@@ -1,0 +1,44 @@
+# Lerni Configuration
+# Copy this file to ~/.lerni/config.toml and customize
+
+[general]
+# Editor to use for study edit command (defaults to $EDITOR)
+# editor = "vim"
+
+[notifications]
+# Enable daily review reminders
+enabled = true
+# Time to show daily summary (24h format)
+reminder_time = "09:00"
+
+[ai]
+# Enable AI agent features (requires API key)
+enabled = false
+
+# Default agent settings
+default_mode = "socratic"  # socratic, eli5, analogy
+default_rigor = 3          # 1-5 scale
+max_turns = 5              # Turns per session
+
+# Save full conversation transcripts
+save_transcripts = true
+
+[ai.api]
+# API provider: "anthropic" or "openai"
+provider = "anthropic"
+
+# Model to use
+# Anthropic: claude-sonnet-4-20250514, claude-opus-4-5-20251101
+# OpenAI: gpt-4o, gpt-4o-mini
+model = "claude-sonnet-4-20250514"
+
+# API key (or set ANTHROPIC_API_KEY / OPENAI_API_KEY env var)
+# api_key = "sk-..."
+
+[review]
+# Default number of days to look ahead in 'study today'
+lookahead_days = 7
+
+# Auto-skip threshold: skip reviews older than N days
+# Set to 0 to disable
+auto_skip_after_days = 0
