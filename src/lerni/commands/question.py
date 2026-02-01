@@ -26,6 +26,9 @@ def new_question(
     step: Optional[int] = typer.Option(
         None, "--step", "-s", help="Start at specific step (1-4)", min=1, max=4
     ),
+    editor: bool = typer.Option(
+        False, "--editor", "-e", help="Use external editor instead of inline prompts"
+    ),
 ):
     """
     Create a new question using the Feynman workflow.
@@ -48,7 +51,8 @@ def new_question(
     console.print("[dim]Write a question that tests understanding of a concept.[/dim]")
     console.print("[dim]This question will be shown during review (without your answer).[/dim]\n")
     prompt = edit_text(
-        prompt_header="# Question\n# Write a question that tests understanding of a concept.\n# Example: 'What are Python decorators and how do they work?'\n# This will be shown during review - your answer will be hidden.\n# Lines starting with # will be removed."
+        prompt_header="# Question\n# Write a question that tests understanding of a concept.\n# Example: 'What are Python decorators and how do they work?'\n# This will be shown during review - your answer will be hidden.\n# Lines starting with # will be removed.",
+        use_editor=editor,
     )
 
     if not prompt:
@@ -79,7 +83,8 @@ def new_question(
         console.print("\n[dim]Step 1/4:[/dim] [bold]Raw Notes[/bold]")
         console.print("[dim]Dump everything you know about this topic.[/dim]\n")
         raw_notes = edit_text(
-            prompt_header="# Step 1: Raw Notes\n# Write everything you know about this topic.\n# Don't worry about organization - just dump your knowledge.\n# Lines starting with # will be removed."
+            prompt_header="# Step 1: Raw Notes\n# Write everything you know about this topic.\n# Don't worry about organization - just dump your knowledge.\n# Lines starting with # will be removed.",
+            use_editor=editor,
         )
 
         if not raw_notes:
@@ -103,7 +108,8 @@ def new_question(
             "[dim]Explain this as if teaching a complete beginner.[/dim]\n"
         )
         simple_explanation = edit_text(
-            prompt_header="# Step 2: Simple Explanation\n# Explain this topic as if teaching someone who knows nothing about it.\n# Use simple words, avoid jargon.\n# Lines starting with # will be removed."
+            prompt_header="# Step 2: Simple Explanation\n# Explain this topic as if teaching someone who knows nothing about it.\n# Use simple words, avoid jargon.\n# Lines starting with # will be removed.",
+            use_editor=editor,
         )
 
     # Step 3: Gaps and questions
@@ -114,7 +120,8 @@ def new_question(
             "[dim]What parts are unclear? What questions do you still have?[/dim]\n"
         )
         gaps_questions = edit_text(
-            prompt_header="# Step 3: Gaps & Questions\n# Identify what you struggled to explain.\n# What questions remain? What needs more research?\n# Lines starting with # will be removed."
+            prompt_header="# Step 3: Gaps & Questions\n# Identify what you struggled to explain.\n# What questions remain? What needs more research?\n# Lines starting with # will be removed.",
+            use_editor=editor,
         )
 
     # Step 4: Final explanation
@@ -123,14 +130,16 @@ def new_question(
         "[dim]Write your refined explanation incorporating what you learned.[/dim]\n"
     )
     final_explanation = edit_text(
-        prompt_header="# Step 4: Final Explanation\n# Write your refined explanation incorporating what you learned from identifying gaps.\n# Lines starting with # will be removed."
+        prompt_header="# Step 4: Final Explanation\n# Write your refined explanation incorporating what you learned from identifying gaps.\n# Lines starting with # will be removed.",
+        use_editor=editor,
     )
 
     # Bonus: Analogies
     console.print("\n[dim]Bonus:[/dim] [bold]Analogies & Examples[/bold]")
     console.print("[dim]Provide real-world analogies or concrete examples.[/dim]\n")
     analogies_examples = edit_text(
-        prompt_header="# Analogies & Examples\n# Provide real-world analogies or concrete examples that illustrate the concept.\n# Lines starting with # will be removed."
+        prompt_header="# Analogies & Examples\n# Provide real-world analogies or concrete examples that illustrate the concept.\n# Lines starting with # will be removed.",
+        use_editor=editor,
     )
 
     question_id = _save_question(
@@ -165,6 +174,9 @@ def _save_question(prompt: str, concept=None, **answer_fields) -> UUID:
 
 def edit_question(
     question_id: str = typer.Argument(..., help="Question ID (partial match supported)"),
+    editor: bool = typer.Option(
+        False, "--editor", "-e", help="Use external editor instead of inline prompts"
+    ),
 ):
     """
     Edit question content (minor changes, no new version).
@@ -195,6 +207,7 @@ def edit_question(
         new_raw = edit_text(
             initial_content=answer.raw_notes,
             prompt_header="# Raw Notes\n# Edit your raw notes below.\n# Lines starting with # will be removed.",
+            use_editor=editor,
         )
         if new_raw:
             answer.raw_notes = new_raw
@@ -206,6 +219,7 @@ def edit_question(
             new_simple = edit_text(
                 initial_content=answer.simple_explanation or "",
                 prompt_header="# Simple Explanation\n# Lines starting with # will be removed.",
+                use_editor=editor,
             )
             answer.simple_explanation = new_simple or answer.simple_explanation
 
@@ -216,6 +230,7 @@ def edit_question(
             new_gaps = edit_text(
                 initial_content=answer.gaps_questions or "",
                 prompt_header="# Gaps & Questions\n# Lines starting with # will be removed.",
+                use_editor=editor,
             )
             answer.gaps_questions = new_gaps or answer.gaps_questions
 
@@ -226,6 +241,7 @@ def edit_question(
             new_final = edit_text(
                 initial_content=answer.final_explanation or "",
                 prompt_header="# Final Explanation\n# Lines starting with # will be removed.",
+                use_editor=editor,
             )
             answer.final_explanation = new_final or answer.final_explanation
 
@@ -236,6 +252,7 @@ def edit_question(
             new_analogies = edit_text(
                 initial_content=answer.analogies_examples or "",
                 prompt_header="# Analogies & Examples\n# Lines starting with # will be removed.",
+                use_editor=editor,
             )
             answer.analogies_examples = new_analogies or answer.analogies_examples
 
@@ -245,6 +262,9 @@ def edit_question(
 
 def snapshot_question(
     question_id: str = typer.Argument(..., help="Question ID"),
+    editor: bool = typer.Option(
+        False, "--editor", "-e", help="Use external editor instead of inline prompts"
+    ),
 ):
     """
     Create a new answer snapshot (meaningful revision).
@@ -269,6 +289,7 @@ def snapshot_question(
         raw_notes = edit_text(
             initial_content=current.raw_notes if current else "",
             prompt_header="# Raw Notes (new snapshot)\n# Lines starting with # will be removed.",
+            use_editor=editor,
         )
 
         if not raw_notes:
@@ -278,21 +299,25 @@ def snapshot_question(
         simple = edit_text(
             initial_content=current.simple_explanation if current else "",
             prompt_header="# Simple Explanation\n# Lines starting with # will be removed.",
+            use_editor=editor,
         )
 
         gaps = edit_text(
             initial_content=current.gaps_questions if current else "",
             prompt_header="# Gaps & Questions\n# Lines starting with # will be removed.",
+            use_editor=editor,
         )
 
         final = edit_text(
             initial_content=current.final_explanation if current else "",
             prompt_header="# Final Explanation\n# Lines starting with # will be removed.",
+            use_editor=editor,
         )
 
         analogies = edit_text(
             initial_content=current.analogies_examples if current else "",
             prompt_header="# Analogies & Examples\n# Lines starting with # will be removed.",
+            use_editor=editor,
         )
 
         new_answer = Answer.create(

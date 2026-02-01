@@ -22,6 +22,9 @@ def review_cmd(
     question_id: Optional[str] = typer.Argument(
         None, help="Specific question to review (optional)"
     ),
+    editor: bool = typer.Option(
+        False, "--editor", "-e", help="Use external editor instead of inline prompts"
+    ),
 ):
     """
     Start a review session.
@@ -53,7 +56,7 @@ def review_cmd(
 
         for i, question in enumerate(questions, 1):
             console.print(f"\n[bold cyan]── Question {i}/{len(questions)} ──[/bold cyan]")
-            _review_single_question(conn, question)
+            _review_single_question(conn, question, use_editor=editor)
 
             if i < len(questions):
                 if not typer.confirm("\nContinue to next question?", default=True):
@@ -63,7 +66,7 @@ def review_cmd(
         console.print("\n[green bold]Review session complete![/green bold]")
 
 
-def _review_single_question(conn, question: Question):
+def _review_single_question(conn, question: Question, use_editor: bool = False):
     """
     Interactive review for a single question using 2-stage recall flow.
 
@@ -104,7 +107,8 @@ def _review_single_question(conn, question: Question):
 
     # User attempts explanation from scratch
     attempted_explanation = edit_text(
-        prompt_header=f"# Question: {question.prompt}\n#\n# Write your explanation from memory.\n# Don't worry if it's incomplete - just write what you remember.\n# Lines starting with # will be removed."
+        prompt_header=f"# Question: {question.prompt}\n#\n# Write your explanation from memory.\n# Don't worry if it's incomplete - just write what you remember.\n# Lines starting with # will be removed.",
+        use_editor=use_editor,
     )
 
     # Ask if they could recall

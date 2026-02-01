@@ -1,4 +1,4 @@
-"""External editor integration for Lerni."""
+"""Text input for Lerni - inline prompts and external editor integration."""
 
 import os
 import subprocess
@@ -6,23 +6,127 @@ import tempfile
 from pathlib import Path
 from typing import Optional
 
+from rich.console import Console
+from rich.prompt import Prompt
+
 from .config import load_config
 
+console = Console()
 
-def get_editor() -> str:
+# Terminator to end multi-line input
+END_MARKER = "/done"
+
+
+def prompt_multiline(
+    prompt_text: str,
+    initial_content: str = "",
+    hint: Optional[str] = None,
+) -> str:
     """
-    Get editor command in priority order: config > EDITOR > VISUAL > vim.
+    Prompt for multi-line input directly in terminal.
+
+    User types content and enters '/done' on its own line to finish.
+    Empty input (just /done) returns empty string.
+
+    Args:
+        prompt_text: Header text explaining what to enter.
+        initial_content: Pre-populate with this text (shown for reference).
+        hint: Optional hint shown below the prompt.
 
     Returns:
-        Editor command string.
+        The entered content, or empty string if nothing entered.
     """
-    config = load_config()
-    if config.editor:
-        return config.editor
-    return os.environ.get("EDITOR", os.environ.get("VISUAL", "vim"))
+    console.print(f"\n[bold cyan]{prompt_text}[/bold cyan]")
+    if hint:
+        console.print(f"[dim]{hint}[/dim]")
+    console.print(f"[dim]Type your response. Enter [bold]{END_MARKER}[/bold] on a new line when done.[/dim]")
+
+    if initial_content:
+        console.print(f"\n[dim]Current content:[/dim]")
+        for line in initial_content.split("\n")[:5]:  # Show first 5 lines
+            console.print(f"[dim]  {line}[/dim]")
+        if initial_content.count("\n") > 5:
+            console.print(f"[dim]  ... ({initial_content.count(chr(10)) - 5} more lines)[/dim]")
+        console.print()
+
+    lines = []
+    try:
+        while True:
+            line = console.input("[green]> [/green]")
+            if line.strip().lower() == END_MARKER.lower():
+                break
+            lines.append(line)
+    except (KeyboardInterrupt, EOFError):
+        console.print("\n[yellow]Input cancelled.[/yellow]")
+        return ""
+
+    return "\n".join(lines).strip()
+
+
+def prompt_single(
+    prompt_text: str,
+    default: str = "",
+) -> str:
+    """
+    Prompt for single-line input.
+
+    Args:
+        prompt_text: The prompt to show.
+        default: Default value if user just presses Enter.
+
+    Returns:
+        The entered text.
+    """
+    return Prompt.ask(f"[bold cyan]{prompt_text}[/bold cyan]", default=default)
 
 
 def edit_text(
+    initial_content: str = "",
+    suffix: str = ".md",
+    prompt_header: Optional[str] = None,
+    use_editor: bool = False,
+) -> str:
+    """
+    Get text input from user - inline prompt by default, or external editor.
+
+    Args:
+        initial_content: Pre-populate with this text.
+        suffix: File extension for temp file (only used with editor).
+        prompt_header: Text explaining what to enter.
+        use_editor: If True, open external editor instead of inline prompt.
+
+    Returns:
+        Entered content, or empty string if aborted.
+    """
+    if use_editor:
+        return _edit_with_external_editor(initial_content, suffix, prompt_header)
+
+    # Extract a clean prompt from the header
+    prompt_text = "Enter your response"
+    hint = None
+
+    if prompt_header:
+        # Parse the header to get a clean prompt
+        lines = prompt_header.strip().split("\n")
+        # Find first non-comment line or use first comment as title
+        for line in lines:
+            clean = line.lstrip("#").strip()
+            if clean:
+                prompt_text = clean
+                break
+        # Get hint from remaining lines
+        hints = []
+        for line in lines[1:]:
+            clean = line.lstrip("#").strip()
+            if clean and not clean.startswith("Lines starting with"):
+                hints.append(clean)
+        if hints:
+            hint = " ".join(hints[:2])  # First 2 hint lines
+
+    return prompt_multiline(prompt_text, initial_content, hint)
+
+
+def _edit_with_external_editor(
     initial_content: str = "",
     suffix: str = ".md",
     prompt_header: Optional[str] = None,
@@ -32,21 +136,6 @@ def edit_text(
 
     Creates a temporary file, opens it in the user's editor, and returns
     the edited content with any header comments stripped.
-
-    Args:
-        initial_content: Pre-populate editor with this text.
-        suffix: File extension for temp file (affects syntax highlighting).
-        prompt_header: Optional comment header explaining what to enter.
-            Lines starting with # in the header area will be stripped.
-
-    Returns:
-        Edited content with header stripped, or empty string if aborted.
-
-    Example:
-        >>> content = edit_text(
-        ...     initial_content="",
-        ...     prompt_header="# Enter your notes below. Lines starting with # will be removed."
-        ... )
     """
     editor = get_editor()
 
@@ -95,6 +184,19 @@ def edit_text(
 
     finally:
         Path(temp_path).unlink(missing_ok=True)
+
+
+def get_editor() -> str:
+    """
+    Get editor command in priority order: config > EDITOR > VISUAL > vim.
+
+    Returns:
+        Editor command string.
+    """
+    config = load_config()
+    if config.editor:
+        return config.editor
+    return os.environ.get("EDITOR", os.environ.get("VISUAL", "vim"))
 
 
 def edit_in_place(file_path: Path) -> bool:
