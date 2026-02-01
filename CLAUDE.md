@@ -4,11 +4,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Lerni is a local-first, privacy-preserving learning system that combines the Feynman Technique (learning by teaching) with spaced repetition (SM-2 algorithm). It includes optional AI agents for coaching. The project is currently in the documentation/design phase with implementation not yet begun.
+Lerni is a local-first, privacy-preserving learning system combining the Feynman Technique (learning by teaching) with spaced repetition (SM-2). Currently in documentation/design phase—implementation not yet begun.
 
 ## Tech Stack
 
-- **Language**: Python 3.11+ (uses `tomllib` from stdlib)
+- **Python 3.11+** (uses `tomllib` from stdlib)
 - **CLI**: typer
 - **Database**: SQLite (stdlib `sqlite3`)
 - **Notifications**: `osascript` (macOS native)
@@ -16,72 +16,73 @@ Lerni is a local-first, privacy-preserving learning system that combines the Fey
 
 ## Build/Test Commands
 
-Not yet configured. When implemented, expect:
-- pytest for testing
-- Standard Python tooling (pyproject.toml)
+Not yet configured. When implemented:
+```bash
+pytest                          # Run all tests
+pytest tests/test_sm2.py -v     # Run single test file
+pytest -k "test_name"           # Run specific test
+```
+
+## Project Structure
+
+```
+src/lerni/
+├── cli.py            # CLI entry points (typer)
+├── models.py         # Data models
+├── db.py             # Database operations
+├── sm2.py            # SM-2 algorithm
+├── review.py         # Review workflow
+└── agents/           # AI agent orchestration
+    ├── base.py       # Base agent class
+    ├── beginner.py   # Beginner agent logic
+    └── expert.py     # Expert agent logic
+
+agents/               # Default agent prompt files (markdown)
+~/.lerni/             # User data (db, config, custom prompts, transcripts)
+```
 
 ## Architecture
 
-### Data Layer
+### Data Model
 - **Topic**: Main learning unit with metadata (tags, domain, difficulty, prerequisites)
-- **TopicVersion**: Immutable snapshots tracking the 4-step Feynman process
-  - Step 1: Raw notes (what you know)
-  - Step 2: Simple explanation
-  - Step 3: Identified gaps/questions
-  - Step 4: Refined explanation + analogies
-- **Review**: Tracks review sessions with SM-2 state and self-grades (0-5 scale)
+- **TopicVersion**: Immutable snapshots of the 4-step Feynman process
+- **Review**: Tracks review sessions with SM-2 state and self-grades (0-5)
 - **AISession**: Optional AI coaching transcripts
 
-### User Data Location
-All user data stored in `~/.lerni/`:
-- `lerni.db` - SQLite database
-- `config.toml` - User preferences (copied from `config.example.toml`)
-- `agents/` - User customizations of agent prompts
-- `transcripts/` - Saved AI session transcripts
-
 ### Core Algorithms
-- **Feynman Technique**: 4-step teaching-yourself workflow
-- **SM-2**: Spaced repetition with easiness factor (starts 2.5, min 1.3), quality grades 0-5
+- **Feynman Technique**: 4-step workflow (raw notes → simple explanation → gaps → refined explanation + analogies)
+- **SM-2**: Easiness factor starts at 2.5 (min 1.3), grades 0-5, interval calculation per spec
 
 ### AI Agents
-Located in `agents/`:
-- **beginner.md**: 3 modes (Socratic, ELI5, Analogy) - 5 turns, gap identification
-- **expert.md**: 5 rigor levels (1=Gentle to 5=Harsh Critic) - 5 turns, grade recommendation
-
-## Key Documentation
-
-- `docs/spec.md` - Complete technical specification (data models, CLI commands, algorithms)
-- `docs/mission.md` - Product vision and core beliefs
-- `docs/roadmap.md` - 5-phase development roadmap (MVP → AI → Analytics → Visualization → Native apps)
-- `docs/PRD.md` - Product requirements index
+- **Beginner Agent** (`agents/beginner.md`): 3 modes (Socratic, ELI5, Analogy), 5-turn sessions, gap identification
+- **Expert Agent** (`agents/expert.md`): 5 rigor levels (1=Gentle to 5=Harsh), grade recommendation
 
 ## Design Principles
 
-1. **Local-First**: No cloud sync; privacy is paramount
-2. **Feynman-Centric**: AI enhances but never replaces the core learning process
-3. **Opt-In AI**: AI features require explicit `--ai` flag and user API keys
+1. **Local-First**: No cloud sync; privacy paramount
+2. **Feynman-Centric**: AI enhances but never replaces core learning process
+3. **Opt-In AI**: Requires explicit `--ai` flag and user API keys
 4. **Immutable Versions**: All topic revisions are versioned snapshots
 
-## CLI Structure (Planned)
+## CLI Commands (Planned)
 
 ```bash
-# Topic management
 study new "Title"              # 4-step Feynman flow
 study new "Title" --quick      # Quick capture (step 1 only)
 study new "Title" --ai         # With beginner agent review
 study edit <id>                # Minor edits
 study snapshot <id>            # Create new version
 study list [--domain|--tag|--due]
-
-# Review & assessment
 study today                    # Daily summary
-study review [<id>] [--ai]     # Review with optional AI coaching
+study review [<id>] [--ai]     # Review with optional AI
 study coach <id> --agent <beginner|expert> [--mode|--rigor]
-
-# Knowledge graph
-study graph [<id>]
-study export-graph --format json
 ```
+
+## Key Documentation
+
+- `docs/spec.md` - Complete technical specification (data models, CLI, algorithms)
+- `docs/mission.md` - Product vision and core beliefs
+- `docs/roadmap.md` - 5-phase development roadmap
 
 ## Implementation Roadmap
 
