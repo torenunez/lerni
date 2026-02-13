@@ -223,15 +223,10 @@ CREATE INDEX IF NOT EXISTS idx_concept_edges_to ON concept_edges(to_concept_id);
 """
 
 
-def get_lerni_dir() -> Path:
-    """Get Lerni data directory (~/.lerni/), creating if needed."""
-    lerni_dir = Path.home() / ".lerni"
-    lerni_dir.mkdir(exist_ok=True)
-    return lerni_dir
-
-
 def get_db_path() -> Path:
     """Get database path (~/.lerni/lerni.db)."""
+    from .config import get_lerni_dir
+
     return get_lerni_dir() / "lerni.db"
 
 

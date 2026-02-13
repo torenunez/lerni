@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 from lerni.db import init_db, get_connection
-from lerni.models import Topic, TopicVersion
+from lerni.models import Concept, Question, Answer
 
 
 @pytest.fixture
@@ -26,16 +26,22 @@ def db_connection(temp_db):
 
 
 @pytest.fixture
-def sample_topic():
-    """Create a sample topic for testing."""
-    return Topic.create("Test Topic: Python Decorators")
+def sample_concept():
+    """Create a sample concept for testing."""
+    return Concept.create("Python Decorators", description="Function wrappers using @ syntax")
 
 
 @pytest.fixture
-def sample_version(sample_topic):
-    """Create a sample version with all fields populated."""
-    return TopicVersion.create(
-        sample_topic,
+def sample_question(sample_concept):
+    """Create a sample question for testing."""
+    return Question.create("Explain Python decorators", concept=sample_concept)
+
+
+@pytest.fixture
+def sample_answer(sample_question):
+    """Create a sample answer with all fields populated."""
+    return Answer.create(
+        sample_question,
         raw_notes="Decorators are functions that modify other functions. They use the @ syntax.",
         simple_explanation="A decorator wraps a function to add extra behavior without changing the original function.",
         gaps_questions="How do decorators with arguments work? What about class decorators?",

@@ -24,30 +24,25 @@
 ### Project Repository
 ```
 lerni/
-├── .lerni/               # Project outputs (gitignored)
-│   └── tmp/
 ├── docs/
-│   ├── PRD.md            # Product requirements index
 │   ├── mission.md        # Product vision
 │   ├── roadmap.md        # Feature roadmap
 │   ├── spec.md           # This file
-│   └── specs/            # Feature specifications
-│       └── {timestamp}-{feature}/
+│   └── todo.md           # Full backlog
 ├── src/lerni/
 │   ├── __init__.py
-│   ├── cli.py            # CLI entry points
-│   ├── models.py         # SQLAlchemy/dataclass models
-│   ├── db.py             # Database operations
+│   ├── __main__.py       # python -m lerni entry point
+│   ├── cli.py            # CLI app + command registration (typer)
+│   ├── models.py         # Dataclass models
+│   ├── db.py             # SQLite schema, connections, repository classes
 │   ├── sm2.py            # SM-2 algorithm
-│   ├── review.py         # Review workflow
-│   └── agents/           # AI agent orchestration
-│       ├── __init__.py
-│       ├── base.py       # Base agent class
-│       ├── beginner.py   # Beginner agent logic
-│       └── expert.py     # Expert agent logic
-├── agents/               # Default agent prompt files
-│   ├── beginner.md
-│   └── expert.md
+│   ├── config.py         # Config loading (config.toml)
+│   ├── editor.py         # External editor integration
+│   └── commands/         # CLI command implementations
+│       ├── question.py   # new, edit, snapshot, show, history, delete
+│       ├── review.py     # review, skip, today
+│       ├── organize.py   # list, search, assign, meta, concept subcommands
+│       └── notify.py     # macOS notifications
 ├── tests/
 ├── pyproject.toml
 └── README.md
@@ -55,52 +50,71 @@ lerni/
 
 ---
 
-## Data Model
+## Data Model (v3 — concept-based knowledge graph)
 
-### `Topic`
+### `Concept`
 | Field | Type | Description |
 |-------|------|-------------|
 | `id` | UUID | Primary key |
-| `title` | string | Topic name |
-| `metadata` | JSON | Tags, domain, difficulty, prerequisites, related_topics, source_refs |
-| `current_version_id` | UUID | FK to latest TopicVersion |
+| `name` | string | Canonical name (unique) |
+| `aliases` | JSON list | Alternative names for fuzzy matching |
+| `description` | text | Optional description |
+| `created_at` | datetime | |
+
+### `ConceptEdge`
+| Field | Type | Description |
+|-------|------|-------------|
+| `from_concept_id` | UUID | FK to source Concept |
+| `to_concept_id` | UUID | FK to target Concept |
+| `relationship` | enum | parent, prerequisite, related |
+
+### `Question`
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | UUID | Primary key |
+| `concept_id` | UUID | FK to Concept (nullable for inbox/uncategorized) |
+| `prompt` | string | The question text shown during review |
+| `current_answer_id` | UUID | FK to latest Answer |
 | `next_review_at` | datetime | When next review is due |
 | `schedule_state` | JSON | SM-2 state: easiness_factor, interval, repetitions |
+| `difficulty` | int | 1-5 scale |
+| `source_refs` | JSON list | URLs, books, citations |
 | `created_at` | datetime | |
 | `updated_at` | datetime | |
 
-### `TopicVersion` (immutable)
+### `Answer` (immutable)
 | Field | Type | Description |
 |-------|------|-------------|
 | `id` | UUID | Primary key |
-| `topic_id` | UUID | FK to Topic |
+| `question_id` | UUID | FK to Question |
 | `raw_notes` | text | Step 1: What you know |
 | `simple_explanation` | text | Step 2: Explain simply |
 | `gaps_questions` | text | Step 3: Identified gaps |
 | `final_explanation` | text | Step 4: Refined explanation |
 | `analogies_examples` | text | Step 4: Analogies and examples |
-| `metadata_snapshot` | JSON | Copy of metadata at version time |
 | `created_at` | datetime | |
 
 ### `Review`
 | Field | Type | Description |
 |-------|------|-------------|
 | `id` | UUID | Primary key |
-| `topic_id` | UUID | FK to Topic |
-| `version_id` | UUID | FK to TopicVersion reviewed |
+| `question_id` | UUID | FK to Question |
+| `answer_id` | UUID | FK to Answer reviewed |
 | `scheduled_for` | datetime | When it was due |
 | `completed_at` | datetime | When completed |
 | `status` | enum | pending, completed, skipped |
 | `self_grade` | int | 0-5 (SM-2 scale) |
+| `attempted_explanation` | text | What user wrote from scratch during review |
+| `recalled_from_memory` | bool | True if user could explain without seeing answer |
 | `gaps_identified` | text | Gaps found during this review |
 | `notes` | text | Optional review notes |
-| `ai_session_id` | UUID | FK to AISession (if AI-assisted) |
+| `ai_session_id` | UUID | FK to AISession (Phase 2, NULL for now) |
 
-### `AISession`
+### `AISession` (Phase 2 — not yet implemented)
 | Field | Type | Description |
 |-------|------|-------------|
 | `id` | UUID | Primary key |
-| `topic_id` | UUID | FK to Topic |
+| `question_id` | UUID | FK to Question |
 | `review_id` | UUID | FK to Review (optional) |
 | `agent_type` | string | beginner, expert |
 | `agent_mode` | string | socratic, eli5, analogy (for beginner) |
@@ -109,16 +123,6 @@ lerni/
 | `summary` | text | AI-generated session summary |
 | `gaps_identified` | text | Gaps surfaced during session |
 | `created_at` | datetime | |
-
-### Metadata Fields
-| Field | Type | Description |
-|-------|------|-------------|
-| `tags` | list[string] | Categorization tags |
-| `domain` | string | Knowledge domain (e.g., "math", "programming") |
-| `difficulty` | int | 1-5 scale |
-| `prerequisites` | list[UUID] | Topic IDs that should be learned first |
-| `related_topics` | list[UUID] | Connected topic IDs |
-| `source_refs` | list[string] | Links or citations |
 
 ---
 
@@ -160,135 +164,99 @@ After each review:
 
 # CLI Command Reference
 
-## Topic Management
+## Question Management (Implemented)
 
 ```bash
-# Create a new topic (sequential Feynman flow)
-study new "Topic Title"
+# Create a new question (sequential Feynman flow)
+study new "Question prompt"
   # Prompts for: raw_notes → simple_explanation → gaps → final_explanation → analogies
-  # Use --step <1-4> to start at a specific step
 
-# Create topic with AI assistance
-study new "Topic Title" --ai
-  # After manual entry, beginner agent challenges your explanation
-
-# Create topic with minimal info (quick capture)
-study new "Topic Title" --quick
+# Create question with minimal info (quick capture)
+study new "Question prompt" --quick
   # Only prompts for raw_notes (Step 1)
 
-# Edit a topic (minor changes, no new version)
+# Edit a question (minor changes, no new version)
 study edit <id>
-  # Opens editor for current version fields
+  # Opens editor for current answer fields
 
-# Create a new version snapshot (meaningful revision)
+# Create a new answer snapshot (meaningful revision)
 study snapshot <id>
-  # Creates a new immutable TopicVersion
+  # Creates a new immutable Answer
 
-# View a topic
+# View a question
 study show <id>
-  # Displays current version + metadata + review history
+  # Displays current answer + metadata + review history
 
-# View version history
+# View answer history
 study history <id>
-  # Lists all versions with timestamps
+  # Lists all answer versions with timestamps
 
-# List all topics
-study list
-study list --domain <domain>
-study list --tag <tag>
-study list --due          # Only topics due for review
-
-# Search topics
-study search <query>
-
-# Delete a topic
+# Delete a question
 study delete <id>
 ```
 
-## Review Management
+## Organization (Implemented)
+
+```bash
+# List questions
+study list
+study list --concept <name>   # Filter by concept
+study list --due              # Only questions due for review
+
+# Search questions
+study search <query>
+
+# Assign question to concept
+study assign <id> <concept>
+
+# Update metadata
+study meta <id> --difficulty 3 --source "https://..."
+```
+
+## Knowledge Graph (Implemented)
+
+```bash
+# Create a concept
+study concept new "Concept Name"
+
+# List all concepts
+study concept list
+
+# Show concept details
+study concept show <id>
+
+# Link concepts
+study concept link <id1> <id2> --type prereq
+study concept link <id1> <id2> --type related
+study concept link <id1> <id2> --type parent
+
+# Unlink concepts
+study concept unlink <id1> <id2>
+
+# Delete a concept
+study concept delete <id>
+```
+
+## Review Management (Implemented)
 
 ```bash
 # Show daily summary
 study today
-  # Lists topics due today and upcoming in next 7 days
+  # Lists questions due today and upcoming in next 7 days
 
-# Start a review session (no AI)
+# Start a review session
 study review
-  # Presents due topics one by one
+  # Presents due questions one by one
   # Shows content → prompts for gaps → prompts for grade
 
-# Start AI-assisted review session
-study review --ai
-  # Uses beginner agent to challenge you, then expert to grade
-
-# Review with specific agent mode
-study review --ai --mode socratic    # Probing questions
-study review --ai --mode eli5        # Roleplay confused beginner
-study review --ai --mode analogy     # Push for real-world analogies
-
-# Set expert rigor level (1=gentle, 5=harsh critic)
-study review --ai --rigor 3
-
-# Review a specific topic
+# Review a specific question
 study review <id>
-study review <id> --ai --mode eli5 --rigor 4
 
 # Skip a review
 study skip <id>
 ```
 
-## AI Agent Sessions (Standalone)
-
-```bash
-# Start a standalone session with beginner agent
-study coach <id> --agent beginner --mode socratic
-study coach <id> --agent beginner --mode eli5
-study coach <id> --agent beginner --mode analogy
-
-# Start a standalone session with expert agent
-study coach <id> --agent expert --rigor 3
-
-# View past AI sessions for a topic
-study sessions <id>
-  # Lists all AI sessions with timestamps and summaries
-
-# View a specific session transcript
-study session <session_id>
-```
-
-## Metadata & Links
-
-```bash
-# Update metadata
-study meta <id> --tags "tag1,tag2"
-study meta <id> --domain "mathematics"
-study meta <id> --difficulty 3
-study meta <id> --source "https://example.com"
-
-# Link topics
-study link <id1> <id2> --type prereq
-study link <id1> <id2> --type related
-
-# Unlink topics
-study unlink <id1> <id2>
-```
-
-## Knowledge Graph
-
-```bash
-# Graph summary
-study graph
-  # Shows: total nodes, total edges, top tags, domains
-
-# Topic connections
-study graph <id>
-  # Shows: prerequisites, related topics, shared-tag connections
-
-# Export graph for visualization
-study export-graph --format json
-```
-
-## Notifications
+## Notifications (Implemented)
 
 ```bash
 # Send macOS notification with today's summary
@@ -297,6 +265,35 @@ study notify
 # Setup daily notifications
 study notify --setup
   # Outputs crontab entry for daily reminders
+```
+
+## AI-Assisted Review (Phase 2 — not yet implemented)
+
+```bash
+# Start AI-assisted review session
+study review --ai
+study review --ai --mode socratic    # Probing questions
+study review --ai --mode eli5        # Roleplay confused beginner
+study review --ai --mode analogy     # Push for real-world analogies
+study review --ai --rigor 3          # Expert rigor level (1-5)
+
+# Standalone agent sessions
+study coach <id> --agent beginner --mode socratic
+study coach <id> --agent expert --rigor 3
+
+# View past AI sessions
+study sessions <id>
+study session <session_id>
+```
+
+## Analytics & Export (Phase 3 — not yet implemented)
+
+```bash
+study stats                    # Global statistics
+study stats <id>               # Per-question analytics
+study export --all             # Full JSON backup
+study import                   # Restore from backup
+study export-graph             # Knowledge graph JSON
 ```
 
 ---

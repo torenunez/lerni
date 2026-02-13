@@ -5,33 +5,36 @@
 **Goal**: Fully functional local study system without AI
 
 ### Data Layer
-- [ ] SQLite database setup (`~/.lerni/lerni.db`)
-- [ ] Topic model with metadata JSON
-- [ ] TopicVersion model (immutable snapshots)
-- [ ] Review model with SM-2 state
+- [x] SQLite database setup (`~/.lerni/lerni.db`)
+- [x] Concept model (knowledge graph nodes)
+- [x] ConceptEdge model (typed relationships: parent, prerequisite, related)
+- [x] Question model with SM-2 schedule state
+- [x] Answer model (immutable Feynman snapshots)
+- [x] Review model with SM-2 state
 
 ### Feynman Workflow
-- [ ] `study new` - Full 4-step flow
-- [ ] `study new --quick` - Quick capture (step 1 only)
-- [ ] `study edit` - Minor edits without versioning
-- [ ] `study snapshot` - Create new version
+- [x] `study new` - Full 4-step flow
+- [x] `study new --quick` - Quick capture (step 1 only)
+- [x] `study edit` - Minor edits without versioning
+- [x] `study snapshot` - Create new version
 
 ### Review System
-- [ ] SM-2 algorithm implementation
-- [ ] `study review` - Review session workflow
-- [ ] `study skip` - Skip and reschedule
-- [ ] `study today` - Daily summary
+- [x] SM-2 algorithm implementation
+- [x] `study review` - Review session workflow
+- [x] `study skip` - Skip and reschedule
+- [x] `study today` - Daily summary
 
 ### Organization
-- [ ] `study list` - List with filters (domain, tag, due)
-- [ ] `study search` - Full-text search
-- [ ] `study show` / `study history` - View topic and versions
-- [ ] `study meta` - Update metadata
-- [ ] `study link` / `study unlink` - Topic relationships
+- [x] `study list` - List with filters (concept, due)
+- [x] `study search` - Full-text search
+- [x] `study show` / `study history` - View question and answers
+- [x] `study meta` - Update metadata
+- [x] `study assign` - Assign question to concept
+- [x] `study concept new/list/show/link/unlink/delete` - Knowledge graph management
 
 ### Notifications
-- [ ] `study notify` - macOS notification
-- [ ] `study notify --setup` - Cron setup instructions
+- [x] `study notify` - macOS notification
+- [x] `study notify --setup` - Cron setup instructions
 
 ---
 

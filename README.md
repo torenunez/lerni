@@ -17,24 +17,24 @@ A local-first, privacy-preserving learning system that combines the **Feynman Te
 4. **Refine** — Improve your explanation with analogies and examples
 5. **Review** — SM-2 algorithm schedules reviews at optimal intervals
 
-## Features (Planned)
+## Features
 
 - CLI-based workflow (`study new`, `study review`, `study today`)
 - 4-step Feynman technique with version tracking
+- Concept-based knowledge graph with typed relationships (parent, prerequisite, related)
 - SM-2 spaced repetition scheduling
-- Optional AI coaching (Beginner agent challenges, Expert agent grades)
-- Knowledge graph with prerequisites and related topics
 - macOS notifications for daily review reminders
-- Full data export (JSON, Neo4j)
+- Optional AI coaching — planned for Phase 2
 
 ## Status
 
-This project is in the **design phase**. Documentation and specifications are complete; implementation has not yet begun.
+**Phase 1 (MVP) is complete.** Core system is functional: data layer, Feynman workflow, SM-2 review scheduling, concept graph, and CLI.
 
 See [`docs/`](docs/) for detailed specifications:
 - [Mission & Vision](docs/mission.md)
 - [Technical Specification](docs/spec.md)
 - [Roadmap](docs/roadmap.md)
+- [Backlog](docs/todo.md)
 
 ## Tech Stack
 
