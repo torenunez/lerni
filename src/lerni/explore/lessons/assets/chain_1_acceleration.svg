@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 360" role="img" aria-labelledby="t d">
+  <title id="t">Two cars making the same speed change in different times</title>
+  <desc id="d">Two lanes. Both cars go from 0 to 60 miles per hour. Car A's time bar is labelled 4 seconds. Car B's time bar is labelled 8 seconds and is twice as long.</desc>
+  <rect x="0" y="0" width="800" height="360" fill="#ffffff"/>
+
+  <text x="400" y="36" text-anchor="middle" font-family="sans-serif" font-size="24" font-weight="bold" fill="#111111">Same speed change, different time</text>
+
+  <g font-family="sans-serif" font-size="18" fill="#111111">
+    <text x="40" y="86">Car A</text>
+    <text x="40" y="226">Car B</text>
+  </g>
+
+  <g stroke="#111111" stroke-width="3" fill="none">
+    <line x1="130" y1="110" x2="700" y2="110"/>
+    <line x1="130" y1="250" x2="700" y2="250"/>
+  </g>
+
+  <g font-family="sans-serif" font-size="16" fill="#111111" text-anchor="middle">
+    <text x="130" y="140">0 mph</text>
+    <text x="700" y="140">60 mph</text>
+    <text x="130" y="280">0 mph</text>
+    <text x="700" y="280">60 mph</text>
+  </g>
+
+  <g stroke="#111111" stroke-width="3">
+    <line x1="130" y1="98" x2="130" y2="122"/>
+    <line x1="700" y1="98" x2="700" y2="122"/>
+    <line x1="130" y1="238" x2="130" y2="262"/>
+    <line x1="700" y1="238" x2="700" y2="262"/>
+  </g>
+
+  <g fill="#1a4d8f">
+    <rect x="140" y="66" width="120" height="26" rx="6"/>
+    <rect x="140" y="206" width="240" height="26" rx="6"/>
+  </g>
+
+  <g font-family="sans-serif" font-size="17" font-weight="bold" fill="#111111">
+    <text x="272" y="86">4 seconds</text>
+    <text x="392" y="226">8 seconds</text>
+  </g>
+
+  <text x="400" y="330" text-anchor="middle" font-family="sans-serif" font-size="18" fill="#111111">Car A makes the same change in less time, so its average acceleration is greater.</text>
+</svg>
