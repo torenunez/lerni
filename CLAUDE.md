@@ -84,12 +84,13 @@ plans/                # Explore implementation bundle
 - `quality-gate.sh` — shared commit gate: lints **staged** Python files with
   ruff and runs the **full** pytest suite. Lint is staged-only because `src/`
   carries pre-existing violations; tests are full-suite because regressions are not
-  local to a diff. Tools resolve from `.venv/bin` first, then `PATH`; a genuinely
-  missing tool skips its check rather than failing closed.
+  local to a diff. Tools resolve from `.venv/bin` first, then `PATH`. Missing
+  ruff (when Python is staged) or missing pytest **fails closed**; tool stdout/
+  stderr is shown, not swallowed.
 - `pre-commit-quality.sh` (PreToolUse/Bash) — calls the shared gate before any
-  `git commit` and denies the commit on failure.
+  `git commit` and denies the commit on failure. Missing `jq` also denies.
 - `auto-format.sh` (PostToolUse/Edit|Write) — formats after edits (venv-aware).
-- `study-summary.sh` (SessionStart) — prints due-review summary.
+- `study-summary.sh` (SessionStart) — prints due-review summary (needs `sqlite3`).
 
 `settings.json` is tracked and portable. `settings.local.json` is machine-specific
 and gitignored — never commit it.
@@ -128,6 +129,8 @@ they are intentionally not part of the commit.
 | `.claude/settings.local.json` | Claude Code tool permissions | Created by Claude Code on your machine; gitignored |
 | `~/.lerni/` | Study database and `config.toml` | Created by `study` CLI usage; never committed |
 | `.venv/` | Project virtualenv (`ruff`, `pytest`) | `python -m venv .venv && pip install -e .[dev]`; gitignored |
+| `jq` (PATH) | Parses Claude Code PreToolUse JSON | Install via Homebrew/apt; commit hook denies if missing |
+| `sqlite3` (PATH) | Used by `study-summary.sh` | Usually system-provided on macOS |
 | Cursor user settings | Global IDE rules, models, API keys | Cursor app settings; not in this repo |
 
 Tracked in git: `.claude/settings.json` (hook registrations), `.claude/hooks/*`,

@@ -35,9 +35,12 @@ elif command -v ruff > /dev/null 2>&1; then
 fi
 
 if [ -z "$RUFF" ]; then
+    echo "auto-format: ruff unavailable, skipped $FILE_PATH" >&2
     exit 0
 fi
 
-"$RUFF" format "$FILE_PATH" 2>/dev/null || true
+if ! "$RUFF" format "$FILE_PATH"; then
+    echo "auto-format: ruff format failed on $FILE_PATH" >&2
+fi
 
 exit 0

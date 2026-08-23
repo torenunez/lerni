@@ -158,7 +158,11 @@ and no network.
 - [ ] Curated, accessible visual asset
 - [ ] Optional browser read-aloud
 - [ ] Typed input as the universal fallback
-- [ ] Tutor capability contract, plus one qualified runtime adapter before any LLM pilot
+- [ ] Tutor capability contract with authored fallback (no live adapter required)
+
+Phase 1A is account-free and authored-only. Qualifying a real tutor / harm-gate
+adapter is **1A+** (see PR-07A in `plans/`), required before any LLM pilot — not
+part of the deterministic safe-slice acceptance.
 
 ## Explore Phase 1B — Push-to-talk
 

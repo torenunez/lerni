@@ -2,6 +2,8 @@
 
 > For vision and principles, see [mission.md](./mission.md)
 > For roadmap and phases, see [roadmap.md](./roadmap.md)
+> For Explore implementation contracts, see [`plans/`](../plans/) (normative for
+> execution; this file holds product-facing Study + Explore contracts)
 
 ---
 
