@@ -188,3 +188,90 @@ study concept delete "Name"
 ### Next
 - Manual testing of `study new` and `study review` in terminal
 - Add database tests for new schema
+
+---
+
+## 2026-08-23 (Explore Pivot — Documentation Alignment)
+
+### Decisions
+
+- **Pivot to Explore-first.** Development focus moves from Study to Explore: a
+  parent-supervised, localhost experience taking a child from an existing interest
+  (fast cars) down to a fundamental idea (average acceleration).
+- **Study is maintenance-only.** Phase 1 stays feature-complete and compatible.
+  Phases 2–5 are parked, not deleted. Study's `study` entry point and database
+  schema are unchanged by this work.
+- **First-slice boundary selected.** The first slice is deterministic and
+  account-free: reviewed lesson content, an application-owned state machine, local
+  policy and grounding, local telemetry with parent controls, and a localhost UI.
+  FastAPI, NetworkX, shared Study database state, token streaming, hosting, and the
+  garage concept are all deferred — none contributes to the first learning signal.
+- **Provider- and model-neutral capability architecture.** No model, provider, SDK,
+  or hosted service is required or named. Tutor, speech-to-text, and harm-gate
+  capabilities are replaceable adapters selected by explicit runtime qualification,
+  loaded out-of-process, configured with `env:` credential references. With none
+  configured, the lesson completes on authored content.
+- **Read-aloud first, push-to-talk second.** Browser read-aloud is cheap and
+  optional, so it lands with the first usable build. Audio *input* is a separate
+  concern and follows immediately behind, through an isolated speech-to-text
+  adapter — it does not block the lesson core.
+- **Local telemetry, separate database.** Sanitized turns, structured events, and
+  parent observations go to their own Explore SQLite file under an operator-owned
+  private root. No child name, no raw blocked text, no audio, no credentials. Parent
+  controls retention, export, and deletion. Explicitly not described as anonymous.
+
+### Correction
+
+The draft framing "that 0–60 number has a name: acceleration" is **scientifically
+wrong** and has been corrected throughout. A 0–60 figure is *elapsed time*.
+Acceleration is change in velocity over time. The lesson now teaches the
+distinction rather than collapsing it, and the fact sheet avoids mutable
+leaderboard claims.
+
+### Lesson sequence vs. concept graph
+
+These are now explicitly separate. A `ConceptEdge` states a domain relationship
+("this concept requires that prerequisite"). A lesson step states pedagogy ("teach
+this next"). Treating one graph edge as one tutor turn would corrupt both models,
+so the first slice uses an explicit authored lesson sequence and defers graph
+integration entirely. Hop count is recorded as an authoring heuristic, not a
+difficulty measure.
+
+### Done
+
+- Restored the `.claude/` hooks and `settings.json` lost to a working-tree reset,
+  and repaired the pre-commit quality gate, which had never passed: it called bare
+  `ruff` and `pytest` (present only in `.venv/bin`) and linted all of `src/`, which
+  carries 99 pre-existing style violations. Lint is now scoped to staged Python
+  files; pytest still runs the full suite.
+- Imported the 29-file Explore implementation bundle into `plans/` under version
+  control, so plan revisions become reviewable history. Reorganized it into
+  `prs/` (execution units), `specs/` (technical contracts), and `runbooks/`
+  (manual procedures), renamed the master plan from its hash to
+  `cursor_master_plan.plan.md`, dropped the repeated `explore_safe_slice_` prefix,
+  and added a `plans/README.md` index carrying the spec-to-PR mapping — the two
+  numbering schemes do not line up and that was undocumented.
+- Aligned all eight product documents on the two-mode model: `docs/mission.md` and
+  `docs/PRD.md` rewritten, `docs/roadmap.md` merged into Study Track / Explore
+  Track, `docs/todo.md` reordered Explore-first with Study work parked,
+  `docs/spec.md` extended with the Explore contracts, `README.md` and `CLAUDE.md`
+  updated.
+- Corrected `CLAUDE.md`, which documented `src/lerni/agents/` and `src/lerni/skills/`
+  modules that do not exist on disk. The tree now reflects reality.
+
+### Status
+
+**Documentation only. No Explore code exists.** This entry records a design
+decision and a documentation change, not an implementation. `src/lerni/explore/`
+has not been created.
+
+Commits were made on branch `explore/pr-01-documentation` at the user's explicit
+request. The implementation plans otherwise assume no commits are made without
+that authorization.
+
+### Next
+
+- Lesson domain, canonical serialization, and the strict TOML catalog
+- Reviewed Chain-1 acceleration content, with real source retrieval dates and
+  human review attestations — not fabricated to make checks pass
+- Deterministic state engine
