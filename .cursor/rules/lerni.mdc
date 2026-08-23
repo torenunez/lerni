@@ -1,0 +1,27 @@
+---
+description: Lerni repo context — defers to CLAUDE.md for full guidance
+alwaysApply: true
+---
+
+Read `CLAUDE.md` before making changes. Standing rules there are authoritative.
+
+**Explore work:** start at `plans/cursor_master_plan.plan.md`, then the active PR in `plans/prs/`.
+**Active PR:** PR-02 — `plans/prs/02-lesson-core.md`.
+
+Do not hardcode providers, models, or credentials. Tests must use deterministic fakes only.
+No git commit, push, or PR unless explicitly requested.
+
+When committing from Cursor, run the quality gate first:
+
+```bash
+.claude/hooks/quality-gate.sh
+```
+
+Or enable the shared git hook once per clone (writes to `.git/config`, not the repo):
+
+```bash
+git config core.hooksPath .githooks
+```
+
+See `CLAUDE.md` → Agent Tooling → Machine-local setup for other paths outside git
+(`.claude/settings.local.json`, `~/.lerni/`, `.venv/`, Cursor user settings).

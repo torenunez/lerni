@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+#
+# Git pre-commit hook — shared quality gate for commits from any tool.
+#
+# TRACKED: this file lives in the repo under .githooks/
+# NOT TRACKED: activation is per-clone in .git/config — run once:
+#   git config core.hooksPath .githooks
+# Without that, commits from Cursor (or any non-Claude-Code tool) skip this
+# hook unless you run .claude/hooks/quality-gate.sh manually.
+
+set -euo pipefail
+
+ROOT="$(git rev-parse --show-toplevel)"
+exec "$ROOT/.claude/hooks/quality-gate.sh" "$ROOT"

@@ -63,10 +63,12 @@ plans/                # Explore implementation bundle
 ├── specs/            # normative technical contracts
 └── runbooks/         # procedures a human performs (setup, data priming)
 ~/.lerni/             # Study user data (db, config)
-.claude/              # Claude Code configuration
+.claude/              # Claude Code configuration (primary agent tooling)
 ├── settings.json     # Hook registrations (tracked)
 ├── settings.local.json  # Machine-specific permissions (gitignored)
-└── hooks/            # auto-format.sh, pre-commit-quality.sh, study-summary.sh
+└── hooks/            # quality-gate.sh, auto-format.sh, pre-commit-quality.sh, study-summary.sh
+.cursor/rules/        # Thin Cursor rules — defer here, not duplicate standing rules
+.githooks/            # Optional git pre-commit hook (enable per clone; see Agent Tooling)
 ```
 
 **`src/lerni/explore/` does not exist yet.** Planned modules, per `plans/`:
@@ -79,17 +81,58 @@ plans/                # Explore implementation bundle
 
 ### `.claude/` hooks
 
-- `pre-commit-quality.sh` (PreToolUse/Bash) — before any `git commit`, lints the
-  **staged** Python files and runs the **full** pytest suite; denies the commit on
-  failure. Lint is staged-only because `src/` carries pre-existing violations;
-  tests are full-suite because regressions are not local to a diff. Tools resolve
-  from `.venv/bin` first, then `PATH`, and a genuinely missing tool skips its check
-  rather than failing closed.
-- `auto-format.sh` (PostToolUse/Edit|Write) — formats after edits.
+- `quality-gate.sh` — shared commit gate: lints **staged** Python files with
+  ruff and runs the **full** pytest suite. Lint is staged-only because `src/`
+  carries pre-existing violations; tests are full-suite because regressions are not
+  local to a diff. Tools resolve from `.venv/bin` first, then `PATH`; a genuinely
+  missing tool skips its check rather than failing closed.
+- `pre-commit-quality.sh` (PreToolUse/Bash) — calls the shared gate before any
+  `git commit` and denies the commit on failure.
+- `auto-format.sh` (PostToolUse/Edit|Write) — formats after edits (venv-aware).
 - `study-summary.sh` (SessionStart) — prints due-review summary.
 
 `settings.json` is tracked and portable. `settings.local.json` is machine-specific
 and gitignored — never commit it.
+
+## Agent Tooling
+
+**Primary: Claude Code (~90%).** Hooks in `.claude/` handle session context,
+auto-format, and commit gates. This file is the single source of truth for both
+agents.
+
+**Secondary: Cursor (~10%).** `.cursor/rules/lerni.mdc` is a thin pointer here —
+do not duplicate standing rules in Cursor. Use Plan mode with
+`plans/cursor_master_plan.plan.md` for Explore sequencing; use native Cursor
+agents sparingly for review or isolated tasks.
+
+**Active Explore work:** PR-01 (documentation) is complete. Next:
+[`plans/prs/02-lesson-core.md`](plans/prs/02-lesson-core.md).
+
+**Shared commit gate for Cursor commits:** run `.claude/hooks/quality-gate.sh`
+before committing, or enable the git hook once per clone:
+
+```bash
+git config core.hooksPath .githooks
+chmod +x .githooks/pre-commit .claude/hooks/quality-gate.sh
+```
+
+### Machine-local setup (not tracked in git)
+
+Several paths this tooling touches live **outside the repository** or are
+**gitignored**. Reviewers and new clones should expect to configure these locally;
+they are intentionally not part of the commit.
+
+| Location | Purpose | How it is set |
+|---|---|---|
+| `.git/config` | Activates `.githooks/pre-commit` | `git config core.hooksPath .githooks` (once per clone) |
+| `.claude/settings.local.json` | Claude Code tool permissions | Created by Claude Code on your machine; gitignored |
+| `~/.lerni/` | Study database and `config.toml` | Created by `study` CLI usage; never committed |
+| `.venv/` | Project virtualenv (`ruff`, `pytest`) | `python -m venv .venv && pip install -e .[dev]`; gitignored |
+| Cursor user settings | Global IDE rules, models, API keys | Cursor app settings; not in this repo |
+
+Tracked in git: `.claude/settings.json` (hook registrations), `.claude/hooks/*`,
+`.githooks/pre-commit`, and `.cursor/rules/lerni.mdc`. Everything else in the
+table is operator-scoped.
 
 ## Architecture
 

@@ -9,7 +9,7 @@ Mirrors the first-slice execution order. The implementation bundle is in
 [`plans/`](../plans/); each item maps to a PR unit there.
 
 - [ ] 1. **Environment qualification** — bind command variables, qualify required vs optional runtime tiers, record setup decisions outside the repo
-- [ ] 2. **Documentation** — align the eight product documents around the two-mode model
+- [x] 2. **Documentation** — align the eight product documents around the two-mode model
 - [ ] 3. **Lesson domain** — immutable lesson types and canonical serialization
 - [ ] 4. **Catalog and approved content** — strict TOML catalog, corrected Chain-1 acceleration content, curated accessible SVG
 - [ ] 5. **State engine** — deterministic intro / teach / check / hint / complete transitions
