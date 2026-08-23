@@ -59,9 +59,10 @@ tests/                # Pytest suite — currently test_sm2.py only
 docs/                 # Mission, PRD, spec, roadmap, todo, progress
 plans/                # Explore implementation bundle
 ├── cursor_master_plan.plan.md   # sequence, dependencies, gates, PR index
+├── human-track.md    # status of all non-coding work: done, pending, blocked
 ├── prs/              # execution units, in order
 ├── specs/            # normative technical contracts
-└── runbooks/         # procedures a human performs (setup, data priming)
+└── runbooks/         # procedures a human performs (setup, source review, priming)
 ~/.lerni/             # Study user data (db, config)
 .claude/              # Claude Code configuration (primary agent tooling)
 ├── settings.json     # Hook registrations (tracked)

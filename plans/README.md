@@ -13,6 +13,7 @@ sequence, dependencies, manual gates, and the PR index. This file is only a map.
 | [`prs/`](./prs/) | Execution units. One file per review unit, in order — the work queue. |
 | [`specs/`](./specs/) | Normative technical contracts. What each component must do. |
 | [`runbooks/`](./runbooks/) | Procedures a human performs by hand: account setup, credential qualification, private data priming. |
+| [`human-track.md`](./human-track.md) | **Status** of all non-coding work — what has been reviewed, decided, or approved, and what is still pending. |
 
 A PR file says *what to build and in what order*. A spec file says *what the built
 thing must satisfy*. When they disagree, the spec wins — see the authority order in
@@ -42,11 +43,17 @@ before the PR sequence was settled. This table is the mapping:
 
 ## Human gates
 
-Two runbooks cover work no PR can do for you:
+**[`human-track.md`](./human-track.md) tracks the state of all of it** — done,
+pending, and blocked, grouped by the gate that needs it. Check there first.
+
+Three runbooks cover work no PR can do for you:
 
 - [`runbooks/manual-setup.md`](./runbooks/manual-setup.md) — environment, and the
   account/terms/retention/credential review required before any optional capability.
   The authored fallback-only slice needs no account and no key.
+- [`runbooks/chain-1-source-review.md`](./runbooks/chain-1-source-review.md) — the
+  four-fact source evidence sheet a science reviewer works from before the Chain-1
+  lesson can leave draft.
 - [`runbooks/data-priming.md`](./runbooks/data-priming.md) — filling and reviewing the
   private curation bundle. The filled family copy stays untracked.
 
