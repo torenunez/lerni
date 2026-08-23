@@ -135,3 +135,140 @@ def valid_lesson(valid_source, valid_facts) -> Lesson:
             sources=(valid_source,),
         ),
     )
+
+
+VALID_LESSON_TOML = """
+schema_version = 1
+lesson_id = "test-lesson"
+content_version = 1
+title = "Test lesson"
+locale = "en-US"
+audience = "ages-7-9"
+max_turns = 8
+sequence = ["intro-step", "teach-step"]
+
+[review]
+status = "approved"
+
+[[review.attestations]]
+id = "att-science"
+scope = "science"
+reviewer_role = "test-reviewer"
+reviewed_on = 2026-01-01
+evidence_ref = "tests/explore/conftest.py"
+reviewed_payload_sha256 = "PAYLOAD_HASH"
+
+[[review.attestations]]
+id = "att-child"
+scope = "child_content"
+reviewer_role = "test-reviewer"
+reviewed_on = 2026-01-01
+reviewed_payload_sha256 = "PAYLOAD_HASH"
+
+[[review.attestations]]
+id = "att-visual"
+scope = "visual_accessibility"
+reviewer_role = "test-reviewer"
+reviewed_on = 2026-01-01
+reviewed_payload_sha256 = "PAYLOAD_HASH"
+
+[[review.attestations]]
+id = "att-parent"
+scope = "parent_approval"
+reviewer_role = "test-reviewer"
+reviewed_on = 2026-01-01
+reviewed_payload_sha256 = "PAYLOAD_HASH"
+
+[grounding]
+scope = "Test scope."
+fallback_text = "Fallback."
+redirect_text = "Redirect."
+
+[[grounding.sources]]
+id = "test-source"
+title = "Test Source"
+publisher = "Test Publisher"
+url = "https://example.org/test"
+retrieved_on = 2026-01-01
+
+[[grounding.facts]]
+id = "fact-one"
+canonical_text = "Canonical one."
+child_text = "Child one."
+source_ids = ["test-source"]
+allowed_numbers = ["0", "60"]
+
+[[grounding.facts]]
+id = "fact-two"
+canonical_text = "Canonical two."
+child_text = "Child two."
+source_ids = ["test-source"]
+allowed_numbers = []
+
+[[steps]]
+id = "intro-step"
+kind = "intro"
+heading = "Intro heading"
+body = "Intro body."
+fact_ids = ["fact-one"]
+scope_terms = ["car", "time"]
+
+[[steps]]
+id = "teach-step"
+kind = "teach"
+heading = "Teach heading"
+body = "Teach body."
+fact_ids = ["fact-two"]
+scope_terms = ["acceleration", "time"]
+
+[check]
+id = "test-check"
+prompt = "Which one?"
+correct_choice_id = "choice-a"
+hints = ["First hint.", "Second hint."]
+success_text = "Correct."
+reveal_text = "It was A."
+fact_ids = ["fact-one", "fact-two"]
+scope_terms = ["car", "time"]
+allowed_short_replies = ["no", "yes"]
+
+[[check.choices]]
+id = "choice-a"
+label = "Choice A"
+
+[[check.choices]]
+id = "choice-b"
+label = "Choice B"
+"""
+
+
+@pytest.fixture
+def valid_lesson_toml() -> str:
+    """Approved TOML with a placeholder payload hash.
+
+    The placeholder is replaced with the real recomputed hash by
+    :func:`approved_lesson_toml`. A fixed test-only review date is acceptable
+    here because this is a fixture, never production content.
+    """
+    return VALID_LESSON_TOML
+
+
+@pytest.fixture
+def draft_lesson_toml() -> str:
+    """The same lesson as draft, with no attestations."""
+    head, _, tail = VALID_LESSON_TOML.partition("[review]")
+    _, _, rest = tail.partition("[grounding]")
+    return head + '[review]\nstatus = "draft"\n\n[grounding]' + rest
+
+
+@pytest.fixture
+def approved_lesson_toml(draft_lesson_toml) -> str:
+    """Approved TOML carrying the real recomputed payload hash.
+
+    The payload hash excludes review metadata, so it can be computed from the
+    draft form of the same lesson and then substituted into the approved form.
+    """
+    from lerni.explore.catalog import lesson_payload_sha256, parse_lesson_toml
+
+    digest = lesson_payload_sha256(parse_lesson_toml(draft_lesson_toml))
+    return VALID_LESSON_TOML.replace("PAYLOAD_HASH", digest)
