@@ -4,15 +4,21 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Lerni is a local-first, privacy-preserving learning system combining the Feynman Technique (learning by teaching) with spaced repetition (SM-2). Phase 1 MVP is complete — core data layer, Feynman workflow, SM-2 scheduling, concept graph, and CLI are implemented.
+Lerni is a local-first, privacy-preserving learning system. **One repository, two modes:**
+
+- **Study** — adult Feynman + SM-2 spaced-repetition CLI. **Phase 1 feature-complete; maintenance-only.** Fixes and hardening, no new features.
+- **Explore** — child interest-to-fundamentals experience, parent-supervised, localhost only. **Active development. No code exists yet** — only the design in `plans/` and the contracts in `docs/spec.md`.
+
+Feature-complete is not hardened. Study has SM-2 test coverage; the database layer and CLI are untested, and `src/` carries ruff debt. See `docs/todo.md`.
 
 ## Tech Stack
 
-- **Python 3.11+** (uses `tomllib` from stdlib)
+- **Python 3.11+** (uses `tomllib`, `enum.StrEnum` from stdlib)
 - **CLI**: typer + rich
 - **Database**: SQLite (stdlib `sqlite3`)
 - **Notifications**: `osascript` (macOS native)
-- **AI**: Anthropic Claude API or OpenAI (optional, user-provided keys) — planned for Phase 2
+- **Explore UI** (planned): Gradio, as an optional extra — never a core dependency
+- **Runtime capabilities** (planned): no required model, provider, or SDK
 
 ## Build/Test Commands
 
@@ -20,56 +26,128 @@ Lerni is a local-first, privacy-preserving learning system combining the Feynman
 pytest                          # Run all tests
 pytest tests/test_sm2.py -v     # Run single test file
 pytest -k "test_name"           # Run specific test
+ruff check src/                 # Lint (known pre-existing debt)
+mypy src/                       # Type check
 ```
+
+Use ordinary Python tooling. Prefer `python -m <tool>` from the project
+virtualenv so behavior does not depend on what happens to be on `PATH`.
 
 ## Project Structure
 
+This is the **actual** tree. Do not assume modules exist because a document
+mentions them.
+
 ```
-src/lerni/
+src/lerni/            # Study — implemented
 ├── __init__.py
 ├── __main__.py       # python -m lerni entry point
 ├── cli.py            # CLI app + command registration (typer)
-├── models.py         # Data models (Concept, ConceptEdge, Question, Answer, Review)
-├── db.py             # SQLite schema, connection handling, repository classes
+├── models.py         # Concept, ConceptEdge, Question, Answer, Review
+├── db.py             # SQLite schema, connections, repository classes
 ├── sm2.py            # SM-2 spaced repetition algorithm
 ├── config.py         # Config loading (config.toml), get_lerni_dir()
 ├── editor.py         # External editor integration
-└── commands/         # CLI command implementations
+└── commands/
     ├── question.py   # new, edit, snapshot, show, history, delete
     ├── review.py     # review, skip, today
     ├── organize.py   # list, search, assign, meta, concept subcommands
     └── notify.py     # macOS notifications
 
-tests/                # Pytest test suite
-docs/                 # Specifications and roadmap
-~/.lerni/             # User data (db, config)
+agents/               # Study Phase-2 prompt drafts (beginner.md, expert.md) — parked, unused
+tests/                # Pytest suite — currently test_sm2.py only
+docs/                 # Mission, PRD, spec, roadmap, todo, progress
+plans/                # Explore implementation bundle (master plan, PR units, contracts)
+~/.lerni/             # Study user data (db, config)
+.claude/              # Claude Code configuration
+├── settings.json     # Hook registrations (tracked)
+├── settings.local.json  # Machine-specific permissions (gitignored)
+└── hooks/            # auto-format.sh, pre-commit-quality.sh, study-summary.sh
 ```
+
+**`src/lerni/explore/` does not exist yet.** Planned modules, per `plans/`:
+`domain.py`, `catalog.py`, `engine.py`, `canonical.py`, `contracts.py`,
+`runtime_config.py`, `capability_runner.py`, `capability_supervisor.py`,
+`capability_worker.py`, `readiness.py`, `policy.py`, `sanitization.py`,
+`grounding.py`, `tutor_service.py`, `plugin_loader.py`, `qualification.py`,
+`telemetry_store.py`, `data_lifecycle.py`, `export.py`, `bootstrap.py`,
+`presenter.py`, `visuals.py`, `ui.py`, `launch.py`.
+
+### `.claude/` hooks
+
+- `pre-commit-quality.sh` (PreToolUse/Bash) — before any `git commit`, lints the
+  **staged** Python files and runs the **full** pytest suite; denies the commit on
+  failure. Lint is staged-only because `src/` carries pre-existing violations;
+  tests are full-suite because regressions are not local to a diff. Tools resolve
+  from `.venv/bin` first, then `PATH`, and a genuinely missing tool skips its check
+  rather than failing closed.
+- `auto-format.sh` (PostToolUse/Edit|Write) — formats after edits.
+- `study-summary.sh` (SessionStart) — prints due-review summary.
+
+`settings.json` is tracked and portable. `settings.local.json` is machine-specific
+and gitignored — never commit it.
 
 ## Architecture
 
-### Data Model (v3 schema)
-- **Concept**: Knowledge graph node (name, aliases, description). Forms a DAG with typed edges.
-- **ConceptEdge**: Typed relationship between concepts (parent, prerequisite, related)
-- **Question**: Study card attached to a concept. Carries SM-2 schedule state.
-- **Answer**: Immutable Feynman snapshot (raw_notes, simple_explanation, gaps_questions, final_explanation, analogies_examples)
-- **Review**: Review session record with self-grade (0-5), gaps, notes
+### Study data model (v3 schema)
+- **Concept**: knowledge graph node (name, aliases, description). Forms a DAG with typed edges.
+- **ConceptEdge**: typed relationship between concepts (parent, prerequisite, related)
+- **Question**: study card attached to a concept. Carries SM-2 schedule state.
+- **Answer**: immutable Feynman snapshot (raw_notes, simple_explanation, gaps_questions, final_explanation, analogies_examples)
+- **Review**: review session record with self-grade (0–5), gaps, notes
 
-### Core Algorithms
-- **Feynman Technique**: 4-step workflow (raw notes -> simple explanation -> gaps -> refined explanation + analogies)
-- **SM-2**: Easiness factor starts at 2.5 (min 1.3), grades 0-5, interval calculation per spec
+### Core algorithms
+- **Feynman Technique**: 4-step workflow (raw notes → simple explanation → gaps → refined explanation + analogies)
+- **SM-2**: easiness factor starts at 2.5 (min 1.3), grades 0–5, interval calculation per spec
 
-### AI Agents (Phase 2 — not yet implemented)
-- **Beginner Agent** (`agents/beginner.md`): 3 modes (Socratic, ELI5, Analogy), 5-turn sessions, gap identification
-- **Expert Agent** (`agents/expert.md`): 5 rigor levels (1=Gentle to 5=Harsh), grade recommendation
+### Explore (planned)
+Reviewed lesson content in packaged TOML; a deterministic intro/teach/check/hint/
+complete state machine owned by the application; capabilities loaded
+out-of-process behind typed protocols; deterministic local input/output policy and
+grounding; a separate local SQLite telemetry store with parent export, retention,
+and deletion. See `docs/spec.md` and `plans/`.
+
+## Standing Rules
+
+These apply to any work in this repository.
+
+1. **Runtime adapters are selected by qualification, never hardcoded.** Do not add
+   a provider SDK, model ID, endpoint, or account identifier to core code. Text
+   generation, speech-to-text, and harm gates are replaceable capabilities chosen
+   by an operator-owned runtime profile. Credentials appear only as `env:VAR`
+   references — never literal values in TOML, source, tests, logs, or telemetry.
+
+2. **Tests use deterministic fakes. No live model, service, or network call.** A
+   test that requires a credential or reaches a provider is not an acceptable test.
+
+3. **Child-facing content requires human approval.** Lesson text, facts, and visual
+   assets must carry recorded review attestations tied to an exact content hash
+   before a child can see them. Never fabricate an attestation, a review date, or a
+   hash to make a check pass.
+
+4. **Lesson order is separate from `ConceptEdge`.** A graph edge states a domain
+   relationship between concepts. A lesson step states what to teach next. These
+   are different things — conflating them corrupts both. Lesson sequence comes from
+   authored step indices only.
+
+5. **No commit unless explicitly requested.** Do not commit, push, create a branch,
+   or open a pull request on the user's behalf without being asked directly.
+
+6. **Do not overstate safety.** Never write "child-safe", "COPPA compliant",
+   "anonymous", "PII-free", or "forensic deletion". Explore's controls are
+   prototype guardrails plus a supervising parent.
+
+7. **Do not claim code exists until it does.** Explore is designed, not built.
 
 ## Design Principles
 
-1. **Local-First**: No cloud sync; privacy paramount
-2. **Feynman-Centric**: AI enhances but never replaces core learning process
-3. **Opt-In AI**: Requires explicit `--ai` flag and user API keys
-4. **Immutable Versions**: All answers are versioned snapshots
+1. **Local-First**: no cloud sync; privacy paramount
+2. **Feynman-Centric**: AI enhances but never replaces the core learning process
+3. **Opt-In AI**: requires explicit configuration and operator-supplied credentials
+4. **Immutable Versions**: answers and lesson content are versioned snapshots
+5. **Application owns progression**: reviewed content and deterministic logic decide what happens next — not a model
 
-## CLI Commands (Implemented)
+## Study CLI Reference (Implemented)
 
 ```bash
 # Question workflow
@@ -105,17 +183,24 @@ study notify                   # macOS notification
 study notify --setup           # Cron setup instructions
 ```
 
+## Parked: Study Phase-2 AI Agents and Skills
+
+Designed, not implemented, and not scheduled while Explore is active. Retained as
+a design record in `docs/spec.md` and `docs/todo.md`.
+
+- **Beginner Agent** (`agents/beginner.md`): 3 modes (Socratic, ELI5, Analogy), 5-turn sessions, gap identification
+- **Expert Agent** (`agents/expert.md`): 5 rigor levels (1=Gentle to 5=Harsh), grade recommendation
+- **AI Skill Modules**: Feynman Coach, Spaced Repetition Analyzer, Knowledge Graph Builder, Study Session Generator
+
+This design is separate from the Explore tutor capability. Do not treat them as
+the same runtime.
+
 ## Key Documentation
 
-- `docs/spec.md` - Technical specification (data models, CLI, algorithms)
-- `docs/mission.md` - Product vision and core beliefs
-- `docs/roadmap.md` - 5-phase development roadmap
-- `docs/todo.md` - Full backlog with known issues
-
-## Implementation Roadmap
-
-- **Phase 1 (MVP)**: Core system without AI - data layer, Feynman workflow, SM-2 — **complete**
-- **Phase 2**: AI agents with transcript storage
-- **Phase 3**: Analytics and export
-- **Phase 4**: Visualization (Plotly, Neo4j)
-- **Phase 5**: Native apps
+- `docs/mission.md` — vision, two modes, core beliefs
+- `docs/PRD.md` — product requirements and safety boundaries
+- `docs/spec.md` — technical specification and Explore contracts
+- `docs/roadmap.md` — Study Track and Explore Track
+- `docs/todo.md` — active Explore backlog, parked Study work
+- `docs/progress.md` — dated implementation log
+- `plans/` — Explore implementation bundle
