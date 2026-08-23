@@ -11,10 +11,10 @@ Route sanitized in-scope child text through an optional tutor capability, then a
 
 ## Normative plans
 
-- [Safety, grounding, and tutor boundary](./explore_safe_slice_03_safety_tutor.md)
-- [Normative policy algorithms](./explore_safe_slice_03a_policy_algorithms.md)
-- [Normative harm-probe fixture](./explore_safe_slice_03b_harm_probe_cases.md)
-- [Manual capability setup](./explore_safe_slice_manual_setup.md)
+- [Safety, grounding, and tutor boundary](../specs/03-safety-tutor.md)
+- [Normative policy algorithms](../specs/03a-policy-algorithms.md)
+- [Normative harm-probe fixture](../specs/03b-harm-probe-cases.md)
+- [Manual capability setup](../runbooks/manual-setup.md)
 
 ## Files
 

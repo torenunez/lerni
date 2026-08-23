@@ -13,9 +13,9 @@ Assemble the first child-facing application: deterministic lesson, safety/tutor 
 
 ## Normative plans
 
-- [Gradio UI and read-aloud](./explore_safe_slice_05_gradio_ui.md)
-- [Runtime bootstrap](./explore_safe_slice_00a_runtime_bootstrap.md)
-- [Verification plan](./explore_safe_slice_07_verification.md)
+- [Gradio UI and read-aloud](../specs/05-gradio-ui.md)
+- [Runtime bootstrap](../specs/00a-runtime-bootstrap.md)
+- [Verification plan](../specs/07-verification.md)
 
 ## Files
 

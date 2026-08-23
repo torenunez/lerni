@@ -650,7 +650,7 @@ class CurationBundleSource(Protocol):
 
 The first source implementation reads a local directory. A future Google Sheets adapter may implement the same source protocol.
 
-The exact immutable import types, SQL schema, version rules, activation pointer, and transactions are normative in [Curriculum persistence](./explore_safe_slice_08a_curriculum_persistence.md).
+The exact immutable import types, SQL schema, version rules, activation pointer, and transactions are normative in [Curriculum persistence](./08a-curriculum-persistence.md).
 
 ## Validation pipeline
 
@@ -854,7 +854,7 @@ This section is design input for plan 08b. It is not implemented or accepted as 
 
 Initial recommendations are deterministic candidates shown to a parent, never directly to the child.
 
-The exact readiness model, eligibility filters, warning behavior, scope object, persistence, observation aggregation, ordering tuple, defer/reject behavior, and lesson-assignment state are defined only in [Recommendation and feedback contract](./explore_safe_slice_08b_recommendation_feedback.md). This graph plan intentionally duplicates none of those rules.
+The exact readiness model, eligibility filters, warning behavior, scope object, persistence, observation aggregation, ordering tuple, defer/reject behavior, and lesson-assignment state are defined only in [Recommendation and feedback contract](./08b-recommendation-feedback.md). This graph plan intentionally duplicates none of those rules.
 
 Candidate explanation includes:
 

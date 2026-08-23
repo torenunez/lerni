@@ -12,10 +12,10 @@ Provide portable spreadsheet templates and a deterministic offline curriculum pa
 
 ## Normative plans
 
-- [Spreadsheet curation and graph priming](./explore_safe_slice_08_graph_recommendations.md)
-- [`ValidatedCurationRows` boundary only](./explore_safe_slice_08a_curriculum_persistence.md); PR-10 owns `StageableCurationBundle` and persistence
-- [Data priming runbook](./explore_safe_slice_data_priming.md)
-- [Manual Google Sheets setup](./explore_safe_slice_manual_setup.md)
+- [Spreadsheet curation and graph priming](../specs/08-graph-recommendations.md)
+- [`ValidatedCurationRows` boundary only](../specs/08a-curriculum-persistence.md); PR-10 owns `StageableCurationBundle` and persistence
+- [Data priming runbook](../runbooks/data-priming.md)
+- [Manual Google Sheets setup](../runbooks/manual-setup.md)
 
 ## Files
 

@@ -10,9 +10,9 @@ Add strict provider-neutral runtime configuration, private path derivation/proce
 
 ## Normative plans
 
-- [Execution contract](./explore_safe_slice_00_execution_contract.md)
-- [Runtime profile and bootstrap](./explore_safe_slice_00a_runtime_bootstrap.md)
-- [Manual setup](./explore_safe_slice_manual_setup.md)
+- [Execution contract](../specs/00-execution-contract.md)
+- [Runtime profile and bootstrap](../specs/00a-runtime-bootstrap.md)
+- [Manual setup](../runbooks/manual-setup.md)
 
 ## Files
 

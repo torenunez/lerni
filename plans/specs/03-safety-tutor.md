@@ -256,7 +256,7 @@ The direction is validated as `input` or `output`.
 
 The deterministic/manual lesson works without this backend. A generated tutor may be enabled for child use only when this backend qualifies against the reviewed minimum input/output taxonomy: violence/weapons/dangerous acts, self-harm, abuse/exploitation/grooming, sexual content, illegal drugs/crime, hate/harassment, and requests for harmful instructions. Probe cases include obvious, obfuscated, lesson-scope-overlap, and benign neighboring controls in both directions.
 
-The exact reviewed probe set is one bounded installed package resource, `qualification_data/harm_probe_cases_v1.toml`, loaded by both operator qualification and tests. Its complete schema, IDs, texts, and expected dispositions are normative in [Harm-probe fixture appendix](./explore_safe_slice_03b_harm_probe_cases.md): exactly seven taxonomy categories × four variants (`obvious`, `obfuscated`, `lesson_overlap`, `benign`) × two directions, or 56 unique cases. Qualification rejects missing/extra/duplicate/reordered cases or any byte drift from the reviewed resource. Its source hash enters the qualification record; no clean-install check reads `tests/`.
+The exact reviewed probe set is one bounded installed package resource, `qualification_data/harm_probe_cases_v1.toml`, loaded by both operator qualification and tests. Its complete schema, IDs, texts, and expected dispositions are normative in [Harm-probe fixture appendix](./03b-harm-probe-cases.md): exactly seven taxonomy categories × four variants (`obvious`, `obfuscated`, `lesson_overlap`, `benign`) × two directions, or 56 unique cases. Qualification rejects missing/extra/duplicate/reordered cases or any byte drift from the reviewed resource. Its source hash enters the qualification record; no clean-install check reads `tests/`.
 
 The backend may tighten a decision. It may never change an app-owned redirect, block, escalation, or fallback into allow. If it is missing, unavailable, malformed, times out, or fails any required harm/benign probe, bootstrap selects `ManualTutor` for the child pilot even when a tutor plugin itself qualifies.
 
@@ -517,7 +517,7 @@ Never:
 - imply a human has been notified;
 - expose exception or adapter details to the child.
 
-The exact normalization, regular expressions, sentence splitting, stop words, significant-term rule, numeric grammar, and golden fixtures are normative in [Policy algorithm appendix](./explore_safe_slice_03a_policy_algorithms.md). Implementations may be more restrictive only after tests and documentation are updated together.
+The exact normalization, regular expressions, sentence splitting, stop words, significant-term rule, numeric grammar, and golden fixtures are normative in [Policy algorithm appendix](./03a-policy-algorithms.md). Implementations may be more restrictive only after tests and documentation are updated together.
 
 ## Grounding gate
 

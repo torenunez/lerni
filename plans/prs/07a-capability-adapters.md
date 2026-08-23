@@ -11,7 +11,7 @@ This file is the implementation template for one or more adapter PRs. Replace no
 - PR-03 runtime/process contracts and strict private qualification/decision schemas
 - PR-04 tutor and mandatory additional-safety contracts
 - PR-07 speech-to-text contract and managed media boundary
-- completed parent-owned account, terms, route/retention/training, quota/billing, and credential-reference decisions in `explore_safe_slice_manual_setup.md`
+- completed parent-owned account, terms, route/retention/training, quota/billing, and credential-reference decisions in `runbooks/manual-setup.md`
 
 ## Scope
 

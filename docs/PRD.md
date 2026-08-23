@@ -103,7 +103,7 @@ Session duration is not a success signal. A pilot that shows the approach does n
 | [spec.md](./spec.md) | Technical specification and Explore contracts |
 | [todo.md](./todo.md) | Active Explore backlog and parked Study work |
 | [progress.md](./progress.md) | Dated implementation log |
-| [`plans/`](../plans/) | Explore safe-slice implementation bundle: master plan, PR units, and technical contracts |
+| [`plans/`](../plans/) | Explore safe-slice implementation bundle: [master plan](../plans/cursor_master_plan.plan.md), `prs/`, `specs/`, `runbooks/` |
 
 Feature specifications, when written, follow:
 

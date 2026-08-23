@@ -11,8 +11,8 @@ Persist only sanitized session evidence in a separate Explore SQLite database an
 
 ## Normative plan
 
-- [Local telemetry and parent controls](./explore_safe_slice_04_telemetry.md)
-- [Manual setup and wipe limitations](./explore_safe_slice_manual_setup.md)
+- [Local telemetry and parent controls](../specs/04-telemetry.md)
+- [Manual setup and wipe limitations](../runbooks/manual-setup.md)
 
 ## Files
 

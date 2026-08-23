@@ -13,7 +13,7 @@ The spreadsheet is a curation surface, not a child profile or live runtime datab
 
 ## Authoritative schema
 
-Use the exact columns, enums, normalization, CSV grammar, review scopes, and seed text in [Portable spreadsheet curation and early graph](./explore_safe_slice_08_graph_recommendations.md). Persistence and activation use [Curriculum persistence](./explore_safe_slice_08a_curriculum_persistence.md).
+Use the exact columns, enums, normalization, CSV grammar, review scopes, and seed text in [Portable spreadsheet curation and early graph](../specs/08-graph-recommendations.md). Persistence and activation use [Curriculum persistence](../specs/08a-curriculum-persistence.md).
 
 Create these tabs in this order:
 

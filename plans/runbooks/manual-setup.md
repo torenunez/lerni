@@ -66,7 +66,7 @@ api_key = "env:LERNI_TUTOR_API_KEY"
 
 10. Place the value in a launch-scoped environment through a trusted secret manager or non-echoing shell input. Never paste it into TOML, source, tests, `.env` committed to Git, chat, issue, PR, terminal command history, or spreadsheet.
 11. Run synthetic qualification before any child input; atomically write the strict generated `<kind>.qualification.json`, then review/write the separate `<kind>.json` operator decision that pins its hash.
-12. For generated tutor use, qualify the separate mandatory input/output harm gate against the exact installed 56-case v1 fixture from `explore_safe_slice_03b_harm_probe_cases.md`; any missing, blocked-benign, allowed-harmful, timeout, or drifted case disables generated mode.
+12. For generated tutor use, qualify the separate mandatory input/output harm gate against the exact installed 56-case v1 fixture from `specs/03b-harm-probe-cases.md`; any missing, blocked-benign, allowed-harmful, timeout, or drifted case disables generated mode.
 13. Keep the capability disabled if any route, retention, logging, training, age-use, deletion, or harm-gate answer is unknown.
 
 Qualification must show that `status()` is credential-free, local, idempotent, and non-billable. An adapter that pings a provider from status is ineligible; real provider contact occurs only in an explicitly approved operational/probe call and is disclosed/countable.

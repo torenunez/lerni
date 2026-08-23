@@ -13,9 +13,9 @@ Add deterministic, explainable, parent-controlled recommendation candidates and 
 
 ## Normative plan
 
-- [Recommendation and feedback contract](./explore_safe_slice_08b_recommendation_feedback.md)
-- [Verification plan](./explore_safe_slice_07_verification.md)
-- [Post-pilot data priming](./explore_safe_slice_data_priming.md)
+- [Recommendation and feedback contract](../specs/08b-recommendation-feedback.md)
+- [Verification plan](../specs/07-verification.md)
+- [Post-pilot data priming](../runbooks/data-priming.md)
 
 ## Files
 

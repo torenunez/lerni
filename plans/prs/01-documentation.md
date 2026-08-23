@@ -11,8 +11,8 @@ Align repository-facing product documentation around one repo with two modes: St
 
 ## Normative plan
 
-- [Documentation alignment](./explore_safe_slice_01_documentation.md)
-- [Master plan](./explore_safe_slice_62964d1d.plan.md)
+- [Documentation alignment](../specs/01-documentation.md)
+- [Master plan](../cursor_master_plan.plan.md)
 
 ## Files
 

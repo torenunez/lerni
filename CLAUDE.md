@@ -57,7 +57,11 @@ src/lerni/            # Study — implemented
 agents/               # Study Phase-2 prompt drafts (beginner.md, expert.md) — parked, unused
 tests/                # Pytest suite — currently test_sm2.py only
 docs/                 # Mission, PRD, spec, roadmap, todo, progress
-plans/                # Explore implementation bundle (master plan, PR units, contracts)
+plans/                # Explore implementation bundle
+├── cursor_master_plan.plan.md   # sequence, dependencies, gates, PR index
+├── prs/              # execution units, in order
+├── specs/            # normative technical contracts
+└── runbooks/         # procedures a human performs (setup, data priming)
 ~/.lerni/             # Study user data (db, config)
 .claude/              # Claude Code configuration
 ├── settings.json     # Hook registrations (tracked)

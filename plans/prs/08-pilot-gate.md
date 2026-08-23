@@ -10,9 +10,9 @@ Close first-slice integration gaps, prove distribution/privacy/regression behavi
 
 ## Normative plans
 
-- [Verification and pilot](./explore_safe_slice_07_verification.md)
-- [Manual setup](./explore_safe_slice_manual_setup.md)
-- [Execution contract](./explore_safe_slice_00_execution_contract.md)
+- [Verification and pilot](../specs/07-verification.md)
+- [Manual setup](../runbooks/manual-setup.md)
+- [Execution contract](../specs/00-execution-contract.md)
 
 ## Files
 

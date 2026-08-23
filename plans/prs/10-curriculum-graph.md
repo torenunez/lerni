@@ -13,9 +13,9 @@ Stage validated immutable curation batches in a separate SQLite database, compil
 
 ## Normative plans
 
-- [Curriculum persistence](./explore_safe_slice_08a_curriculum_persistence.md)
-- [Graph/import/compilation](./explore_safe_slice_08_graph_recommendations.md)
-- [Data priming](./explore_safe_slice_data_priming.md)
+- [Curriculum persistence](../specs/08a-curriculum-persistence.md)
+- [Graph/import/compilation](../specs/08-graph-recommendations.md)
+- [Data priming](../runbooks/data-priming.md)
 
 ## Files
 

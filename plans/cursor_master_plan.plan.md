@@ -92,14 +92,14 @@ isProject: false
 
 ## Manual setup tracks
 
-1. **[Accounts, credentials, runtime, and parent launch setup](./explore_safe_slice_manual_setup.md).**
+1. **[Accounts, credentials, runtime, and parent launch setup](./runbooks/manual-setup.md).**
    - The fallback-only slice needs no service account or credential.
    - External tutor, STT, or additional-safety capabilities require separate parent-owned account/terms/retention/billing/key qualification.
    - If no compatible plugin exists, the environment implements a separate recorded adapter package; fake backends do not satisfy a real LLM/STT pilot.
    - Google Sheets is optional and needs no Google API/OAuth/service account; local CSV is authoritative.
    - Credential values never enter TOML, Git, IPC JSON, telemetry, exports, logs, or sheets.
 
-2. **[Private CSV/Google Sheets data priming](./explore_safe_slice_data_priming.md).**
+2. **[Private CSV/Google Sheets data priming](./runbooks/data-priming.md).**
    - Parents may draft sanitized interest/nudge notes while PRs 01–08 proceed; they populate the exact private bundle after PR-09 templates/validator exist.
    - Real source, science, child-content, accessibility, and parent reviews are required before approval.
    - The filled family workbook/bundle stays private and untracked.
@@ -107,29 +107,29 @@ isProject: false
 
 ## PR index
 
-1. **[PR-01 — Explore-first product documentation](./explore_safe_slice_pr_01_documentation.md).**
+1. **[PR-01 — Explore-first product documentation](./prs/01-documentation.md).**
    Markdown-only alignment; preserves existing user edits.
-2. **[PR-02 — Reviewed lesson core and Chain-1 content](./explore_safe_slice_pr_02_lesson_core.md).**
+2. **[PR-02 — Reviewed lesson core and Chain-1 content](./prs/02-lesson-core.md).**
    Immutable lesson types, strict package catalog, approved facts/visual, deterministic state.
-3. **[PR-03 — Runtime profile and capability process boundary](./explore_safe_slice_pr_03_runtime_boundary.md).**
+3. **[PR-03 — Runtime profile and capability process boundary](./prs/03-runtime-boundary.md).**
    Private paths, credential references, bounded helper protocol, parent guard, readiness primitives.
-4. **[PR-04 — Deterministic safety, grounding, and tutor service](./explore_safe_slice_pr_04_safety_tutor.md).**
+4. **[PR-04 — Deterministic safety, grounding, and tutor service](./prs/04-safety-tutor.md).**
    Input/output policy, manual fallback, optional tutor/additional-safety contracts.
-5. **[PR-05 — Local telemetry and data lifecycle](./explore_safe_slice_pr_05_telemetry_lifecycle.md).**
+5. **[PR-05 — Local telemetry and data lifecycle](./prs/05-telemetry-lifecycle.md).**
    Sanitized SQLite, observations, export, retention, deletion, and registered managed-family-data wipe.
-6. **[PR-06 — Local Gradio app, bootstrap, and read-aloud](./explore_safe_slice_pr_06_gradio_app.md).**
+6. **[PR-06 — Local Gradio app, bootstrap, and read-aloud](./prs/06-gradio-app.md).**
    Readiness-gated localhost UI, curated visual, typed/choice interaction, parent controls.
-7. **[PR-07 — Push-to-talk speech input](./explore_safe_slice_pr_07_audio_input.md).**
+7. **[PR-07 — Push-to-talk speech input](./prs/07-audio-input.md).**
    Qualified STT port, strict WAV boundary, editable preview, cleanup, typed fallback.
-7A. **[PR-07A — Deployment-specific real capability adapters](./explore_safe_slice_pr_07a_capability_adapters.md).**
+7A. **[PR-07A — Deployment-specific real capability adapters](./prs/07a-capability-adapters.md).**
    Conditional provider-specific distributions for real tutor, mandatory safety, and STT; required for generated/voice eligibility, never for the authored baseline.
-8. **[PR-08 — First-slice integration and pilot gate](./explore_safe_slice_pr_08_pilot_gate.md).**
+8. **[PR-08 — First-slice integration and pilot gate](./prs/08-pilot-gate.md).**
    Concrete claim/evidence map, privacy/distribution/regression checks, supervised-pilot runbook.
-9. **[PR-09 — Curation templates and strict CSV validation](./explore_safe_slice_pr_09_curation_csv.md).**
+9. **[PR-09 — Curation templates and strict CSV validation](./prs/09-curation-csv.md).**
    Portable draft templates, exact offline parser/validator, no database activation.
-10. **[PR-10 — Curriculum persistence, graph, and publication](./explore_safe_slice_pr_10_curriculum_graph.md).**
+10. **[PR-10 — Curriculum persistence, graph, and publication](./prs/10-curriculum-graph.md).**
     Immutable batches, compile/publish/install verification, explicit activation, graph/binding.
-11. **[PR-11 — Parent recommendations, assignments, and feedback](./explore_safe_slice_pr_11_recommendations.md).**
+11. **[PR-11 — Parent recommendations, assignments, and feedback](./prs/11-recommendations.md).**
     Parent scope/readiness, deterministic candidates, crash-safe assignments, UI/lifecycle extension.
 
 ## Dependency and gate sequence
@@ -204,27 +204,27 @@ When a qualified tutor is available, it may phrase an explanation or answer a bo
 
 ## Technical specification index
 
-1. **[Execution contract and environment qualification](./explore_safe_slice_00_execution_contract.md).** Preserve the working tree, bind portable command variables, and qualify required versus optional environment tiers.
+1. **[Execution contract and environment qualification](./specs/00-execution-contract.md).** Preserve the working tree, bind portable command variables, and qualify required versus optional environment tiers.
 
-2. **[Runtime profile and bootstrap](./explore_safe_slice_00a_runtime_bootstrap.md).** Parse one strict provider-neutral profile, derive private paths, qualify capability metadata, enforce call deadlines, authorize parent controls, and assemble deterministic fallbacks.
+2. **[Runtime profile and bootstrap](./specs/00a-runtime-bootstrap.md).** Parse one strict provider-neutral profile, derive private paths, qualify capability metadata, enforce call deadlines, authorize parent controls, and assemble deterministic fallbacks.
 
-3. **[Documentation alignment](./explore_safe_slice_01_documentation.md).** Rewrite product identity and priorities while preserving all existing uncommitted AI-skill, iOS, hook, and Study content.
+3. **[Documentation alignment](./specs/01-documentation.md).** Rewrite product identity and priorities while preserving all existing uncommitted AI-skill, iOS, hook, and Study content.
 
-4. **[Lesson domain and reviewed Chain-1 content](./explore_safe_slice_02_lesson_core.md).** Implement immutable types, a strict TOML catalog, corrected acceleration content, an accessible curated SVG, deterministic intro/teach/check/hint/complete transitions, and installed-package verification.
+4. **[Lesson domain and reviewed Chain-1 content](./specs/02-lesson-core.md).** Implement immutable types, a strict TOML catalog, corrected acceleration content, an accessible curated SVG, deterministic intro/teach/check/hint/complete transitions, and installed-package verification.
 
-5. **[Safety, grounding, and tutor boundary](./explore_safe_slice_03_safety_tutor.md), with [normative policy algorithms](./explore_safe_slice_03a_policy_algorithms.md) and [exact harm-probe fixture](./explore_safe_slice_03b_harm_probe_cases.md).** Implement best-effort sanitization, deterministic policy, exact rules/fixtures, fact/number checks, typed tutor contracts, authored fallback, and the mandatory qualified harm gate for any generated child-facing tutor.
+5. **[Safety, grounding, and tutor boundary](./specs/03-safety-tutor.md), with [normative policy algorithms](./specs/03a-policy-algorithms.md) and [exact harm-probe fixture](./specs/03b-harm-probe-cases.md).** Implement best-effort sanitization, deterministic policy, exact rules/fixtures, fact/number checks, typed tutor contracts, authored fallback, and the mandatory qualified harm gate for any generated child-facing tutor.
 
-6. **[Local telemetry and parent controls](./explore_safe_slice_04_telemetry.md).** Add a separate Explore SQLite schema for sanitized turns, structured events, parent observations, retention, export, and transactional deletion; exclude child names, raw rejected content, audio, arbitrary JSON, credentials, and provider identifiers.
+6. **[Local telemetry and parent controls](./specs/04-telemetry.md).** Add a separate Explore SQLite schema for sanitized turns, structured events, parent observations, retention, export, and transactional deletion; exclude child names, raw rejected content, audio, arbitrary JSON, credentials, and provider identifiers.
 
-7. **[Gradio UI, curated visual, and read-aloud](./explore_safe_slice_05_gradio_ui.md).** Build pure presenter callbacks first, then a localhost-only Gradio composition with deterministic controls, optional read-aloud, accessible fallbacks, and parent supervision controls.
+7. **[Gradio UI, curated visual, and read-aloud](./specs/05-gradio-ui.md).** Build pure presenter callbacks first, then a localhost-only Gradio composition with deterministic controls, optional read-aloud, accessible fallbacks, and parent supervision controls.
 
-8. **[Push-to-talk audio input](./explore_safe_slice_06_audio_input.md).** Add plugin qualification, bounded managed recordings, strict WAV validation, cleanup in every path, transcript preview/edit, and the same policy pipeline as typed input.
+8. **[Push-to-talk audio input](./specs/06-audio-input.md).** Add plugin qualification, bounded managed recordings, strict WAV validation, cleanup in every path, transcript preview/edit, and the same policy pipeline as typed input.
 
-9. **[Deployment-specific real capability adapters](./explore_safe_slice_pr_07a_capability_adapters.md).** Implement/install separately recorded provider-specific tutor, mandatory safety, and STT distributions only after manual service selection; keep provider details and SDKs outside core.
+9. **[Deployment-specific real capability adapters](./prs/07a-capability-adapters.md).** Implement/install separately recorded provider-specific tutor, mandatory safety, and STT distributions only after manual service selection; keep provider details and SDKs outside core.
 
-10. **[First-slice verification and parent-supervised pilot](./explore_safe_slice_07_verification.md).** Capture baseline, preserve red/green evidence, run focused/full/static/distribution checks, exercise privacy and audio failures, verify Study compatibility, qualify selected adapters, and run a deliberately bounded family pilot.
+10. **[First-slice verification and parent-supervised pilot](./specs/07-verification.md).** Capture baseline, preserve red/green evidence, run focused/full/static/distribution checks, exercise privacy and audio failures, verify Study compatibility, qualify selected adapters, and run a deliberately bounded family pilot.
 
-11. **[Portable spreadsheet curation and graph priming](./explore_safe_slice_08_graph_recommendations.md), [curriculum persistence](./explore_safe_slice_08a_curriculum_persistence.md), and [recommendation/feedback](./explore_safe_slice_08b_recommendation_feedback.md).** Provide exact portable workbook/CSV tabs and columns, privacy rules, immutable types, SQL/transactions, validation/import contracts, an early approved graph, deterministic lesson compilation, local observation aggregation, and transparent parent-approved recommendations.
+11. **[Portable spreadsheet curation and graph priming](./specs/08-graph-recommendations.md), [curriculum persistence](./specs/08a-curriculum-persistence.md), and [recommendation/feedback](./specs/08b-recommendation-feedback.md).** Provide exact portable workbook/CSV tabs and columns, privacy rules, immutable types, SQL/transactions, validation/import contracts, an early approved graph, deterministic lesson compilation, local observation aggregation, and transparent parent-approved recommendations.
 
 ## Execution boundary
 

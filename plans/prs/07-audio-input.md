@@ -13,8 +13,8 @@ Add parent-enabled microphone capture, strict managed WAV validation, replaceabl
 
 ## Normative plans
 
-- [Push-to-talk audio](./explore_safe_slice_06_audio_input.md)
-- [Manual account/credential setup](./explore_safe_slice_manual_setup.md)
+- [Push-to-talk audio](../specs/06-audio-input.md)
+- [Manual account/credential setup](../runbooks/manual-setup.md)
 
 ## Files
 

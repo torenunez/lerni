@@ -245,7 +245,12 @@ difficulty measure.
   carries 99 pre-existing style violations. Lint is now scoped to staged Python
   files; pytest still runs the full suite.
 - Imported the 29-file Explore implementation bundle into `plans/` under version
-  control, so plan revisions become reviewable history.
+  control, so plan revisions become reviewable history. Reorganized it into
+  `prs/` (execution units), `specs/` (technical contracts), and `runbooks/`
+  (manual procedures), renamed the master plan from its hash to
+  `cursor_master_plan.plan.md`, dropped the repeated `explore_safe_slice_` prefix,
+  and added a `plans/README.md` index carrying the spec-to-PR mapping — the two
+  numbering schemes do not line up and that was undocumented.
 - Aligned all eight product documents on the two-mode model: `docs/mission.md` and
   `docs/PRD.md` rewritten, `docs/roadmap.md` merged into Study Track / Explore
   Track, `docs/todo.md` reordered Explore-first with Study work parked,

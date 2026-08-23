@@ -112,7 +112,7 @@ mypy src/                    # types
 - [Roadmap](docs/roadmap.md) — Study Track and Explore Track
 - [Backlog](docs/todo.md) — active Explore work, parked Study work
 - [Progress Log](docs/progress.md) — dated implementation history
-- [`plans/`](plans/) — Explore implementation bundle: master plan, PR units, technical contracts
+- [`plans/`](plans/) — Explore implementation bundle: [master plan](plans/cursor_master_plan.plan.md), plus `prs/` (execution units), `specs/` (technical contracts), and `runbooks/` (manual procedures)
 
 ## License
 
