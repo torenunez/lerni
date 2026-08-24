@@ -1,29 +1,15 @@
 # Checking the Lesson's Science
 
-## What you're being asked to do
-
 The lesson teaches one idea: **a car's "0–60 time" is how many seconds something
-took — it is not the same thing as acceleration.** It makes four specific claims,
-and all four cite the same NASA page.
+took — not the same thing as acceleration.** It makes four claims, all citing one
+NASA page. Read the quotes below, say whether they hold up.
 
-Your job is to read four short quotes and say whether they hold up. You should
-not have to read a physics article and work backwards; that's what this sheet is
-for.
+The quotes were pulled by software; the judgment is yours, so open the page and
+check. If you can't confirm something, say so — it stays blocked, which is the
+system working.
 
-The software will not show this lesson to a child until you've done this. If you
-can't confirm something, say so and it stays blocked — that's the system working
-correctly, not an obstacle to get around.
-
-**The quotes below were pulled by software. The judgment is yours.** Open the
-page yourself and check them.
-
-## The source
-
-**Displacement, Velocity, Acceleration** — NASA Glenn Research Center
-<https://www.grc.nasa.gov/WWW/K-12/airplane/disvelac.html>
-
-Confirmed online on 2026-08-23. That only means the page loaded — it is not the
-check you're doing now.
+**Source:** [Displacement, Velocity, Acceleration](https://www.grc.nasa.gov/WWW/K-12/airplane/disvelac.html)
+— NASA Glenn Research Center. Confirmed loading 2026-08-23; that's not this check.
 
 ---
 
@@ -37,16 +23,10 @@ check you're doing now.
 **What the NASA page says about this:** nothing. The page is about aircraft and
 rocket motion. It never mentions cars or 0–60 figures at all.
 
-**This is the one that needs your judgment.** The claim isn't really physics —
-it's a statement about how car magazines write specifications. Two reasonable
-options:
-
-- **Accept it** as a plain restatement of the definition NASA does give (velocity
-  changing over time), and note that reasoning when you sign off; or
-- **Ask for a second source** that actually discusses 0–60 as a timed
-  measurement. That means updating the lesson and redoing the fingerprint.
-
-Neither is obviously right. Pick one and say why.
+**This one needs your judgment.** It isn't really physics — it's about how car
+magazines write specs. Either accept it as a restatement of the definition NASA
+*does* give (velocity changing over time), or ask for a second source that
+actually covers 0–60 as a timed measurement. Neither is obviously right.
 
 Your decision: ______________________________________________
 
@@ -75,13 +55,12 @@ Confirmed? ☐ yes ☐ no — notes: ______________________________
 **What the NASA page says:** it gives the formula `a = (V1 - V0) / (t1 - t0)`,
 but never makes this comparison itself.
 
-**So this one is reasoning, not a quote.** It follows from the formula: if the
-speed change stays the same and the time gets smaller, acceleration gets bigger.
+**Reasoning, not a quote** — it follows from the formula: same speed change, less
+time, bigger acceleration.
 
-The part worth your attention is the qualifier — *"the same initial and final
-velocities."* Without it the claim is flatly false, and it would be easy for
-someone to trim it later for readability. Please confirm it's there and that you
-think it belongs.
+Watch the qualifier: *"the same initial and final velocities."* Without it the
+claim is flatly false, and it's exactly the kind of clause someone trims later
+for readability. Confirm it's there.
 
 Confirmed? ☐ yes ☐ no — notes: ______________________________
 
@@ -100,29 +79,25 @@ Confirmed? ☐ yes ☐ no — notes: ______________________________
 
 ---
 
-## Also: the simplified wording
+## The simplified wording
 
-Each claim has a plain-English version — that's what the child actually reads.
-It has to stay honest while being simpler. The risk is that simplifying
-accidentally makes a claim *stronger* than the evidence supports.
+What the child actually reads. The risk is that simplifying makes a claim
+*stronger* than the evidence supports.
 
 - [ ] "A 0–60 result tells how many seconds the speed change took."
 - [ ] "Acceleration tells how quickly velocity changes."
 - [ ] "If both cars make the same speed change, the one that does it in less time has greater average acceleration."
 - [ ] "A car can accelerate differently during the run, so 0–60 supports an average."
 
-Also confirm the lesson packages **no brand, no logo, and no current-rankings
-claim**, and that the 4-second and 8-second figures read as hypothetical examples
-rather than assertions about real vehicles.
+Also confirm: no brand, no logo, no current-rankings claim, and that the 4- and
+8-second figures read as hypothetical examples, not real vehicles.
 
 ---
 
 ## Recording it
 
-This part is for whoever types it in — you can hand it off. What matters is that
-the role and date are real, and that they came from you.
-
-Add to `chain_1_acceleration.toml`:
+Hand this part off if you like. What matters is that the role and date are real
+and came from you.
 
 ```toml
 [[review.attestations]]
@@ -134,14 +109,11 @@ evidence_ref = "plans/runbooks/chain-1-source-review.md"
 reviewed_payload_sha256 = "<the exact hash you were shown>"
 ```
 
-Also set `retrieved_on` to the date **you** opened the page — not the date at the
-top of this sheet.
+Set `retrieved_on` to the date **you** opened the page.
 
-Your name is not recorded; only your role. The long hex string is a fingerprint
-of the exact wording you approved, so if anyone edits the lesson afterward it
-stops matching and the software blocks it until someone re-reviews. Approving
-specific words rather than the lesson in general is the point.
+Your name isn't recorded, only your role. The hex string fingerprints the exact
+wording you approved — edit the lesson later and it stops matching, so it goes
+back for review.
 
-This is one of four checks. The other three — age fit, the picture, and a
-parent's permission — are listed in [`../human-track.md`](../human-track.md).
-All four have to be done, and all four have to reference the same fingerprint.
+One of four checks; the others are in [`../human-track.md`](../human-track.md).
+All four must reference the same fingerprint.
