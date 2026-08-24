@@ -1,54 +1,61 @@
-# Runbook — Chain-1 Source Review Sheet
+# Checking the Lesson's Science
 
-## What this is
+## What you're being asked to do
 
-The Chain-1 acceleration lesson makes four factual claims, all citing one source.
-Before the lesson can leave `status = "draft"`, a scientifically competent
-reviewer must confirm that the source still supports those claims and record the
-date they actually checked.
+The lesson teaches one idea: **a car's "0–60 time" is how many seconds something
+took — it is not the same thing as acceleration.** It makes four specific claims,
+and all four cite the same NASA page.
 
-This sheet exists so the reviewer verifies **four specific quotes** rather than
-reading a physics article and cross-referencing from scratch.
+Your job is to read four short quotes and say whether they hold up. You should
+not have to read a physics article and work backwards; that's what this sheet is
+for.
 
-**The evidence below was gathered by an agent. The verdict is not.** Fill in the
-right-hand columns yourself, from the live page. If you cannot confirm a row, the
-lesson stays draft and no child sees it — that is the system working, not a
-failure to route around.
+The software will not show this lesson to a child until you've done this. If you
+can't confirm something, say so and it stays blocked — that's the system working
+correctly, not an obstacle to get around.
 
-## Source under review
+**The quotes below were pulled by software. The judgment is yours.** Open the
+page yourself and check them.
 
-- **id**: `nasa-acceleration`
-- **title**: Displacement, Velocity, Acceleration
-- **publisher**: NASA Glenn Research Center
-- **url**: <https://www.grc.nasa.gov/WWW/K-12/airplane/disvelac.html>
-- **checked reachable**: 2026-08-23 (availability only — not a science review)
+## The source
 
-## Evidence table
+**Displacement, Velocity, Acceleration** — NASA Glenn Research Center
+<https://www.grc.nasa.gov/WWW/K-12/airplane/disvelac.html>
 
-### Fact 1 — `zero-to-sixty-is-time`
+Confirmed online on 2026-08-23. That only means the page loaded — it is not the
+check you're doing now.
 
-> **Our claim:** "A 0-to-60 result reports the elapsed time for velocity to change
-> from 0 miles per hour to 60 miles per hour."
+---
 
-**Supporting text found on the source:** *none.* The page discusses aircraft and
-rocket motion. It never mentions cars, 0–60 figures, or automotive specifications.
+## The four claims
 
-**Status: UNSUPPORTED by this source.** This is a claim about how car
-specifications are written, not a physics claim. It is the one row that needs a
-real decision:
+### 1. What a 0–60 number actually means
 
-- Accept it as a definitional framing that follows from the sourced definition of
-  velocity change over time, and note that reasoning in the attestation; **or**
-- Add a second source that actually discusses 0–60 as an elapsed-time measurement,
-  update `source_ids`, and regenerate the payload hash.
+> **The lesson says:** "A 0-to-60 result reports the elapsed time for velocity to
+> change from 0 miles per hour to 60 miles per hour."
 
-Reviewer decision: ______________________________________________
+**What the NASA page says about this:** nothing. The page is about aircraft and
+rocket motion. It never mentions cars or 0–60 figures at all.
 
-### Fact 2 — `acceleration-definition`
+**This is the one that needs your judgment.** The claim isn't really physics —
+it's a statement about how car magazines write specifications. Two reasonable
+options:
 
-> **Our claim:** "Average acceleration is change in velocity divided by elapsed time."
+- **Accept it** as a plain restatement of the definition NASA does give (velocity
+  changing over time), and note that reasoning when you sign off; or
+- **Ask for a second source** that actually discusses 0–60 as a timed
+  measurement. That means updating the lesson and redoing the fingerprint.
 
-**Supporting text on the source:**
+Neither is obviously right. Pick one and say why.
+
+Your decision: ______________________________________________
+
+### 2. What acceleration is
+
+> **The lesson says:** "Average acceleration is change in velocity divided by
+> elapsed time."
+
+**What the NASA page says:**
 
 > "The **acceleration (a)** of the object through the domain is the change of the
 > velocity with respect to time."
@@ -56,42 +63,48 @@ Reviewer decision: ______________________________________________
 > "the **average acceleration** is the change in velocity divided by the time
 > interval: a = (V1 - V0) / (t1 - t0)"
 
-**Status: DIRECTLY SUPPORTED.** Near-verbatim.
+**This one is nearly word-for-word.** Should be a quick yes.
 
 Confirmed? ☐ yes ☐ no — notes: ______________________________
 
-### Fact 3 — `shorter-time-greater-average`
+### 3. Comparing two cars
 
-> **Our claim:** "For two straight-line runs with the same initial and final
+> **The lesson says:** "For two straight-line runs with the same initial and final
 > velocities, the shorter elapsed time has the greater average acceleration."
 
-**Supporting text on the source:** the formula `a = (V1 - V0) / (t1 - t0)`.
+**What the NASA page says:** it gives the formula `a = (V1 - V0) / (t1 - t0)`,
+but never makes this comparison itself.
 
-**Status: DERIVED, not stated.** The page does not make this comparison. It
-follows arithmetically: hold the numerator `(V1 - V0)` fixed and shrink the
-denominator, and `a` increases. The reviewer is attesting to the derivation being
-sound and the "same initial and final velocities" qualifier being present and
-necessary — without it the claim is false.
+**So this one is reasoning, not a quote.** It follows from the formula: if the
+speed change stays the same and the time gets smaller, acceleration gets bigger.
 
-Confirmed? ☐ yes ☐ no — notes: ______________________________
-
-### Fact 4 — `average-not-instant`
-
-> **Our claim:** "A 0-to-60 elapsed time can support average acceleration over the
-> interval but does not reveal acceleration at every instant."
-
-**Supporting text on the source:** the page gives average acceleration as
-`a = (V1 - V0) / (t1 - t0)` and instantaneous acceleration as `a = dv / dt`,
-treating them as distinct quantities.
-
-**Status: DIRECTLY SUPPORTED** for the distinction. The 0–60 framing is again ours.
+The part worth your attention is the qualifier — *"the same initial and final
+velocities."* Without it the claim is flatly false, and it would be easy for
+someone to trim it later for readability. Please confirm it's there and that you
+think it belongs.
 
 Confirmed? ☐ yes ☐ no — notes: ______________________________
 
-## Also check the child-facing wording
+### 4. Average isn't the whole story
 
-The `child_text` of each fact is what a 7–9 year old reads. It must stay true to
-`canonical_text` while being simpler — not truer than the evidence allows.
+> **The lesson says:** "A 0-to-60 elapsed time can support average acceleration
+> over the interval but does not reveal acceleration at every instant."
+
+**What the NASA page says:** it gives average acceleration as
+`a = (V1 - V0) / (t1 - t0)` and instantaneous acceleration as `a = dv/dt`, and
+treats them as two different things.
+
+**The distinction is well supported.** As with claim 1, the 0–60 framing is ours.
+
+Confirmed? ☐ yes ☐ no — notes: ______________________________
+
+---
+
+## Also: the simplified wording
+
+Each claim has a plain-English version — that's what the child actually reads.
+It has to stay honest while being simpler. The risk is that simplifying
+accidentally makes a claim *stronger* than the evidence supports.
 
 - [ ] "A 0–60 result tells how many seconds the speed change took."
 - [ ] "Acceleration tells how quickly velocity changes."
@@ -102,9 +115,14 @@ Also confirm the lesson packages **no brand, no logo, and no current-rankings
 claim**, and that the 4-second and 8-second figures read as hypothetical examples
 rather than assertions about real vehicles.
 
-## Recording the result
+---
 
-When satisfied, record in `chain_1_acceleration.toml`:
+## Recording it
+
+This part is for whoever types it in — you can hand it off. What matters is that
+the role and date are real, and that they came from you.
+
+Add to `chain_1_acceleration.toml`:
 
 ```toml
 [[review.attestations]]
@@ -116,10 +134,14 @@ evidence_ref = "plans/runbooks/chain-1-source-review.md"
 reviewed_payload_sha256 = "<the exact hash you were shown>"
 ```
 
-Also update `retrieved_on` in `[[grounding.sources]]` to the date **you** opened
-the page.
+Also set `retrieved_on` to the date **you** opened the page — not the date at the
+top of this sheet.
 
-`science` is one of four required scopes. The other three — `child_content`,
-`visual_accessibility`, `parent_approval` — are tracked in
-[`../human-track.md`](../human-track.md). All four must carry the **same**
-`reviewed_payload_sha256`; a mismatch fails the parser closed.
+Your name is not recorded; only your role. The long hex string is a fingerprint
+of the exact wording you approved, so if anyone edits the lesson afterward it
+stops matching and the software blocks it until someone re-reviews. Approving
+specific words rather than the lesson in general is the point.
+
+This is one of four checks. The other three — age fit, the picture, and a
+parent's permission — are listed in [`../human-track.md`](../human-track.md).
+All four have to be done, and all four have to reference the same fingerprint.

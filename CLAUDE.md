@@ -59,7 +59,7 @@ tests/                # Pytest suite — currently test_sm2.py only
 docs/                 # Mission, PRD, spec, roadmap, todo, progress
 plans/                # Explore implementation bundle
 ├── cursor_master_plan.plan.md   # sequence, dependencies, gates, PR index
-├── human-track.md    # status of all non-coding work: done, pending, blocked
+├── human-track.md    # what educators/parents must do; plain language, dev section at end
 ├── prs/              # execution units, in order
 ├── specs/            # normative technical contracts
 └── runbooks/         # procedures a human performs (setup, source review, priming)
