@@ -35,12 +35,24 @@ dev = [
 [project.scripts]
 study = "lerni.cli:app"
 
+[tool.setuptools]
+include-package-data = true
+
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+"lerni.explore.lessons" = [
+  "*.toml",
+  "assets/*.svg",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
+markers = [
+    "distribution: builds and installs the package; slow, needs build tooling",
+]
 
 [tool.mypy]
 python_version = "3.11"
