@@ -1,0 +1,14 @@
+task_id,area,what_to_decide,who,where,status,decided_on,verdict,notes
+src-1,Science,"Claim 1: ""A 0-to-60 result reports the elapsed time for velocity to change from 0 to 60 mph."" The NASA page never mentions cars. Accept as a restatement of NASA's velocity-over-time definition, or require a second source that covers 0–60 as a timed measurement? This one is a real judgment call.",Educator,plans/runbooks/chain-1-source-review.md §1,not_started,,,
+src-2,Science,"Claim 2: ""Average acceleration is change in velocity divided by elapsed time."" NASA states this nearly word-for-word. Expected to be a quick yes.",Educator,plans/runbooks/chain-1-source-review.md §2,not_started,,,
+src-3,Science,"Claim 3: comparing two cars — same start and end velocity, shorter time means greater average acceleration.",Educator,plans/runbooks/chain-1-source-review.md §3,not_started,,,
+src-4,Science,"Claim 4: a 0–60 time supports an average over the interval, not acceleration at every instant.",Educator,plans/runbooks/chain-1-source-review.md §4,not_started,,,
+att-science,Sign-off,"Attestation scope `science`: is the science right, and does the source back it? Requires src-1..4 settled first.",Educator,REVIEWS tab,blocked,,,Blocked on src-1 through src-4.
+att-child-content,Sign-off,Attestation scope `child_content`: does this read well for a 7–9 year old?,Parent or educator,REVIEWS tab,not_started,,,
+att-visual,Sign-off,"Attestation scope `visual_accessibility`: does the diagram work, including its text description (alt text)?",Parent or educator,REVIEWS tab,not_started,,,
+att-parent,Sign-off,Attestation scope `parent_approval`: is this okay for my kid? Last of the four.,Parent,REVIEWS tab,not_started,,,
+graph-interest,Graph,"Fill the `fast-cars` row in INTERESTS: what does your kid actually point at, in your words. Then the strength (1–5) and the two dates. Shipped blank on purpose — nobody but you can fill these truthfully.",Parent,INTERESTS tab,not_started,,,"Never write the child's name, school, address, contact details, or their exact words."
+graph-concepts,Graph,Review the two seeded concepts and add any others worth teaching from this interest.,Educator or parent,CONCEPTS tab,not_started,,,
+graph-edges,Graph,Check the seeded `related` edge and add domain relationships. A `parent`/`prerequisite`/`related` edge states how concepts relate — it is NOT teaching order. Do not add a prerequisite edge just to force a sequence.,Educator,EDGES tab,not_started,,,Standing Rule 4.
+graph-nudges,Graph,"Review the seeded comparison nudge and add others: a question, prediction, or activity moving from the interest toward a concept.",Parent or educator,NUDGES tab,not_started,,,
+pilot-consent,Gate,"Both parents agree to exactly what is enabled, and one stays in the room and can stop the session. Comes after all four sign-offs.",Both parents,plans/human-track.md,blocked,,,Blocked on all four attestations plus the PR-08 technical gate.

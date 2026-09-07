@@ -1,0 +1,18 @@
+section,text
+Purpose,"Curation surface for the Lerni Explore knowledge graph. Parents and educators draft interests, concepts, sources, facts, nudges, and edges here. Nothing here reaches a child until a person approves it."
+Authority,"This sheet is a drafting convenience, not a safety boundary. The local importer decides whether a bundle is valid. Google Sheets data validation catches typos; it does not enforce anything."
+NEVER put in this sheet,"Child name. Account identifier. Exact address, school, phone, email, or location. Raw audio. Raw transcript. Full model prompt or response. Credentials. Medical, behavioral, or diagnostic labels. Family-confidential details."
+Why,This is cloud storage. Everything else in Lerni is local by design. A paraphrase is more useful for curation than a quote anyway.
+Status workflow,draft -> proposed -> approved. draft/proposed -> rejected. approved -> paused. approved/paused -> retired. Only an educator or parent review moves child-facing content to approved.
+Approval is data,An entity is approved only when its status says so AND the REVIEWS tab holds every required active attestation. Status alone does nothing.
+Required review scopes,interest: parent_approval. source: science. concept/fact/edge: science + child_content. nudge: science + child_content + parent_approval. asset: visual_accessibility + parent_approval. lesson: all four.
+No fabricated reviews,"No AI, script, or agent writes a REVIEWS row, a date, or a hash. A person does, or the content stays blocked. This is Standing Rule 3."
+Edges are not lesson order,A parent/prerequisite/related edge states how two concepts relate in the domain. Teaching order is a separate authored sequence. Conflating them corrupts both. This is Standing Rule 4.
+IDs,"Lowercase kebab-case, matching ^[a-z0-9]+(?:-[a-z0-9]+)*$. Stable forever. Row numbers are never identifiers."
+Dates,ISO YYYY-MM-DD. Real dates only.
+Lists in one cell,Separate with the pipe character. No spaces around it. Order is preserved and meaningful. No duplicates. No item may itself contain a pipe.
+Empty cells,"Leave genuinely blank. Not N/A, not none, not a dash."
+Leading characters,"Text must not start with = + @ or -. The importer rejects these outright rather than silently rewriting reviewed content, because a formula prefix is how a spreadsheet becomes an attack surface."
+Booleans,Lowercase true or false.
+Export,"File -> Download -> Comma-separated values, one tab at a time. Filename must equal the tab name. README, LISTS, EDUCATOR_TODO, and OBSERVATIONS are helper tabs and are never part of a curriculum import."
+Current state,The Chain-1 lesson is draft with zero attestations. The software refuses to show unreviewed material to a child. See the EDUCATOR_TODO tab for what is outstanding.
