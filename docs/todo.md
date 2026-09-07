@@ -10,9 +10,13 @@ Mirrors the first-slice execution order. The implementation bundle is in
 
 - [ ] 1. **Environment qualification** — bind command variables, qualify required vs optional runtime tiers, record setup decisions outside the repo
 - [x] 2. **Documentation** — align the eight product documents around the two-mode model
-- [ ] 3. **Lesson domain** — immutable lesson types and canonical serialization
-- [ ] 4. **Catalog and approved content** — strict TOML catalog, corrected Chain-1 acceleration content, curated accessible SVG
-- [ ] 5. **State engine** — deterministic intro / teach / check / hint / complete transitions
+- [x] 3. **Lesson domain** — immutable lesson types and canonical serialization
+- [x] 4. **Catalog and approved content** — strict TOML catalog, corrected Chain-1 acceleration content, curated accessible SVG
+  - Code and content are packaged; the content is still `status = "draft"` with zero
+    attestations, so the child catalog refuses it. Approval is a human gate tracked in
+    [`plans/human-track.md`](../plans/human-track.md) — a checked box here does not mean a
+    child can see this.
+- [x] 5. **State engine** — deterministic intro / teach / check / hint / complete transitions
 - [ ] 6. **Safety and grounding** — sanitization, deterministic input/output policy, fact and numeric grounding checks
 - [ ] 7. **Tutor capability** — provider-neutral tutor contract, process boundary, authored fallback, mandatory harm gate for any generated child-facing output
 - [ ] 8. **Telemetry** — separate Explore SQLite store, sanitized turns, parent observations, export, retention, transactional deletion, managed wipe

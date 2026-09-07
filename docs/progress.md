@@ -265,6 +265,8 @@ difficulty measure.
 decision and a documentation change, not an implementation. `src/lerni/explore/`
 has not been created.
 
+*(Superseded by the 2026-09-06 entry below: `src/lerni/explore/` now exists.)*
+
 Commits were made on branch `explore/pr-01-documentation` at the user's explicit
 request. The implementation plans otherwise assume no commits are made without
 that authorization.
@@ -275,3 +277,74 @@ that authorization.
 - Reviewed Chain-1 acceleration content, with real source retrieval dates and
   human review attestations — not fabricated to make checks pass
 - Deterministic state engine
+
+---
+
+## 2026-09-06 (Explore PR-02 — Lesson Core)
+
+### Done
+
+- Implemented the Explore lesson domain: immutable lesson, source, fact, step,
+  check, and review types with constructor invariants that fail closed on an
+  invalid enum, ID, version, index, hash, or review scope.
+- Implemented the strict canonical-JSON encoder that gives a lesson payload its
+  identity. The payload hash changes for a runtime, grounding, or asset change and
+  does not change for review-only metadata.
+- Implemented catalog loading over `importlib.resources`: exact schema rejection,
+  index and asset hash verification, size limits enforced before an unbounded
+  decode or render, and child-catalog filtering that excludes draft content.
+- Implemented the deterministic state engine — intro, teach, check, progressive
+  hint, correct completion, and revealed completion. No random branch exists.
+  Public snapshots omit answer keys and internal review or source detail.
+  Tutor-like text produces no engine event.
+- Added draft Chain-1 acceleration content and a project-authored accessible SVG,
+  packaged as resources. The content teaches that a 0–60 result is elapsed time
+  and that average acceleration is velocity change over time; it avoids
+  instantaneous acceleration and mutable ranking claims.
+- Verified both distributions: wheel and source distribution carry the exact
+  indexed bytes in clean installs.
+- Rewrote `plans/human-track.md` and `plans/runbooks/chain-1-source-review.md` for
+  the people who actually have to use them — educators and parents, not developers.
+- Study is untouched: no change to its models, database, SM-2, or commands.
+
+### Files Created
+
+- `src/lerni/explore/__init__.py`, `domain.py`, `canonical.py`, `catalog.py`,
+  `engine.py`
+- `src/lerni/explore/lessons/__init__.py`, `lesson_index.toml`,
+  `chain_1_acceleration.toml`, `assets/chain_1_acceleration.svg`
+- `tests/explore/` — `conftest.py`, `test_domain.py`, `test_canonical.py`,
+  `test_catalog.py`, `test_chain_1_content.py`, `test_engine.py`,
+  `test_distribution.py`
+
+### Testing
+
+```
+$ .venv/bin/python -m pytest -q
+148 passed, 2 xfailed in 12.10s
+```
+
+### Status
+
+**The Chain-1 lesson is `status = "draft"` and carries zero attestations.** The
+child catalog refuses to load it. Leaving draft requires four real human reviews —
+`science`, `child_content`, `visual_accessibility`, `parent_approval` — each
+recorded with a role and date and pinning the same recomputed payload hash. No
+agent may write one (Standing Rule 3). Nothing here has been reviewed, and no
+child-facing session is possible before the PR-08 pilot gate.
+
+The draft status blocks child-facing content. It does not block PR-03, which uses
+synthetic fixtures only, so the human review gate and the next code unit can
+proceed in parallel.
+
+### Next
+
+- [PR-03 — Runtime profile and capability process boundary](../plans/prs/03-runtime-boundary.md):
+  strict provider-neutral profile parsing, private path derivation and process
+  lock, `env:VAR` credential references, bounded helper-subprocess IPC, and
+  readiness primitives.
+- In parallel, the human review gate: educator checks the science against the
+  NASA source, parents make the age-fit, picture, and permission calls.
+- PR-03's manual prerequisites are the operator's: an absolute private runtime
+  root outside the repository, a qualified helper Python, and a fallback-only
+  versus plugin decision. No account or credential is needed.

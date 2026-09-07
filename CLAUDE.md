@@ -54,8 +54,16 @@ src/lerni/            # Study — implemented
     ├── organize.py   # list, search, assign, meta, concept subcommands
     └── notify.py     # macOS notifications
 
+src/lerni/explore/    # Explore — lesson core implemented (PR-02)
+├── __init__.py
+├── domain.py         # Immutable lesson, source, fact, step, check, review types
+├── canonical.py      # Strict canonical-JSON encoder for payload identity
+├── catalog.py        # importlib.resources loading, schema/hash verification, child filtering
+├── engine.py         # Deterministic intro/teach/check/hint/complete transitions
+└── lessons/          # Packaged content: lesson_index.toml, chain_1_acceleration.toml, assets/
+
 agents/               # Study Phase-2 prompt drafts (beginner.md, expert.md) — parked, unused
-tests/                # Pytest suite — currently test_sm2.py only
+tests/                # Pytest suite — test_sm2.py plus tests/explore/ (6 modules)
 docs/                 # Mission, PRD, spec, roadmap, todo, progress
 plans/                # Explore implementation bundle
 ├── cursor_master_plan.plan.md   # sequence, dependencies, gates, PR index
@@ -72,8 +80,8 @@ plans/                # Explore implementation bundle
 .githooks/            # Optional git pre-commit hook (enable per clone; see Agent Tooling)
 ```
 
-**`src/lerni/explore/` does not exist yet.** Planned modules, per `plans/`:
-`domain.py`, `catalog.py`, `engine.py`, `canonical.py`, `contracts.py`,
+**Remaining `src/lerni/explore/` modules are planned, not written.** Per `plans/`:
+`contracts.py`,
 `runtime_config.py`, `capability_runner.py`, `capability_supervisor.py`,
 `capability_worker.py`, `readiness.py`, `policy.py`, `sanitization.py`,
 `grounding.py`, `tutor_service.py`, `plugin_loader.py`, `qualification.py`,
@@ -107,8 +115,10 @@ do not duplicate standing rules in Cursor. Use Plan mode with
 `plans/cursor_master_plan.plan.md` for Explore sequencing; use native Cursor
 agents sparingly for review or isolated tasks.
 
-**Active Explore work:** PR-01 (documentation) is complete. Next:
-[`plans/prs/02-lesson-core.md`](plans/prs/02-lesson-core.md).
+**Active Explore work:** PR-02 (lesson core) is complete in code; its four human
+review attestations remain open, which blocks child-facing content but not
+further PRs. Next:
+[`plans/prs/03-runtime-boundary.md`](plans/prs/03-runtime-boundary.md).
 
 **Shared commit gate for Cursor commits:** run `.claude/hooks/quality-gate.sh`
 before committing, or enable the git hook once per clone:
