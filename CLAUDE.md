@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Lerni is a local-first, privacy-preserving learning system. **One repository, two modes:**
 
 - **Study** — adult Feynman + SM-2 spaced-repetition CLI. **Phase 1 feature-complete; maintenance-only.** Fixes and hardening, no new features.
-- **Explore** — child interest-to-fundamentals experience, parent-supervised, localhost only. **Active development. No code exists yet** — only the design in `plans/` and the contracts in `docs/spec.md`.
+- **Explore** — child interest-to-fundamentals experience, parent-supervised, localhost only. **Active development.** The lesson core exists (PR-02: domain, canonical encoder, catalog, engine, packaged draft content). Everything else — runtime boundary, safety, tutor, telemetry, UI, audio — is still only the design in `plans/` and the contracts in `docs/spec.md`. No lesson has been human-reviewed, so nothing is child-visible.
 
 Feature-complete is not hardened. Study has SM-2 test coverage; the database layer and CLI are untested, and `src/` carries ruff debt. See `docs/todo.md`.
 
@@ -198,7 +198,9 @@ These apply to any work in this repository.
    "anonymous", "PII-free", or "forensic deletion". Explore's controls are
    prototype guardrails plus a supervising parent.
 
-7. **Do not claim code exists until it does.** Explore is designed, not built.
+7. **Do not claim code exists until it does.** Explore's lesson core is built; the
+   remaining modules listed under Project Structure are designed only. Check the
+   tree before describing a module as existing.
 
 ## Design Principles
 
