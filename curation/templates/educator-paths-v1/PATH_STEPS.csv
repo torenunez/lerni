@@ -1,0 +1,1 @@
+path_step_id,path_id,sequence,target_node_id,connection_id,step_goal,opening_prompt,activity,understanding_check,expected_observation,materials,content_revision,source_ids,status,reviewer_role,review_date,educator_notes

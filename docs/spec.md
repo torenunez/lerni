@@ -484,9 +484,10 @@ will happen on evidence from a real pilot rather than by assumption.
 **The concept graph is future curriculum structure, not a runtime controller.**
 Neither Study's concept graph nor the planned Explore curriculum graph drives the
 first slice. The first lesson is explicit packaged application data with an
-authored sequence. The Explore curriculum graph arrives in Phase 2, after a pilot,
-and even then it structures *authoring* and produces parent-reviewable
-recommendation candidates — it does not select what the child sees next at
+authored sequence. Educator path authoring ([`educator-paths-v1`](../plans/specs/08c-educator-path-authoring.md))
+starts before any pilot, but only as offline drafting files. An active Explore
+curriculum graph arrives later (roadmap M5–M6), and even then it structures
+*authoring* and produces parent-reviewable recommendation candidates — it does not select what the child sees next at
 runtime. No graph traversal advances a session.
 
 # Explore Architecture
@@ -625,6 +626,10 @@ OS backups, filesystem snapshots, or any external service's retained copies.
 - **No child image upload** — the child cannot send images into the system.
 
 ## Parent Curation and Curriculum Graph Contract
+
+> Educator authoring now uses the separate [`educator-paths-v1`](../plans/specs/08c-educator-path-authoring.md)
+> drafting contract. The contract below is the planned delivery/import format
+> (not implemented); mapping one to the other is later work (roadmap M5).
 
 - **Workbook tabs and privacy exclusions** — a fixed ordered tab set covering
   interests, concepts, sources, facts, nudges, edges, assets, lessons, lesson

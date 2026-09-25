@@ -1,36 +1,37 @@
 # Lerni — Backlog
 
 Explore is active. Study work below is parked, not cancelled — it is kept so it
-can be resumed if the Explore pilot does not justify continuing.
+can be resumed if Explore does not justify continuing. Completed work is recorded
+in [`progress.md`](./progress.md), not here.
 
-## Explore Phase 1 — Active
+## Explore — Active
 
-Mirrors the first-slice execution order. The implementation bundle is in
-[`plans/`](../plans/); each item maps to a PR unit there.
+Milestones are defined in [`roadmap.md`](./roadmap.md). Implemented code, human
+review, app qualification, and a student session are separate kinds of progress.
 
-- [ ] 1. **Environment qualification** — bind command variables, qualify required vs optional runtime tiers, record setup decisions outside the repo
-- [x] 2. **Documentation** — align the eight product documents around the two-mode model
-- [x] 3. **Lesson domain** — immutable lesson types and canonical serialization
-- [x] 4. **Catalog and approved content** — strict TOML catalog, corrected Chain-1 acceleration content, curated accessible SVG
-  - Code and content are packaged; the content is still `status = "draft"` with zero
-    attestations, so the child catalog refuses it. Approval is a human gate tracked in
-    [`plans/human-track.md`](../plans/human-track.md) — a checked box here does not mean a
-    child can see this.
-- [x] 5. **State engine** — deterministic intro / teach / check / hint / complete transitions
-- [ ] 6. **Safety and grounding** — sanitization, deterministic input/output policy, fact and numeric grounding checks
-- [ ] 7. **Tutor capability** — provider-neutral tutor contract, process boundary, authored fallback, mandatory harm gate for any generated child-facing output
-- [ ] 8. **Telemetry** — separate Explore SQLite store, sanitized turns, parent observations, export, retention, transactional deletion, managed wipe
-- [ ] 9. **Gradio visual and read-aloud** — readiness-gated localhost UI, curated visual, optional browser read-aloud
-- [ ] 10. **Push-to-talk** — qualified speech-to-text port, bounded WAV capture, editable transcript, guaranteed cleanup
-- [ ] 11. **Verification** — privacy boundary tests, distribution checks, failure injection, Study compatibility
-- [ ] 12. **Parent-supervised pilot** — bounded first session, then an explicit decision whether to continue
+### M1 — Educator authoring and documentation (developer)
+- [ ] Review and merge GitHub PR #2 (`educator-paths-v1` and document adoption)
+- [ ] Collect educator feedback on the templates and adjust wording (not the schema) as needed
 
-## Explore Phase 2 — Parent Curation and Bounded Recommendations
+### M2 — First reviewed walkthrough (educator and parent)
+- [ ] Choose a fitting interest and one concrete learning goal
+- [ ] Sketch three to five activities; prepare and genuinely review the first
+- [ ] Optional short walkthrough; private observations; revise one thing
 
-**Gate**: starts only after item 12 and an explicit parent decision to continue.
+### M3 — Authored local app slice (developer, then parent rehearsal)
+- [ ] Environment qualification — bind command variables, qualify the runtime tier the slice needs, record setup decisions outside the repo
+- [ ] Reconcile PR-03 runtime, PR-06 UI, and PR-08 verification specs for the reduced slice; write its acceptance checks (PRD APP-01–APP-08) before relying on them
+- [ ] Translate one reviewed path step into one packaged lesson, with a separate path/step/revision mapping record
+- [ ] Genuine exact-content attestations for that lesson (TOML `review.attestations`)
+- [ ] Local UI: visible text, curated visuals and text alternatives, authored choices, hints, completion, parent Start/Stop/Reset, in-memory state
+- [ ] Verify session ownership, Stop/Reset, approval and integrity checks, no persistent storage, no outbound requests, Study compatibility
+- [ ] Adult rehearsal and parent authorization
 
-- [ ] 13. **Curation workbook and dry-run CSV importer** — portable templates, strict offline validation, no activation
-- [ ] 14. **Early approved graph priming and transparent parent recommendation candidates** — immutable batches, explicit activation, deterministic explainable candidates requiring parent approval
+### Later (M4–M6 and optional capabilities)
+- [ ] M4 — student app session, second path from a different interest, follow-up recall
+- [ ] M5 — `educator-paths-v1` delivery mapping, then strict import/compilation (PR-09) and curriculum persistence (PR-10)
+- [ ] M6 — explainable recommendations from reviewed connections; reviewed graph-growth proposals (PR-11)
+- [ ] Optional, each with its own qualification: deterministic safety/grounding and tutor capability (PR-04, PR-07A), telemetry lifecycle (PR-05), read-aloud, push-to-talk (PR-07)
 
 ## Study — Optional hardening
 

@@ -1,5 +1,30 @@
 # Progress Log
 
+## Current state
+
+**Verified 2026-09-25** against the local checkout at `54acca4` (branch
+`explore/curation-templates`, the branch behind GitHub PR #2) plus the M1 change
+recorded in the 2026-09-25 entry below. Each row names a
+different kind of evidence: implemented code, human review, app qualification,
+and observed student use are separate and are never implied by one another.
+
+| Area | State | Evidence | Next action or blocker |
+|---|---|---|---|
+| Study | Implemented; maintenance-only | `src/lerni/` CLI; SM-2 tests in the full suite | Optional hardening in [todo.md](./todo.md) |
+| Explore lesson foundation (plan PR-02) | Implemented, on `main` at `7f7fc0b` | `src/lerni/explore/`; `tests/explore/` pass in the 2026-09-25 run | Integrate into the M3 app slice |
+| Chain-1 acceleration lesson | Draft, zero attestations | `review.status = "draft"` in `chain_1_acceleration.toml`; the child catalog refuses it | Genuine human reviews ([runbook](../plans/runbooks/chain-1-source-review.md)) |
+| Educator authoring (`educator-paths-v1`) | Implemented; committed to `explore/curation-templates` (GitHub PR #2); **not merged** | `curation/`, checker, tests; results in the 2026-09-25 entry | Review and merge PR #2; educator usability feedback |
+| Product documents | Revised direction adopted (GitHub PR #2, unmerged) | [PRD](./PRD.md), [roadmap](./roadmap.md) | Planning deliverable, not runtime delivery |
+| Local app and qualification (M3) | Not implemented | No UI, runtime, or parent-control modules in `src/lerni/explore/` | Reconcile reduced-slice specs, then build |
+| First activity review and walkthrough (M2) | Pending | No review or session evidence exists | Educator and parent: choose interest, prepare and review one activity |
+| Student app session (M4) | Pending | None | Waits for M3 |
+| Conversion and recommendations (M5–M6) | Planned | Specs only | After M4 |
+
+Plan work package **PR-02** (`plans/prs/02-lesson-core.md`) is the implemented
+lesson core. **GitHub PR #2** is a different thing: the curation-template branch.
+
+---
+
 ## 2025-01-31
 
 ### Done
@@ -348,3 +373,107 @@ proceed in parallel.
 - PR-03's manual prerequisites are the operator's: an absolute private runtime
   root outside the repository, a qualified helper Python, and a fallback-only
   versus plugin decision. No account or credential is needed.
+
+*(Superseded 2026-09-25: sequence now follows roadmap milestones M1–M6. PR-03
+work is scoped to the subset the M3 authored app slice needs.)*
+
+## 2026-09-25 (M1 — Educator Path Authoring and Product-Document Adoption)
+
+**Baseline:** local checkout `54acca4d5fab1098059e972faec3029dd27aa26c` on
+`explore/curation-templates` — the head of GitHub PR #2, whose base is `main` at
+`7f7fc0b`. Clean working tree before this work. Baseline full suite:
+`148 passed, 2 xfailed`. No remote was fetched for this entry.
+
+**Committed to `explore/curation-templates` and pushed to update GitHub PR #2. Not merged into `main`.**
+
+### Decisions
+
+- Adopted the revised product direction: educator curation runs alongside
+  development; a genuinely reviewed educator-led walkthrough comes before any app
+  session; the first app slice is authored text/choices/visuals/hints with parent
+  Start/Stop/Reset and no AI, speech, accounts, or persistence.
+- New authoring contract `educator-paths-v1` (six tables: nodes, relationships,
+  connections, paths, path steps, sources) is separate from, and not
+  import-compatible with, the legacy v1 delivery schema or the runtime lesson
+  TOML. The adapter is later work (M5).
+- Kept the legacy `curation/templates/v1/` headers intact; corrected their
+  instructions instead of rewriting their schema.
+
+### Done
+
+- `educator-paths-v1` contract: `curation/schemas/educator-paths-v1.json` (column
+  inventory the checker reads) and `plans/specs/08c-educator-path-authoring.md`
+  (field meanings, relationship semantics, path continuity, status/readiness,
+  serialization, privacy separation).
+- Blank header-only templates, `LISTS.csv`, and an educator how-to in
+  `curation/templates/educator-paths-v1/`; single entry point `curation/README.md`.
+- Draft example bundle `curation/examples/educator-paths-v1-draft/`: 30 nodes,
+  35 relationships, 26 connections, 6 paths, 24 path steps, 10 sources, extracted
+  (author-entered columns only) from the supplied educator workbook with a
+  standard-library XLSX reader. All 121 curriculum records are `draft` with blank
+  review fields. Demonstrates two routes from `n-music`, shared `c-012` across
+  music and cooking, the building revisit of `n-length`, multiple incoming
+  connections, and off-path branches. First steps have fuller activities; later
+  steps are deliberate outlines.
+- Offline drafting checker `scripts/validate_curation_templates.py` (standard
+  library, read-only; exit 0/1/2; plain text and `--json`) with 49 tests in
+  `tests/test_curation_templates.py`.
+- Legacy corrections: `curation/templates/v1/README.md`, `README.csv`, and
+  `EDUCATOR_TODO.csv` no longer promise a clean import, name the six missing
+  delivery tables, point the four Chain-1 sign-offs at the TOML
+  `review.attestations` procedure, and route learner observations to a private
+  log. The Chain-1 example INTERESTS note now says not to fill its observation
+  fields. Task verdicts, dates, and both `REVIEWS.csv` files remain blank.
+- Adopted `docs/PRD.md` and `docs/roadmap.md` from the revised drafts, with links
+  rewritten to repository paths; preserved Study detail (roadmap Appendix A) and
+  explicit safety limitations. Added the current-state table above.
+- Reconciled `plans/README.md`, the master plan (revision section, educator track,
+  readiness table, next developer unit, dependency graph), `plans/human-track.md`
+  (immediate educator steps and a non-personal walkthrough section),
+  `plans/prs/09-curation-csv.md` (drafting checker vs. future strict importer,
+  new mapping prerequisite), status notes in spec 08 and the data-priming
+  runbook, and the directly conflicting lines in `README.md`, `CLAUDE.md`,
+  `docs/spec.md`, and `docs/todo.md`.
+- Not touched: `src/`, the packaged lesson TOML and its review state, the asset,
+  Study, and the supplied planning originals (hashes match their manifest).
+
+### Testing
+
+```
+$ .venv/bin/python scripts/validate_curation_templates.py --templates curation/templates/educator-paths-v1
+Result: structurally valid - 0 error(s), 0 warning(s), 0 drafting note(s).   (exit 0)
+$ .venv/bin/python scripts/validate_curation_templates.py --bundle curation/examples/educator-paths-v1-draft
+Result: structurally valid - 0 error(s), 9 warning(s), 54 drafting note(s).  (exit 0)
+$ .venv/bin/python -m pytest tests/test_curation_templates.py -q
+49 passed in 0.24s
+$ .venv/bin/python -m ruff check scripts/validate_curation_templates.py tests/test_curation_templates.py
+All checks passed!
+$ .venv/bin/python -m pytest -q
+197 passed, 2 xfailed in 11.98s
+$ git diff --check
+(clean)
+```
+
+The 9 warnings are records with no sources yet (three off-path connections and
+all six paths). The 54 drafting notes are unfinished activity fields on the 18
+outline steps. A relative-link check over the 20 changed or new Markdown files
+found 183 links and 0 broken.
+
+**Not performed:** no spreadsheet application was opened — CSVs were checked by
+parsing and Markdown by reading, not by rendering in a spreadsheet or browser. No
+human review, no walkthrough, and no student session occurred; none is implied.
+
+### Status
+
+Structural validity only. No curriculum record is reviewed, the Chain-1 lesson
+is still draft with zero attestations, there is no app, and no student has used
+anything.
+
+### Next
+
+- **Educator and parent (M2):** choose a fitting interest and goal, sketch three
+  to five activities, prepare and genuinely review the first, optionally run a
+  short walkthrough, keep observations private, revise one thing.
+- **Developer (M3):** reconcile the PR-03/PR-06/PR-08 specifications for the
+  reduced authored slice and write its acceptance checks, then build it.
+- **User:** review and merge GitHub PR #2.

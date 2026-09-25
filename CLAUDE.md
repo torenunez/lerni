@@ -63,7 +63,12 @@ src/lerni/explore/    # Explore — lesson core implemented (PR-02)
 └── lessons/          # Packaged content: lesson_index.toml, chain_1_acceleration.toml, assets/
 
 agents/               # Study Phase-2 prompt drafts (beginner.md, expert.md) — parked, unused
-tests/                # Pytest suite — test_sm2.py plus tests/explore/ (6 modules)
+tests/                # Pytest suite — test_sm2.py, test_curation_templates.py, tests/explore/ (6 modules)
+scripts/              # generate_lesson_index.py; validate_curation_templates.py (offline drafting checker)
+curation/             # Educator authoring — start at curation/README.md
+├── schemas/          # educator-paths-v1.json column inventory
+├── templates/        # educator-paths-v1/ (current); v1/ (legacy partial delivery draft)
+└── examples/         # educator-paths-v1-draft/ (six draft paths); chain-1-v1-draft/ (legacy)
 docs/                 # Mission, PRD, spec, roadmap, todo, progress
 plans/                # Explore implementation bundle
 ├── cursor_master_plan.plan.md   # sequence, dependencies, gates, PR index
@@ -115,10 +120,13 @@ do not duplicate standing rules in Cursor. Use Plan mode with
 `plans/cursor_master_plan.plan.md` for Explore sequencing; use native Cursor
 agents sparingly for review or isolated tasks.
 
-**Active Explore work:** PR-02 (lesson core) is complete in code; its four human
-review attestations remain open, which blocks child-facing content but not
-further PRs. Next:
-[`plans/prs/03-runtime-boundary.md`](plans/prs/03-runtime-boundary.md).
+**Active Explore work:** milestones M1–M6 in [`docs/roadmap.md`](docs/roadmap.md)
+own the order; `plans/prs/` are work packages beneath them (plan PR-02 ≠ GitHub
+PR #2). M1 (educator authoring + doc adoption) is on
+`explore/curation-templates` (GitHub PR #2, unmerged). Next developer unit: M3, the authored local app
+slice — start by reconciling the PR-03/PR-06/PR-08 specs for that reduced slice
+(see the master plan's 2026-09-25 revision). The Chain-1 lesson is still draft
+with zero attestations.
 
 **Shared commit gate for Cursor commits:** run `.claude/hooks/quality-gate.sh`
 before committing, or enable the git hook once per clone:
@@ -267,3 +275,4 @@ the same runtime.
 - `docs/todo.md` — active Explore backlog, parked Study work
 - `docs/progress.md` — dated implementation log
 - `plans/` — Explore implementation bundle
+- `curation/` — educator path authoring (`educator-paths-v1`); spec in `plans/specs/08c-educator-path-authoring.md`

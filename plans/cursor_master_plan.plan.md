@@ -1,6 +1,6 @@
 ---
 name: Explore Safe Slice
-overview: Master implementation plan and PR index for pivoting Lerni to an Explore-first, parent-supervised multimodal Chain-1 prototype without disturbing Study. It includes provider-neutral runtime contracts, manual account/credential gates, private CSV/Google Sheets priming, a first-pilot boundary, and post-pilot graph/recommendation milestones.
+overview: Master implementation plan and PR index for Lerni Explore — educator path authoring alongside development, a reviewed educator-led walkthrough, then a qualified authored app slice for the first selected interest — without disturbing Study. It includes provider-neutral runtime contracts, manual account/credential gates, private CSV/Google Sheets priming, a first-pilot boundary, and post-pilot graph/recommendation milestones.
 todos:
   - id: manual-setup
     content: Complete local environment setup and decide which optional accounts/capabilities remain disabled or require qualification
@@ -9,7 +9,16 @@ todos:
     content: PR-01 align Explore-first product documentation while preserving existing edits
     status: pending
   - id: pr-02-lesson
-    content: PR-02 add reviewed Chain-1 lesson domain, content, and deterministic state
+    content: PR-02 add lesson domain, draft Chain-1 content, and deterministic state (code implemented; content approval is a separate human gate)
+    status: completed
+  - id: m1-educator-authoring
+    content: M1 educator-paths-v1 schema, templates, draft examples, offline drafting checker, and product-document adoption
+    status: in_progress
+  - id: m2-manual-walkthrough
+    content: M2 educator/parent choose an interest, prepare and genuinely review one activity, optional short walkthrough, private observations
+    status: pending
+  - id: m3-authored-app-slice
+    content: M3 reconcile reduced-slice specs, then build and qualify the authored local app slice (text, choices, visuals, hints, completion, parent Start/Stop/Reset)
     status: pending
   - id: pr-03-runtime
     content: PR-03 add strict runtime configuration, credential references, process boundary, and readiness primitives
@@ -33,7 +42,7 @@ todos:
     content: PR-08 close integration/privacy/distribution gaps and pass the supervised pilot gate
     status: pending
   - id: pr-09-curation
-    content: PR-09 add portable curation templates and strict offline CSV validation
+    content: PR-09 strict offline import validation and educator-paths-v1 delivery mapping (drafting checker already delivered at M1)
     status: pending
   - id: prime-private-data
     content: Fill and review the private CSV/Google Sheets seed bundle without committing family data
@@ -53,7 +62,7 @@ isProject: false
 
 ### Keep
 - Preserve Study as a feature-frozen mode in the same repository; its Phase-1 CLI is functional and should remain compatible.
-- Start with one short, educator-authored car-to-science lesson and test whether it creates curiosity before building the garage, parent portal, or broader graph.
+- Start with one short, educator-authored lesson from the first selected interest and test whether it creates curiosity before building the garage, parent portal, or broader graph. The Chain-1 car lesson remains an optional existing draft example, not a required starting point.
 - Keep curriculum human-reviewed and make the application—not the LLM—select lesson content and advance progress.
 - Keep the first prototype local, parent-supervised, and data-minimized, with an account-free authored baseline and explicit qualification for any optional service account; parents control retention, export, and deletion.
 
@@ -73,11 +82,11 @@ isProject: false
 - Locked: Gradio + replaceable tutor capability + app-owned lesson state + Chain-1 grounding/output gate.
 - Locked: generated tutor use for a child additionally requires a qualified input/output harm gate; otherwise authored fallback remains active.
 - Locked: no plan file assumes an available coding agent, model, provider, credential, speech engine, accelerator, or orchestration tool; runtime adapters are selected through explicit environment qualification.
-- Locked: the first child session includes curated visuals and text/choice interaction, and offers parent-enabled browser read-aloud only when qualified/supported; it does not accept child image uploads.
-- Locked: push-to-talk input follows the core immediately, using Gradio microphone capture and a replaceable speech-to-text contract; the selected adapter's local/external routing and retention are reviewed by parents before use.
+- Locked: the first child session includes curated visuals and text/choice interaction, and offers parent-enabled browser read-aloud only when qualified/supported; it does not accept child image uploads. *(Revised 2026-09-25: read-aloud is an optional later capability, not part of the first authored slice — see [roadmap](../docs/roadmap.md) section 10.)*
+- Locked: push-to-talk input follows the core immediately, using Gradio microphone capture and a replaceable speech-to-text contract; the selected adapter's local/external routing and retention are reviewed by parents before use. *(Revised 2026-09-25: speech input is an optional later capability, not a prerequisite for the first authored slice.)*
 - Locked: localhost only (`127.0.0.1`, no share URL), buffered responses, no public deployment.
-- Locked: retain sanitized turns, lesson events, and parent observations in a separate local Explore SQLite database with no child name; provide session-level delete and JSON export controls. Do not add cloud analytics or retain audio.
-- Locked: parent curation begins in portable CSV-backed spreadsheet templates compatible with Google Sheets; interests, nudges, facts, graph edges, and lesson order remain separate records, and only approved content primes the active graph.
+- Locked: retain sanitized turns, lesson events, and parent observations in a separate local Explore SQLite database with no child name; provide session-level delete and JSON export controls. Do not add cloud analytics or retain audio. *(Revised 2026-09-25: the first authored slice keeps session state in memory with no persistent student telemetry; these lifecycle requirements apply before any later persistence is used.)*
+- Locked: parent curation begins in portable CSV-backed spreadsheet templates compatible with Google Sheets; interests, nudges, facts, graph edges, and lesson order remain separate records, and only approved content primes the active graph. *(Revised 2026-09-25: educator authoring now starts immediately with [`educator-paths-v1`](./specs/08c-educator-path-authoring.md) — nodes, relationships, connections, paths, path steps, sources — with learner observations kept out of curriculum. Only approved content ever primes an active graph.)*
 - Locked: preserve all pre-existing uncommitted work, including `.claude/`; make no commits.
 - Deferred: integration with the Study database, garage/mastery, Spanish, child image uploads, deployment framework/hosting, graph libraries, automatic sheet synchronization, and any non-family access.
 
@@ -100,17 +109,40 @@ isProject: false
    - Credential values never enter TOML, Git, IPC JSON, telemetry, exports, logs, or sheets.
 
 2. **[Private CSV/Google Sheets data priming](./runbooks/data-priming.md).**
-   - Parents may draft sanitized interest/nudge notes while PRs 01–08 proceed; they populate the exact private bundle after PR-09 templates/validator exist.
+   - Legacy-format bundle only. New educator path authoring uses `educator-paths-v1` (see the educator authoring track below) and does not wait for PR-09.
    - Real source, science, child-content, accessibility, and parent reviews are required before approval.
    - The filled family workbook/bundle stays private and untracked.
    - Activation and recommendation priming occur only at their later gates.
+
+## Revision 2026-09-25: educator authoring track and reduced first slice
+
+Product direction is now owned by [`docs/PRD.md`](../docs/PRD.md) and milestone order by [`docs/roadmap.md`](../docs/roadmap.md) (M1–M6). The numbered PR files remain the work-package detail beneath those milestones. Where this plan's older sequencing conflicts with the roadmap, the roadmap wins; where a runtime, safety, or approval **control** here conflicts with the reduced slice, the control stands until the M3 work unit reconciles the specifications explicitly. Removing an optional feature does not by itself pass a gate.
+
+### Educator authoring track — starts alongside development
+
+1. **M1 (repository, developer):** `educator-paths-v1` contract ([spec 08c](./specs/08c-educator-path-authoring.md)), blank templates, six draft example paths, offline drafting checker, tests — in [`../curation/`](../curation/README.md).
+2. **M2 (educator and parent):** choose a fitting interest and a concrete goal; sketch three to five activities; prepare only the first; review it genuinely; optionally run a 5–10 minute walkthrough; record observations privately; revise one thing. See [`human-track.md`](./human-track.md).
+3. **M3 (developer, then parent rehearsal):** the next developer work unit, below.
+
+| Readiness | Needed | What it permits |
+|---|---|---|
+| Path sketch | Stable IDs, meaningful definitions and transitions, ordered targets/goals, draft status | Adult curriculum authoring and discussion |
+| Selected manual activity | Exact prompt/activity/check, expected observation, materials, revision, real educator/parent review and applicable content controls | A short supervised educator-led walkthrough, if the family elects to participate |
+| Application activity | Reviewed packaged content and assets, actual app implementation, technical qualification, adult rehearsal, parent authorization | A supervised app session for that enabled slice |
+| Recommendations | Exercised handoff, reviewed graph records, separate design/implementation and approval controls | Explained suggestions; new graph additions still require review |
+
+### Next developer work unit — authored local app slice (M3)
+
+Scope: one reviewed activity translated manually into one packaged lesson; visible authored text, necessary curated visuals with text alternatives, authored choices, hints, and completion; parent Start/Stop/Reset; in-memory session state. Out of scope for this slice: AI, speech input or output, accounts, persistence and student telemetry, automatic import, and automatic graph traversal.
+
+Before any app use, that unit must first write the slice's own acceptance checks into the runtime (PR-03), UI (PR-06), and verification (PR-08) specifications — at minimum APP-01 to APP-08 in the [PRD](../docs/PRD.md) — and then pass them, plus an adult rehearsal and parent authorization. Documentation alone qualifies nothing. Keep a separate mapping record of `path_id`, `path_step_id`, activity revision, and lesson revision; do not add those fields to the runtime lesson format.
 
 ## PR index
 
 1. **[PR-01 — Explore-first product documentation](./prs/01-documentation.md).**
    Markdown-only alignment; preserves existing user edits.
 2. **[PR-02 — Reviewed lesson core and Chain-1 content](./prs/02-lesson-core.md).**
-   Immutable lesson types, strict package catalog, approved facts/visual, deterministic state.
+   Immutable lesson types, strict package catalog, facts/visual, deterministic state. **Implemented; Chain-1 content remains draft with zero attestations.**
 3. **[PR-03 — Runtime profile and capability process boundary](./prs/03-runtime-boundary.md).**
    Private paths, credential references, bounded helper protocol, parent guard, readiness primitives.
 4. **[PR-04 — Deterministic safety, grounding, and tutor service](./prs/04-safety-tutor.md).**
@@ -126,7 +158,7 @@ isProject: false
 8. **[PR-08 — First-slice integration and pilot gate](./prs/08-pilot-gate.md).**
    Concrete claim/evidence map, privacy/distribution/regression checks, supervised-pilot runbook.
 9. **[PR-09 — Curation templates and strict CSV validation](./prs/09-curation-csv.md).**
-   Portable draft templates, exact offline parser/validator, no database activation.
+   Strict offline parser/validator and the `educator-paths-v1` delivery mapping, no database activation. The early drafting checker and templates were delivered separately at roadmap M1.
 10. **[PR-10 — Curriculum persistence, graph, and publication](./prs/10-curriculum-graph.md).**
     Immutable batches, compile/publish/install verification, explicit activation, graph/binding.
 11. **[PR-11 — Parent recommendations, assignments, and feedback](./prs/11-recommendations.md).**
@@ -156,8 +188,13 @@ flowchart TD
     PR07A --> GeneratedGate[Generated and voice tier requalification]
     PR08 --> GeneratedGate
     GeneratedGate --> PilotDecision
-    PilotDecision --> PR09[PR-09 Curation validation]
-    InterestNotes[Sanitized parent interest notes] --> ReviewData[Real reviews and approved bundle]
+    PilotDecision --> PR09[PR-09 Strict import validation]
+    EduAuthoring[M1 Educator path authoring] --> Walkthrough[M2 Reviewed educator-led walkthrough]
+    Walkthrough --> SelectedActivity[Selected activity packaged and genuinely reviewed]
+    SelectedActivity --> PR08
+    EduAuthoring --> PR09
+    PrivateObservations[Private learner observations] -.->|"generalized revisions only"| EduAuthoring
+    InterestNotes[Reviewed curation records] --> ReviewData[Real reviews and approved bundle]
     PR09 --> ReviewData
     ReviewData --> PR10[PR-10 Curriculum graph]
     PR10 --> PR11[PR-11 Recommendations]
@@ -176,7 +213,7 @@ flowchart LR
     SessionController --> BrowserSpeech[Optional browser read-aloud]
     Microphone[Push-to-talk microphone] --> STTPort[Qualified speech-to-text port]
     STTPort --> InputGate
-    SessionController --> Chain1[Reviewed Chain-1 content]
+    SessionController --> Chain1[Reviewed packaged lesson for the selected interest]
     SessionController --> InputGate[Local input policy]
     InputGate -->|"generated path"| InputHarmGate[Qualified generated-input harm gate]
     InputGate -->|"manual authored fallback"| SessionController
@@ -189,7 +226,7 @@ flowchart LR
     SessionController --> ExploreStore[Local sanitized telemetry]
     ParentNotes[Parent observation form] --> ExploreStore
     FakeTutor[Test fake] --> TutorPort
-    ParentSheet[Parent spreadsheet curation] -->|"manual CSV export"| CsvBundle[Portable reviewed CSV bundle]
+    ParentSheet[Educator path authoring, educator-paths-v1] -->|"future adapter, M5"| CsvBundle[Portable reviewed delivery bundle]
     CsvBundle --> CurriculumGraph[Early approved curriculum graph]
     CurriculumGraph --> Chain1
     ExploreStore --> ParentReview[Parent review]
@@ -200,7 +237,7 @@ flowchart LR
     Assignment --> SessionController
 ```
 
-When a qualified tutor is available, it may phrase an explanation or answer a bounded car-science question. It cannot select edges, mark mastery, unlock content, reveal/grade the deterministic check, or bypass the output gate. Browser read-aloud is optional. Microphone audio passes only to the selected speech-to-text capability; raw voice is routed before transcript redaction, and Lerni attempts immediate cleanup only inside its managed recording boundary before the editable transcript follows the normal input path.
+When a qualified tutor is available, it may phrase an explanation or answer a bounded question within the current lesson's scope. It cannot select edges, mark mastery, unlock content, reveal/grade the deterministic check, or bypass the output gate. Browser read-aloud is optional. Microphone audio passes only to the selected speech-to-text capability; raw voice is routed before transcript redaction, and Lerni attempts immediate cleanup only inside its managed recording boundary before the editable transcript follows the normal input path.
 
 ## Technical specification index
 
@@ -230,8 +267,8 @@ When a qualified tutor is available, it may phrase an explanation or answer a bo
 
 - The account-free authored first slice is PRs 01–08 plus technical plans 00–07. PR-07A is conditional first-slice work that may be skipped for authored rehearsal but is mandatory—and followed by a PR-08 eligibility rerun—before any generated-tutor or voice-input claim.
 - PR-06 enables a parent/developer fallback-only UI preview; no session is called an LLM or voice pilot until PR-08’s corresponding real-capability eligibility level passes.
-- Parents may privately draft the workbook in parallel, but no family-filled copy is tracked.
-- PR-09 starts only after the first-slice technical gate and parent decision to continue.
+- Educators author paths with `educator-paths-v1` in parallel with development, and a genuinely reviewed educator-led walkthrough may happen before the app exists; no family-filled copy or learner observation is tracked.
+- PR-09's strict import validator starts only after the first-slice technical gate and parent decision to continue; the M1 drafting checker is a separate, already-delivered tool.
 - PR-10 additionally requires real content reviews and an approved exact bundle.
 - PR-11 additionally requires a verified active curriculum; observations/readiness may remain empty/unknown rather than fabricated.
 - Every PR runs focused tests plus the containing regression set before handoff.

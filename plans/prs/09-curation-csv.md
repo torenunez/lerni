@@ -1,12 +1,36 @@
 # PR-09 — Curation Templates and Strict CSV Validation
 
+## Status and split (2026-09-25)
+
+This work package is now two separate deliveries:
+
+1. **Early authoring (delivered at roadmap M1, not part of this PR's acceptance).**
+   The [`educator-paths-v1`](../specs/08c-educator-path-authoring.md) contract,
+   blank templates, draft examples, and the offline **drafting** checker
+   `scripts/validate_curation_templates.py`. That checker explains incomplete
+   drafts; it is not this PR's strict parser, it does not produce
+   `ValidatedCurationRows`, and it does not complete any task below.
+2. **Strict import and compilation (this file, roadmap M5).** Everything below.
+   Nothing here is implemented.
+
+The `curation/templates/v1/` and `curation/examples/chain-1-v1-draft/` files listed
+under *Files* already exist as a **legacy partial draft**: seven of the sixteen
+tabs, no asset/lesson/check tables, no manifest, no importer.
+
+**New prerequisite task — before any strict-parser work:** specify how the six
+`educator-paths-v1` tables map into a reviewed delivery representation (lessons,
+facts, sources, assets, and a separate path/step identity mapping), and reconcile
+the older v1 schema's learner-bearing INTERESTS table and fixed concept roles.
+Renaming columns is not a mapping. Update spec 08 before implementation.
+
 ## Goal
 
 Provide portable spreadsheet templates and a deterministic offline curriculum parser/validator for interests, concepts, sources, facts, nudges, edges, assets, lessons, checks, and reviews. Keep the observation header as a non-importable reference for the separate PR-10 export contract; observations never enter a curriculum import manifest. This PR does not write a curriculum database or activate content.
 
 ## Depends on
 
-- PR-08 technical/pilot gate and parent decision to proceed.
+- PR-08 technical/pilot gate and parent decision to proceed (for the strict importer only; educator authoring does not wait).
+- The `educator-paths-v1` delivery mapping task above.
 - PR-02 lesson schema.
 - PR-04 policy normalization/number rules.
 
@@ -39,11 +63,12 @@ Blank templates contain headers only. The separate example contains only draft s
 
 - [ ] Choose local CSV editor or private Google Sheets.
 - [ ] If Google Sheets is used, complete account/sharing/privacy steps; no Google API setup.
-- [ ] Parents prepare truthful sanitized interest observations in a private copy.
+- [ ] Real learner observations stay in a separate private log, never in the curriculum bundle (the legacy INTERESTS observation columns are not filled).
 - [ ] Science/content/accessibility reviewers are available for later approval.
 
 ## Implementation tasks
 
+- [ ] Specify and review the `educator-paths-v1` → delivery mapping (prerequisite; see top).
 - [ ] Lock exact headers, enums, ID/list/date/timestamp/number grammar, limits, and privacy exclusions.
 - [ ] Install/hash the exact curation-schema and SVG-policy resources used with the shared policy-cases resource in `validated_rows_sha256`.
 - [ ] Add versioned README/LISTS and draft Chain-1 template rows.
