@@ -1,0 +1,82 @@
+{
+  "schema_version": "educator-paths-v1",
+  "description": "Column inventory for the educator path-authoring CSV tables. Application-specific metadata read by scripts/validate_curation_templates.py; not a JSON Schema document. Field meanings live in plans/specs/08c-educator-path-authoring.md.",
+  "id_pattern": "^[a-z][a-z0-9-]{0,79}$",
+  "integer_pattern": "^[1-9][0-9]*$",
+  "list_separator": "|",
+  "statuses": ["draft", "reviewed", "needs_revision", "retired"],
+  "reviewer_roles": ["educator", "parent", "subject_expert"],
+  "relationship_types": ["is_a", "part_of", "example_of", "uses", "explains", "related_to"],
+  "symmetric_relationship_types": ["related_to"],
+  "taxonomy_relationship_types": ["is_a", "part_of"],
+  "helper_files": ["LISTS.csv", "README.md"],
+  "tables": [
+    {
+      "name": "NODES",
+      "file": "NODES.csv",
+      "primary_key": "node_id",
+      "columns": ["node_id", "label", "definition", "aliases", "subject_tags", "scope_notes", "source_ids", "status", "reviewer_role", "review_date", "educator_notes"],
+      "required": ["node_id", "label", "definition", "status"],
+      "list_columns": ["aliases", "subject_tags", "source_ids"],
+      "references": {"source_ids": "SOURCES"},
+      "integer_columns": [],
+      "has_review": true
+    },
+    {
+      "name": "RELATIONSHIPS",
+      "file": "RELATIONSHIPS.csv",
+      "primary_key": "relationship_id",
+      "columns": ["relationship_id", "from_node_id", "relationship_type", "to_node_id", "rationale", "source_ids", "status", "reviewer_role", "review_date", "educator_notes"],
+      "required": ["relationship_id", "from_node_id", "relationship_type", "to_node_id", "rationale", "status"],
+      "list_columns": ["source_ids"],
+      "references": {"from_node_id": "NODES", "to_node_id": "NODES", "source_ids": "SOURCES"},
+      "integer_columns": [],
+      "has_review": true
+    },
+    {
+      "name": "CONNECTIONS",
+      "file": "CONNECTIONS.csv",
+      "primary_key": "connection_id",
+      "columns": ["connection_id", "from_node_id", "to_node_id", "learning_reason", "readiness_guidance", "illustrative_prompt", "source_ids", "status", "reviewer_role", "review_date", "educator_notes"],
+      "required": ["connection_id", "from_node_id", "to_node_id", "learning_reason", "status"],
+      "list_columns": ["source_ids"],
+      "references": {"from_node_id": "NODES", "to_node_id": "NODES", "source_ids": "SOURCES"},
+      "integer_columns": [],
+      "has_review": true
+    },
+    {
+      "name": "PATHS",
+      "file": "PATHS.csv",
+      "primary_key": "path_id",
+      "columns": ["path_id", "title", "entry_node_id", "learning_goal", "intended_audience", "starting_knowledge", "source_ids", "status", "reviewer_role", "review_date", "educator_notes"],
+      "required": ["path_id", "title", "entry_node_id", "learning_goal", "status"],
+      "list_columns": ["source_ids"],
+      "references": {"entry_node_id": "NODES", "source_ids": "SOURCES"},
+      "integer_columns": [],
+      "has_review": true
+    },
+    {
+      "name": "PATH_STEPS",
+      "file": "PATH_STEPS.csv",
+      "primary_key": "path_step_id",
+      "columns": ["path_step_id", "path_id", "sequence", "target_node_id", "connection_id", "step_goal", "opening_prompt", "activity", "understanding_check", "expected_observation", "materials", "content_revision", "source_ids", "status", "reviewer_role", "review_date", "educator_notes"],
+      "required": ["path_step_id", "path_id", "sequence", "target_node_id", "connection_id", "step_goal", "status"],
+      "list_columns": ["source_ids"],
+      "references": {"path_id": "PATHS", "target_node_id": "NODES", "connection_id": "CONNECTIONS", "source_ids": "SOURCES"},
+      "integer_columns": ["sequence", "content_revision"],
+      "activity_fields": ["opening_prompt", "activity", "understanding_check", "expected_observation", "materials", "content_revision"],
+      "has_review": true
+    },
+    {
+      "name": "SOURCES",
+      "file": "SOURCES.csv",
+      "primary_key": "source_id",
+      "columns": ["source_id", "title", "citation", "url", "source_notes"],
+      "required": ["source_id", "title", "citation"],
+      "list_columns": [],
+      "references": {},
+      "integer_columns": [],
+      "has_review": false
+    }
+  ]
+}

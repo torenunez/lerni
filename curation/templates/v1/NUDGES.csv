@@ -1,0 +1,1 @@
+nudge_id,status,from_interest_id,from_concept_id,target_concept_id,nudge_kind,parent_goal,child_prompt,expected_signal,hint_1,hint_2,reveal_text,priority,prerequisite_concept_ids,source_ids,locale,content_version

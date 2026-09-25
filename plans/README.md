@@ -1,7 +1,14 @@
 # Explore Implementation Plans
 
 The implementation bundle for **Explore** — Lerni's parent-supervised, child-facing
-mode. Design only; no Explore code exists yet.
+mode. The lesson core (PR-02) is implemented; its Chain-1 content is an unapproved
+draft. Educator authoring templates and a drafting checker exist in
+[`../curation/`](../curation/README.md). The runtime, UI, and later work are still
+design only.
+
+Product milestones M1–M6 are defined in [`../docs/roadmap.md`](../docs/roadmap.md).
+The numbered `prs/` files are internal work packages — plan **PR-02** is not
+GitHub PR #2.
 
 **Start here: [`cursor_master_plan.plan.md`](./cursor_master_plan.plan.md).** It owns
 sequence, dependencies, manual gates, and the PR index. This file is only a map.
@@ -35,7 +42,7 @@ before the PR sequence was settled. This table is the mapping:
 | [07 — audio input](./prs/07-audio-input.md) | [`06-audio-input`](./specs/06-audio-input.md) |
 | [07a — capability adapters](./prs/07a-capability-adapters.md) | self-contained; deliberately outside the core specs |
 | [08 — pilot gate](./prs/08-pilot-gate.md) | [`07-verification`](./specs/07-verification.md) |
-| [09 — curation CSV](./prs/09-curation-csv.md) | [`08-graph-recommendations`](./specs/08-graph-recommendations.md), [`08a-curriculum-persistence`](./specs/08a-curriculum-persistence.md) |
+| [09 — curation CSV](./prs/09-curation-csv.md) | Early drafting checker: [`08c-educator-path-authoring`](./specs/08c-educator-path-authoring.md) (delivered, roadmap M1). Strict import: [`08-graph-recommendations`](./specs/08-graph-recommendations.md), [`08a-curriculum-persistence`](./specs/08a-curriculum-persistence.md) (not built; roadmap M5) |
 | [10 — curriculum graph](./prs/10-curriculum-graph.md) | [`08a-curriculum-persistence`](./specs/08a-curriculum-persistence.md), [`08-graph-recommendations`](./specs/08-graph-recommendations.md) |
 | [11 — recommendations](./prs/11-recommendations.md) | [`08b-recommendation-feedback`](./specs/08b-recommendation-feedback.md) |
 
@@ -56,11 +63,16 @@ Three runbooks cover work no PR can do for you:
   four-fact source evidence sheet a science reviewer works from before the Chain-1
   lesson can leave draft.
 - [`runbooks/data-priming.md`](./runbooks/data-priming.md) — filling and reviewing the
-  private curation bundle. The filled family copy stays untracked.
+  private legacy-format curation bundle. The filled family copy stays untracked. New
+  path authoring uses [`../curation/templates/educator-paths-v1/`](../curation/templates/educator-paths-v1/README.md).
 
-Two gates are decisions, not code: the **parent-supervised pilot decision** after
-PR-08, and the **content review** (25 required attestations) before PR-10. PRs 09–11
-do not begin merely because the code is ready.
+Educator authoring and a reviewed educator-led walkthrough do **not** wait for any
+PR — they run alongside development (roadmap M1–M2). What stays gated is app use:
+no child uses the app before its technical gate, adult rehearsal, and parent
+authorization pass, and any content a child sees still needs genuine review. The
+strict import/publication work (PR-09's validator, PR-10) additionally needs the
+real content reviews in its specs. PRs 09–11 do not begin merely because code is
+ready.
 
 ## Ground rules
 

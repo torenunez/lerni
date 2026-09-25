@@ -1,36 +1,46 @@
 # Lerni — Backlog
 
 Explore is active. Study work below is parked, not cancelled — it is kept so it
-can be resumed if the Explore pilot does not justify continuing.
+can be resumed if Explore does not justify continuing. Completed work is recorded
+in [`progress.md`](./progress.md), not here.
 
-## Explore Phase 1 — Active
+## Explore — Active
 
-Mirrors the first-slice execution order. The implementation bundle is in
-[`plans/`](../plans/); each item maps to a PR unit there.
+Milestones are defined in [`roadmap.md`](./roadmap.md). Implemented code, human
+review, app qualification, and a student session are separate kinds of progress.
+Owners are in brackets.
 
-- [ ] 1. **Environment qualification** — bind command variables, qualify required vs optional runtime tiers, record setup decisions outside the repo
-- [x] 2. **Documentation** — align the eight product documents around the two-mode model
-- [x] 3. **Lesson domain** — immutable lesson types and canonical serialization
-- [x] 4. **Catalog and approved content** — strict TOML catalog, corrected Chain-1 acceleration content, curated accessible SVG
-  - Code and content are packaged; the content is still `status = "draft"` with zero
-    attestations, so the child catalog refuses it. Approval is a human gate tracked in
-    [`plans/human-track.md`](../plans/human-track.md) — a checked box here does not mean a
-    child can see this.
-- [x] 5. **State engine** — deterministic intro / teach / check / hint / complete transitions
-- [ ] 6. **Safety and grounding** — sanitization, deterministic input/output policy, fact and numeric grounding checks
-- [ ] 7. **Tutor capability** — provider-neutral tutor contract, process boundary, authored fallback, mandatory harm gate for any generated child-facing output
-- [ ] 8. **Telemetry** — separate Explore SQLite store, sanitized turns, parent observations, export, retention, transactional deletion, managed wipe
-- [ ] 9. **Gradio visual and read-aloud** — readiness-gated localhost UI, curated visual, optional browser read-aloud
-- [ ] 10. **Push-to-talk** — qualified speech-to-text port, bounded WAV capture, editable transcript, guaranteed cleanup
-- [ ] 11. **Verification** — privacy boundary tests, distribution checks, failure injection, Study compatibility
-- [ ] 12. **Parent-supervised pilot** — bounded first session, then an explicit decision whether to continue
+### Next up — three things can start in parallel
+1. **[user]** Review and merge GitHub PR #2.
+2. **[educator + parent]** M2: choose an interest and goal, sketch activities, prepare and review the first.
+3. **[developer]** M3 step 1: reconcile the reduced-slice specs.
 
-## Explore Phase 2 — Parent Curation and Bounded Recommendations
+### M1 — Educator authoring and documentation
+Delivered on GitHub PR #2 (unmerged); see [progress.md](./progress.md).
+- [ ] **[user]** Review and merge GitHub PR #2
+- [ ] **[educator]** Try the templates in a real spreadsheet app and report what is confusing; fix wording, and treat any schema change as a new version
 
-**Gate**: starts only after item 12 and an explicit parent decision to continue.
+### M2 — First reviewed walkthrough (no app needed)
+- [ ] **[educator + parent]** Choose a fitting interest and one concrete learning goal
+- [ ] **[educator]** Sketch three to five activities; fully prepare only the first
+- [ ] **[educator + parent]** Genuinely review that activity's exact wording and materials
+- [ ] **[educator + parent]** Optional 5–10 minute walkthrough; private observations; revise one thing
 
-- [ ] 13. **Curation workbook and dry-run CSV importer** — portable templates, strict offline validation, no activation
-- [ ] 14. **Early approved graph priming and transparent parent recommendation candidates** — immutable batches, explicit activation, deterministic explainable candidates requiring parent approval
+### M3 — Authored local app slice
+In order. Steps 1–2 can start now; step 3 needs M2's reviewed activity.
+1. [ ] **[developer]** Reconcile PR-03 runtime, PR-06 UI, and PR-08 verification specs for the reduced slice; write its acceptance checks (PRD APP-01–APP-08) before relying on them
+2. [ ] **[developer + operator]** Environment qualification for whatever runtime tier the reconciled specs require; setup decisions recorded outside the repo
+3. [ ] **[developer]** Translate one reviewed path step into one packaged lesson, with a separate path/step/revision mapping record. (Alternative: use the existing draft Chain-1 lesson instead, if it fits the chosen interest.)
+4. [ ] **[human reviewers]** Genuine exact-content attestations for that lesson (TOML `review.attestations`, all four scopes)
+5. [ ] **[developer]** Local UI: visible text, curated visuals and text alternatives, authored choices, hints, completion, parent Start/Stop/Reset, in-memory state
+6. [ ] **[developer]** Verify session ownership, Stop/Reset, approval and integrity checks, no persistent storage, no outbound requests, Study compatibility
+7. [ ] **[parent]** Adult rehearsal, then parent authorization
+
+### Later (M4–M6 and optional capabilities)
+- [ ] M4 — student app session, second path from a different interest, follow-up recall
+- [ ] M5 — `educator-paths-v1` delivery mapping, then strict import/compilation (PR-09) and curriculum persistence (PR-10)
+- [ ] M6 — explainable recommendations from reviewed connections; reviewed graph-growth proposals (PR-11)
+- [ ] Optional, each with its own qualification: deterministic safety/grounding and tutor capability (PR-04, PR-07A), telemetry lifecycle (PR-05), read-aloud, push-to-talk (PR-07)
 
 ## Study — Optional hardening
 

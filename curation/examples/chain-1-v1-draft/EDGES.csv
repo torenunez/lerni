@@ -1,0 +1,2 @@
+edge_id,status,from_concept_id,to_concept_id,relationship_type,rationale,source_ids,content_version
+average-acceleration-related-zero-to-sixty,draft,average-acceleration,zero-to-sixty-time,related,"A fixed velocity change and its elapsed time can be used to discuss average acceleration.",nasa-acceleration,1

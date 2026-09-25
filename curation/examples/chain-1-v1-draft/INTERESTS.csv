@@ -1,0 +1,2 @@
+interest_id,lifecycle_status,approval_status,label,category,anchor_concept_ids,child_phrase_sanitized,parent_observation_sanitized,engagement_strength,first_observed_on,last_observed_on,locale,entered_by_role,notes_sanitized,content_version
+fast-cars,candidate,draft,Fast cars,vehicles,zero-to-sixty-time,,,,,,en-US,parent,"Legacy structure only. Do not fill the phrase, observation, strength, or dates here: they are learner records. Keep real observations in a separate private log.",1

@@ -1,0 +1,36 @@
+relationship_id,from_node_id,relationship_type,to_node_id,rationale,source_ids,status,reviewer_role,review_date,educator_notes
+r-001,n-average-speed,uses,n-distance,The average-speed calculation uses route length.,s-openstax-speed,draft,,,Relationship wording is an educator-review proposal.
+r-002,n-average-speed,uses,n-elapsed-time,The calculation uses the duration of the same journey.,s-openstax-speed,draft,,,Relationship wording is an educator-review proposal.
+r-003,n-average-speed,is_a,n-rate,Average speed is distance per unit time.,s-openstax-speed,draft,,,Relationship wording is an educator-review proposal.
+r-004,n-tempo,is_a,n-rate,Tempo counts underlying beats per unit time.,s-ableton-tempo,draft,,,Relationship wording is an educator-review proposal.
+r-005,n-average-acceleration,is_a,n-rate,Average acceleration is velocity change per unit time.,s-nasa-motion,draft,,,Relationship wording is an educator-review proposal.
+r-006,n-average-acceleration,uses,n-elapsed-time,Its interval must match the velocity comparison.,s-nasa-motion,draft,,,Relationship wording is an educator-review proposal.
+r-007,n-distance,is_a,n-length,Route distance is a length measured along a path.,s-openstax-speed,draft,,,Relationship wording is an educator-review proposal.
+r-008,n-length,related_to,n-measurement,Measuring length compares extent with a unit.,s-openstax-geometry,draft,,,Relationship wording is an educator-review proposal.
+r-009,n-area,related_to,n-measurement,Area measurement compares a region with square units.,s-openstax-geometry,draft,,,Relationship wording is an educator-review proposal.
+r-010,n-perimeter,uses,n-length,Perimeter combines boundary lengths.,s-openstax-geometry,draft,,,Relationship wording is an educator-review proposal.
+r-011,n-area,uses,n-square-unit,Square units provide a measure for region size.,s-openstax-geometry,draft,,,Relationship wording is an educator-review proposal.
+r-012,n-rhythm,part_of,n-music,Timing arrangements are one component of music.,s-ableton-tempo,draft,,,Relationship wording is an educator-review proposal.
+r-013,n-steady-beat,related_to,n-rhythm,A pulse can provide a reference for varied rhythms.,s-ableton-tempo,draft,,,Relationship wording is an educator-review proposal.
+r-014,n-tempo,related_to,n-steady-beat,Tempo specifies the rate of the pulse.,s-ableton-tempo,draft,,,Relationship wording is an educator-review proposal.
+r-015,n-repeating-pattern,related_to,n-rhythm,Some rhythms organize a repeated unit.,s-ableton-bars,draft,,,Relationship wording is an educator-review proposal.
+r-016,n-equal-parts,explains,n-fractions,Equal subdivisions support the part-whole interpretation.,s-openstax-fractions,draft,,,Relationship wording is an educator-review proposal.
+r-017,n-equivalent-fractions,related_to,n-fractions,Equivalent representations denote the same number.,s-openstax-fractions,draft,,,Relationship wording is an educator-review proposal.
+r-018,n-cooking,uses,n-measurement,Measuring ingredient amounts is a common cooking practice.,s-openstax-measure,draft,,,Relationship wording is an educator-review proposal.
+r-019,n-cooking,uses,n-fractions,Ingredient amounts can be expressed as parts of a unit.,s-openstax-measure,draft,,,Relationship wording is an educator-review proposal.
+r-020,n-building,uses,n-length,Designs can specify lengths for components.,s-openstax-geometry,draft,,,Relationship wording is an educator-review proposal.
+r-021,n-building,uses,n-area,Designs can specify surface coverage.,s-openstax-geometry,draft,,,Relationship wording is an educator-review proposal.
+r-022,n-building,uses,n-perimeter,A design can require boundary-length calculations.,s-openstax-geometry,draft,,,Relationship wording is an educator-review proposal.
+r-023,n-plant-parts,part_of,n-plants,"Roots, stems and leaves are structures of plants.",s-ngss-parts,draft,,,Relationship wording is an educator-review proposal.
+r-024,n-plant-needs,related_to,n-plants,Growth depends on suitable resources and conditions.,s-ngss-needs,draft,,,Relationship wording is an educator-review proposal.
+r-025,n-fair-test,uses,n-observation,A comparison needs recorded observations.,s-ngss-fair-test,draft,,,Relationship wording is an educator-review proposal.
+r-026,n-fair-test,uses,n-comparison,An explicit comparison connects the question to evidence.,s-ngss-fair-test,draft,,,Relationship wording is an educator-review proposal.
+r-027,n-rectangle,related_to,n-area,Rectangles provide useful regions to measure.,s-openstax-geometry,draft,,,Relationship wording is an educator-review proposal.
+r-028,n-triangle,related_to,n-area,Triangles also enclose regions with measurable area.,s-openstax-geometry,draft,,,Relationship wording is an educator-review proposal.
+r-029,n-steady-beat,example_of,n-repeating-pattern,An ideal steady pulse repeats equal time intervals.,s-ableton-tempo,draft,,,Relationship wording is an educator-review proposal.
+r-030,n-observation,related_to,n-measurement,A measurement is one form of observational evidence.,s-ngss-fair-test,draft,,,Relationship wording is an educator-review proposal.
+r-031,n-comparison,uses,n-measurement,Quantitative comparisons use compatible measurements.,s-ngss-fair-test,draft,,,Relationship wording is an educator-review proposal.
+r-032,n-change,related_to,n-elapsed-time,Measurements over a stated interval can describe change.,s-nasa-motion,draft,,,Relationship wording is an educator-review proposal.
+r-033,n-average-acceleration,uses,n-change,The numerator is a change in velocity.,s-nasa-motion,draft,,,Relationship wording is an educator-review proposal.
+r-034,n-rectangle,related_to,n-perimeter,A rectangle has a boundary whose lengths can be summed.,s-openstax-geometry,draft,,,Relationship wording is an educator-review proposal.
+r-035,n-equal-parts,related_to,n-area,Area can be the measure used to compare portions.,s-openstax-fractions,draft,,,Relationship wording is an educator-review proposal.

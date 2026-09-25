@@ -1,5 +1,16 @@
 # Explore Safe Slice — Portable Spreadsheet Curation and Early Graph Priming
 
+> **Status (2026-09-25).** New educator authoring uses the separate
+> [`educator-paths-v1`](./08c-educator-path-authoring.md) contract, which is
+> implemented as drafting templates and an offline checker. This spec remains the
+> **planned delivery/import format** and is not implemented. Two of its semantics
+> conflict with the newer authoring model and need an explicit adapter/spec revision
+> before any production importer is built: (1) the INTERESTS table records a
+> particular child's phrases, observations, strength, and dates — those are learner
+> records and must stay out of shared curriculum; (2) CONCEPTS fixes permanent
+> roles (`kind`, `track`), whereas a node's anchor/bridge/fundamental role depends on
+> the path. Its approval, security, and activation requirements are unchanged.
+
 ## Goal
 
 Give parents and educators a practical spreadsheet schema, usable in Google Sheets or another CSV-capable editor, for:

@@ -16,8 +16,9 @@ they already care about down to the idea underneath it.
 **Study** — capture what you know, explain it simply, find the gaps, refine, then
 review on an SM-2 schedule.
 
-**Explore** — a reviewed lesson takes a child from a car's 0–60 time to average
-acceleration. The application owns the lesson; any AI capability is optional,
+**Explore** — an educator-curated path takes a child from an interest they already
+have (cars, music, cooking, plants, building…) to an underlying idea, one short
+reviewed activity at a time. The application owns the lesson; any AI capability is optional,
 replaceable, and cannot decide what is taught or whether an answer was right.
 
 ## Current Status
@@ -27,9 +28,11 @@ scheduling, concept graph, and CLI are all functional. It receives fixes, not ne
 features. Feature-complete is not the same as hardened — see [`docs/todo.md`](docs/todo.md)
 for open test and lint debt.
 
-**Explore is not implemented yet.** The design is complete and reviewed; the code
-is not written. What exists today is the implementation bundle in [`plans/`](plans/)
-and the contracts in [`docs/spec.md`](docs/spec.md). There is nothing to run.
+**Explore has a lesson core but no app yet.** The lesson domain, catalog, and
+deterministic engine exist in `src/lerni/explore/`, with one draft (unreviewed)
+lesson. Educators can outline learning paths today with the templates in
+[`curation/`](curation/README.md) and check them offline. There is no app to run;
+see [`docs/roadmap.md`](docs/roadmap.md) for milestones M1–M6.
 
 ## Study Quick Start
 
@@ -109,8 +112,9 @@ mypy src/                    # types
 - [Mission](docs/mission.md) — vision, two modes, core beliefs
 - [Product Requirements](docs/PRD.md) — requirements and safety boundaries
 - [Technical Specification](docs/spec.md) — data model, CLI, Explore contracts
-- [Roadmap](docs/roadmap.md) — Study Track and Explore Track
+- [Roadmap](docs/roadmap.md) — Explore milestones M1–M6; parked Study phases
 - [Backlog](docs/todo.md) — active Explore work, parked Study work
+- [Curation](curation/README.md) — educator path-authoring templates, examples, and offline checker
 - [Progress Log](docs/progress.md) — dated implementation history
 - [`plans/`](plans/) — Explore implementation bundle: [master plan](plans/cursor_master_plan.plan.md), plus `prs/` (execution units), `specs/` (technical contracts), and `runbooks/` (manual procedures)
 

@@ -44,18 +44,21 @@ No tutor/STT account or credential is needed.
 
 ## Implementation tasks
 
-- [ ] Scaffold importable public symbols.
-- [ ] Write behavior-specific failing tests for frozen types and constructor invariants.
-- [ ] Implement immutable lesson/source/fact/step/check/review types and the shared strict canonical-JSON encoder used by lesson payload identity and later readiness records.
-- [ ] Write failing strict-TOML and package-index tests.
-- [ ] Implement `importlib.resources` loading, exact schema rejection, hash verification, and child catalog filtering.
-- [ ] Write failing event/state transition tests.
-- [ ] Implement intro, teach, check, progressive hint, correct completion, and revealed completion transitions.
-- [ ] Ensure snapshots omit answer keys and internal review/source detail.
-- [ ] Add corrected Chain-1 draft content and accessible project-authored SVG.
-- [ ] Keep production content draft until human review is complete.
+Code tasks are done (2026-09-06, see `docs/progress.md`). The attestation task and
+all manual prerequisites above remain open: they need genuine human review.
+
+- [x] Scaffold importable public symbols.
+- [x] Write behavior-specific failing tests for frozen types and constructor invariants.
+- [x] Implement immutable lesson/source/fact/step/check/review types and the shared strict canonical-JSON encoder used by lesson payload identity and later readiness records.
+- [x] Write failing strict-TOML and package-index tests.
+- [x] Implement `importlib.resources` loading, exact schema rejection, hash verification, and child catalog filtering.
+- [x] Write failing event/state transition tests.
+- [x] Implement intro, teach, check, progressive hint, correct completion, and revealed completion transitions.
+- [x] Ensure snapshots omit answer keys and internal review/source detail.
+- [x] Add corrected Chain-1 draft content and accessible project-authored SVG.
+- [x] Keep production content draft until human review is complete.
 - [ ] Add actual attestations carrying the exact reviewed payload hash and switch to approved only after the gate.
-- [ ] Verify wheel and source distribution carry exact indexed bytes.
+- [x] Verify wheel and source distribution carry exact indexed bytes.
 
 ## Required concrete tests
 

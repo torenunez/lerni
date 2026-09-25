@@ -1,0 +1,14 @@
+list_name,value,meaning
+status,draft,Proposed curriculum; no review claimed. Default for new rows.
+status,reviewed,A real person reviewed this record; reviewer_role and review_date are required. Curation review only - not app approval.
+status,needs_revision,Previously considered content needs changes. Clear stale review fields and get a fresh review.
+status,retired,Kept for identity and history; not for new use. Never reuse its ID for a new meaning.
+relationship_type,is_a,From is a narrower kind of To. Never a teaching-order instruction.
+relationship_type,part_of,From is a component of To. Not a prerequisite and not a synonym for is_a.
+relationship_type,example_of,From illustrates or instantiates To.
+relationship_type,uses,From uses To in the context stated in the rationale.
+relationship_type,explains,Understanding From helps account for To. A substantive claim that needs review.
+relationship_type,related_to,Symmetric association justified in the rationale. No direction; a reversed copy is a duplicate.
+reviewer_role,educator,Educator reviewer.
+reviewer_role,parent,Parent or supervising adult reviewer.
+reviewer_role,subject_expert,Subject-matter expert reviewer.

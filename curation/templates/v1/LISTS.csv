@@ -1,0 +1,9 @@
+content_status,interest_status,concept_kind,concept_track,nudge_kind,relationship_type,step_kind,understanding_level,entered_by_role,locale,review_scope,review_status,entity_type,todo_status
+draft,candidate,anchor,interest,question,parent,intro,not_observed,parent,en-US,science,active,interest,not_started
+proposed,active,bridge,learning,comparison,prerequisite,teach,not_yet,educator,es-US,child_content,revoked,concept,in_progress
+approved,paused,mechanism,,prediction,related,,partial,,,visual_accessibility,,source,blocked
+rejected,retired,fundamental,,demonstration,,,clear,,,parent_approval,,fact,done
+paused,,application,,analogy,,,,,,,,nudge,
+retired,,,,retrieval,,,,,,,,edge,
+,,,,activity,,,,,,,,asset,
+,,,,,,,,,,,,lesson,
