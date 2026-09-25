@@ -2,9 +2,8 @@
 
 ## Current state
 
-**Verified 2026-09-25** against the local checkout at `54acca4` (branch
-`explore/curation-templates`, the branch behind GitHub PR #2) plus the M1 change
-recorded in the 2026-09-25 entry below. Each row names a
+**Verified 2026-09-25** at commit `f0af295`, the head of branch
+`explore/curation-templates` (GitHub PR #2, open, not merged into `main`). Each row names a
 different kind of evidence: implemented code, human review, app qualification,
 and observed student use are separate and are never implied by one another.
 
@@ -12,13 +11,17 @@ and observed student use are separate and are never implied by one another.
 |---|---|---|---|
 | Study | Implemented; maintenance-only | `src/lerni/` CLI; SM-2 tests in the full suite | Optional hardening in [todo.md](./todo.md) |
 | Explore lesson foundation (plan PR-02) | Implemented, on `main` at `7f7fc0b` | `src/lerni/explore/`; `tests/explore/` pass in the 2026-09-25 run | Integrate into the M3 app slice |
-| Chain-1 acceleration lesson | Draft, zero attestations | `review.status = "draft"` in `chain_1_acceleration.toml`; the child catalog refuses it | Genuine human reviews ([runbook](../plans/runbooks/chain-1-source-review.md)) |
+| Chain-1 acceleration lesson | Draft, zero attestations | `review.status = "draft"` in `chain_1_acceleration.toml`; the child catalog refuses it | Optional: needed only if this lesson is chosen for the M3 app slice ([runbook](../plans/runbooks/chain-1-source-review.md)) |
 | Educator authoring (`educator-paths-v1`) | Implemented; committed to `explore/curation-templates` (GitHub PR #2); **not merged** | `curation/`, checker, tests; results in the 2026-09-25 entry | Review and merge PR #2; educator usability feedback |
 | Product documents | Revised direction adopted (GitHub PR #2, unmerged) | [PRD](./PRD.md), [roadmap](./roadmap.md) | Planning deliverable, not runtime delivery |
 | Local app and qualification (M3) | Not implemented | No UI, runtime, or parent-control modules in `src/lerni/explore/` | Reconcile reduced-slice specs, then build |
 | First activity review and walkthrough (M2) | Pending | No review or session evidence exists | Educator and parent: choose interest, prepare and review one activity |
 | Student app session (M4) | Pending | None | Waits for M3 |
 | Conversion and recommendations (M5–M6) | Planned | Specs only | After M4 |
+
+**Next:** merge PR #2 (user); M2 activity preparation and review (educator and
+parent); M3 spec reconciliation (developer). The same list, with owners, is at the
+top of [todo.md](./todo.md).
 
 Plan work package **PR-02** (`plans/prs/02-lesson-core.md`) is the implemented
 lesson core. **GitHub PR #2** is a different thing: the curation-template branch.
@@ -383,6 +386,11 @@ work is scoped to the subset the M3 authored app slice needs.)*
 `explore/curation-templates` — the head of GitHub PR #2, whose base is `main` at
 `7f7fc0b`. Clean working tree before this work. Baseline full suite:
 `148 passed, 2 xfailed`. No remote was fetched for this entry.
+
+That branch already held two earlier commits with no log entry of their own:
+`76ee190` (2026-09-06) added the legacy v1 curation templates and the Chain-1
+draft example bundle, and `54acca4` (2026-09-07) corrected two stale CLAUDE.md
+claims. This entry's work was committed as `f0af295` and pushed to update PR #2.
 
 **Committed to `explore/curation-templates` and pushed to update GitHub PR #2. Not merged into `main`.**
 

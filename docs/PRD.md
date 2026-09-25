@@ -1,6 +1,6 @@
 # Lerni — Product Requirements
 
-Adopted 2026-09-25 from the revised product direction. Current-state statements were checked against the local checkout at `54acca4` (branch `explore/curation-templates`) plus the working change that adds educator authoring; see [progress.md](./progress.md) for dated evidence. Requirements below describe work to deliver, not capabilities already available. This document approves no curriculum and authorizes no student session.
+Adopted 2026-09-25 from the revised product direction. Current-state statements were checked at commit `f0af295` (branch `explore/curation-templates`, GitHub PR #2, not yet merged into `main`); see [progress.md](./progress.md) for dated evidence. Requirements below describe work to deliver, not capabilities already available. This document approves no curriculum and authorizes no student session.
 
 ## 1. Purpose
 
@@ -188,7 +188,7 @@ The proposal cannot silently change the reviewed graph, assign mastery, or selec
 
 ## 11. Current status and product boundaries
 
-As of the local checkout at `54acca4` plus the educator-authoring working change (2026-09-25):
+As of commit `f0af295` on `explore/curation-templates` (2026-09-25):
 
 - Study's core CLI is implemented and remains maintenance-only, with known hardening work.
 - Explore's domain, canonical encoder, packaged catalog, deterministic engine, draft acceleration lesson, visual asset, and associated tests exist (merged to `main` at `7f7fc0b`).

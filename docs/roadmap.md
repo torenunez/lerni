@@ -1,6 +1,6 @@
 # Lerni — Roadmap
 
-Adopted 2026-09-25 from the revised product direction. Current state was checked against the local checkout at `54acca4` plus the educator-authoring working change; dated evidence is in [progress.md](./progress.md). Saving this roadmap does not change repository gates or establish that a human review or student test occurred.
+Adopted 2026-09-25 from the revised product direction. Current state was checked at commit `f0af295` (branch `explore/curation-templates`, GitHub PR #2); dated evidence is in [progress.md](./progress.md). Saving this roadmap does not change repository gates or establish that a human review or student test occurred.
 
 ## 1. Direction
 
@@ -17,13 +17,13 @@ Use dependency-based milestones rather than invented dates or completion percent
 | Study | Core CLI implemented; maintenance-only | Existing Feynman workflow, graph, and scheduling are available. Hardening debt remains; Explore does not inherit its runtime or scheduler. |
 | Explore lesson foundation | Implemented on main | Domain, canonical encoding, catalog, engine, draft lesson, and visual exist. This is not a complete app. |
 | Packaged content | Draft; zero attestations | A reviewable starting example exists. It cannot load through the approved child catalog. |
-| Curation templates (branch `explore/curation-templates`, GitHub PR #2) | Open and unmerged when last checked | Legacy v1 draft aids exist on that branch, not on main. The `educator-paths-v1` schema, templates, examples, and checker are added in the M1 working change on the same branch. |
+| Curation templates (branch `explore/curation-templates`, GitHub PR #2) | Open and unmerged when last checked | Legacy v1 draft aids exist on that branch, not on main. The `educator-paths-v1` schema, templates, examples, and checker were added on the same branch in `f0af295`. |
 | Product direction | Adopted into this roadmap and [PRD](./PRD.md) | Planning decisions. Repository templates support authoring; filled curriculum copies and learner observations remain separately managed. None of this is an installed application feature. |
 | Educator and student activity | Not evidenced by the reviewed repository or planning artifacts | Do not mark interest selection, content approval, a walkthrough, or a student app session complete without genuine evidence. |
 | Local Explore application | Not implemented on main | UI, parent controls, session integration, and pilot qualification remain work to do. |
 | Conversion, persistence, recommendations | Planned | No active workflow exists merely because detailed specifications have been written. |
 
-The latest implementation log records 148 passing tests and two expected failures on September 6. That is historical evidence, not a current test run or an app-readiness claim.
+The September 6 log recorded 148 passing tests and two expected failures; the September 25 M1 run recorded 197 passing and two expected failures. Test counts are technical evidence, not an app-readiness claim.
 
 ## 3. Milestone map
 

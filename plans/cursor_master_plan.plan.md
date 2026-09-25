@@ -6,8 +6,8 @@ todos:
     content: Complete local environment setup and decide which optional accounts/capabilities remain disabled or require qualification
     status: pending
   - id: pr-01-docs
-    content: PR-01 align Explore-first product documentation while preserving existing edits
-    status: pending
+    content: PR-01 align Explore-first product documentation while preserving existing edits (done 2026-08-23; realigned to M1–M6 in M1)
+    status: completed
   - id: pr-02-lesson
     content: PR-02 add lesson domain, draft Chain-1 content, and deterministic state (code implemented; content approval is a separate human gate)
     status: completed

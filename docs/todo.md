@@ -8,24 +8,33 @@ in [`progress.md`](./progress.md), not here.
 
 Milestones are defined in [`roadmap.md`](./roadmap.md). Implemented code, human
 review, app qualification, and a student session are separate kinds of progress.
+Owners are in brackets.
 
-### M1 — Educator authoring and documentation (developer)
-- [ ] Review and merge GitHub PR #2 (`educator-paths-v1` and document adoption)
-- [ ] Collect educator feedback on the templates and adjust wording (not the schema) as needed
+### Next up — three things can start in parallel
+1. **[user]** Review and merge GitHub PR #2.
+2. **[educator + parent]** M2: choose an interest and goal, sketch activities, prepare and review the first.
+3. **[developer]** M3 step 1: reconcile the reduced-slice specs.
 
-### M2 — First reviewed walkthrough (educator and parent)
-- [ ] Choose a fitting interest and one concrete learning goal
-- [ ] Sketch three to five activities; prepare and genuinely review the first
-- [ ] Optional short walkthrough; private observations; revise one thing
+### M1 — Educator authoring and documentation
+Delivered on GitHub PR #2 (unmerged); see [progress.md](./progress.md).
+- [ ] **[user]** Review and merge GitHub PR #2
+- [ ] **[educator]** Try the templates in a real spreadsheet app and report what is confusing; fix wording, and treat any schema change as a new version
 
-### M3 — Authored local app slice (developer, then parent rehearsal)
-- [ ] Environment qualification — bind command variables, qualify the runtime tier the slice needs, record setup decisions outside the repo
-- [ ] Reconcile PR-03 runtime, PR-06 UI, and PR-08 verification specs for the reduced slice; write its acceptance checks (PRD APP-01–APP-08) before relying on them
-- [ ] Translate one reviewed path step into one packaged lesson, with a separate path/step/revision mapping record
-- [ ] Genuine exact-content attestations for that lesson (TOML `review.attestations`)
-- [ ] Local UI: visible text, curated visuals and text alternatives, authored choices, hints, completion, parent Start/Stop/Reset, in-memory state
-- [ ] Verify session ownership, Stop/Reset, approval and integrity checks, no persistent storage, no outbound requests, Study compatibility
-- [ ] Adult rehearsal and parent authorization
+### M2 — First reviewed walkthrough (no app needed)
+- [ ] **[educator + parent]** Choose a fitting interest and one concrete learning goal
+- [ ] **[educator]** Sketch three to five activities; fully prepare only the first
+- [ ] **[educator + parent]** Genuinely review that activity's exact wording and materials
+- [ ] **[educator + parent]** Optional 5–10 minute walkthrough; private observations; revise one thing
+
+### M3 — Authored local app slice
+In order. Steps 1–2 can start now; step 3 needs M2's reviewed activity.
+1. [ ] **[developer]** Reconcile PR-03 runtime, PR-06 UI, and PR-08 verification specs for the reduced slice; write its acceptance checks (PRD APP-01–APP-08) before relying on them
+2. [ ] **[developer + operator]** Environment qualification for whatever runtime tier the reconciled specs require; setup decisions recorded outside the repo
+3. [ ] **[developer]** Translate one reviewed path step into one packaged lesson, with a separate path/step/revision mapping record. (Alternative: use the existing draft Chain-1 lesson instead, if it fits the chosen interest.)
+4. [ ] **[human reviewers]** Genuine exact-content attestations for that lesson (TOML `review.attestations`, all four scopes)
+5. [ ] **[developer]** Local UI: visible text, curated visuals and text alternatives, authored choices, hints, completion, parent Start/Stop/Reset, in-memory state
+6. [ ] **[developer]** Verify session ownership, Stop/Reset, approval and integrity checks, no persistent storage, no outbound requests, Study compatibility
+7. [ ] **[parent]** Adult rehearsal, then parent authorization
 
 ### Later (M4–M6 and optional capabilities)
 - [ ] M4 — student app session, second path from a different interest, follow-up recall

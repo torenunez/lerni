@@ -492,9 +492,10 @@ runtime. No graph traversal advances a session.
 
 # Explore Architecture
 
-**Package structure** (planned, `src/lerni/explore/`): immutable lesson domain and
-canonical serialization; a strict packaged content catalog; a deterministic session
-engine; runtime configuration and private path derivation; an out-of-process
+**Package structure** (`src/lerni/explore/`; the lesson domain, canonical
+serialization, packaged catalog, and deterministic engine are implemented; the rest
+is planned): immutable lesson domain and canonical serialization; a strict packaged
+content catalog; a deterministic session engine; runtime configuration and private path derivation; an out-of-process
 capability boundary; safety, sanitization, and grounding; a local telemetry store
 and data-lifecycle service; pure presenter callbacks; and a thin Gradio composition
 layer over those callbacks.
