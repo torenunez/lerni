@@ -12,8 +12,8 @@ todos:
     content: PR-02 add lesson domain, draft Chain-1 content, and deterministic state (code implemented; content approval is a separate human gate)
     status: completed
   - id: m1-educator-authoring
-    content: M1 educator-paths-v1 schema, templates, draft examples, offline drafting checker, and product-document adoption
-    status: in_progress
+    content: M1 educator-paths-v1 schema, templates, draft examples, offline drafting checker, and product-document adoption (merged 2026-09-25; educator template feedback tracked in docs/todo.md)
+    status: completed
   - id: m2-manual-walkthrough
     content: M2 educator/parent choose an interest, prepare and genuinely review one activity, optional short walkthrough, private observations
     status: pending

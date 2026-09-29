@@ -1,6 +1,6 @@
 # Lerni — Product Requirements
 
-Adopted 2026-09-25 from the revised product direction. Current-state statements were checked at commit `f0af295` (branch `explore/curation-templates`, GitHub PR #2, not yet merged into `main`); see [progress.md](./progress.md) for dated evidence. Requirements below describe work to deliver, not capabilities already available. This document approves no curriculum and authorizes no student session.
+Adopted 2026-09-25 from the revised product direction. Current-state statements were checked at commit `f0af295` (GitHub PR #2, merged into `main` as `4dd3e45` on 2026-09-25); see [progress.md](./progress.md) for dated evidence. Requirements below describe work to deliver, not capabilities already available. This document approves no curriculum and authorizes no student session.
 
 ## 1. Purpose
 
@@ -188,14 +188,14 @@ The proposal cannot silently change the reviewed graph, assign mastery, or selec
 
 ## 11. Current status and product boundaries
 
-As of commit `f0af295` on `explore/curation-templates` (2026-09-25):
+As of commit `f0af295`, merged into `main` as `4dd3e45` (2026-09-25):
 
 - Study's core CLI is implemented and remains maintenance-only, with known hardening work.
 - Explore's domain, canonical encoder, packaged catalog, deterministic engine, draft acceleration lesson, visual asset, and associated tests exist (merged to `main` at `7f7fc0b`).
 - The acceleration lesson remains draft with zero attestations. The repository does not establish content approval or a completed student session.
 - `educator-paths-v1` authoring templates, examples, and an offline drafting checker exist in [`curation/`](../curation/README.md). They are drafting tools, not an importer, and their draft examples are not reviewed curriculum.
 - The local app, runtime integration, persistence, authoring-to-app conversion, and recommendations are not implemented.
-- Plan work package **PR-02** (lesson core, in `plans/prs/`) is implemented. It is a different thing from [GitHub PR #2](https://github.com/torenunez/lerni/pull/2), the curation-template branch `explore/curation-templates`, which was open and unmerged when last checked.
+- Plan work package **PR-02** (lesson core, in `plans/prs/`) is implemented. It is a different thing from [GitHub PR #2](https://github.com/torenunez/lerni/pull/2), the curation-template change merged into `main` on 2026-09-25.
 
 Public/non-family deployment, classroom management, a parent portal, a garage/mastery system, bilingual delivery, child uploads, native apps, automatic Sheets synchronization, and new Study features remain outside current commitments.
 

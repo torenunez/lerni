@@ -122,8 +122,8 @@ agents sparingly for review or isolated tasks.
 
 **Active Explore work:** milestones M1–M6 in [`docs/roadmap.md`](docs/roadmap.md)
 own the order; `plans/prs/` are work packages beneath them (plan PR-02 ≠ GitHub
-PR #2). M1 (educator authoring + doc adoption) is on
-`explore/curation-templates` (GitHub PR #2, unmerged). Next developer unit: M3, the authored local app
+PR #2). M1 (educator authoring + doc adoption) is merged
+into `main` (GitHub PR #2). Next developer unit: M3, the authored local app
 slice — start by reconciling the PR-03/PR-06/PR-08 specs for that reduced slice
 (see the master plan's 2026-09-25 revision). The Chain-1 lesson is still draft
 with zero attestations.

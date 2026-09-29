@@ -10,14 +10,12 @@ Milestones are defined in [`roadmap.md`](./roadmap.md). Implemented code, human
 review, app qualification, and a student session are separate kinds of progress.
 Owners are in brackets.
 
-### Next up — three things can start in parallel
-1. **[user]** Review and merge GitHub PR #2.
-2. **[educator + parent]** M2: choose an interest and goal, sketch activities, prepare and review the first.
-3. **[developer]** M3 step 1: reconcile the reduced-slice specs.
+### Next up — two things can start in parallel
+1. **[educator + parent]** M2: choose an interest and goal, sketch activities, prepare and review the first.
+2. **[developer]** M3 step 1: reconcile the reduced-slice specs.
 
 ### M1 — Educator authoring and documentation
-Delivered on GitHub PR #2 (unmerged); see [progress.md](./progress.md).
-- [ ] **[user]** Review and merge GitHub PR #2
+Repository work is merged into `main` (GitHub PR #2); see [progress.md](./progress.md). One item remains:
 - [ ] **[educator]** Try the templates in a real spreadsheet app and report what is confusing; fix wording, and treat any schema change as a new version
 
 ### M2 — First reviewed walkthrough (no app needed)
