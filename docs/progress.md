@@ -2,8 +2,8 @@
 
 ## Current state
 
-**Verified 2026-09-25** at commit `f0af295`, the head of branch
-`explore/curation-templates` (GitHub PR #2, open, not merged into `main`). Each row names a
+**Verified 2026-09-25** at commit `f0af295` (GitHub PR #2), merged into `main` as `4dd3e45` on 2026-09-25; the
+follow-up `7555a41` changed documentation only. Each row names a
 different kind of evidence: implemented code, human review, app qualification,
 and observed student use are separate and are never implied by one another.
 
@@ -12,15 +12,15 @@ and observed student use are separate and are never implied by one another.
 | Study | Implemented; maintenance-only | `src/lerni/` CLI; SM-2 tests in the full suite | Optional hardening in [todo.md](./todo.md) |
 | Explore lesson foundation (plan PR-02) | Implemented, on `main` at `7f7fc0b` | `src/lerni/explore/`; `tests/explore/` pass in the 2026-09-25 run | Integrate into the M3 app slice |
 | Chain-1 acceleration lesson | Draft, zero attestations | `review.status = "draft"` in `chain_1_acceleration.toml`; the child catalog refuses it | Optional: needed only if this lesson is chosen for the M3 app slice ([runbook](../plans/runbooks/chain-1-source-review.md)) |
-| Educator authoring (`educator-paths-v1`) | Implemented; committed to `explore/curation-templates` (GitHub PR #2); **not merged** | `curation/`, checker, tests; results in the 2026-09-25 entry | Review and merge PR #2; educator usability feedback |
-| Product documents | Revised direction adopted (GitHub PR #2, unmerged) | [PRD](./PRD.md), [roadmap](./roadmap.md) | Planning deliverable, not runtime delivery |
+| Educator authoring (`educator-paths-v1`) | Implemented; on `main` (GitHub PR #2, merged into `main` as `4dd3e45` on 2026-09-25) | `curation/`, checker, tests; results in the 2026-09-25 entry | Educator tries the templates and reports confusion |
+| Product documents | Revised direction adopted; on `main` | [PRD](./PRD.md), [roadmap](./roadmap.md) | Planning deliverable, not runtime delivery |
 | Local app and qualification (M3) | Not implemented | No UI, runtime, or parent-control modules in `src/lerni/explore/` | Reconcile reduced-slice specs, then build |
 | First activity review and walkthrough (M2) | Pending | No review or session evidence exists | Educator and parent: choose interest, prepare and review one activity |
 | Student app session (M4) | Pending | None | Waits for M3 |
 | Conversion and recommendations (M5–M6) | Planned | Specs only | After M4 |
 
-**Next:** merge PR #2 (user); M2 activity preparation and review (educator and
-parent); M3 spec reconciliation (developer). The same list, with owners, is at the
+**Next:** M2 activity preparation and review (educator and parent); M3 spec
+reconciliation (developer). The same list, with owners, is at the
 top of [todo.md](./todo.md).
 
 Plan work package **PR-02** (`plans/prs/02-lesson-core.md`) is the implemented
@@ -485,3 +485,5 @@ anything.
 - **Developer (M3):** reconcile the PR-03/PR-06/PR-08 specifications for the
   reduced authored slice and write its acceptance checks, then build it.
 - **User:** review and merge GitHub PR #2.
+
+*(Done: PR #2 merged into `main` as `4dd3e45` on 2026-09-25, after a documentation-only follow-up commit, `7555a41`.)*

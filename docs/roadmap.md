@@ -17,7 +17,7 @@ Use dependency-based milestones rather than invented dates or completion percent
 | Study | Core CLI implemented; maintenance-only | Existing Feynman workflow, graph, and scheduling are available. Hardening debt remains; Explore does not inherit its runtime or scheduler. |
 | Explore lesson foundation | Implemented on main | Domain, canonical encoding, catalog, engine, draft lesson, and visual exist. This is not a complete app. |
 | Packaged content | Draft; zero attestations | A reviewable starting example exists. It cannot load through the approved child catalog. |
-| Curation templates (branch `explore/curation-templates`, GitHub PR #2) | Open and unmerged when last checked | Legacy v1 draft aids exist on that branch, not on main. The `educator-paths-v1` schema, templates, examples, and checker were added on the same branch in `f0af295`. |
+| Curation templates (GitHub PR #2) | Merged into `main` as `4dd3e45` (2026-09-25) | Legacy v1 draft aids plus the `educator-paths-v1` schema, templates, examples, and checker. Drafting tools, not an importer. |
 | Product direction | Adopted into this roadmap and [PRD](./PRD.md) | Planning decisions. Repository templates support authoring; filled curriculum copies and learner observations remain separately managed. None of this is an installed application feature. |
 | Educator and student activity | Not evidenced by the reviewed repository or planning artifacts | Do not mark interest selection, content approval, a walkthrough, or a student app session complete without genuine evidence. |
 | Local Explore application | Not implemented on main | UI, parent controls, session integration, and pilot qualification remain work to do. |
@@ -46,7 +46,7 @@ M1 and M2 can proceed in parallel. The educator can use the repository templates
 ## 4. M1 — Adopt the direction and establish repository authoring
 
 **Owners:** developer for repository changes; educator for feedback on usability.\
-**State:** implemented on `explore/curation-templates` (2026-09-25, GitHub PR #2); merge state is recorded in [progress.md](./progress.md). Educator usability feedback is pending.\
+**State:** implemented and merged into `main` as `4dd3e45` on 2026-09-25 (GitHub PR #2). Educator usability feedback is pending.\
 **Dependencies:** agreed schema and current repository baseline. A completed app pilot is not a prerequisite for authoring.
 
 ### Work
@@ -191,7 +191,7 @@ A newly enabled capability requires a new review of applicable app acceptance ch
 
 ## 11. Relating milestones to existing plan files
 
-The numbered files in `plans/prs/` are internal work packages, not GitHub pull-request numbers. In particular, plan **PR-02** is the lesson core already on main, while **GitHub PR #2** is the unmerged curation-template change.
+The numbered files in `plans/prs/` are internal work packages, not GitHub pull-request numbers. In particular, plan **PR-02** is the lesson core already on main, while **GitHub PR #2** is the curation-template change merged on 2026-09-25.
 
 | Existing work package | Revised treatment |
 |---|---|
