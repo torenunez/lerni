@@ -116,12 +116,12 @@ isProject: false
 
 ## Revision 2026-09-25: educator authoring track and reduced first slice
 
-Product direction is now owned by [`docs/PRD.md`](../docs/PRD.md) and milestone order by [`docs/roadmap.md`](../docs/roadmap.md) (M1–M6). The numbered PR files remain the work-package detail beneath those milestones. Where this plan's older sequencing conflicts with the roadmap, the roadmap wins; where a runtime, safety, or approval **control** here conflicts with the reduced slice, the control stands until the M3 work unit reconciles the specifications explicitly. Removing an optional feature does not by itself pass a gate.
+Product direction is now owned by [`docs/PRD.md`](../docs/prd/student.md) and milestone order by [`docs/roadmap.md`](../docs/roadmap.md) (M1–M6). The numbered PR files remain the work-package detail beneath those milestones. Where this plan's older sequencing conflicts with the roadmap, the roadmap wins; where a runtime, safety, or approval **control** here conflicts with the reduced slice, the control stands until the M3 work unit reconciles the specifications explicitly. Removing an optional feature does not by itself pass a gate.
 
 ### Educator authoring track — starts alongside development
 
 1. **M1 (repository, developer):** `educator-paths-v1` contract ([spec 08c](./specs/08c-educator-path-authoring.md)), blank templates, six draft example paths, offline drafting checker, tests — in [`../curation/`](../curation/README.md).
-2. **M2 (educator and parent):** choose a fitting interest and a concrete goal; sketch three to five activities; prepare only the first; review it genuinely; optionally run a 5–10 minute walkthrough; record observations privately; revise one thing. See [`human-track.md`](./human-track.md).
+2. **M2 (educator and parent):** choose a fitting interest and a concrete goal; sketch three to five activities; prepare only the first; review it genuinely; optionally run a 5–10 minute walkthrough; record observations privately; revise one thing. See [`human-track.md`](../curation/README.md).
 3. **M3 (developer, then parent rehearsal):** the next developer work unit, below.
 
 | Readiness | Needed | What it permits |
@@ -135,7 +135,7 @@ Product direction is now owned by [`docs/PRD.md`](../docs/PRD.md) and milestone 
 
 Scope: one reviewed activity translated manually into one packaged lesson; visible authored text, necessary curated visuals with text alternatives, authored choices, hints, and completion; parent Start/Stop/Reset; in-memory session state. Out of scope for this slice: AI, speech input or output, accounts, persistence and student telemetry, automatic import, and automatic graph traversal.
 
-Before any app use, that unit must first write the slice's own acceptance checks into the runtime (PR-03), UI (PR-06), and verification (PR-08) specifications — at minimum APP-01 to APP-08 in the [PRD](../docs/PRD.md) — and then pass them, plus an adult rehearsal and parent authorization. Documentation alone qualifies nothing. Keep a separate mapping record of `path_id`, `path_step_id`, activity revision, and lesson revision; do not add those fields to the runtime lesson format.
+Before any app use, that unit must first write the slice's own acceptance checks into the runtime (PR-03), UI (PR-06), and verification (PR-08) specifications — at minimum APP-01 to APP-08 in the [PRD](../docs/prd/student.md) — and then pass them, plus an adult rehearsal and parent authorization. Documentation alone qualifies nothing. Keep a separate mapping record of `path_id`, `path_step_id`, activity revision, and lesson revision; do not add those fields to the runtime lesson format.
 
 ## PR index
 

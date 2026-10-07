@@ -95,4 +95,4 @@ time, filename equal to the tab name.
 
 The Chain-1 lesson is `draft` with zero attestations, and the child catalog
 refuses to load it. Nothing in these templates has been reviewed. See
-[`plans/human-track.md`](../../../plans/human-track.md).
+[`curation/README.md`](../../README.md).

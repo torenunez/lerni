@@ -115,5 +115,5 @@ Your name isn't recorded, only your role. The hex string fingerprints the exact
 wording you approved — edit the lesson later and it stops matching, so it goes
 back for review.
 
-One of four checks; the others are in [`../human-track.md`](../human-track.md).
+One of four checks: `science`, `child_content`, `visual_accessibility`, and `parent_approval`.
 All four must reference the same fingerprint.

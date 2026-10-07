@@ -1,6 +1,6 @@
-# Study reference
+# Admin tool reference
 
-Study is Lerni's adult command-line tool for explaining an idea, finding gaps, and returning to it later. It is available and maintained while Explore is developed. This reference describes the checked implementation; it does not promise the parked AI, analytics, export, or native-app features.
+The admin tool (the `study` command) is the builder's terminal tool. Its current features test two learning mechanics: explaining an idea to find gaps, and returning to it later. It is available and maintained while the student app is built. This reference describes the checked implementation; it does not promise the parked AI, analytics, export, or native-app features.
 
 ## Daily use
 
@@ -36,7 +36,7 @@ Concept subcommands share the `study concept` prefix. `notify --setup` prints sc
 
 ## Records and storage
 
-The SQLite database is `~/.lerni/lerni.db`; optional settings are in `~/.lerni/config.toml`. Study has no implemented AI runtime or cloud synchronization. These are Study's records, separate from Explore curriculum and learner observations.
+The SQLite database is `~/.lerni/lerni.db`; optional settings are in `~/.lerni/config.toml`. The admin tool has no implemented AI runtime or cloud synchronization. These are the admin tool's records, separate from the student app's curriculum and learner observations.
 
 - **Concept:** unique name, aliases, description, identifier, creation time.
 - **ConceptEdge:** source concept, destination concept, relationship. `parent` points from child to parent; `prerequisite` points from concept to prerequisite; `related` is interpreted bidirectionally.
@@ -44,7 +44,7 @@ The SQLite database is `~/.lerni/lerni.db`; optional settings are in `~/.lerni/c
 - **Answer:** question, the five explanation fields, identifier, creation time. A snapshot adds a version; `edit` mutates the existing answer, so history is not strictly immutable.
 - **Review:** question/answer references, scheduled/completed times, status, grade, attempted explanation, recall flag, gaps, notes. Status is pending, completed, or skipped. The AI-session field is unused.
 
-The graph is intended to be acyclic; the current link command does not enforce cycle rejection. Study edges do not control Explore lesson order.
+The graph is intended to be acyclic; the current link command does not enforce cycle rejection. These links do not control the student app's activity order.
 
 ## Scheduling
 
@@ -60,6 +60,6 @@ Grades mean blackout (0), recognition after seeing the answer (1), apparent ease
 
 ## Maintenance
 
-Open work: repair outdated test fixtures; add database, CLI, and full-workflow coverage; address lint/type debt; consolidate duplicated data-directory helpers; add `--version`; inspect empty-database, invalid-ID, and concurrent-access behavior. Existing scheduling tests do not establish complete application coverage.
+Open work is tracked in [todo.md](../todo.md#admin-tool-maintenance). Existing scheduling tests do not establish complete application coverage.
 
 Implementation detail: [models](../../src/lerni/models.py), [database](../../src/lerni/db.py), [scheduler](../../src/lerni/sm2.py), [commands](../../src/lerni/commands).

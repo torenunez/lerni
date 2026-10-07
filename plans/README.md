@@ -20,7 +20,7 @@ sequence, dependencies, manual gates, and the PR index. This file is only a map.
 | [`prs/`](./prs/) | Execution units. One file per review unit, in order — the work queue. |
 | [`specs/`](./specs/) | Normative technical contracts. What each component must do. |
 | [`runbooks/`](./runbooks/) | Procedures a human performs by hand: account setup, credential qualification, private data priming. |
-| [`human-track.md`](./human-track.md) | **What people need to do** — written for the educator and parents, not for programmers. Tracks what has been reviewed or decided, and what is still pending. |
+| [`human-track.md`](../curation/README.md) | **What people need to do** — written for the educator and parents, not for programmers. Tracks what has been reviewed or decided, and what is still pending. |
 
 A PR file says *what to build and in what order*. A spec file says *what the built
 thing must satisfy*. When they disagree, the spec wins — see the authority order in
@@ -50,7 +50,7 @@ before the PR sequence was settled. This table is the mapping:
 
 ## Human gates
 
-**[`human-track.md`](./human-track.md) tracks the state of all of it.** It is
+**[`human-track.md`](../curation/README.md) tracks the state of all of it.** It is
 written in plain language for the people who actually do this work, with the
 PR-by-PR breakdown kept in a section at the end for developers. Check there first.
 
