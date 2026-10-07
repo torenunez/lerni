@@ -11,13 +11,7 @@ This folder is where an educator prepares learning paths. No app is needed.
 5. **Optionally try it** as a short walkthrough (below).
 6. **Revise one thing,** then prepare the next activity.
 
-Check your files for mistakes:
-
-```bash
-python scripts/validate_curation_templates.py --bundle path/to/your/folder
-```
-
-A clean result means the files are consistent, not that the content is correct or approved.
+Send your files to the admin, who runs a checker for mistakes. A clean result means the files are consistent, not that the content is correct or approved.
 
 ## A short walkthrough
 

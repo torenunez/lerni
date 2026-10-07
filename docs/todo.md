@@ -6,20 +6,20 @@ The one checklist. Owners in brackets. Milestones and what completes them: [road
 
 - [ ] **[educator + parent]** Choose an interest and a goal, sketch 3–5 activities, and prepare the first. How: [curation guide](../curation/README.md).
 - [ ] **[educator]** Try the templates in a spreadsheet app; report what is confusing.
-- [ ] **[builder]** Update the technical requirements and checks for [Release 1](prd/student.md#release-1-run-a-seeded-activity) before building it.
+- [ ] **[admin]** Update the technical requirements and checks for [Release 1](prd/student.md#release-1-run-a-seeded-activity) before building it.
 
 ## Next
 
 - [ ] **[educator + parent]** Review the first activity, try a short walkthrough, keep notes private, revise one thing.
-- [ ] **[builder]** Build the local app against test content.
-- [ ] **[builder]** Turn the reviewed activity into the app's lesson format.
+- [ ] **[admin]** Build the local app against test content.
+- [ ] **[admin]** Turn the reviewed activity into the app's lesson format.
 - [ ] **[reviewers]** Approve that activity's exact wording and pictures.
-- [ ] **[builder]** Show Release 1 working in the installed app.
+- [ ] **[admin]** Show Release 1 working in the installed app.
 - [ ] **[parent]** Rehearse it as an adult, then authorize student use.
 
 ## Tooling
 
-- [ ] **[builder]** Cut `tests/test_curation_templates.py` from 48 tests to about 15 covering the checker's key behavior.
+- [ ] **[admin]** Cut `tests/test_curation_templates.py` from 48 tests to about 15 covering the checker's key behavior.
 
 ## Admin tool maintenance
 

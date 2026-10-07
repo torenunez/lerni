@@ -1,6 +1,6 @@
 # Admin tool reference
 
-The admin tool (the `study` command) is the builder's terminal tool. Its current features test two learning mechanics: explaining an idea to find gaps, and returning to it later. It is available and maintained while the student app is built. This reference describes the checked implementation; it does not promise the parked AI, analytics, export, or native-app features.
+The admin tool (the `study` command) runs in the terminal. Its current features test two learning mechanics: explaining an idea to find gaps, and returning to it later. It is available and maintained while the student app is built. This reference describes the checked implementation; it does not promise the parked AI, analytics, export, or native-app features.
 
 ## Daily use
 

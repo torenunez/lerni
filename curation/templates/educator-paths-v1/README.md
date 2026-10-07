@@ -39,11 +39,7 @@ A filled-in example: [`../../examples/educator-paths-v1-draft/`](../../examples/
    nothing is needed), and `content_revision` = `1`.
 6. Add **RELATIONSHIPS** only for real subject claims. A teaching move does not
    need a matching subject relationship.
-7. Run the checker and fix any errors:
-
-   ```bash
-   python scripts/validate_curation_templates.py --bundle path/to/your/folder
-   ```
+7. Send the files to the admin, who runs the checker and tells you what to fix.
 
 8. Ask the educator and parent to review that first activity's exact wording and
    materials. Only after a real review does anyone change `status` to `reviewed`
