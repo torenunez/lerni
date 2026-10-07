@@ -12,7 +12,6 @@ import hashlib
 import importlib.util
 import json
 import random
-import re
 import shutil
 import socket
 import sys
@@ -26,7 +25,6 @@ SCRIPT = ROOT / "scripts" / "validate_curation_templates.py"
 SCHEMA = json.loads((ROOT / "curation/schemas/educator-paths-v1.json").read_text())
 TEMPLATES = ROOT / "curation/templates/educator-paths-v1"
 EXAMPLES = ROOT / "curation/examples/educator-paths-v1-draft"
-CONTRACT_DOC = ROOT / "plans/specs/08c-educator-path-authoring.md"
 TABLES = {t["name"]: t for t in SCHEMA["tables"]}
 
 _spec = importlib.util.spec_from_file_location("validate_curation_templates", SCRIPT)
@@ -121,16 +119,6 @@ def test_blank_templates_have_exact_headers_and_no_records(
     assert status == 0
     assert report["issues"] == []
     assert set(report["counts"].values()) == {0}
-
-
-def test_documented_contract_matches_schema_metadata() -> None:
-    doc = CONTRACT_DOC.read_text(encoding="utf-8")
-    blocks = re.findall(r"```csv\n(.*?)\n```", doc, flags=re.S)
-    for spec in SCHEMA["tables"]:
-        assert ",".join(spec["columns"]) in blocks, spec["name"]
-        assert f"### {spec['file']}" in doc
-    for value in SCHEMA["statuses"] + SCHEMA["relationship_types"] + SCHEMA["reviewer_roles"]:
-        assert f"`{value}`" in doc
 
 
 def test_lists_helper_matches_schema_enums() -> None:

@@ -40,6 +40,10 @@ In order. Steps 1–2 can start now; step 3 needs M2's reviewed activity.
 - [ ] M6 — explainable recommendations from reviewed connections; reviewed graph-growth proposals (PR-11)
 - [ ] Optional, each with its own qualification: deterministic safety/grounding and tutor capability (PR-04, PR-07A), telemetry lifecycle (PR-05), read-aloud, push-to-talk (PR-07)
 
+## Tooling
+
+- [ ] **[developer]** Cut `tests/test_curation_templates.py` from 48 tests to about 15 that cover the checker's key behavior (valid bundle, broken references, path order, review metadata, exit codes). It tests a drafting tool, not product code.
+
 ## Study — Optional hardening
 
 Study is feature-complete but not hardened. These are open.

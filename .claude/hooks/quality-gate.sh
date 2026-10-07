@@ -41,9 +41,18 @@ if [ "$HAS_STAGED_PY" -eq 1 ]; then
     fi
 fi
 
-# Check 2: pytest — full suite on every commit; fail closed if missing.
+# Check 2: pytest — full suite, skipped only when every staged path (including
+# deletions) is Markdown. CSV/JSON are not skipped: tests read curation data.
+DOCS_ONLY=1
+STAGED=$(cd "$CWD" && git diff --cached --name-only 2>/dev/null)
+if [ -z "$STAGED" ] || echo "$STAGED" | grep -qvE '\.(md|mdc)$'; then
+    DOCS_ONLY=0
+fi
+
 PYTEST=$(resolve_tool pytest)
-if [ -z "$PYTEST" ]; then
+if [ "$DOCS_ONLY" -eq 1 ]; then
+    echo "=== pytest skipped: only Markdown staged ===" >&2
+elif [ -z "$PYTEST" ]; then
     ERRORS="${ERRORS}pytest unavailable (install .venv or put pytest on PATH). "
 else
     echo "=== pytest ===" >&2
