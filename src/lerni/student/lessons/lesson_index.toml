@@ -5,7 +5,7 @@ schema_version = 1
 [[lessons]]
 lesson_id = "chain-1-acceleration"
 resource_name = "chain_1_acceleration.toml"
-sha256 = "c655df020fceb0a36263768153a4de1e4e95ef49c996c3e734844efff0de573c"
+sha256 = "823815f0f74688d435ee88373e3613c438bef5e134271fc18b1ae0bd81164d42"
 lesson_payload_sha256 = "f1b11726f668af756c3c806c128a5392f10d1da97be70d1d7a59a321cb10e692"
 
 [[assets]]

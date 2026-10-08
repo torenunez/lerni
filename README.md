@@ -17,7 +17,7 @@ The student app treats knowledge as a map: **nodes** are ideas, and **edges** li
 4. [Learning concepts](docs/learning-concepts.md): the learning ideas behind Lerni.
 5. [Architecture](docs/ARCHITECTURE.md): how the parts fit together.
 6. [Roadmap](docs/roadmap.md): what comes next and who owns it.
-7. [Progress](docs/progress.md): what exists and what remains unverified.
+7. [Progress](docs/progress.md): where things stand, and a dated log of what was done.
 
 Educators can then open the [curation guide](curation/README.md) to prepare a path. Admins can use the [implementation index](plans/README.md) to find detailed specifications and tasks. The [admin tool reference](docs/reference/admin.md) covers its commands and behavior.
 

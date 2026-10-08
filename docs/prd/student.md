@@ -43,7 +43,7 @@ These hold for every release.
 
 ## Release 1: answer questions about something you love
 
-The app asks short questions about one of the one or two activities an educator wrote, and the student answers by tapping. Nothing about the student is saved. This is the MVP: the first thing the student tries ([roadmap M2](../roadmap.md#m2--mvp)).
+The app asks short questions about one of the one or two activities an educator wrote, and the student answers by tapping. Nothing about the student is saved. This is the MVP: the first thing the student tries ([build plan](../../plans/release-1-mvp.md)).
 
 ### Story: Work it out myself
 

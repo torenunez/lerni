@@ -37,14 +37,14 @@ Settings never change on their own, and each takes effect at once.
 
 ## Constraints
 
-- No terminal and no code: educators work in the authoring spreadsheet and the educator view.
+- No terminal, no code, and no IDs: educators work in a plain plan sheet, an activity card, and the educator view.
 - The educator is present for every Release 1 session; from Release 2, for most but not all. They can stop any session at any moment.
 - Before first use, the educator agrees to which outside services receive the student's data, and can withdraw that at any time.
 - No student identity or private observations go into shared curriculum.
 
 ## Release 1: seed, approve, and supervise
 
-Before the app, the educator writes one or two activities in the authoring spreadsheet ([curation guide](../../curation/README.md)); the admin checks them and turns a reviewed one into the app's format.
+Before the app, the educator fills in a plan sheet (one plain row per activity) and an activity card for the first activity ([curation guide](../../curation/README.md)); the admin turns them into the authoring tables and the app's format.
 
 ### Story: Approve an activity
 
@@ -52,14 +52,16 @@ As an educator, I want to approve an activity's exact wording and pictures, so t
 
 - WHEN an activity has not been approved THE SYSTEM SHALL not offer it.
 - WHEN its wording or pictures change THE SYSTEM SHALL require approval again.
+- WHEN the educator previews a draft THE SYSTEM SHALL run it only in the educator view, marked as a draft, and never on the student's screen.
 
-Approval covers four checks: the science is right, the wording suits the student, the pictures work, and it's OK to use. Approve only after the admin's technical checks pass and you have tried the activity yourself. Marking a row `reviewed` in the spreadsheet is a drafting note, not approval.
+Approval covers four checks: the science is right, the wording suits the student, the pictures work, and it's OK to use. Approve only after the admin's technical checks pass and you have tried the activity yourself. Marking a row `reviewed` in the authoring tables is a drafting note, not approval.
 
 ### Story: Run a session
 
 As an educator, I want to start, stop, and reset activities, so that I stay in control.
 
-- WHEN the educator opens the educator view on their own device THE SYSTEM SHALL list approved activities only.
+- WHEN someone opens the educator view THE SYSTEM SHALL ask for the educator's passcode.
+- WHEN the educator opens the educator view on their own device THE SYSTEM SHALL list approved activities, and drafts separately for preview only.
 - WHEN the educator presses Start THE SYSTEM SHALL show the activity's first step on the student's iPad.
 - WHEN the educator presses Stop THE SYSTEM SHALL end the interaction at once.
 - WHEN the educator presses Reset THE SYSTEM SHALL clear progress and return the student's screen to waiting.
@@ -70,7 +72,7 @@ As an educator, I want a short summary when an activity ends, so that I can note
 
 - WHEN the activity ends or is stopped THE SYSTEM SHALL show which choices were picked, which hints were used, and how long it took, then discard it. Notes stay private, outside the app.
 
-## Release 2: continuity
+## Release 2: remembering
 
 ### Story: Write reminders and recall questions
 
@@ -133,7 +135,9 @@ Running the admin tool. Editing app code or lesson files directly.
 - 2026-10-08: Drafting and conversation use the admin's Claude account, so keys and billing stay with whoever runs the system.
 - 2026-10-08: The educator reviews drafts in the educator view.
 - 2026-10-08: The starting exclusion list covers violence, weapons, sexual content, self-harm, and drugs.
+- 2026-10-08: The educator writes plans in plain language (a plan sheet and activity cards); the admin converts them into the six authoring tables. The tables were too technical for an educator.
 - 2026-10-08: The educator view runs on the educator's own device (a phone or laptop), separate from the student's iPad, and controls the same session.
+- 2026-10-08: Only the educator logs in, with one passcode the admin sets; the student screen has no login. The educator can preview a draft on their own device before approving it.
 
 ## Open questions
 

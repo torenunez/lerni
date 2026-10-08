@@ -1,4 +1,6 @@
-# Educator path templates — `educator-paths-v1`
+# Authoring tables — `educator-paths-v1`
+
+**For the admin.** Educators don't fill these in: they write a plain [plan sheet and activity card](../../README.md), and the admin converts them into these tables.
 
 Blank, header-only CSV files for outlining learning paths. Open them in any
 spreadsheet program (LibreOffice, Numbers, Excel, or Google Sheets — none is
@@ -21,7 +23,7 @@ A filled-in example: [`../../examples/educator-paths-v1-draft/`](../../examples/
 `LISTS.csv` holds the allowed values for `status`, `relationship_type`, and
 `reviewer_role`. It is a helper, not curriculum.
 
-## Worked example: add a path and prepare its first activity
+## Worked example: turn an educator's plan into a path
 
 1. **PATHS** — add a row: `p-trains`, a title, an entry node, a learning goal,
    `status` = `draft`.
@@ -39,8 +41,7 @@ A filled-in example: [`../../examples/educator-paths-v1-draft/`](../../examples/
    nothing is needed), and `content_revision` = `1`.
 6. Add **RELATIONSHIPS** only for real subject claims. A teaching move does not
    need a matching subject relationship.
-7. Send the files to the admin, who runs the checker and tells you what to fix.
-
+7. Run the checker and fix what it reports.
 8. Ask the educator to review that first activity's exact wording and
    materials. Only after a real review does anyone change `status` to `reviewed`
    and enter their role and the real date. If the wording changes later, set

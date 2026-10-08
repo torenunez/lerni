@@ -4,7 +4,7 @@ How Lerni works: what runs where, how an activity reaches the student, who owns 
 
 ## Bird's-eye view
 
-The educator plans a learning path in a spreadsheet. One step of that path becomes an **activity**: a few teaching screens followed by one multiple-choice question, with hints and a picture. The activity file reaches the student only after the educator approves its exact content. The student app runs on a home server; the student uses it on an iPad, and the educator controls it from their own phone or laptop.
+The educator writes a learning plan in plain language: a plan sheet with one row per activity, and an activity card for the next one. The admin turns them into the authoring tables and an **activity**: a few teaching screens followed by one multiple-choice question, with hints and a picture. The activity file reaches the student only after the educator approves its exact content. The student app runs on a home server; the student uses it on an iPad, and the educator controls it from their own phone or laptop.
 
 The admin tool (`lerni` in a terminal) is separate: the admin's own learning and testing tool, with its own data. Code and filenames say "lesson"; the docs say "activity". They mean the same thing.
 
@@ -55,13 +55,13 @@ flowchart LR
 5. The engine's **snapshot** holds only what the screen may show: the text, the choices (an ID and a label each), the hint, and the picture. Which choice is correct, the sources, and the approval records never leave the server. The answer appears only in the completion text, once the activity ends.
 6. The student screen redraws. The educator sees the recap when the activity ends or is stopped.
 
-**How an activity gets approved:** path step in the spreadsheet → activity file written by hand → four recorded approvals (science, student wording, pictures and accessibility, OK to use) → catalog. Each approval records the hash of the activity's reviewable content, including its pictures. Review records themselves are left out of that hash, so adding an approval doesn't invalidate it, but any change to the content does. A clean checker report, or a spreadsheet row marked `reviewed`, is not an approval.
+**How an activity gets approved:** the educator's plan and activity card → authoring tables and activity file, made by the admin → four recorded approvals (science, student wording, pictures and accessibility, OK to use) → catalog. Each approval records the hash of the activity's reviewable content, including its pictures. Review records themselves are left out of that hash, so adding an approval doesn't invalidate it, but any change to the content does. A clean checker report, or a spreadsheet row marked `reviewed`, is not an approval.
 
 ## Who owns each kind of data
 
 | Data | What it is | Owner | Where |
 |---|---|---|---|
-| Curriculum | Reusable concepts, how they relate, possible next steps, and authored paths. Path sequence numbers set order; relationships never do. | Educator | Spreadsheet files (built) |
+| Curriculum | Reusable concepts, how they relate, possible next steps, and authored paths. Path sequence numbers set order; relationships never do. | Educator writes; admin converts | Plan sheet and activity cards, then six authoring tables (built) |
 | Activities | Reviewed teaching content for one path step, with its approvals | Educator approves; admin packages | `src/lerni/student/lessons/` (built) |
 | Session | The live state of one activity run, and its recap | The app | Memory only; discarded on Reset or server restart (planned) |
 | Learner record | Which activity revision was tried, concepts met, recall results. Meeting a concept is not the same as understanding it. | Educator can view and delete | Server storage (Release 2) |
@@ -71,7 +71,7 @@ flowchart LR
 
 If a change would break one of these, stop and ask.
 
-1. **Only approved, unaltered activities reach the student.** The catalog refuses anything else, and a raw index entry is never treated as approved.
+1. **Only approved, unaltered activities reach the student.** The catalog refuses anything else, and a raw index entry is never treated as approved. A draft can run only as a preview in the educator view, which needs the passcode.
 2. **The answer key stays on the server.** The snapshot type has no field for it.
 3. **The engine decides progression, never a model.**
 4. **Session updates are atomic and ignore stale input.** Stop and Reset win over any tap in flight.
@@ -83,7 +83,7 @@ If a change would break one of these, stop and ask.
 
 - `src/lerni/student/`: `domain.py` (data types), `catalog.py` (loads and checks activities), `engine.py` (steps and snapshots), `canonical.py` (stable bytes for hashing), `lessons/` (activity files, pictures, generated index).
 - `src/lerni/cli.py`, `commands/`, `db.py`, `sm2.py`: the admin tool.
-- `scripts/`: the index generator and the curation checker. `curation/`: templates, [schema](../curation/schemas/educator-paths-v1.json), examples.
+- `scripts/`: the index generator and the curation checker. `curation/`: the educator's plan sheet and activity card, the admin's authoring tables, [schema](../curation/schemas/educator-paths-v1.json), examples.
 - `tests/`: pytest, fakes only. `plans/`: build plans by release.
 
 ## Target architecture (not built)

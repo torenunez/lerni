@@ -12,7 +12,7 @@ These concepts guide how we design activities and learning paths. Examples are i
 
 *Example:* Ask the learner to explain a ratio today, revisit it a few days later, and return to it the following week. Adjust the timing based on what they remember. These intervals are illustrative.
 
-*In Lerni:* the admin tool schedules reviews with SM-2 and asks you to explain from memory before showing your old answer ([details](reference/admin.md#scheduling)). The student app checks recall from Release 2 (continuity).
+*In Lerni:* the admin tool schedules reviews with SM-2 and asks you to explain from memory before showing your old answer ([details](reference/admin.md#scheduling)). The student app checks recall from Release 2 (remembering).
 
 **Analogical scaffolding and transfer.** Analogical scaffolding uses guided comparisons to make an unfamiliar idea easier to understand. Transfer means applying what was learned to a different problem or context. Make the shared principle explicit, then check whether the learner can use it independently. [Research on scaffolding](https://journals.aps.org/prper/abstract/10.1103/PhysRevSTPER.3.010109) · [Research on transfer](https://gwern.net/doc/psychology/1983-gick.pdf).
 

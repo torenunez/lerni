@@ -6,7 +6,7 @@
 
 These seven curriculum tables follow **part of** the older planned delivery
 schema in
-[`plans/specs/08-graph-recommendations.md`](../../../plans/later/specs/08-graph-recommendations.md).
+[`plans/later/specs/08-graph-recommendations.md`](../../../plans/later/specs/08-graph-recommendations.md).
 Their headers match that spec. That is all a header match means: **no importer
 exists**, and this folder is **not a complete import bundle**.
 

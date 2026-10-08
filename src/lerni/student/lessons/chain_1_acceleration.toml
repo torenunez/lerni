@@ -1,7 +1,7 @@
 # Chain-1 — DRAFT. Not approved; the student catalog will refuse to load this.
 #
 # Leaving draft requires four real human reviews recorded as [[review.attestations]].
-# See plans/runbooks/chain-1-source-review.md and plans/human-track.md.
+# See plans/runbooks/chain-1-source-review.md and docs/prd/educator.md (Approve an activity).
 # Never fabricate an attestation, a review date, or a hash to make a check pass.
 
 schema_version = 1
