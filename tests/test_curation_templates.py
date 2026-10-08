@@ -161,9 +161,9 @@ def test_example_bundle_is_valid_draft_with_visible_gaps(
 def test_example_bundle_demonstrates_reuse_branching_and_revisit() -> None:
     _, paths = read_table(EXAMPLES, "PATHS")
     entry = {p["path_id"]: p["entry_node_id"] for p in paths}
-    assert entry["p-music-pulse"] == entry["p-music-pattern"] == "n-music"
+    assert entry["p-sharks-speed"] == entry["p-sharks-body"] == "n-sharks"
     _, nodes = read_table(EXAMPLES, "NODES")
-    assert [n["node_id"] for n in nodes].count("n-music") == 1
+    assert [n["node_id"] for n in nodes].count("n-sharks") == 1
 
     routes = ordered_paths(EXAMPLES)
     assert [t for _, t, _ in routes["p-cars"]] == [
@@ -172,21 +172,21 @@ def test_example_bundle_demonstrates_reuse_branching_and_revisit() -> None:
         "n-average-speed",
         "n-average-acceleration",
     ]
-    assert "c-012" in {c for _, _, c in routes["p-music-pattern"]}
-    assert "c-012" in {c for _, _, c in routes["p-cooking"]}
+    shared = {c for _, _, c in routes["p-cars"]} & {c for _, _, c in routes["p-sharks-speed"]}
+    assert {"c-002", "c-003"} <= shared  # same teaching moves reused across interests
 
-    building = routes["p-building"]
-    assert building[0][1] == building[3][1] == "n-length"
-    assert building[0][0] != building[3][0]
+    kick = routes["p-soccer-kick"]
+    assert kick[0][1] == kick[3][1] == "n-force"
+    assert kick[0][0] != kick[3][0]
     _, steps = read_table(EXAMPLES, "PATH_STEPS")
     goals = {s["path_step_id"]: s["step_goal"] for s in steps}
-    assert goals[building[0][0]] != goals[building[3][0]]
+    assert goals[kick[0][0]] != goals[kick[3][0]]
 
     _, connections = read_table(EXAMPLES, "CONNECTIONS")
     incoming: dict[str, int] = {}
     for c in connections:
         incoming[c["to_node_id"]] = incoming.get(c["to_node_id"], 0) + 1
-    assert incoming["n-fractions"] >= 2 and incoming["n-measurement"] >= 3
+    assert incoming["n-distance"] >= 3 and incoming["n-comparison"] >= 2
     used = {c for route in routes.values() for _, _, c in route}
     assert {c["connection_id"] for c in connections} - used  # off-path branches exist
 
@@ -261,7 +261,7 @@ def test_appending_node_source_connection_and_step_is_valid(
     )
     status, report = run(bundle, capsys)
     assert status == 0, issues(report)
-    assert report["counts"]["NODES"] == 31 and report["counts"]["PATH_STEPS"] == 25
+    assert report["counts"]["NODES"] == 27 and report["counts"]["PATH_STEPS"] == 25
 
 
 # ------------------------------------------------------------ record errors
@@ -270,15 +270,15 @@ def test_appending_node_source_connection_and_step_is_valid(
 def test_duplicate_primary_key_names_table_record_and_id(
     bundle: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    append(bundle, "NODES", node_id="n-music", label="Dup", definition="Dup.", status="draft")
+    append(bundle, "NODES", node_id="n-sharks", label="Dup", definition="Dup.", status="draft")
     status, report = run(bundle, capsys)
     assert status == 1
     [dup] = [i for i in issues(report) if i["code"] == "duplicate-id"]
     assert (dup["table"], dup["record_id"], dup["field"], dup["record_number"]) == (
         "NODES",
-        "n-music",
+        "n-sharks",
         "node_id",
-        32,
+        28,
     )
 
 
@@ -355,12 +355,12 @@ def test_review_pair_must_be_complete(bundle: Path, capsys: pytest.CaptureFixtur
 
 def test_list_token_rules(bundle: Path, capsys: pytest.CaptureFixture[str]) -> None:
     edit(bundle, "NODES", "n-cars", source_ids="s-nasa-motion||s-openstax-speed")
-    edit(bundle, "NODES", "n-music", aliases="song|song")
-    edit(bundle, "NODES", "n-rate", source_ids="s-nasa-motion | s-ableton-tempo")
+    edit(bundle, "NODES", "n-sharks", aliases="shark|shark")
+    edit(bundle, "NODES", "n-rate", source_ids="s-nasa-motion | s-openstax-speed")
     _, report = run(bundle, capsys)
     got = keyed(report)
     assert ("list-empty-token", "NODES", "n-cars", "source_ids") in got
-    assert ("list-duplicate-token", "NODES", "n-music", "aliases") in got
+    assert ("list-duplicate-token", "NODES", "n-sharks", "aliases") in got
     assert ("list-token-whitespace", "NODES", "n-rate", "source_ids") in got
 
 
@@ -371,36 +371,36 @@ def test_duplicate_position_and_gap_are_errors_without_resequencing(
     bundle: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
     edit(bundle, "PATH_STEPS", "p-cars-s03", sequence="2")
-    edit(bundle, "PATH_STEPS", "p-plants-s04", sequence="5")
+    edit(bundle, "PATH_STEPS", "p-sharks-body-s04", sequence="5")
     before = digest_tree(bundle)
     status, report = run(bundle, capsys)
     assert status == 1
     got = keyed(report)
     assert ("duplicate-sequence", "PATH_STEPS", "p-cars-s03", "sequence") in got
-    assert ("sequence-gap", "PATH_STEPS", "p-plants-s04", "sequence") in got
+    assert ("sequence-gap", "PATH_STEPS", "p-sharks-body-s04", "sequence") in got
     assert digest_tree(bundle) == before
 
 
 def test_first_and_later_origin_failures_are_distinct(
     bundle: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    edit(bundle, "PATHS", "p-cars", entry_node_id="n-music")
-    edit(bundle, "CONNECTIONS", "c-018", from_node_id="n-plants")
+    edit(bundle, "PATHS", "p-cars", entry_node_id="n-soccer")
+    edit(bundle, "CONNECTIONS", "c-009", from_node_id="n-sharks")
     _, report = run(bundle, capsys)
     got = keyed(report)
     assert ("first-connection-origin-mismatch", "PATH_STEPS", "p-cars-s01", "connection_id") in got
-    assert ("connection-origin-mismatch", "PATH_STEPS", "p-plants-s03", "connection_id") in got
+    assert ("connection-origin-mismatch", "PATH_STEPS", "p-sharks-body-s03", "connection_id") in got
 
 
 def test_connection_ending_at_wrong_target(
     bundle: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    edit(bundle, "PATH_STEPS", "p-cooking-s04", target_node_id="n-fractions")
+    edit(bundle, "PATH_STEPS", "p-soccer-field-s04", target_node_id="n-area")
     _, report = run(bundle, capsys)
     assert (
         "connection-destination-mismatch",
         "PATH_STEPS",
-        "p-cooking-s04",
+        "p-soccer-field-s04",
         "connection_id",
     ) in keyed(report)
 
@@ -411,7 +411,7 @@ def test_path_without_steps_is_a_warning(bundle: Path, capsys: pytest.CaptureFix
         "PATHS",
         path_id="p-test-new",
         title="New",
-        entry_node_id="n-plants",
+        entry_node_id="n-sharks",
         learning_goal="Test goal.",
         status="draft",
     )
@@ -430,10 +430,10 @@ def test_second_rationale_for_same_endpoints_is_a_separate_valid_connection(
         bundle,
         "CONNECTIONS",
         connection_id="c-test-alt",
-        from_node_id="n-equal-parts",
-        to_node_id="n-fractions",
+        from_node_id="n-distance",
+        to_node_id="n-elapsed-time",
         learning_reason="A different teaching move.",
-        source_ids="s-openstax-fractions",
+        source_ids="s-openstax-measure",
         status="draft",
     )
     status, report = run(bundle, capsys)
@@ -447,9 +447,9 @@ def test_reverse_related_to_is_duplicate_but_reverse_directional_is_not(
         bundle,
         "RELATIONSHIPS",
         relationship_id="r-test-rev",
-        from_node_id="n-rhythm",
+        from_node_id="n-measurement",
         relationship_type="related_to",
-        to_node_id="n-steady-beat",
+        to_node_id="n-length",
         rationale="Reverse.",
         status="draft",
     )
@@ -470,11 +470,11 @@ def test_reverse_related_to_is_duplicate_but_reverse_directional_is_not(
 
 def test_self_links_are_rejected(bundle: Path, capsys: pytest.CaptureFixture[str]) -> None:
     edit(bundle, "RELATIONSHIPS", "r-008", to_node_id="n-length")
-    edit(bundle, "CONNECTIONS", "c-024", to_node_id="n-rate")
+    edit(bundle, "CONNECTIONS", "c-023", to_node_id="n-rate")
     _, report = run(bundle, capsys)
     got = keyed(report)
     assert ("self-link", "RELATIONSHIPS", "r-008", "to_node_id") in got
-    assert ("self-link", "CONNECTIONS", "c-024", "to_node_id") in got
+    assert ("self-link", "CONNECTIONS", "c-023", "to_node_id") in got
 
 
 def test_learning_and_association_cycles_are_valid(
@@ -485,8 +485,8 @@ def test_learning_and_association_cycles_are_valid(
         bundle,
         "CONNECTIONS",
         connection_id="c-test-back",
-        from_node_id="n-fractions",
-        to_node_id="n-equal-parts",
+        from_node_id="n-elapsed-time",
+        to_node_id="n-distance",
         learning_reason="Reverse teaching move.",
         status="draft",
     )
@@ -531,10 +531,10 @@ def test_multiline_unicode_quoted_cells_keep_logical_record_numbers(
     bundle: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
     edit(bundle, "NODES", "n-cars", educator_notes='Line one, with comma\nline two "quoted" — é ✓')
-    edit(bundle, "NODES", "n-music", status="bogus")
+    edit(bundle, "NODES", "n-sharks", status="bogus")
     _, report = run(bundle, capsys)
     [bad] = [i for i in issues(report) if i["code"] == "invalid-status"]
-    assert bad["record_number"] == 3 and bad["record_id"] == "n-music"
+    assert bad["record_number"] == 3 and bad["record_id"] == "n-sharks"
 
 
 def test_crlf_and_bom_exports_give_identical_reports(
@@ -568,7 +568,7 @@ def test_wholly_empty_records_are_ignored(bundle: Path, capsys: pytest.CaptureFi
     path = bundle / "NODES.csv"
     path.write_text(path.read_text(encoding="utf-8") + ",,,,,,,,,,\n,, ,,,,,,,,\n", "utf-8")
     status, report = run(bundle, capsys)
-    assert status == 0 and report["counts"]["NODES"] == 30
+    assert status == 0 and report["counts"]["NODES"] == 26
 
 
 def test_formula_like_text_is_flagged_not_evaluated_or_changed(
@@ -576,7 +576,7 @@ def test_formula_like_text_is_flagged_not_evaluated_or_changed(
 ) -> None:
     canary = "=HYPERLINK(CANARY-7731)"
     edit(bundle, "NODES", "n-cars", educator_notes=canary)
-    edit(bundle, "NODES", "n-music", scope_notes="　＋fullwidth plus")  # NFKC -> "+"
+    edit(bundle, "NODES", "n-sharks", scope_notes="　＋fullwidth plus")  # NFKC -> "+"
     edit(bundle, "NODES", "n-rate", educator_notes="​@mention")
     before = digest_tree(bundle)
     status, report = run(bundle, capsys)
@@ -588,7 +588,7 @@ def test_formula_like_text_is_flagged_not_evaluated_or_changed(
     }
     assert flagged == {
         ("n-cars", "educator_notes"),
-        ("n-music", "scope_notes"),
+        ("n-sharks", "scope_notes"),
         ("n-rate", "educator_notes"),
     }
     assert "CANARY-7731" not in json.dumps(report)
@@ -599,7 +599,7 @@ def test_messages_never_echo_arbitrary_cell_text(
     bundle: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
     edit(bundle, "NODES", "n-cars", status="SECRET-CANARY", source_ids="SECRET CANARY")
-    edit(bundle, "NODES", "n-music", node_id="Bad ID SECRET-CANARY")
+    edit(bundle, "NODES", "n-sharks", node_id="Bad ID SECRET-CANARY")
     checker.main(["--bundle", str(bundle)])
     text = capsys.readouterr().out
     _, report = run(bundle, capsys)

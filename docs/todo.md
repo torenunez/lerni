@@ -6,7 +6,7 @@ The one checklist. Owners in brackets. Milestones and what completes them: [road
 
 - [ ] **[educator]** Choose an interest and a goal, sketch 3–5 activities, and prepare the first. How: [curation guide](../curation/README.md).
 - [ ] **[educator]** Try the templates in a spreadsheet app; report what is confusing.
-- [ ] **[admin]** Update the technical requirements and checks for [Release 1](prd/student.md#release-1-run-a-seeded-activity) before building it.
+- [ ] **[admin]** Update the technical requirements and checks for [Release 1](prd/student.md#release-1-answer-questions-about-something-you-love) before building it.
 
 ## Next
 

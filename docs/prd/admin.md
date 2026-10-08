@@ -15,6 +15,9 @@ The admin can do anything Lerni does from the terminal: learn topics, try out wh
 - Terminal only. Data stays on this computer in `~/.lerni/`.
 - No credentials in files; tests use fakes and make no network calls.
 - Existing commands and data keep working.
+- The admin runs the student app: a Gradio web app hosted on Hugging Face Spaces, opened in Safari on an iPad. It uses the existing lesson format, catalog, and engine (the code calls an activity a lesson).
+- Student data may leave the device, but only to services the educator agreed to. No sharing, analytics, or advertising. In Release 1, session state stays in memory and logs contain no learner content.
+- These are prototype guardrails, not production moderation. One family; no public use.
 - Full access is for trying things out. Anything a student sees still goes through the student app's approval and supervision; the admin tool never puts unapproved content in front of a student.
 
 ## Release 1: test the mechanics (exists)
@@ -44,7 +47,10 @@ Use by educators or students.
 - 2026-10-07: Today's CLI is an admin testing tool for the learning mechanics.
 - 2026-10-07: The admin has full access: learn topics, try anything the student would see, and run or tune the system.
 - 2026-10-07: The student app relies on mechanics the admin tunes here, so the two share a core.
+- 2026-10-07: The student app is a Gradio web app on Hugging Face Spaces, used on an iPad rather than as a native app; the specifics are deferred.
+- 2026-10-07: For now, student data may leave the device, under educator supervision.
 
 ## Open questions
 
+- [NEEDS CLARIFICATION] (Release 1) Hugging Face Spaces details: private Space or login, cost, which plan. The admin decides while building.
 - [NEEDS CLARIFICATION] (Release 2) Which parts of the core (concept map, scheduler, explanation checks) does the student app reuse, given that the admin tool's database was not built for students' data?

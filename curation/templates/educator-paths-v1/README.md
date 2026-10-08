@@ -11,7 +11,7 @@ A filled-in example: [`../../examples/educator-paths-v1-draft/`](../../examples/
 
 | File | One row is… | Put here | Never put here |
 |---|---|---|---|
-| `NODES.csv` | a reusable idea (e.g. *fractions*) | label, educator definition, aliases, scope | anything about a particular student |
+| `NODES.csv` | a reusable idea (e.g. *speed*) | label, educator definition, aliases, scope | anything about a particular student |
 | `RELATIONSHIPS.csv` | a subject fact linking two ideas | the claim type and why it holds | teaching order |
 | `CONNECTIONS.csv` | a teaching move from one idea to another | why the move could help, what to check first | an observed result |
 | `PATHS.csv` | one route from a starting topic | title, entry idea, overall goal | a student's name or profile |
@@ -70,5 +70,5 @@ do not have to finish every step before trying one well-prepared activity.
 Student name or initials, school, address, contact details, photos, audio,
 transcripts, what a particular student said or liked, session dates, scores, and
 medical, behavioral, or diagnostic information. A generic starting topic
-("music") is curriculum; "my student loves music" is a private observation — write it
+("sharks") is curriculum; "my student loves sharks" is a private observation — write it
 in a separate private log, never in this repository.

@@ -462,3 +462,9 @@ anything.
 - **User:** review and merge GitHub PR #2.
 
 *(Done: PR #2 merged into `main` as `4dd3e45` on 2026-09-25, after a documentation-only follow-up commit, `7555a41`.)*
+
+## 2026-10-07 (Documentation decisions)
+
+- PRDs are split by who acts: student, educator, and admin tool.
+- No requirement IDs for now; releases and stories are referred to by name.
+- The unit of learning is an "activity", not a "lesson" (the code still calls it a lesson).

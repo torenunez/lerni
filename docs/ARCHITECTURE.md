@@ -15,7 +15,7 @@ Authoring tables [available]
                 Web app on iPad + educator view [planned]
 ```
 
-These are the steps in the process, not completed reviews. The [product requirements](prd/student.md#release-1-run-a-seeded-activity) define readiness for student app use; [progress](progress.md) records what exists.
+These are the steps in the process, not completed reviews. The [product requirements](prd/student.md#release-1-answer-questions-about-something-you-love) define readiness for student app use; [progress](progress.md) records what exists.
 
 ## Four responsibilities
 

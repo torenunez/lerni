@@ -6,11 +6,11 @@ This is the proposed sequence. [Progress](progress.md) records what has happened
 |---|---|---|
 | M1 — Authoring | Admin + educator | Templates, draft examples, and checker exist; educator tries them in a spreadsheet. |
 | M2 — Discovery round | Educator; usable templates | One activity tried by hand; the signals below are clear enough to design the app. |
-| M3 — First app | Admin + educator; reviewed activity | Meet [Release 1](prd/student.md#release-1-run-a-seeded-activity) on the iPad; rehearse and obtain educator authorization. |
-| M4 — Continuity | Student + educators + admin; M3 | Meet [Release 2](prd/student.md#release-2-continuity): the app remembers progress and builds on it; an idea is reused across two interests; later recall is checked. |
-| M5 — Voice | Admin + educator; M4 and the voice decisions | Meet [Release 3](prd/student.md#release-3-voice) on the iPad; the educator agrees to the setup. |
-| M6 — New ideas on old ones | Admin + educator; M5 | Meet [Release 4](prd/student.md#release-4-new-ideas-that-build-on-old-ones): the app proposes and drafts connected activities; educators approve each. |
-| M7 — Free conversation | Admin + educator; M6 reliable | Meet [Release 5](prd/student.md#release-5-free-conversation): the student converses without an educator involved; the educator monitors the concept map and answers rare consent requests. |
+| M3 — First app | Admin + educator; reviewed activity | Meet [Release 1](prd/student.md#release-1-answer-questions-about-something-you-love) on the iPad; rehearse and obtain educator authorization. |
+| M4 — Continuity | Student + educators + admin; M3 | Meet [Release 2](prd/student.md#release-2-the-app-remembers-me): the app remembers progress and builds on it; an idea is reused across two interests; later recall is checked. |
+| M5 — Voice | Admin + educator; M4 and the voice decisions | Meet [Release 3](prd/student.md#release-3-talk-with-the-app) on the iPad; the educator agrees to the setup. |
+| M6 — New ideas on old ones | Admin + educator; M5 | Meet [Release 4](prd/student.md#release-4-new-ideas-grow-from-old-ones): the app proposes and drafts connected activities; educators approve each. |
+| M7 — Free conversation | Admin + educator; M6 reliable | Meet [Release 5](prd/student.md#release-5-explore-freely): the student converses without an educator involved; the educator monitors the concept map and answers rare consent requests. |
 
 ## M2 — Discovery round
 
@@ -34,4 +34,4 @@ Record only what actually happened; leave gaps blank. A correct choice alone is 
 
 Next actions, with owners, are in [todo.md](todo.md).
 
-Each milestone delivers one student app release; the [student app PRD](prd/student.md#where-this-goes) describes them. Admin tool maintenance: [todo](todo.md#admin-tool-maintenance).
+Each milestone delivers one student app release; the [student app PRD](prd/student.md#how-the-experience-grows) describes them. Admin tool maintenance: [todo](todo.md#admin-tool-maintenance).

@@ -7,7 +7,7 @@ Lerni has two parts:
 - **Educator-supervised student app — the main product.** A student explores ideas by voice on an iPad while an educator supervises. The educator seeds the first activities, approves what the student sees, supervises from the educator view, and can stop any session. Educator involvement steps down over time: at first the app explores only concepts on the educator's allowlist; eventually the student converses freely about anything not on the educator's exclusion list, and the educator reviews a map of the concepts explored, blocks paths, and answers the rare consent request for a sensitive subject. We are building it in steps: first text, pictures, and choices; then remembering what the student explored and building on it; then speaking and listening. The authoring tools and activity engine exist; the app is not built yet.
 - **Admin tool — in the terminal.** Full access: learn topics with it, try out anything a student would see, and tune the learning mechanics before the student app relies on them. Available now. Educators never need it.
 
-The student app treats knowledge as a map: **nodes** are ideas, and **edges** link them, either by how they relate or by which makes a good next step. A path starts at a student's core interest (cars, music, cooking) and follows edges toward an underlying idea. The map grows by branching to nearby ideas. It strengthens when the same idea is reached again from a different interest, so fractions met through music and again through cooking become one connected idea. Educators build the map today; suggesting where to go next comes later.
+The student app treats knowledge as a map: **nodes** are ideas, and **edges** link them, either by how they relate or by which makes a good next step. A path starts at a student's core interest (cars, sharks, soccer) and follows edges toward an underlying idea. The map grows by branching to nearby ideas. It strengthens when the same idea is reached again from a different interest, so speed met through cars and again through sharks becomes one connected idea. Educators build the map today; suggesting where to go next comes later.
 
 ## Read in this order
 
@@ -34,4 +34,4 @@ pytest
 lerni --help
 ```
 
-The admin tool stores data locally in `~/.lerni/`. The student app is for supervised use by one family.
+The admin tool stores data locally in `~/.lerni/`. The student app is designed for supervised use.

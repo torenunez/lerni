@@ -63,7 +63,7 @@ One reusable topic or concept. Required: `node_id`, `label`, `definition`,
 
 | Field | Meaning |
 |---|---|
-| `node_id` | Stable ID, e.g. `n-fractions`. Reuse it across paths; changing the label does not change it. |
+| `node_id` | Stable ID, e.g. `n-distance`. Reuse it across paths; changing the label does not change it. |
 | `label` | Short human-readable name. |
 | `definition` | Adult-facing statement of what the node means. Never a learner observation. |
 | `aliases` | Alternative labels, `\|`-separated. For search; not distinct concepts. |
@@ -86,10 +86,10 @@ context — not a generic "these are related".
 | Type | Direction and meaning | Example | Common mistake |
 |---|---|---|---|
 | `is_a` | From is a narrower kind of To. | Average speed → rate | Reading taxonomy as "teach this first". |
-| `part_of` | From is a component of To. | Plant parts → plants | Confusing a component with a subtype. |
+| `part_of` | From is a component of To. | Fins → animal body parts | Confusing a component with a subtype. |
 | `example_of` | From illustrates or instantiates To. | Steady beat → repeating pattern | Treating every related idea as an example. |
 | `uses` | From uses To in the stated context. | Perimeter → length | Claiming every comparison must be numerical. |
-| `explains` | Understanding From helps account for To. | Equal parts → fractions | Presenting a speculative link as a proven cause. |
+| `explains` | Understanding From helps account for To. | Force → change in motion | Presenting a speculative link as a proven cause. |
 | `related_to` | Symmetric association justified by the rationale. | Rhythm ↔ steady beat | Omitting why the association is useful. |
 
 These types are never lesson order. `related_to` has no direction, so a reversed
@@ -138,7 +138,7 @@ fields and `status`.
 
 **Order.** `sequence` alone determines order: a positive integer, starting at 1,
 unique and contiguous within each path. Sorting rows must not change a path. The
-visible suffix of an ID such as `p-building-s04` does not control order.
+visible suffix of an ID such as `p-soccer-kick-s04` does not control order.
 
 **Continuity.** Group by `path_id`, sort numerically by `sequence`, then:
 
@@ -199,8 +199,8 @@ details.
    spreadsheet. The drafting checker never evaluates or changes it. The stricter
    production importer policy in spec 08 is separate.
 9. **Privacy.** Keep student identity, actual interests, observations, engagement
-   scores, progress, transcripts, and session dates out of these tables. "Music"
-   as a starting topic is curriculum; "this student enjoyed music" is a private
+   scores, progress, transcripts, and session dates out of these tables. "Sharks"
+   as a starting topic is curriculum; "this student enjoyed sharks" is a private
    observation and belongs in a separate learner record.
 
 ## Status and review

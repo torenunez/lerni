@@ -4,7 +4,7 @@ This folder is where an educator prepares learning paths. No app is needed.
 
 ## What to do
 
-1. **Pick an interest and one goal.** Something the student cares about now. Cars are only an example.
+1. **Pick an interest and one goal.** Something the student cares about now. Cars, sharks, and soccer are only examples.
 2. **Sketch 3–5 activities** in the [templates](templates/educator-paths-v1/README.md). Each needs a target idea, an order number, the teaching move that leads to it, and a goal. See the [six example paths](examples/educator-paths-v1-draft/README.md) for shape; they are drafts, not approved lessons.
 3. **Prepare only the first activity:** opening question, what you'll do, how you'll check understanding, what you hope to see, materials (or `none`).
 4. **Review it.** Read the exact wording and materials. Only then mark it `reviewed`, with your role and the real date.
@@ -23,11 +23,11 @@ Send your files to the admin, who runs a checker for mistakes. A clean result me
 
 ## Never write in these files
 
-Student name or initials, birthday, school, address, contact details, photos, audio, transcripts, a student's exact words, what a particular student liked or did, or anything medical or behavioral. A topic ("music") is curriculum. "My student loves music" is a private note; it does not go in this repository.
+Student name or initials, birthday, school, address, contact details, photos, audio, transcripts, a student's exact words, what a particular student liked or did, or anything medical or behavioral. A topic ("sharks") is curriculum. "My student loves sharks" is a private note; it does not go in this repository.
 
 ## Approval
 
-`reviewed` in these tables records an educator review. It does not put content in the app. App lessons need their own approval of the exact wording and pictures; see the [product requirements](../docs/prd/student.md#release-1-run-a-seeded-activity).
+`reviewed` in these tables records an educator review. It does not put content in the app. App lessons need their own approval of the exact wording and pictures; see the [product requirements](../docs/prd/student.md#release-1-answer-questions-about-something-you-love).
 
 ## What's in this folder
 
