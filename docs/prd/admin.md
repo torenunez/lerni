@@ -32,7 +32,7 @@ Commands and behavior: [admin tool reference](../reference/admin.md). Open maint
 - Run the curation checker and other admin tasks from the same tool.
 - Package a reviewed activity for the student app, recording the approvals real people gave.
 - Tune the mechanics the student app shares, once the shared core is designed.
-- Connect cloud services and a Claude account for drafting and conversation, behind a replaceable adapter.
+- Connect cloud services and the admin's Claude account for drafting and conversation, behind a replaceable adapter.
 
 ## Out of scope
 
@@ -47,4 +47,4 @@ Use by educators or students.
 
 ## Open questions
 
-- [NEEDS CLARIFICATION] Which parts of the core (concept map, scheduler, explanation checks) does the student app reuse, given that the admin tool's database was not built for students' data?
+- [NEEDS CLARIFICATION] (Release 2) Which parts of the core (concept map, scheduler, explanation checks) does the student app reuse, given that the admin tool's database was not built for students' data?

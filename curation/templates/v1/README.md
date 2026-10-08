@@ -54,7 +54,7 @@ and requires all four scopes — `science`, `student_content`,
 
 ## Learner privacy — the INTERESTS table is legacy
 
-`INTERESTS.csv` has columns for a student's phrase, a educator's observation,
+`INTERESTS.csv` has columns for a student's phrase, an educator's observation,
 engagement strength, and observation dates. Those are **learner records**, not
 shared curriculum, and do not belong in a curriculum sheet. The columns stay so
 the old format is not silently broken; do not fill them. Record real

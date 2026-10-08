@@ -33,7 +33,7 @@ These hold for every release.
 - **Allowlist mode (Releases 1–4):** the app explores only concepts and questions on the educator's allowlist. Approving an activity adds its concepts to the allowlist.
 - **Exclusion-list mode (Release 5):** the app explores freely, except for concepts on the educator's exclusion list. The educator turns this mode on as a setting; the app never switches on its own.
 - The app's checks work whether or not an educator is watching.
-- In both modes, the student never sees an excluded concept or a path the educator blocked, and a sensitive subject waits for the educator's consent.
+- In both modes, the student never sees an excluded concept or a path the educator blocked, and a sensitive subject waits for the educator's consent. Sensitive subjects are allowed but personal: death, illness, the body, family matters, religion, and politics.
 - A session can be stopped at any moment. Stopping or resetting clears the student's screen at once, and any delayed, repeated, or earlier-session action is ignored.
 - The admin tool's commands and data keep working.
 - These are prototype guardrails, not production moderation. One family; no public use.
@@ -73,7 +73,7 @@ The app remembers what the student explored, so each session can build on the la
 Rules for this release:
 
 - Remember only which activities the student finished, which ideas they reached, and how later recall questions went. No recordings, transcripts, or free-text answers.
-- The record is stored where the educator can see and delete it ([educator PRD](educator.md)).
+- The record is kept until the educator deletes it, and the educator can turn remembering off ([educator PRD](educator.md)).
 
 ### Story: The app builds on what I explored
 
@@ -98,7 +98,7 @@ The rules of Releases 1 and 2 still apply. The student can now ask the app quest
 As a student, I want the app to talk with me and hear my answer, so that I can learn without reading or typing.
 
 - WHEN a step is read aloud THE SYSTEM SHALL keep its text visible.
-- WHEN the microphone has not been turned on by an educator THE SYSTEM SHALL not listen.
+- WHEN the educator has not authorized voice THE SYSTEM SHALL not listen. Once authorized, the student's talk button works in every session without asking the educator.
 - WHEN the student answers by voice THE SYSTEM SHALL listen only while the talk button is held.
 - WHEN speech is turned into text THE SYSTEM SHALL show it for correction and send nothing until confirmed.
 - WHEN the student answers by voice THE SYSTEM SHALL judge the answer itself, without the student tapping a choice.
@@ -152,14 +152,14 @@ More than one family, public access, and a native iPad app.
 - 2026-10-07: The app runs in allowlist mode first (only approved concepts and questions), then in exclusion-list mode (anything not excluded).
 - 2026-10-07: The end state is free conversation without an educator involved. Only sensitive subjects ask for educator consent, and that should be rare.
 - 2026-10-07: Separate PRDs by who acts. This file covers the student; educator tasks are in the educator PRD; terminal work is in the admin tool PRD.
+- 2026-10-08: Sensitive subjects are allowed but personal (death, illness, the body, family matters, religion, politics); they ask for educator consent.
+- 2026-10-08: The progress record is kept until the educator deletes it; remembering can be turned off.
 
 ## Open questions
 
-- [NEEDS CLARIFICATION] What counts as a sensitive subject that needs educator consent?
-- [NEEDS CLARIFICATION] How does a consent request reach the educator, and how long does the student wait?
-- [NEEDS CLARIFICATION] How does the app decide a question or reply suits a student, beyond the allowlist and exclusion list?
-- [NEEDS CLARIFICATION] How long is the student's progress record kept, and can a educator turn remembering off entirely?
-- [NEEDS CLARIFICATION] Which service turns the student's speech into text?
-- [NEEDS CLARIFICATION] Which reading-aloud voice do we use?
-- [NEEDS CLARIFICATION] Deferred: Hugging Face Spaces details (private Space or login, cost, which plan).
-- [NEEDS CLARIFICATION] How does the app judge a spoken answer: against prepared answers, or with its own understanding?
+- [NEEDS CLARIFICATION] (Release 5) How does a consent request reach the educator, and how long does the student wait?
+- [NEEDS CLARIFICATION] (Release 3) How does the app decide a question or reply suits a student, beyond the allowlist and exclusion list?
+- [NEEDS CLARIFICATION] (Release 3) Which service turns the student's speech into text?
+- [NEEDS CLARIFICATION] (Release 3) Which reading-aloud voice do we use?
+- [NEEDS CLARIFICATION] (Release 1, admin decides while building) Hugging Face Spaces details (private Space or login, cost, which plan).
+- [NEEDS CLARIFICATION] (Release 3) How does the app judge a spoken answer: against prepared answers, or with its own understanding?

@@ -7,7 +7,7 @@ This folder is where an educator prepares learning paths. No app is needed.
 1. **Pick an interest and one goal.** Something the student cares about now. Cars are only an example.
 2. **Sketch 3–5 activities** in the [templates](templates/educator-paths-v1/README.md). Each needs a target idea, an order number, the teaching move that leads to it, and a goal. See the [six example paths](examples/educator-paths-v1-draft/README.md) for shape; they are drafts, not approved lessons.
 3. **Prepare only the first activity:** opening question, what you'll do, how you'll check understanding, what you hope to see, materials (or `none`).
-4. **Review it.** Educator read the exact wording and materials. Only then mark it `reviewed`, with your role and the real date.
+4. **Review it.** Read the exact wording and materials. Only then mark it `reviewed`, with your role and the real date.
 5. **Optionally try it** as a short walkthrough (below).
 6. **Revise one thing,** then prepare the next activity.
 
@@ -15,7 +15,7 @@ Send your files to the admin, who runs a checker for mistakes. A clean result me
 
 ## A short walkthrough
 
-- One prepared, reviewed activity. A educator is present throughout.
+- One prepared, reviewed activity. An educator is present throughout.
 - Offer it in one sentence; the student may say no or stop at any time.
 - About 5–10 minutes. Finishing is not the goal.
 - Ask the prepared question. If you gave a hint, note it.

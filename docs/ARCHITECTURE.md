@@ -23,7 +23,7 @@ These are the steps in the process, not completed reviews. The [product requirem
 
 **Preparing app content:** the educator and admin manually turn one path step into one lesson. A lesson may contain several presentation steps. A separate record links the path and activity IDs, activity revision, and lesson revision. There is no automatic importer yet. The catalog loads lessons and checks their exact content, human approvals, and files before making them available.
 
-**Running an activity:** the engine controls progression. The planned web app, used in Safari on an iPad, adds a educator view with Start/Stop/Reset and keeps actions tied to the correct session. Separating the activity from the interface lets different interests use the same engine.
+**Running an activity:** the engine controls progression. The planned web app, used in Safari on an iPad, adds an educator view with Start/Stop/Reset and keeps actions tied to the correct session. Separating the activity from the interface lets different interests use the same engine.
 
 **Learning from observations:** early learner notes stay in a private manual log outside the repository. Only generalized educational improvements return to the curriculum.
 
