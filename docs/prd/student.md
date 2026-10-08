@@ -4,7 +4,7 @@ What the student experiences in the app, and what the app guarantees them. Every
 
 ## Outcome
 
-The app leads a student from idea to idea, each new one connected to what they already explored, and the student shows they understand in their own words. Educators step back as the app earns trust.
+Eventually the student talks back and forth with the app about their interests, without an educator involved. The app leads them from idea to idea, each new one connected to what they already explored, and the student shows they understand in their own words. Educators step back as the app earns trust.
 
 ## Users
 
@@ -18,7 +18,7 @@ The app leads a student from idea to idea, each new one connected to what they a
 | 2 | Continuity: the app remembers what the student explored and builds on it |
 | 3 | Voice: the app talks and listens |
 | 4 | New ideas that build on old ones, proposed by the app and approved by an educator |
-| 5 | Self-directed exploration within educator-set limits |
+| 5 | Free conversation: the student explores by talking, without an educator involved |
 
 Continuity comes before voice: it is what makes this more than one-off activities, and it can be tested with text first.
 
@@ -30,7 +30,9 @@ These hold for every release.
 
 - The app is a Gradio web app, hosted on Hugging Face Spaces, that the student opens in Safari on an iPad. Touch comes first; nothing needs a keyboard.
 - Data about the student may leave the device, but only to services the educator has agreed to.
-- The student sees only activities an educator has approved, never a topic on the off-limits list.
+- **Allowlist mode (Releases 1–4):** the app explores only concepts and questions on the educator's allowlist. Approving an activity adds its concepts to the allowlist.
+- **Exclusion-list mode (Release 5):** the app explores freely, except for concepts on the educator's exclusion list. The educator turns this mode on as a setting; the app never switches on its own.
+- In both modes, the student never sees an excluded concept or a path the educator blocked, and a sensitive subject waits for the educator's consent.
 - A session can be stopped at any moment. Stopping or resetting clears the student's screen at once, and any delayed, repeated, or earlier-session action is ignored.
 - The admin tool's commands and data keep working.
 - These are prototype guardrails, not production moderation. One family; no public use.
@@ -106,7 +108,7 @@ As a student, I want the app to talk with me and hear my answer, so that I can l
 
 As a student, I want to ask the app something I'm curious about, so that the conversation can start from my question.
 
-- WHEN the student asks a question by voice THE SYSTEM SHALL check it against the off-limits list and for whether it suits a student before answering.
+- WHEN the student asks a question by voice THE SYSTEM SHALL check it against the allowlist, the exclusion list, and blocked paths, and for whether it suits a student before answering.
 - WHEN the question is allowed THE SYSTEM SHALL answer briefly, then steer the conversation toward the learning plan educators approved.
 - WHEN the question is not allowed THE SYSTEM SHALL say kindly that it can't talk about that, and steer back to the learning plan.
 - WHEN the app generates a reply THE SYSTEM SHALL check the reply the same way before saying or showing it.
@@ -115,9 +117,18 @@ As a student, I want to ask the app something I'm curious about, so that the con
 
 The app proposes the next activity from the concept map, connected to something the student already explored, and drafts it in the seeded pattern. An educator approves each one before the student sees it. Stories to be written after Release 3.
 
-## Release 5: self-directed within limits
+## Release 5: free conversation
 
-The app chooses and runs activities inside limits educators set, with spot checks. Stories to be written once Release 4 is reliable.
+The student talks back and forth with the app and learns about their interests without an educator involved. The educator no longer approves individual activities or interactions. Stories to be written once Release 4 is reliable.
+
+### Story: Talk freely about my interests
+
+As a student, I want to keep asking and answering questions about what interests me, so that I can learn without waiting for an adult.
+
+- WHEN the student asks about an allowed concept THE SYSTEM SHALL answer and continue the conversation without educator approval.
+- WHEN the student asks about a sensitive subject THE SYSTEM SHALL pause that subject, ask the educator for consent, and offer to explore something else meanwhile.
+- WHEN the educator has not consented THE SYSTEM SHALL not discuss the subject.
+- WHEN a question touches an excluded concept or a blocked path THE SYSTEM SHALL decline kindly and steer elsewhere, without asking the educator.
 
 ## Out of scope
 
@@ -137,11 +148,15 @@ More than one family, public access, and a native iPad app.
 - 2026-10-07: Build it with Gradio and host it on Hugging Face Spaces; the specifics are deferred.
 - 2026-10-07: For now, assume any data can leave the device, under educator supervision.
 - 2026-10-07: A session starts with the app asking, or (from Release 3, by voice only) the student asking. The app answers allowed questions briefly, then steers toward the learning plan.
+- 2026-10-07: The app runs in allowlist mode first (only approved concepts and questions), then in exclusion-list mode (anything not excluded).
+- 2026-10-07: The end state is free conversation without an educator involved. Only sensitive subjects ask for educator consent, and that should be rare.
 - 2026-10-07: Separate PRDs by who acts. This file covers the student; educator tasks are in the educator PRD; terminal work is in the admin tool PRD.
 
 ## Open questions
 
-- [NEEDS CLARIFICATION] How does the app decide a question or reply suits a student, beyond the off-limits list?
+- [NEEDS CLARIFICATION] What counts as a sensitive subject that needs educator consent?
+- [NEEDS CLARIFICATION] How does a consent request reach the educator, and how long does the student wait?
+- [NEEDS CLARIFICATION] How does the app decide a question or reply suits a student, beyond the allowlist and exclusion list?
 - [NEEDS CLARIFICATION] How long is the student's progress record kept, and can a educator turn remembering off entirely?
 - [NEEDS CLARIFICATION] Which service turns the student's speech into text?
 - [NEEDS CLARIFICATION] Which reading-aloud voice do we use?

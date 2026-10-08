@@ -10,7 +10,7 @@ This is the proposed sequence. [Progress](progress.md) records what has happened
 | M4 — Continuity | Student + educators + admin; M3 | Meet [Release 2](prd/student.md#release-2-continuity): the app remembers progress and builds on it; an idea is reused across two interests; later recall is checked. |
 | M5 — Voice | Admin + educator; M4 and the voice decisions | Meet [Release 3](prd/student.md#release-3-voice) on the iPad; the educator agrees to the setup. |
 | M6 — New ideas on old ones | Admin + educator; M5 | Meet [Release 4](prd/student.md#release-4-new-ideas-that-build-on-old-ones): the app proposes and drafts connected activities; educators approve each. |
-| M7 — Self-directed | Admin + educator; M6 reliable | Meet [Release 5](prd/student.md#release-5-self-directed-within-limits) within educator-set limits, with spot checks. |
+| M7 — Free conversation | Admin + educator; M6 reliable | Meet [Release 5](prd/student.md#release-5-free-conversation): the student converses without an educator involved; the educator monitors the concept map and answers rare consent requests. |
 
 ## M2 — Discovery round
 

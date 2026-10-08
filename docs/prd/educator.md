@@ -1,22 +1,24 @@
 # PRD: Educator tools
 
-Every task an educator performs: preparing activities, approving them, supervising sessions, and keeping the student safe. What the student experiences is in the [student app PRD](student.md). The admin's terminal work is in the [admin tool PRD](admin.md).
+An educator is initially heavily involved in developing and supervising the learning plan, and later steps back to occasionally monitor activities to ensure they are appropriate and safe. The educator never gates every interaction: they review the map of concepts the student explored, not transcripts. What the student experiences is in the [student app PRD](student.md). The admin's terminal work is in the [admin tool PRD](admin.md).
 
 ## Outcome
 
-Educators direct a student's learning without code or the terminal, and spend less time on it as the system improves.
+The educator shapes a student's learning plan without code or the terminal: closely at first, then through occasional monitoring as the system earns trust.
+
+The **learning plan** is the interests, goals, and ordered activities the educator prepares and approves for a student.
 
 ## Users
 
-- **Educator:** seeds the first activities, approves what the student sees, keeps the off-limits list, consents to data sharing, authorizes use, supervises sessions from the educator view, and later reviews what the system drafts.
+- **Educator:** develops the learning plan and seeds its first activities, approves what the student sees (the allowlist), keeps the exclusion list, consents to data sharing, authorizes use, and supervises sessions from the educator view. Later, reviews what the system drafts, then only monitors the concept map and answers rare consent requests.
 
 ## How educator involvement changes
 
-Educators bootstrap the system, then step back in stages:
+The educator starts heavily involved, then steps back in stages:
 
 1. **Seed.** An educator hand-writes one or two activities, the worked examples of a good activity.
 2. **Draft and approve.** The system drafts new activities in the seeded pattern; an educator approves each one before a student sees it.
-3. **Guardrails and spot checks.** Once drafting is reliable, educators set limits and sample-check.
+3. **Occasional monitoring.** The student converses freely. The educator reviews the map of explored concepts, prunes or blocks paths, keeps the exclusion list, and answers the rare consent request for a sensitive subject.
 
 Each step needs evidence from the one before. Student app Releases 1–3 are at stage 1, Release 4 is stage 2, and Release 5 is stage 3.
 
@@ -26,7 +28,7 @@ These hold for every release.
 
 - No terminal and no code. Educators work in the authoring spreadsheet and the app's educator view.
 - An educator is present for every session and can stop it at any moment.
-- The educator writes a list of off-limits topics before the first session and can add to it at any time. Nothing on it is seeded, drafted, or suggested.
+- The educator keeps two lists. The **allowlist** holds the concepts and questions the app may explore while in allowlist mode; approving an activity adds to it. The **exclusion list** holds concepts never to explore, in any mode; the educator writes it before the first session and can add to it at any time. Nothing on the exclusion list is seeded, drafted, or suggested.
 - No student identity or private observations go into shared curriculum.
 - Before first use, the educator agrees to which outside services receive the student's data, and can withdraw that at any time.
 
@@ -94,7 +96,35 @@ As a educator, I want to decide when the microphone is on, so that the app liste
 ## Later
 
 - **Review drafts (stage 2, student app Release 4):** see each activity the system proposes and drafts, then approve it, send it back, or reject it.
-- **Set guardrails and spot-check (stage 3, Release 5):** set limits, then sample what the system runs.
+- **Monitor occasionally (stage 3, Release 5):** no approval per interaction.
+
+### Story: Choose the exploration mode
+
+As an educator, I want to decide when the app may explore beyond the allowlist, so that the switch to free conversation is my choice, not automatic.
+
+- WHEN the student app is first set up THE SYSTEM SHALL use allowlist mode.
+- WHEN the educator turns on exclusion-list mode THE SYSTEM SHALL let the student explore any concept not on the exclusion list.
+- WHEN the educator turns exclusion-list mode off THE SYSTEM SHALL return to allowlist mode at once.
+
+### Story: Review the concept map
+
+As an educator, I want to see which concepts the student explored and how they connect, so that I can check their learning without reading transcripts.
+
+- WHEN the educator opens the concept map THE SYSTEM SHALL show the concepts the student explored and the paths between them.
+
+### Story: Prune or block a path
+
+As an educator, I want to remove or block a path on the map, so that the app stops leading the student that way.
+
+- WHEN the educator blocks a path THE SYSTEM SHALL stop suggesting or discussing it.
+- WHEN the educator prunes a concept THE SYSTEM SHALL remove it from the student's map.
+
+### Story: Consent to a sensitive subject
+
+As an educator, I want to be asked before the app discusses a sensitive subject, so that I decide without watching every conversation.
+
+- WHEN the student raises a sensitive subject THE SYSTEM SHALL ask the educator for consent.
+- WHEN the educator declines THE SYSTEM SHALL add the subject to the exclusion list if the educator chooses.
 
 ## Out of scope
 
@@ -103,14 +133,16 @@ Running the admin tool. Editing app code or lesson files directly.
 ## Decisions
 
 - 2026-09-25: Educators author paths alongside development instead of after a pilot, because authoring, development, and early observations should inform each other.
-- 2026-10-07: Educator involvement steps down in stages: seed, then draft-and-approve, then guardrails and spot checks once drafting is reliable.
+- 2026-10-07: Educator involvement steps down in stages: seed, then draft-and-approve, then occasional monitoring once drafting is reliable.
 - 2026-10-07: Every educator task lives in this PRD; the student app PRD covers only the student. Admin terminal work stays in the admin tool PRD.
-- 2026-10-07: The educator keeps an off-limits topic list, set before first use and added to over time.
+- 2026-10-07: Moving from allowlist mode to exclusion-list mode is an educator setting, off by default and reversible; it never switches automatically.
+- 2026-10-07: The educator keeps an allowlist (used through Release 4) and an exclusion list (used in every release), set before first use and added to over time.
+- 2026-10-07: The educator reviews the explored-concept map, not transcripts, and never gates every interaction. Consent is asked only for sensitive subjects.
 - 2026-10-07: The educator agrees to the voice setup before the microphone is first used.
 
 ## Open questions
 
-- [NEEDS CLARIFICATION] What evidence shows drafting is reliable enough to move from approving each activity to spot checks?
+- [NEEDS CLARIFICATION] What evidence shows drafting is reliable enough to move from approving each activity to occasional monitoring?
 - [NEEDS CLARIFICATION] Whose Claude account powers drafting and conversation: the admin's or the educator's?
-- [NEEDS CLARIFICATION] What goes on the starting off-limits list, and where is it kept?
+- [NEEDS CLARIFICATION] What goes on the starting exclusion list, and where are both lists kept?
 - [NEEDS CLARIFICATION] Do educators review drafts in the educator view or a separate screen?
