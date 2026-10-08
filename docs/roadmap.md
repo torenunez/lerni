@@ -5,15 +5,15 @@ This is the proposed sequence. [Progress](progress.md) records what has happened
 | Milestone | Owner and dependency | What completes it |
 |---|---|---|
 | M1 — Authoring | Admin + educator | Templates, draft examples, and checker exist; the educator tries them in a spreadsheet. |
-| M2 — MVP | Admin + educator; one approved activity | [Release 1](prd/student.md#release-1-answer-questions-about-something-you-love) runs on the iPad, the educator rehearses and authorizes it, and the student tries it. The signals below are recorded. |
-| M3 — Continuity | Admin + educator; M2 | [Release 2](prd/student.md#release-2-the-app-remembers-me): the app remembers progress and builds on it; an idea is reused across two interests; later recall is checked. |
-| M4 — Voice | Admin + educator; M3 and the voice decisions | [Release 3](prd/student.md#release-3-talk-with-the-app) runs on the iPad; the educator agrees to the setup. |
+| M2 — MVP | Admin + educator; one approved activity | [Release 1](prd/student.md#release-1-answer-questions-about-something-you-love) runs on the home server, the student uses it on the iPad while the educator controls it from their own device, the educator rehearses and authorizes it, and the student tries it. The signals below are recorded. |
+| M3 — Continuity | Admin + educator; M2 | [Release 2](prd/student.md#release-2-the-app-remembers-me): each activity is mapped to the concepts it teaches; the app remembers progress and builds on it; an idea is reused across two interests; later recall is checked. |
+| M4 — Voice | Admin + educator; M3 and the voice decisions | [Release 3](prd/student.md#release-3-talk-with-the-app) runs on the iPad over HTTPS on the home server; the educator agrees to the speech services. |
 | M5 — New ideas on old ones | Admin + educator; M4 | [Release 4](prd/student.md#release-4-new-ideas-grow-from-old-ones): the app proposes and drafts connected activities; the educator approves each. |
 | M6 — Free conversation | Admin + educator; M5 reliable | [Release 5](prd/student.md#release-5-explore-freely): the student converses without an educator involved; the educator monitors the concept map and answers rare consent requests. |
 
 ## M2 — MVP
 
-The first thing the student tries is the smallest working app: one approved activity on the iPad, answered by tapping, with the educator beside them. There is no hand-run trial first; the MVP itself is how we learn.
+The first thing the student tries is the smallest working app: one approved activity on the iPad, answered by tapping, with the educator beside them and controlling it from their own device. There is no hand-run trial first; the MVP itself is how we learn.
 
 The educator chooses an interest and goal, sketches three to five activities, and prepares and approves the first. The admin builds Release 1 around it. The student tries it and can stop whenever they want. Afterward, the educator writes brief private notes and revises one thing.
 

@@ -8,14 +8,15 @@ This folder is where an educator prepares learning paths. No coding is needed.
 2. **Sketch 3–5 activities** in the [templates](templates/educator-paths-v1/README.md). Each needs a target idea, an order number, the teaching move that leads to it, and a goal. See the [six example paths](examples/educator-paths-v1-draft/README.md) for shape; they are drafts, not approved lessons.
 3. **Prepare only the first activity:** opening question, what you'll do, how you'll check understanding, what you hope to see, materials (or `none`).
 4. **Review it.** Read the exact wording and materials. Only then mark it `reviewed`, with your role and the real date.
-5. **Watch the student try it** in the app (below).
-6. **Revise one thing,** then prepare the next activity.
+5. **Approve it for the app.** The admin turns it into an activity file; you check four things in that exact version: the science, the wording, the pictures and their accessibility, and that it's OK to use. The admin records your approvals.
+6. **Watch the student try it** in the app (below).
+7. **Revise one thing,** then prepare the next activity.
 
 Send your files to the admin, who runs a checker for mistakes. A clean result means the files are consistent, not that the content is correct or approved.
 
 ## Watching the student try it
 
-- The student tries the approved activity in the app, with you beside them.
+- The student uses the app on the iPad, with you beside them. You start, stop, and reset it from the educator view on your own phone or laptop.
 - Offer it in one sentence; the student may say no or stop at any time.
 - About 5–10 minutes. Finishing is not the goal.
 - Notice where they get stuck, which hints help, and whether the screen itself confuses them. The [roadmap](../docs/roadmap.md#m2--mvp) lists what to watch for.
@@ -23,11 +24,11 @@ Send your files to the admin, who runs a checker for mistakes. A clean result me
 
 ## Never write in these files
 
-Student name or initials, birthday, school, address, contact details, photos, audio, transcripts, a student's exact words, what a particular student liked or did, or anything medical or behavioral. A topic ("sharks") is curriculum. "My student loves sharks" is a private note; it does not go in this repository.
+This repository is public. Never write a student name or initials, birthday, school, address, contact details, photos, audio, transcripts, a student's exact words, what a particular student liked or did, or anything medical or behavioral. A topic ("sharks") is curriculum. "My student loves sharks" is a private note; it does not go in this repository.
 
 ## Approval
 
-`reviewed` in these tables records an educator review. It does not put content in the app. App lessons need their own approval of the exact wording and pictures; see the [product requirements](../docs/prd/student.md#release-1-answer-questions-about-something-you-love).
+`reviewed` in these tables is a drafting note. It does not put content in the app. Only the four approvals in step 5, recorded against the exact activity file, do that; see [Approve an activity](../docs/prd/educator.md#story-approve-an-activity).
 
 ## What's in this folder
 

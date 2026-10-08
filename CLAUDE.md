@@ -23,7 +23,7 @@ The commit gate (`.claude/hooks/quality-gate.sh`) lints staged Python and runs t
 
 ## Rules
 
-1. **Vocabulary.** The people are the **student**, the **educator**, and the **admin**. Don't write child, kid, parent, adult, or supervisor.
+1. **Vocabulary.** The people are the **student**, the **educator**, and the **admin**. Don't write child, kid, parent, adult, or supervisor. Tree terms for concepts (a concept's parent or children in the admin tool) are fine.
 2. **No commit, push, branch, or pull request unless asked.**
 3. **No hardcoded providers.** Model and speech services go behind a replaceable adapter; credentials only as `env:VAR` references, never literal values.
 4. **Tests use fakes.** No test calls a real model, service, or network.

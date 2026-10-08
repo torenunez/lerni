@@ -25,16 +25,16 @@ The plan and the tools for writing activities are ready. The student app itself 
 **Built and working:**
 
 - The core of the student app: the format an activity is stored in, the code that loads approved activities, and the step-by-step engine. Automated tests cover it.
-- The admin tool, the `lerni` command (renamed from `study`).
+- The admin tool, the `lerni` command. The old name, `study`, still works as a deprecated alias.
 - The checker for the educator's spreadsheet files. It finds no errors in the examples, but warns that the shark, soccer, and force records have no sources yet.
 
 **Not built yet:**
 
 - The student app's screens (Release 1). The one stored activity, about car acceleration, is still a draft with no approvals, so a student could not see it yet.
 
-**Your next step:** update the technical requirements for Release 1, the MVP, then build it around the educator's first approved activity.
+**Your next step:** build the MVP from the [Release 1 plan](../plans/release-1-mvp.md), starting with the catalog's approved-activity listing and the session controller.
 
-**Open housekeeping:** the documentation rework is on [pull request #4](https://github.com/torenunez/lerni/pull/4), not yet merged; `main` is at `b523254` and this branch at `8d870c8`. Maintenance items are in the [to-do list](todo.md#admin-tool-maintenance).
+**Open housekeeping:** the documentation reset is on [pull request #4](https://github.com/torenunez/lerni/pull/4), not yet merged. Maintenance items are in the [to-do list](todo.md#admin-tool-maintenance).
 
 ## Milestones
 
@@ -46,6 +46,6 @@ The plan and the tools for writing activities are ready. The student app itself 
 
 ## Evidence
 
-Automated tests on 2026-10-08: 196 passed, 2 expected failures. Passing tests show the code behaves as specified. They do not mean anything is ready for a student. That also needs approved content, a working app, and a trial run with the educator.
+Automated tests on 2026-10-08: 197 passed, 2 expected failures. Passing tests show the code behaves as specified. They do not mean anything is ready for a student. That also needs approved content, a working app, and a trial run with the educator.
 
 Keep this file dated. Code built, content approved, app ready, and a student session are separate achievements; record each only when it actually happens.
