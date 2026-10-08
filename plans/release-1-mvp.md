@@ -13,7 +13,7 @@ The smallest app a student can try: one approved activity on an iPad, answered b
 1. **Session controller.** Owns one in-memory session: start, the student's taps, stop, reset. Stop and Reset take effect at once; a delayed, repeated, or earlier-session tap is ignored. Nothing is written to disk, and logs hold no student content.
 2. **Student screen.** Shows the current step's question, the picture with its text alternative, and large tappable choices; then hints, the answer reveal, completion, and a "tell your educator why" prompt. Touch only.
 3. **Educator view.** Lists approved activities only, with Start, Stop, and Reset, and shows the recap (choices picked, hints used, time taken) when an activity ends. The recap is discarded after viewing.
-4. **Running it for the iPad.** A `lerni` command, or a short script, starts the app on the admin's Mac. The iPad opens it in Safari on the same Wi-Fi. No microphone in this release, so plain local HTTP is fine. Hugging Face Spaces comes after the first sessions.
+4. **Running it for the iPad.** A `lerni` command, or a short script, starts the app on the home server (an always-on Mac), bound to all network addresses rather than only `localhost`, so the iPad can reach it. The iPad opens it in Safari on the same Wi-Fi. No microphone in this release, so plain HTTP is fine. Allow the virtual environment's Python through the macOS firewall ahead of time, since the server may be started remotely where nobody sees the prompt, and keep it running in `tmux`.
 
 Gradio is an optional extra (`pip install -e ".[student]"`), never a core dependency. New code goes under `src/lerni/student/`.
 
@@ -33,4 +33,4 @@ Use fakes and synthetic activities; no network. Cover:
 
 ## Not in this release
 
-Voice, AI replies, remembering, accounts, Hugging Face hosting, spreadsheet import, and suggestions.
+Voice, AI replies, remembering, accounts, HTTPS, hosting outside the home, spreadsheet import, and suggestions.

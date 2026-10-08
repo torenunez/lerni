@@ -30,6 +30,7 @@ The commit gate (`.claude/hooks/quality-gate.sh`) lints staged Python and runs t
 5. **Never fabricate approvals.** Student-facing content needs recorded human approvals tied to its exact content fingerprint. No agent writes an approval, review date, or fingerprint to make a check pass.
 6. **Teaching order is not a graph edge.** Concept relationships say how ideas relate; activity order comes only from authored sequence numbers.
 7. **Check the tree before saying code exists.** Many planned modules are designed only.
+8. **This repo is public.** Never write real names, family details, a real student's learning plan or observations, hostnames, IP addresses, network names, or personal paths. Say "the home server" or "the student".
 
 ## Docs
 
