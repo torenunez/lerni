@@ -28,9 +28,8 @@ Build from the [Release 1 plan](../plans/release-1-mvp.md), in this order:
 - [ ] The session controller: one shared session in memory, the tap contract, and Stop and Reset winning over taps in flight.
 - [ ] The activity on both screens: the student screen (iPad) and the educator view with Start, Stop, Reset, the recap, and draft preview.
 
-### Now: docs and tooling
+### Now: tooling
 
-- [ ] Merge [PR #4](https://github.com/torenunez/lerni/pull/4) (the docs reset) after the owner's review.
 - [ ] Cut `tests/test_curation_templates.py` from 48 tests to about 15 covering the checker's key behavior.
 
 ### Later: Release 1 MVP
