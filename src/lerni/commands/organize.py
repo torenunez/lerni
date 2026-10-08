@@ -190,7 +190,7 @@ def meta_cmd(
     Update question metadata.
 
     Set difficulty or add source references.
-    Use 'study assign' to change the concept.
+    Use 'lerni assign' to change the concept.
     """
     with get_connection() as conn:
         question_repo = QuestionRepository(conn)
@@ -282,7 +282,7 @@ def concept_list():
 
         if not concepts:
             console.print("[dim]No concepts found.[/dim]")
-            console.print("[dim]Create one with 'study concept new \"Name\"'[/dim]")
+            console.print("[dim]Create one with 'lerni concept new \"Name\"'[/dim]")
             return
 
         # Build tree structure

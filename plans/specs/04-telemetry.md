@@ -2,7 +2,7 @@
 
 ## Goal
 
-Capture enough evidence to improve the supervised family prototype without turning telemetry into an unrestricted child-data store.
+Capture enough evidence to improve the supervised family prototype without turning telemetry into an unrestricted student-data store.
 
 Store:
 
@@ -16,7 +16,7 @@ Store:
 
 Do not store:
 
-- child name or account;
+- student name or account;
 - raw blocked input;
 - raw rejected tutor output;
 - audio bytes, audio paths, or audio metadata;
@@ -34,13 +34,13 @@ Use a separate Explore telemetry database supplied by runtime configuration. Do 
 Create:
 
 ```text
-src/lerni/explore/
+src/lerni/student/
 ├── telemetry_models.py
 ├── telemetry_store.py
 ├── data_lifecycle.py
 └── export.py
 
-tests/explore/
+tests/student/
 ├── test_telemetry_schema.py
 ├── test_telemetry_store.py
 ├── test_retention.py
@@ -665,7 +665,7 @@ Boundary validation:
 - repeated event idempotency key with byte-equivalent typed fields returns the existing row; a mismatch fails.
 - `record_turn`, `record_turn_pair`, and interactive `record_event` check `status='active'` and insert in the same transaction; an operation-key replay may return an existing row but never append a missing row to a terminal session.
 - `end_session` never transitions a terminal session back to active and is idempotent only for the same terminal identity; post-session parent observations/follow-up recall use their separate explicitly allowed path.
-- event keys are app-generated bounded codes such as `session-start:<operation-or-session-id>`, `step:<step-id>:<visit-index>`, and `choice:<check-id>:<attempt-index>`; no child text enters a key.
+- event keys are app-generated bounded codes such as `session-start:<operation-or-session-id>`, `step:<step-id>:<visit-index>`, and `choice:<check-id>:<attempt-index>`; no student text enters a key.
 - replay orders events by `(occurred_at, id)` and turns by `(turn_index, role)` and rejects impossible/non-contiguous assignment state rather than guessing.
 - session summaries contain no turn/note text and sort by `(started_at DESC, session_id)`.
 
@@ -674,7 +674,7 @@ Boundary validation:
 - session binding must currently be null;
 - binding lesson ID/version and canonical lesson-payload hash must exactly match the recorded session;
 - update only `curriculum_binding_id`;
-- never infer by title, date, child text, or graph proximity;
+- never infer by title, date, student text, or graph proximity;
 - repeated attachment of the same binding is idempotent;
 - a different binding fails.
 
@@ -692,14 +692,14 @@ Global lock order for every Explore build is: already-held process-lifetime runt
 - commit on success;
 - rollback on exception;
 - return an immutable record reconstructed from the inserted row;
-- do not leak SQL or path details into child-facing errors.
+- do not leak SQL or path details into student-facing errors.
 
 Deletion:
 
 - delete the session row;
 - let foreign-key cascades remove turns/events/observations;
 - return `False` for unknown session;
-- do not add a tombstone child row that defeats deletion;
+- do not add a tombstone student row that defeats deletion;
 - rollback if any delete step fails.
 
 `delete_session` is the low-level telemetry transaction and is never called directly by UI code. From PR-05 onward every UI deletion/retention path uses PR-05's token-guarded `LocalDataLifecycleService`; after PR-11 that same service requires its installed parent-state cascade port so readiness evidence, candidate snapshots, assignments, and telemetry cannot be left dangling.
@@ -716,7 +716,7 @@ Purge:
 - compare `ended_at` to UTC cutoff;
 - telemetry store only lists expired IDs and never deletes them in bulk;
 - lifecycle coordinator deletes each ID in cross-store order; each store step is transactional and idempotent;
-- run before browser launch and on explicit maintenance only while no current child session/nonterminal assignment is live;
+- run before browser launch and on explicit maintenance only while no current student session/nonterminal assignment is live;
 - listing/export during a live session is read-only and reports retention deferred; it never starts a multi-session purge behind Stop;
 - when idle, listing/export may request maintenance first, but a short busy/gate timeout returns the list/export with a fixed deferred notice rather than waiting;
 - do not silently purge an active session;
@@ -839,13 +839,13 @@ The lifecycle coordinator owns a fixed strict export-parser registry. PR-05 regi
 
 For a single-file export, summary SHA-256/byte count cover that exact file; for a bundle they cover the exact manifest and total manifest-plus-declared-file bytes. Export IDs are unique across all kinds.
 
-The exact phrase is `DELETE ALL MANAGED LOCAL FAMILY DATA`. The operation requires exclusive ownership of the process-lifetime runtime lock, quiesces callbacks/helper process groups, closes every initialized store, and removes every fixed managed family-data path including telemetry/curriculum/parent-state DB filenames and `-wal`, `-shm`, and `-journal` sidecars, exports, audio temp, and private curation. PR-05 owns this complete fixed registry even when later stores are absent; PR-10/11 only add closers/cascade behavior when those stores exist. Runtime profile, generic packaged lesson/templates, non-child content quarantine, and capability decision records remain.
+The exact phrase is `DELETE ALL MANAGED LOCAL FAMILY DATA`. The operation requires exclusive ownership of the process-lifetime runtime lock, quiesces callbacks/helper process groups, closes every initialized store, and removes every fixed managed family-data path including telemetry/curriculum/parent-state DB filenames and `-wal`, `-shm`, and `-journal` sidecars, exports, audio temp, and private curation. PR-05 owns this complete fixed registry even when later stores are absent; PR-10/11 only add closers/cascade behavior when those stores exist. Runtime profile, generic packaged lesson/templates, non-student content quarantine, and capability decision records remain.
 
-Before closing/deleting paths, atomically create and fsync `.managed-wipe-intent.json` with only schema version, operation UUID, UTC request time, and fixed operation kind—never paths or child data. A valid intent makes the next startup reacquire the runtime lock, derive the fixed registered paths from the profile/code, resume deletion before creating/opening a store, remove/fsync the intent only after verified success, and exit. A malformed intent blocks launch for manual recovery; it is never used as a path source. Any failed known-path deletion leaves the intent and blocks child launch.
+Before closing/deleting paths, atomically create and fsync `.managed-wipe-intent.json` with only schema version, operation UUID, UTC request time, and fixed operation kind—never paths or student data. A valid intent makes the next startup reacquire the runtime lock, derive the fixed registered paths from the profile/code, resume deletion before creating/opening a store, remove/fsync the intent only after verified success, and exit. A malformed intent blocks launch for manual recovery; it is never used as a path source. Any failed known-path deletion leaves the intent and blocks student launch.
 
 The report lists preserved and external/unmanaged categories. `managed_local_complete=True` can coexist with nonempty external categories and means only that every registered Lerni-managed local target was durably removed. The UI must say `Managed local deletion complete; listed copies remain outside Lerni control`, never “all data deleted.” It never claims to delete a live Google Sheet, synced/downloaded/manual copy, browser/terminal cache, provider-held data, filesystem snapshot, backup, or storage remanence. The early implementation exercises the same registered-path algorithm with only currently installed stores.
 
-For each session/launch, conservatively derive fixed external category codes from the qualified capability/browser routes that could have received data (`tutor_or_safety_text`, `speech_to_text_audio`, `browser_speech_text`) and include them before deleting local evidence. Include `browser_speech_text` whenever read-aloud was enabled for the session or its declared route is not mechanically verified local. V1 has no provider deletion API/receipt contract. If the parents require verified provider-side erasure rather than the reviewed retention declaration, external child use is ineligible: select a qualified local capability or add and separately review an adapter deletion/receipt contract before that pilot.
+For each session/launch, conservatively derive fixed external category codes from the qualified capability/browser routes that could have received data (`tutor_or_safety_text`, `speech_to_text_audio`, `browser_speech_text`) and include them before deleting local evidence. Include `browser_speech_text` whenever read-aloud was enabled for the session or its declared route is not mechanically verified local. V1 has no provider deletion API/receipt contract. If the parents require verified provider-side erasure rather than the reviewed retention declaration, external student use is ineligible: select a qualified local capability or add and separately review an adapter deletion/receipt contract before that pilot.
 
 ## Export contract
 
@@ -894,9 +894,9 @@ Requirements:
 - final newline;
 - sanitized/withheld content only;
 - no database path;
-- no settings, credentials, adapter IDs, exceptions, audio, child-name field, or raw source text;
+- no settings, credentials, adapter IDs, exceptions, audio, student-name field, or raw source text;
 - require `export_root` to equal the derived private export directory;
-- generate filename exactly from the fixed kind prefix, session UUID, and export UUID; never from child text or a browser value;
+- generate filename exactly from the fixed kind prefix, session UUID, and export UUID; never from student text or a browser value;
 - reject symlinked directories/files and never accept a browser-supplied filename;
 - create files with owner-only permissions where supported;
 - never overwrite an existing export;
@@ -909,7 +909,7 @@ Requirements:
 - export does not extend retention;
 - warn parent that export is unencrypted and independently retained.
 
-Temporary names use one fixed hidden app prefix plus export UUID. Startup, before listing/readiness, removes only pinned-root regular one-link temp files/directories matching that exact grammar, verifies absence, and reports a count; malformed/symlink/incomplete cleanup blocks export controls and child launch rather than treating partial bytes as an export. PR-10 bundle publication uses the same recovery rule.
+Temporary names use one fixed hidden app prefix plus export UUID. Startup, before listing/readiness, removes only pinned-root regular one-link temp files/directories matching that exact grammar, verifies absence, and reports a count; malformed/symlink/incomplete cleanup blocks export controls and student launch rather than treating partial bytes as an export. PR-10 bundle publication uses the same recovery rule.
 
 ## Task 1 — Schema TDD
 
@@ -928,7 +928,7 @@ Use real temporary SQLite databases.
 Red:
 
 ```bash
-"$PYTHON" -m pytest tests/explore/test_telemetry_schema.py -q
+"$PYTHON" -m pytest tests/student/test_telemetry_schema.py -q
 ```
 
 Green:
@@ -986,7 +986,7 @@ Check rows through SQL; do not depend solely on returned objects.
 Red/green:
 
 ```bash
-"$PYTHON" -m pytest tests/explore/test_telemetry_store.py -q
+"$PYTHON" -m pytest tests/student/test_telemetry_store.py -q
 ```
 
 ## Task 3 — Events and observations
@@ -1001,7 +1001,7 @@ Tests:
 - note over limit rejected without truncation;
 - engagement outside 1–5 rejected;
 - follow-up recall can be added later as a second observation;
-- no observation requires a child identity.
+- no observation requires a student identity.
 
 Red/green in the same store test file or a focused observation file.
 
@@ -1021,14 +1021,14 @@ Tests:
 - UI-facing delete cannot bypass lifecycle coordinator;
 - managed wipe requires exact token/phrase, quiesces callbacks, removes every registered family-data path/sidecar, and reports preserved/external residue;
 - managed wipe removes registered curriculum/private-curation fixtures and preserves only profile/generic-package/setup records;
-- managed-wipe intent is strict/non-child, survives every injected crash point, resumes before store creation, and is removed/fsynced last;
+- managed-wipe intent is strict/non-student, survives every injected crash point, resumes before store creation, and is removed/fsynced last;
 - wrong token or partial shutdown deletes nothing;
 - injected database failure rolls back.
 
 Red/green:
 
 ```bash
-"$PYTHON" -m pytest tests/explore/test_retention.py -q
+"$PYTHON" -m pytest tests/student/test_retention.py -q
 ```
 
 ## Task 5 — Export
@@ -1038,7 +1038,7 @@ Tests:
 - envelope/version exact;
 - rows ordered deterministically;
 - only sanitized content present;
-- settings/path/audio/child-name/credential keys absent;
+- settings/path/audio/student-name/credential keys absent;
 - final newline;
 - export does not mutate session or retention;
 - export outside the derived root rejected;
@@ -1051,7 +1051,7 @@ Tests:
 Red/green:
 
 ```bash
-"$PYTHON" -m pytest tests/explore/test_export.py -q
+"$PYTHON" -m pytest tests/student/test_export.py -q
 ```
 
 ## Task 6 — Safety/telemetry integration
@@ -1071,7 +1071,7 @@ Use real policy, real SQLite, real export, and a deterministic fake tutor.
 Red/green:
 
 ```bash
-"$PYTHON" -m pytest tests/explore/test_safety_telemetry_integration.py -q
+"$PYTHON" -m pytest tests/student/test_safety_telemetry_integration.py -q
 ```
 
 ## Parent-facing claims
@@ -1080,7 +1080,7 @@ Allowed:
 
 - “Lerni stores sanitized session records in a local Explore database.”
 - “Parents can export or delete a session.”
-- “Lerni’s schema does not include audio or a child-name field.”
+- “Lerni’s schema does not include audio or a student-name field.”
 - “Redaction and deletion are best-effort and have documented limits.”
 
 Disallowed:

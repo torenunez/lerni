@@ -2,7 +2,7 @@
 
 ## Goal
 
-Assemble the first child-facing application: deterministic lesson, safety/tutor fallback, telemetry/lifecycle, curated visual, typed interaction, retrieval choices, optional browser read-aloud, parent controls, and a mandatory pre-browser readiness acknowledgement.
+Assemble the first student-facing application: deterministic lesson, safety/tutor fallback, telemetry/lifecycle, curated visual, typed interaction, retrieval choices, optional browser read-aloud, parent controls, and a mandatory pre-browser readiness acknowledgement.
 
 ## Depends on
 
@@ -21,14 +21,14 @@ Assemble the first child-facing application: deterministic lesson, safety/tutor 
 
 Create:
 
-- `src/lerni/explore/bootstrap.py`
-- `src/lerni/explore/presenter.py`
-- `src/lerni/explore/visuals.py`
-- `src/lerni/explore/speech_browser.py`
-- `src/lerni/explore/framework_qualification.py`
-- `src/lerni/explore/ui.py`
-- `src/lerni/explore/launch.py`
-- `src/lerni/explore/__main__.py`
+- `src/lerni/student/bootstrap.py`
+- `src/lerni/student/presenter.py`
+- `src/lerni/student/visuals.py`
+- `src/lerni/student/speech_browser.py`
+- `src/lerni/student/framework_qualification.py`
+- `src/lerni/student/ui.py`
+- `src/lerni/student/launch.py`
+- `src/lerni/student/__main__.py`
 - presenter/visual/speech/UI/launch/bootstrap tests
 
 Modify `pyproject.toml` for the qualified Explore UI extra, `lerni-explore` entry point, and two-mode package description/keywords/classifiers while preserving the `study` entry point and core dependency boundary.
@@ -54,16 +54,16 @@ No hosted Gradio account, tutor account, STT account, or public URL is needed.
 - [ ] Generate/validate the strict private framework qualification record with artifact/probe/platform hashes and count-only canary results.
 - [ ] Expose an operator-only qualification command backed by installed probe code/resources, never a test-directory dependency.
 - [ ] Build localhost-only Gradio components and non-streaming callback map.
-- [ ] Gate every mutation behind mandatory exact loopback Host/same-origin Origin, one-time parent admission, per-session nonce/epoch, and launch/capability-call budgets; unavailable request metadata blocks child UI qualification.
+- [ ] Gate every mutation behind mandatory exact loopback Host/same-origin Origin, one-time parent admission, per-session nonce/epoch, and launch/capability-call budgets; unavailable request metadata blocks student UI qualification.
 - [ ] Keep authoritative `UiSessionState` server-side; expose only a random opaque binding handle/revision and bind every callback to handle, CSRF, framework session, and epoch before resolving state.
 - [ ] Inject the PR-03 admission guard into app composition; never recreate admission state inside callbacks.
 - [ ] Disable share, analytics, flagging, examples, feedback, public API/schema pages, queue persistence, and debug where supported.
-- [ ] Render generated/child text through qualified escaped/plain-text components.
+- [ ] Render generated/student text through qualified escaped/plain-text components.
 - [ ] Add parent-token controls plus exact-phrase managed family-data wipe.
 - [ ] Add summary-only historical session selection with later-recall save and exact-ID export/delete.
 - [ ] Assemble the first-slice `ApplicationBundle` with no graph/recommendation imports.
 - [ ] Resolve fallback trace, print readiness, require exact digest acknowledgement, then construct/launch UI.
-- [ ] Recompute readiness read-only before each child Start; landing-time state/file drift invalidates approval and requires restart.
+- [ ] Recompute readiness read-only before each student Start; landing-time state/file drift invalidates approval and requires restart.
 - [ ] Ensure stale/missing acknowledgement never calls Gradio launch.
 
 ## Required concrete tests
@@ -84,9 +84,9 @@ No hosted Gradio account, tutor account, STT account, or public URL is needed.
 - Historical summaries contain no turn/note text and support restart-safe follow-up recall without accepting a path.
 - Prior-launch active sessions block new Start until token-confirmed abandonment; current-launch active sessions cannot be bulk-abandoned.
 - Generated markup canary renders inert.
-- Framework canary inspection finds no raw input in configured logs/cache/temp; otherwise child pilot is blocked.
+- Framework canary inspection finds no raw input in configured logs/cache/temp; otherwise student pilot is blocked.
 - Browser/server network canary shows no non-loopback framework asset/analytics/telemetry/update/callback request with browser speech and external plugins off.
-- Unsupported temp-root configuration or an uncleanable prior framework temp entry blocks child launch.
+- Unsupported temp-root configuration or an uncleanable prior framework temp entry blocks student launch.
 - Fallback-only complete app starts after acknowledgement.
 - A pre-PR-07 profile that enables speech-to-text fails bootstrap as unsupported rather than changing readiness or being ignored.
 - Base bootstrap/UI has no curriculum/recommendation module imports or controls.
@@ -94,12 +94,12 @@ No hosted Gradio account, tutor account, STT account, or public URL is needed.
 Run:
 
 ```bash
-"$PYTHON" -m pytest tests/explore/test_bootstrap.py -q
-"$PYTHON" -m pytest tests/explore/test_presenter.py -q
-"$PYTHON" -m pytest tests/explore/test_visuals.py -q
-"$PYTHON" -m pytest tests/explore/test_speech_browser.py -q
-"$PYTHON" -m pytest tests/explore/test_ui.py -q
-"$PYTHON" -m pytest tests/explore/test_launch.py -q
+"$PYTHON" -m pytest tests/student/test_bootstrap.py -q
+"$PYTHON" -m pytest tests/student/test_presenter.py -q
+"$PYTHON" -m pytest tests/student/test_visuals.py -q
+"$PYTHON" -m pytest tests/student/test_speech_browser.py -q
+"$PYTHON" -m pytest tests/student/test_ui.py -q
+"$PYTHON" -m pytest tests/student/test_launch.py -q
 ```
 
 ## Acceptance
@@ -108,14 +108,14 @@ Run:
 - Local fallback-only lesson completes through choices.
 - Typed questions use safe authored fallback.
 - Parent can observe/export/delete/reset/wipe synthetic data.
-- No public/share path or child upload exists.
+- No public/share path or student upload exists.
 - Study entry point remains present and core install need not include Gradio.
-- Installed `lerni-explore` and `"$PYTHON" -m lerni.explore.launch` reach the same strict launcher.
+- Installed `lerni-explore` and `"$PYTHON" -m lerni.student.launch` reach the same strict launcher.
 
 ## Out of scope
 
 - Microphone/STT.
 - Curriculum graph/recommendations/placeholders.
 - Public deployment.
-- Child pilot before PR-08 gate.
+- Student pilot before PR-08 gate.
 - Commit, push, or PR creation.

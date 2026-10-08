@@ -11,10 +11,10 @@ A filled-in example: [`../../examples/educator-paths-v1-draft/`](../../examples/
 
 | File | One row is… | Put here | Never put here |
 |---|---|---|---|
-| `NODES.csv` | a reusable idea (e.g. *fractions*) | label, adult definition, aliases, scope | anything about a particular student |
+| `NODES.csv` | a reusable idea (e.g. *fractions*) | label, educator definition, aliases, scope | anything about a particular student |
 | `RELATIONSHIPS.csv` | a subject fact linking two ideas | the claim type and why it holds | teaching order |
 | `CONNECTIONS.csv` | a teaching move from one idea to another | why the move could help, what to check first | an observed result |
-| `PATHS.csv` | one route from a starting topic | title, entry idea, overall goal | a child's name or profile |
+| `PATHS.csv` | one route from a starting topic | title, entry idea, overall goal | a student's name or profile |
 | `PATH_STEPS.csv` | one activity in a route, in order | sequence, target idea, connection, goal, and — for the next activity only — its full wording | what actually happened in a session |
 | `SOURCES.csv` | one reference | citation, optional link, what it supports | a verdict that the source is correct |
 
@@ -41,7 +41,7 @@ A filled-in example: [`../../examples/educator-paths-v1-draft/`](../../examples/
    need a matching subject relationship.
 7. Send the files to the admin, who runs the checker and tells you what to fix.
 
-8. Ask the educator and parent to review that first activity's exact wording and
+8. Ask the educator to review that first activity's exact wording and
    materials. Only after a real review does anyone change `status` to `reviewed`
    and enter their role and the real date. If the wording changes later, set
    `needs_revision`, clear the review fields, and bump `content_revision`.
@@ -67,8 +67,8 @@ do not have to finish every step before trying one well-prepared activity.
 
 ## Keep out of these files
 
-Child name or initials, school, address, contact details, photos, audio,
+Student name or initials, school, address, contact details, photos, audio,
 transcripts, what a particular student said or liked, session dates, scores, and
 medical, behavioral, or diagnostic information. A generic starting topic
-("music") is curriculum; "my kid loves music" is a private observation — write it
+("music") is curriculum; "my student loves music" is a private observation — write it
 in a separate private log, never in this repository.

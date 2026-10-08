@@ -31,28 +31,28 @@ retrieved_on = 2026-08-23
 [[grounding.facts]]
 id = "zero-to-sixty-is-time"
 canonical_text = "A 0-to-60 result reports the elapsed time for velocity to change from 0 miles per hour to 60 miles per hour."
-child_text = "A 0–60 result tells how many seconds the speed change took."
+student_text = "A 0–60 result tells how many seconds the speed change took."
 source_ids = ["nasa-acceleration"]
 allowed_numbers = ["0", "60"]
 
 [[grounding.facts]]
 id = "acceleration-definition"
 canonical_text = "Average acceleration is change in velocity divided by elapsed time."
-child_text = "Acceleration tells how quickly velocity changes."
+student_text = "Acceleration tells how quickly velocity changes."
 source_ids = ["nasa-acceleration"]
 allowed_numbers = []
 
 [[grounding.facts]]
 id = "shorter-time-greater-average"
 canonical_text = "For two straight-line runs with the same initial and final velocities, the shorter elapsed time has the greater average acceleration."
-child_text = "If both cars make the same speed change, the one that does it in less time has greater average acceleration."
+student_text = "If both cars make the same speed change, the one that does it in less time has greater average acceleration."
 source_ids = ["nasa-acceleration"]
 allowed_numbers = ["0", "4", "8", "60"]
 
 [[grounding.facts]]
 id = "average-not-instant"
 canonical_text = "A 0-to-60 elapsed time can support average acceleration over the interval but does not reveal acceleration at every instant."
-child_text = "A car can accelerate differently during the run, so 0–60 supports an average."
+student_text = "A car can accelerate differently during the run, so 0–60 supports an average."
 source_ids = ["nasa-acceleration"]
 allowed_numbers = ["0", "60"]
 

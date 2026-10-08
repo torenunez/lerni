@@ -18,7 +18,7 @@ Build a local Gradio experience that:
 Create:
 
 ```text
-src/lerni/explore/
+src/lerni/student/
 ├── presenter.py
 ├── visuals.py
 ├── speech_browser.py
@@ -26,7 +26,7 @@ src/lerni/explore/
 ├── launch.py
 └── __main__.py
 
-tests/explore/
+tests/student/
 ├── test_presenter.py
 ├── test_visuals.py
 ├── test_speech_browser.py
@@ -37,9 +37,9 @@ tests/explore/
 Modify:
 
 - `pyproject.toml` to add the qualified Gradio dependency to the `explore` optional profile;
-- `pyproject.toml` to add `lerni-explore = "lerni.explore.launch:main"` under project scripts.
+- `pyproject.toml` to add `lerni-explore = "lerni.student.launch:main"` under project scripts.
 
-The canonical SVG remains only under `src/lerni/explore/lessons/assets/`. `visuals.py` reads it through the lesson catalog.
+The canonical SVG remains only under `src/lerni/student/lessons/assets/`. `visuals.py` reads it through the lesson catalog.
 
 ## Dependency boundary
 
@@ -56,7 +56,7 @@ Do not add:
 
 Use the package manager to add the latest compatible Gradio release during implementation; do not invent a version in advance. After qualification, record the supported project range plus the exact resolved transitive distribution/RECORD identities (or the environment’s hash-pinned lock/constraints artifact) used by clean-build evidence. A version range alone is not reproducible; readiness always hashes the actually installed closure.
 
-Keep Gradio imports behind the launch/composition boundary. Bootstrap configures the private derived framework temp/cache root `audio-temp/framework/` before importing Gradio or constructing the server; ordinary `lerni.explore` domain/config/readiness imports must not import the UI framework. PR-07 then qualifies microphone uploads specifically beneath that root.
+Keep Gradio imports behind the launch/composition boundary. Bootstrap configures the private derived framework temp/cache root `audio-temp/framework/` before importing Gradio or constructing the server; ordinary `lerni.student` domain/config/readiness imports must not import the UI framework. PR-07 then qualifies microphone uploads specifically beneath that root.
 
 ## Presenter types
 
@@ -310,11 +310,11 @@ Gradio callbacks depend only on `ExploreSessionPort`. PR-07 extends the port imp
 ### Admission landing
 
 - successful one-time-code admission renders a parent-only `Start Lesson` / `Manage Local Data` landing state;
-- retain the initial `AdmissionGrant` only in the server registry; admission alone creates no `UiResult`, telemetry session, or child interaction;
+- retain the initial `AdmissionGrant` only in the server registry; admission alone creates no `UiResult`, telemetry session, or student interaction;
 - token-guarded history/export/delete/wipe controls work from this landing;
-- active telemetry rows not owned by the current in-memory registry are shown as prior-launch stale; child Start is disabled until a parent explicitly confirms abandonment through the fixed store method;
+- active telemetry rows not owned by the current in-memory registry are shown as prior-launch stale; student Start is disabled until a parent explicitly confirms abandonment through the fixed store method;
 - if the held grant expires during management, Start requires a fresh parent-session grant and consumes another launch-budget slot; no silent refresh occurs;
-- immediately before any child Start, call the read-only readiness provider and require its digest to equal both the displayed report and original terminal approval; a mismatch disables Start and requires restart/fresh terminal acknowledgement;
+- immediately before any student Start, call the read-only readiness provider and require its digest to equal both the displayed report and original terminal approval; a mismatch disables Start and requires restart/fresh terminal acknowledgement;
 - `Start Lesson` requires the current parent token, then passes the still-unconsumed held grant to `ExploreSessionPort.start`; that method is the sole consumer and calls `consume_for_start` exactly once after the comparison.
 
 ### Start
@@ -346,7 +346,7 @@ Gradio callbacks depend only on `ExploreSessionPort`. PR-07 extends the port imp
 - increment learner turn count once;
 - do not call engine transition;
 - speech command contains exactly the displayed tutor text.
-- while a helper call is in flight, clear the raw input component, show only a fixed accessible `Checking that…` status, disable conflicting child mutations but keep Stop available, and never render partial/plugin progress text.
+- while a helper call is in flight, clear the raw input component, show only a fixed accessible `Checking that…` status, disable conflicting student mutations but keep Stop available, and never render partial/plugin progress text.
 
 ### Choice
 
@@ -362,7 +362,7 @@ Gradio callbacks depend only on `ExploreSessionPort`. PR-07 extends the port imp
 
 - mark session stopped;
 - end telemetry session;
-- disable child input;
+- disable student input;
 - emit speech `cancel`.
 - rotate `session_epoch` so late callbacks are discarded.
 
@@ -387,8 +387,8 @@ Gradio callbacks depend only on `ExploreSessionPort`. PR-07 extends the port imp
 - deletion returns a representable `DELETED` result with no state/snapshot;
 - stop/reset/delete rotate the epoch before releasing the session lock;
 - same-page token controls are lightweight local authorization, not account authentication.
-- managed local family-data wipe uses `LocalDataLifecycleService`, exact typed confirmation, stops the app, and reports preserved/external residual categories without child text.
-- enabling read-aloud requires the parent token after browser support is detected and idempotently records the fixed `read_aloud_enabled` event for residual reporting; child controls may repeat/stop already enabled speech but cannot enable it.
+- managed local family-data wipe uses `LocalDataLifecycleService`, exact typed confirmation, stops the app, and reports preserved/external residual categories without student text.
+- enabling read-aloud requires the parent token after browser support is detected and idempotently records the fixed `read_aloud_enabled` event for residual reporting; student controls may repeat/stop already enabled speech but cannot enable it.
 
 ## Curated visual
 
@@ -423,7 +423,7 @@ Validation:
 - require a fixed element/attribute allowlist plus exactly one root `<svg>`, `<title>`, and `<desc>`;
 - reject scripts, style/URL values, event-handler attributes, `foreignObject`, external references, animation, and image/use links;
 - rendered HTML includes an accessible surrounding label;
-- no child-provided visual ID or file path.
+- no student-provided visual ID or file path.
 
 The visual is selected from the current reviewed lesson snapshot.
 
@@ -516,7 +516,7 @@ Browser/operating-system synthesis may use implementation-specific services. Doc
 
 ## Gradio component layout
 
-### Child area
+### Student area
 
 - page heading;
 - short “A grown-up should stay with you” notice;
@@ -531,7 +531,7 @@ Browser/operating-system synthesis may use implementation-specific services. Doc
 - Stop button;
 - Read Again button;
 - Stop Reading button;
-- child-visible status region.
+- student-visible status region.
 
 ### Audio area
 
@@ -578,9 +578,9 @@ The Gradio callback adapter converts:
 - `ParentStatus` to parent-facing Markdown/text;
 - `SpeechCommand` to hidden structured browser state.
 
-No callback receives the answer key. Child callbacks receive an opaque handle, CSRF nonce, and framework request context; only the resolved server-side state is passed to `ExploreSessionPort`.
+No callback receives the answer key. Student callbacks receive an opaque handle, CSRF nonce, and framework request context; only the resolved server-side state is passed to `ExploreSessionPort`.
 
-Generated text is rendered only through a qualified escaped/plain-text path. Prefer a read-only text component. If a chat component is used, it must support Markdown-disabled or equivalent plain-text rendering plus HTML sanitization. Parent-authored status Markdown must never interpolate raw child or generated text.
+Generated text is rendered only through a qualified escaped/plain-text path. Prefer a read-only text component. If a chat component is used, it must support Markdown-disabled or equivalent plain-text rendering plus HTML sanitization. Parent-authored status Markdown must never interpolate raw student or generated text.
 
 ## Event wiring
 
@@ -605,7 +605,7 @@ Use the global order defined by telemetry: already-held runtime lock → shared 
 
 Stop, Reset, Delete, and managed wipe acquire the mutation gate before session locks while a helper runs: rotate the epoch first, cancel/terminate the registered helper process group, terminalize/clean up, and return without accepting its result. A late helper result reacquires in the same order, observes the stale epoch/operation, is discarded without display/persistence, and is reaped. No external/helper call holds either lock for its full deadline.
 
-Qualify a bounded in-memory framework concurrency configuration with at least two request workers and no queue persistence. Stop/cancel must use a nonqueued or distinct-concurrency path that enters while a barrier-controlled tutor callback is blocked; ordinary mutations still serialize in the application lock. If the selected Gradio API queues Stop behind the helper, generated/STT child use is blocked rather than claiming cancellation.
+Qualify a bounded in-memory framework concurrency configuration with at least two request workers and no queue persistence. Stop/cancel must use a nonqueued or distinct-concurrency path that enters while a barrier-controlled tutor callback is blocked; ordinary mutations still serialize in the application lock. If the selected Gradio API queues Stop behind the helper, generated/STT student use is blocked rather than claiming cancellation.
 
 ## Local launch contract
 
@@ -658,12 +658,12 @@ Validation:
 - analytics disabled when the qualified Gradio API exposes that option;
 - flagging, examples, feedback capture, public API names/schema pages, queue persistence, and debug mode disabled;
 - no parent token in URL, browser storage, component value after verification, or logs;
-- generated/child text rendered as escaped plain text;
-- framework error details hidden from child view;
+- generated/student text rendered as escaped plain text;
+- framework error details hidden from student view;
 - no automatic browser-history or monitoring endpoint enabled when configurable.
 - launch rejects missing, stale, or mismatched readiness approval before invoking Gradio.
 
-The launcher may print the local URL and parent capability summary. It must not print credentials, raw runtime profile, child turns, or database content.
+The launcher may print the local URL and parent capability summary. It must not print credentials, raw runtime profile, student turns, or database content.
 
 `main()`:
 
@@ -681,7 +681,7 @@ The launcher may print the local URL and parent capability summary. It must not 
 
 ## Framework data-handling qualification
 
-Before child use, submit unique raw canaries through a throwaway local app and inspect:
+Before student use, submit unique raw canaries through a throwaway local app and inspect:
 
 - stdout/stderr;
 - configured runtime directories;
@@ -699,14 +699,14 @@ Verify:
 - no flagging;
 - no persistent queue;
 - no raw callback body in logs/files;
-- no auto-exposed named API for child or parent mutations;
+- no auto-exposed named API for student or parent mutations;
 - framework temp root is known;
 - no non-loopback asset, analytics, telemetry, update, or callback request is emitted by the app/framework in the qualified fallback-only flow;
 - session cleanup occurs.
 
-If the qualified Gradio version cannot suppress or bound raw text persistence, disclose the exact boundary and block the stronger telemetry-only data claim and child pilot until the design is revised.
+If the qualified Gradio version cannot suppress or bound raw text persistence, disclose the exact boundary and block the stronger telemetry-only data claim and student pilot until the design is revised.
 
-Write the result atomically as strict private `capability-decisions/framework.json`. Its fixed v1 shape contains only schema version, framework/distribution version and RECORD hash, probe-suite source hash, qualified platform/Python identifiers, fixed configuration booleans, managed temp-root relative ID, per-sink canary occurrence counts, qualification date, and `pass`/`fail`; it never contains canary text, child data, absolute paths, account data, or free-form exceptions. Reject unknown fields, nonzero occurrence counts for a passing result, artifact/probe drift, or a non-passing result. `framework_qualification_sha256` is the exact file hash, and a changed framework/build/probe requires requalification.
+Write the result atomically as strict private `capability-decisions/framework.json`. Its fixed v1 shape contains only schema version, framework/distribution version and RECORD hash, probe-suite source hash, qualified platform/Python identifiers, fixed configuration booleans, managed temp-root relative ID, per-sink canary occurrence counts, qualification date, and `pass`/`fail`; it never contains canary text, student data, absolute paths, account data, or free-form exceptions. Reject unknown fields, nonzero occurrence counts for a passing result, artifact/probe drift, or a non-passing result. `framework_qualification_sha256` is the exact file hash, and a changed framework/build/probe requires requalification.
 
 ## Task 1 — Pure presenter TDD
 
@@ -737,7 +737,7 @@ Tests:
 Red:
 
 ```bash
-"$PYTHON" -m pytest tests/explore/test_presenter.py -q
+"$PYTHON" -m pytest tests/student/test_presenter.py -q
 ```
 
 Implement pure application behavior before importing Gradio.
@@ -755,7 +755,7 @@ Tests:
 Red/green:
 
 ```bash
-"$PYTHON" -m pytest tests/explore/test_visuals.py -q
+"$PYTHON" -m pytest tests/student/test_visuals.py -q
 ```
 
 ## Task 3 — Read-aloud TDD
@@ -774,7 +774,7 @@ Tests:
 Red/green:
 
 ```bash
-"$PYTHON" -m pytest tests/explore/test_speech_browser.py -q
+"$PYTHON" -m pytest tests/student/test_speech_browser.py -q
 ```
 
 Do not test the browser vendor’s speech quality. Test the application command contract.
@@ -786,11 +786,11 @@ Tests should assert the application’s own wiring contract, not re-test Gradio 
 Required tests:
 
 - `build_app` succeeds with qualified Gradio and all manual fallbacks;
-- no child image upload component is configured;
+- no student image upload component is configured;
 - microphone component absent/disabled before audio capability;
 - read-aloud defaults off;
 - read-aloud cannot be enabled before browser detection or without parent token;
-- child input remains when read-aloud unavailable;
+- student input remains when read-aloud unavailable;
 - callback map has non-streaming handlers;
 - Host/Origin/admission nonce/session and capability-call budgets fail closed;
 - browser state contains only an opaque handle/revision; forged handles, stale revisions, replay across framework sessions/epochs, and browser-supplied UUID/state fields fail before the session port;
@@ -800,12 +800,12 @@ Required tests:
 - missing or stale readiness approval means Gradio launch is never called;
 - parent delete has explicit confirmation input and token;
 - generated canary renders as text, not active markup;
-- child/assistant canaries do not appear in framework logs/cache during the qualification fixture.
+- student/assistant canaries do not appear in framework logs/cache during the qualification fixture.
 
 Red/green:
 
 ```bash
-"$PYTHON" -m pytest tests/explore/test_ui.py tests/explore/test_launch.py -q
+"$PYTHON" -m pytest tests/student/test_ui.py tests/student/test_launch.py -q
 ```
 
 ## Post-pilot extension boundary

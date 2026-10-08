@@ -10,7 +10,7 @@ Define a deterministic, parent-controlled recommendation layer that:
 - returns explainable candidates;
 - persists parent defer/reject/approve decisions;
 - creates explicit lesson assignments only after approval;
-- never changes graph edges, content approval, mastery, or child-visible state automatically.
+- never changes graph edges, content approval, mastery, or student-visible state automatically.
 
 This milestone begins only after the first-slice pilot and curriculum importer are verified.
 
@@ -21,30 +21,30 @@ Recommendation generation reads one immutable `ActiveCurriculumView` from the cu
 Create:
 
 ```text
-src/lerni/explore/
+src/lerni/student/
 ├── parent_state.py
 ├── observation_aggregation.py
 ├── recommendations.py
 └── assignment_reconcile.py
 
-tests/explore/
+tests/student/
 ├── test_parent_state_schema.py
 ├── test_observation_aggregation.py
 ├── test_recommendations.py
 └── test_assignments.py
 ```
 
-Modify `src/lerni/explore/data_lifecycle.py` and `tests/explore/test_data_lifecycle.py` from the telemetry milestone to install the parent-state cascade port.
+Modify `src/lerni/student/data_lifecycle.py` and `tests/student/test_data_lifecycle.py` from the telemetry milestone to install the parent-state cascade port.
 
 Also modify:
 
 ```text
-src/lerni/explore/bootstrap.py
-src/lerni/explore/ui.py
-src/lerni/explore/presenter.py
-tests/explore/test_bootstrap.py
-tests/explore/test_ui.py
-tests/explore/test_presenter.py
+src/lerni/student/bootstrap.py
+src/lerni/student/ui.py
+src/lerni/student/presenter.py
+tests/student/test_bootstrap.py
+tests/student/test_ui.py
+tests/student/test_presenter.py
 ```
 
 This is a post-pilot milestone. Only now add `parent_state_store`, `recommendation_service`, and `assignment_reconciler` to `ApplicationBundle`; install the parent cascade port; run reconciliation; create the assignment-aware session factory; add recommendation/assignment controls; and upgrade readiness schema `2` to exact `3` with fields `recommendation_mode` and `parent_state_schema_sha256`; strict encoding/decoding rejects another version’s shape. The original plans 00–07 do not import these modules or render disabled placeholder controls.
@@ -60,7 +60,7 @@ class RecommendationLaunchReadinessReport(GraphLaunchReadinessReport):
 
 This concrete type requires `readiness_schema_version == 3`; v2 rejects these fields and v3 requires both.
 
-The PR-03 process-lifetime runtime lock is already held before any store opens. After this extension, graph-enabled bootstrap order is: handle any path-based managed-wipe intent; verify packaged/active curriculum identity; initialize telemetry and parent state; install the cascade port into the lifecycle coordinator; construct services; resume every telemetry-marked session deletion; reconcile remaining assignments; run lifecycle-coordinated retention purge; then build readiness. No reconciliation or retention purge may run earlier. With an active curriculum or any existing parent-state data, lock/store/schema/cascade/recovery/reconciliation failure blocks child launch and every new telemetry delete/purge; it never degrades around dangling assignments/evidence. The pre-browser operator may still invoke the path-based managed family-data wipe while holding the exclusive runtime lock. Curated-only mode is allowed only for a genuinely new empty curriculum/parent-state setup with no prior assignment state.
+The PR-03 process-lifetime runtime lock is already held before any store opens. After this extension, graph-enabled bootstrap order is: handle any path-based managed-wipe intent; verify packaged/active curriculum identity; initialize telemetry and parent state; install the cascade port into the lifecycle coordinator; construct services; resume every telemetry-marked session deletion; reconcile remaining assignments; run lifecycle-coordinated retention purge; then build readiness. No reconciliation or retention purge may run earlier. With an active curriculum or any existing parent-state data, lock/store/schema/cascade/recovery/reconciliation failure blocks student launch and every new telemetry delete/purge; it never degrades around dangling assignments/evidence. The pre-browser operator may still invoke the path-based managed family-data wipe while holding the exclusive runtime lock. Curated-only mode is allowed only for a genuinely new empty curriculum/parent-state setup with no prior assignment state.
 
 ## Storage boundary
 
@@ -270,7 +270,7 @@ class AssignmentReadinessReport:
 
 Build this report from a freshly recomputed base `LaunchReadinessReport` plus the current assignment/candidate/active-binding identities. `launch_readiness_report_sha256` is that exact base report digest. `report_sha256` hashes strict canonical JSON for every field above with `report_sha256` omitted. Start/Resume recomputes both layers and rejects a stale assignment or base readiness digest.
 
-No type includes child name, transcript, audio, duration, message count, emotion score, model score, or free-form generated rationale.
+No type includes student name, transcript, audio, duration, message count, emotion score, model score, or free-form generated rationale.
 
 ## Parent scope
 
@@ -289,7 +289,7 @@ Scope changes create a new immutable `scope_id`; they do not mutate historical r
 Readiness is a parent/educator attestation.
 
 - `unknown`: no readiness claim.
-- `introduced`: child encountered it; not sufficient for a prerequisite.
+- `introduced`: student encountered it; not sufficient for a prerequisite.
 - `ready`: parent/educator approves its use as a prerequisite.
 
 Only `ready` satisfies a prerequisite.
@@ -584,13 +584,13 @@ Compose `AssignmentLifecyclePort` into the session service:
 
 Extend `build_app` with a narrow `recommendation_parent_port` plus the already injected session port, never the full saga-capable service. Render no placeholder controls when absent. When present, the parent accordion adds saved scope selection, Refresh Candidates, exact deterministic candidate explanation, Approve/Defer/Reject, pending/starting/started assignment selection, assignment-specific readiness report/confirmation, Start/Resume Assigned Lesson through `session_port.start_assigned`, and parent-state export creation; generic export list/delete remains owned by the lifecycle controls.
 
-In graph/recommendation mode, extend PR-06's existing parent launch/data-management landing with default-versus-assignment choices. It still creates no telemetry session. The initial server-only `AdmissionGrant` remains unconsumed until the parent starts the default lesson or a selected assignment; the child area stays disabled.
+In graph/recommendation mode, extend PR-06's existing parent launch/data-management landing with default-versus-assignment choices. It still creates no telemetry session. The initial server-only `AdmissionGrant` remains unconsumed until the parent starts the default lesson or a selected assignment; the student area stays disabled.
 
 The landing is a separate pre-session presentation state, not a fabricated `UiResult`/`ParentStatus` with a session ID. The server registry retains the grant by qualified framework session; the browser carries only the existing opaque admission handle/CSRF nonce and stable assignment IDs returned by token-guarded listing.
 
 Prior-launch active telemetry blocks a new default/other assignment. An exactly reconciled `started` assignment may use Resume to adopt that same telemetry session; otherwise the parent must explicitly cancel/abandon through assignment lifecycle before the telemetry store marks it abandoned. Graph mode never calls the base bulk-abandon store method around parent state.
 
-Every recommendation callback verifies the parent token and active admission. Start/Resume calls only `start_assigned`, which first requires a fresh base readiness digest equal to the original terminal approval, then recomputes and verifies the separately acknowledged assignment readiness. It requires no active child session; switching from one requires separate parent confirmation and terminalization. The first selected session passes the held initial grant; a later session reserves a new parent-session grant. `start_assigned` consumes that grant before beginning/resuming the saga, adopts/replays the exact context, acknowledges adoption idempotently, and only then enables child interaction. It uses the same non-refundable launch-session budget and lock/epoch discipline as Reset.
+Every recommendation callback verifies the parent token and active admission. Start/Resume calls only `start_assigned`, which first requires a fresh base readiness digest equal to the original terminal approval, then recomputes and verifies the separately acknowledged assignment readiness. It requires no active student session; switching from one requires separate parent confirmation and terminalization. The first selected session passes the held initial grant; a later session reserves a new parent-session grant. `start_assigned` consumes that grant before beginning/resuming the saga, adopts/replays the exact context, acknowledges adoption idempotently, and only then enables student interaction. It uses the same non-refundable launch-session budget and lock/epoch discipline as Reset.
 
 ## SQLite schema
 
@@ -979,7 +979,7 @@ class AssignmentReconciler:
 
 Every report tuple is stable assignment-ID sorted. Any non-empty `corrupt_assignment_ids` blocks readiness/report creation; successful repair categories/counts are shown only in the transient sanitized maintenance summary.
 
-Reconciliation is an internal recovery operation over fixed IDs/categories; it never accepts or emits child text.
+Reconciliation is an internal recovery operation over fixed IDs/categories; it never accepts or emits student text.
 
 ```python
 class RecommendationService:
@@ -1133,7 +1133,7 @@ Parent-state export:
 - includes stable-sorted exact source session/observation UUID arrays and counts for every exported evidence reference, outside the payload, so lifecycle can remove an affected app-generated snapshot without parsing notes;
 - deterministic JSON schema/version/order;
 - sanitized notes only;
-- no token, child name, transcript, audio, duration, adapter, or credential;
+- no token, student name, transcript, audio, duration, adapter, or credential;
 - atomic no-overwrite write;
 - does not alter retention.
 - register the `parent_state_json` strict parser with the PR-05 lifecycle coordinator, whose generic token-guarded ID/kind/time/hash/size list and fresh-scan exact-ID deletion controls apply.
@@ -1146,7 +1146,7 @@ Deletion:
 - requires reconciliation of `starting`, then explicit stop/cancel of any active started session before deletion;
 - transactionally cascades dependent parent-state rows;
 - never deletes curriculum or telemetry;
-- returns exact deleted count/category without child text;
+- returns exact deleted count/category without student text;
 - exported files are independently retained and must be deleted separately.
 
 ## Cross-store deletion and managed local family-data wipe
@@ -1177,17 +1177,17 @@ Parent-state cleanup happens before telemetry deletion. A crash can leave excess
 Provide a separate parent control, `Delete all managed local family data`, requiring the token plus exact phrase `DELETE ALL MANAGED LOCAL FAMILY DATA`. It:
 
 1. proves ownership of the process-lifetime exclusive runtime lock, stops accepting callbacks, and acquires mutation/session locks;
-2. atomically creates/fsyncs the strict non-child managed-wipe intent;
+2. atomically creates/fsyncs the strict non-student managed-wipe intent;
 3. terminates/reaps helper process groups and removes managed audio temp files;
 4. closes telemetry, curriculum, and parent-state connections;
 5. deletes registered telemetry, curriculum, and parent-state DB files plus `-wal`, `-shm`, and `-journal` sidecars;
-6. deletes app-generated exports, all managed audio-temp children, and the managed `curation-private/` family bundle without following symlinks;
-7. leaves only the runtime profile, generic packaged lesson/templates, non-child content quarantine, capability decision records, and runtime lock;
+6. deletes app-generated exports, all managed audio-temp students, and the managed `curation-private/` family bundle without following symlinks;
+7. leaves only the runtime profile, generic packaged lesson/templates, non-student content quarantine, capability decision records, and runtime lock;
 8. verifies known paths absent, removes/fsyncs the intent last, rotates/invalidates parent and admission tokens, marks the UI stopped, and exits; empty stores are recreated only on a later acknowledged launch.
 
 The control reports categories it could not delete and never claims success if a known file remains. It states that a live Google Sheet, downloaded/synced/manual copy, provider-held copy, browser/terminal cache, filesystem snapshot, backup, and storage remanence are outside managed deletion and require the manual runbook.
 
-No child text is ever printed to the terminal. Readiness data and the parent token may remain in terminal scrollback; a portable app cannot reliably erase that scrollback. The token becomes invalid at exit, and the parent notice instructs the parent to clear/close the terminal and child browser profile after managed wipe. The app does not emit ANSI “clear” sequences and claim deletion.
+No student text is ever printed to the terminal. Readiness data and the parent token may remain in terminal scrollback; a portable app cannot reliably erase that scrollback. The token becomes invalid at exit, and the parent notice instructs the parent to clear/close the terminal and student browser profile after managed wipe. The app does not emit ANSI “clear” sequences and claim deletion.
 
 ## Tests
 
@@ -1267,7 +1267,7 @@ No child text is ever printed to the terminal. Readiness data and the parent tok
 
 ### Privacy
 
-- schema contains no child-name/transcript/audio/duration/model columns;
+- schema contains no student-name/transcript/audio/duration/model columns;
 - notes sanitized;
 - explanation derived only from reviewed fields/aggregate categories;
 - parent token absent from rows/logs/errors.
@@ -1297,7 +1297,7 @@ No child text is ever printed to the terminal. Readiness data and the parent tok
 - Eligibility and ordering are exact.
 - Defer/reject behavior is version-aware.
 - Approval creates an assignment, never a graph mutation.
-- Child never sees an unapproved candidate.
+- Student never sees an unapproved candidate.
 - Recommendation controls appear only after complete post-pilot bootstrap.
 - Assignment adoption and every terminal state reconcile across databases.
 - Cross-store session deletion and managed local family-data wipe satisfy the lifecycle contract.

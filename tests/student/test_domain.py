@@ -1,7 +1,7 @@
-"""Domain contract tests for the Explore lesson core.
+"""Domain contract tests for the student app lesson core.
 
 These assert the shape of the public domain: stable enum values, immutability,
-and the boundary that keeps child-facing data free of answer keys and raw text.
+and the boundary that keeps student-facing data free of answer keys and raw text.
 """
 
 from dataclasses import FrozenInstanceError
@@ -9,7 +9,7 @@ from datetime import date
 
 import pytest
 
-from lerni.explore.domain import (
+from lerni.student.domain import (
     AssetRef,
     CheckChoice,
     GroundedFact,
@@ -41,9 +41,9 @@ def test_phase_values_are_stable():
 def test_review_scope_values_are_stable():
     assert [scope.value for scope in ReviewScope] == [
         "science",
-        "child_content",
+        "student_content",
         "visual_accessibility",
-        "parent_approval",
+        "educator_approval",
     ]
 
 
@@ -74,7 +74,7 @@ def test_grounding_uses_ordered_immutable_tuples(valid_lesson):
         grounding.scope = "other"
 
 
-def test_state_contains_no_child_text():
+def test_state_contains_no_student_text():
     fields = set(LessonState.__dataclass_fields__)
     assert fields == {
         "lesson_id",

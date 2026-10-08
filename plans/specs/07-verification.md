@@ -10,14 +10,14 @@ Produce fresh evidence that:
 - optional tutor and speech adapters satisfy the same contracts;
 - the Study CLI remains intact;
 - data and audio boundaries behave as designed;
-- the first child pilot is parent-supervised and intentionally limited;
+- the first student pilot is parent-supervised and intentionally limited;
 - all changes remain uncommitted.
 
 No success claim is permitted without a fresh command or observed pilot result that proves it.
 
 ## Verification record
 
-Create an execution log outside child-facing content. Record:
+Create an execution log outside student-facing content. Record:
 
 - repository revision and branch at start;
 - initial git status;
@@ -29,20 +29,20 @@ Create an execution log outside child-facing content. Record:
 - each green rerun;
 - final commands, exit codes, and failure counts;
 - synthetic manual-smoke pass/fail and technical categories only;
-- whether the child pilot ran, stopped, or was deferred, without child-specific results;
+- whether the student pilot ran, stopped, or was deferred, without student-specific results;
 - known limitations and deferred work;
 - final git status and diff summary.
 
 Do not record:
 
 - credentials;
-- raw child transcript;
+- raw student transcript;
 - audio;
 - raw blocked/rejected content;
 - parent-confidential notes.
-- engagement, understanding, wanted-more, delayed-recall, or other child-specific pilot observations outside lifecycle-managed telemetry/parent-state storage.
+- engagement, understanding, wanted-more, delayed-recall, or other student-specific pilot observations outside lifecycle-managed telemetry/parent-state storage.
 
-Child pilot observations are entered only through the parent observation controls under the managed runtime root. Session deletion/retention/family wipe therefore reaches them. A final technical report may state counts/status categories only after sanitization and must not copy the observation text.
+Student pilot observations are entered only through the parent observation controls under the managed runtime root. Session deletion/retention/family wipe therefore reaches them. A final technical report may state counts/status categories only after sanitization and must not copy the observation text.
 
 ## Phase 1 — Baseline before edits
 
@@ -78,7 +78,7 @@ This is an example command shape, not a requirement that `pip` or that exact env
 Verify imports:
 
 ```bash
-"$PYTHON" -c "import lerni; import lerni.explore"
+"$PYTHON" -c "import lerni; import lerni.student"
 ```
 
 Build:
@@ -111,9 +111,9 @@ The execution log maintains one row per normative requirement with: stable requi
 
 Minimum concrete integration assertions:
 
-- runtime paths: real temporary private root; assert missing root is not created, children are mode-private where supported, and symlink replacement fails before any store opens;
-- capability process: real spawned child; assert exact wire bytes/schema/ID, timeout termination and join, descriptor closure, bounded frames, metadata hash drift rejection, and sanitized stderr/result;
-- readiness: exact report digest recomputed independently; a maintenance-performing `--print-readiness` and following unchanged launch match; monkeypatch launch/child-Start and assert both call counts remain zero for missing/stale acknowledgement or landing-time drift;
+- runtime paths: real temporary private root; assert missing root is not created, students are mode-private where supported, and symlink replacement fails before any store opens;
+- capability process: real spawned student; assert exact wire bytes/schema/ID, timeout termination and join, descriptor closure, bounded frames, metadata hash drift rejection, and sanitized stderr/result;
+- readiness: exact report digest recomputed independently; a maintenance-performing `--print-readiness` and following unchanged launch match; monkeypatch launch/student-Start and assert both call counts remain zero for missing/stale acknowledgement or landing-time drift;
 - package/content: install each built artifact into a clean environment and compare resource bytes/hashes to the approved index, not merely successful import;
 - policy: parameterize every golden phrase/regex and one adjacent benign counterexample; assert exact action/reason/storage marker and fake tutor call count;
 - output grounding: pass an untrusted draft through the complete service and assert rejected canary absent from return value, telemetry rows, exports, captured logs, and app temp/cache paths;
@@ -134,64 +134,64 @@ Run in this order so failures are localized.
 ### Runtime profile and bootstrap
 
 ```bash
-"$PYTHON" -m pytest tests/explore/test_runtime_config.py -q
-"$PYTHON" -m pytest tests/explore/test_capability_runner.py -q
-"$PYTHON" -m pytest tests/explore/test_readiness.py -q
-"$PYTHON" -m pytest tests/explore/test_bootstrap.py -q
+"$PYTHON" -m pytest tests/student/test_runtime_config.py -q
+"$PYTHON" -m pytest tests/student/test_capability_runner.py -q
+"$PYTHON" -m pytest tests/student/test_readiness.py -q
+"$PYTHON" -m pytest tests/student/test_bootstrap.py -q
 ```
 
 ### Lesson core
 
 ```bash
-"$PYTHON" -m pytest tests/explore/test_domain.py -q
-"$PYTHON" -m pytest tests/explore/test_catalog.py -q
-"$PYTHON" -m pytest tests/explore/test_chain_1_content.py -q
-"$PYTHON" -m pytest tests/explore/test_engine.py -q
-"$PYTHON" -m pytest tests/explore/test_distribution.py -q
+"$PYTHON" -m pytest tests/student/test_domain.py -q
+"$PYTHON" -m pytest tests/student/test_catalog.py -q
+"$PYTHON" -m pytest tests/student/test_chain_1_content.py -q
+"$PYTHON" -m pytest tests/student/test_engine.py -q
+"$PYTHON" -m pytest tests/student/test_distribution.py -q
 ```
 
 ### Safety and tutor boundary
 
 ```bash
-"$PYTHON" -m pytest tests/explore/test_contracts.py -q
-"$PYTHON" -m pytest tests/explore/test_plugin_loader.py -q
-"$PYTHON" -m pytest tests/explore/test_qualification.py -q
-"$PYTHON" -m pytest tests/explore/test_sanitization.py -q
-"$PYTHON" -m pytest tests/explore/test_input_policy.py -q
-"$PYTHON" -m pytest tests/explore/test_output_policy.py -q
-"$PYTHON" -m pytest tests/explore/test_grounding.py -q
-"$PYTHON" -m pytest tests/explore/test_tutor_service.py -q
-"$PYTHON" -m pytest tests/explore/test_policy_golden.py -q
+"$PYTHON" -m pytest tests/student/test_contracts.py -q
+"$PYTHON" -m pytest tests/student/test_plugin_loader.py -q
+"$PYTHON" -m pytest tests/student/test_qualification.py -q
+"$PYTHON" -m pytest tests/student/test_sanitization.py -q
+"$PYTHON" -m pytest tests/student/test_input_policy.py -q
+"$PYTHON" -m pytest tests/student/test_output_policy.py -q
+"$PYTHON" -m pytest tests/student/test_grounding.py -q
+"$PYTHON" -m pytest tests/student/test_tutor_service.py -q
+"$PYTHON" -m pytest tests/student/test_policy_golden.py -q
 ```
 
 ### Telemetry
 
 ```bash
-"$PYTHON" -m pytest tests/explore/test_telemetry_schema.py -q
-"$PYTHON" -m pytest tests/explore/test_telemetry_store.py -q
-"$PYTHON" -m pytest tests/explore/test_retention.py -q
-"$PYTHON" -m pytest tests/explore/test_export.py -q
-"$PYTHON" -m pytest tests/explore/test_data_lifecycle.py -q
-"$PYTHON" -m pytest tests/explore/test_safety_telemetry_integration.py -q
+"$PYTHON" -m pytest tests/student/test_telemetry_schema.py -q
+"$PYTHON" -m pytest tests/student/test_telemetry_store.py -q
+"$PYTHON" -m pytest tests/student/test_retention.py -q
+"$PYTHON" -m pytest tests/student/test_export.py -q
+"$PYTHON" -m pytest tests/student/test_data_lifecycle.py -q
+"$PYTHON" -m pytest tests/student/test_safety_telemetry_integration.py -q
 ```
 
 ### Gradio and read-aloud
 
 ```bash
-"$PYTHON" -m pytest tests/explore/test_presenter.py -q
-"$PYTHON" -m pytest tests/explore/test_visuals.py -q
-"$PYTHON" -m pytest tests/explore/test_speech_browser.py -q
-"$PYTHON" -m pytest tests/explore/test_ui.py -q
-"$PYTHON" -m pytest tests/explore/test_launch.py -q
+"$PYTHON" -m pytest tests/student/test_presenter.py -q
+"$PYTHON" -m pytest tests/student/test_visuals.py -q
+"$PYTHON" -m pytest tests/student/test_speech_browser.py -q
+"$PYTHON" -m pytest tests/student/test_ui.py -q
+"$PYTHON" -m pytest tests/student/test_launch.py -q
 ```
 
 ### Push-to-talk
 
 ```bash
-"$PYTHON" -m pytest tests/explore/test_plugin_loader.py -q
-"$PYTHON" -m pytest tests/explore/test_qualification.py -q
-"$PYTHON" -m pytest tests/explore/test_recordings.py -q
-"$PYTHON" -m pytest tests/explore/test_audio_presenter.py -q
+"$PYTHON" -m pytest tests/student/test_plugin_loader.py -q
+"$PYTHON" -m pytest tests/student/test_qualification.py -q
+"$PYTHON" -m pytest tests/student/test_recordings.py -q
+"$PYTHON" -m pytest tests/student/test_audio_presenter.py -q
 ```
 
 ### Curation and graph integration, when implemented
@@ -199,17 +199,17 @@ Run in this order so failures are localized.
 This is a second verification pass after the first-slice pilot gate, not a prerequisite for that pilot.
 
 ```bash
-"$PYTHON" -m pytest tests/explore/test_curation_csv.py -q
-"$PYTHON" -m pytest tests/explore/test_curation_validation.py -q
-"$PYTHON" -m pytest tests/explore/test_curriculum_store.py -q
-"$PYTHON" -m pytest tests/explore/test_curriculum_graph.py -q
-"$PYTHON" -m pytest tests/explore/test_content_compile.py -q
-"$PYTHON" -m pytest tests/explore/test_recommendations.py -q
-"$PYTHON" -m pytest tests/explore/test_observation_export.py -q
-"$PYTHON" -m pytest tests/explore/test_parent_state_schema.py -q
-"$PYTHON" -m pytest tests/explore/test_observation_aggregation.py -q
-"$PYTHON" -m pytest tests/explore/test_assignments.py -q
-"$PYTHON" -m pytest tests/explore/test_data_lifecycle.py -q
+"$PYTHON" -m pytest tests/student/test_curation_csv.py -q
+"$PYTHON" -m pytest tests/student/test_curation_validation.py -q
+"$PYTHON" -m pytest tests/student/test_curriculum_store.py -q
+"$PYTHON" -m pytest tests/student/test_curriculum_graph.py -q
+"$PYTHON" -m pytest tests/student/test_content_compile.py -q
+"$PYTHON" -m pytest tests/student/test_recommendations.py -q
+"$PYTHON" -m pytest tests/student/test_observation_export.py -q
+"$PYTHON" -m pytest tests/student/test_parent_state_schema.py -q
+"$PYTHON" -m pytest tests/student/test_observation_aggregation.py -q
+"$PYTHON" -m pytest tests/student/test_assignments.py -q
+"$PYTHON" -m pytest tests/student/test_data_lifecycle.py -q
 ```
 
 After plan 08b, repeat the manual UI fixture and assert that recommendation controls appear only with a fully initialized service, Start/Resume adoption is acknowledged before interaction, every assigned terminal state is reconciled, session deletion removes derived parent evidence/candidates/assignments before telemetry, and managed wipe removes parent-state/curriculum sidecars plus private curation.
@@ -217,7 +217,7 @@ After plan 08b, repeat the manual UI fixture and assert that recommendation cont
 ### Explore suite and full regression
 
 ```bash
-"$PYTHON" -m pytest tests/explore -q
+"$PYTHON" -m pytest tests/student -q
 "$PYTHON" -m pytest -q
 ```
 
@@ -228,8 +228,8 @@ The full suite must include and preserve existing SM-2 tests.
 Using qualified tools:
 
 ```bash
-"$PYTHON" -m ruff check src/lerni/explore tests/explore
-"$PYTHON" -m mypy --strict src/lerni/explore
+"$PYTHON" -m ruff check src/lerni/student tests/student
+"$PYTHON" -m mypy --strict src/lerni/student
 ```
 
 Then run full-project checks:
@@ -255,7 +255,7 @@ For wheel and source distribution separately:
 
 1. Create a clean temporary Python environment.
 2. Install the artifact.
-3. Import `lerni.explore`.
+3. Import `lerni.student`.
 4. Load the approved Chain-1 TOML through `importlib.resources`.
 5. Read the SVG.
 6. Build the Gradio app with manual fallbacks.
@@ -311,7 +311,7 @@ Verify:
 - raw draft does not reach display;
 - raw draft does not persist;
 - authored fallback appears;
-- child sees no stack trace or adapter name.
+- student sees no stack trace or adapter name.
 
 ### Audio canaries
 
@@ -339,9 +339,9 @@ Run:
 
 ```bash
 "$PYTHON" -m lerni --help
-study --help
-study list
-study today
+lerni --help
+lerni list
+lerni today
 ```
 
 Use a temporary or explicitly safe Study data directory if commands would touch personal data.
@@ -387,11 +387,11 @@ Verify:
 20. Framework cache/log/temp inspection contains no raw input canary.
 21. Managed-wipe dry fixture removes every currently registered family-data path, preserves profile/generic package/setup records, invalidates parent/admission tokens, and exits.
 
-If framework data-handling qualification cannot bound raw text persistence, stop the child pilot and report the exact boundary.
+If framework data-handling qualification cannot bound raw text persistence, stop the student pilot and report the exact boundary.
 
 ## Phase 10 — Qualified generated-tutor smoke
 
-Do not use child input yet.
+Do not use student input yet.
 
 With the selected tutor and mandatory additional-safety plugins:
 
@@ -427,7 +427,7 @@ Do not claim browser speech stays local unless independently verified for the ac
 
 Follow the audio plan’s manual sequence.
 
-Before child use:
+Before student use:
 
 - parents review routing/retention notice;
 - microphone permission is explicit;
@@ -440,13 +440,13 @@ After success and forced failure:
 - no audio/path is in database/export;
 - transcript requires review and Send.
 
-## Phase 13 — Parent-supervised child pilot
+## Phase 13 — Parent-supervised student pilot
 
 ### Preconditions
 
 - both parents consent;
 - one parent remains present and can stop immediately;
-- lesson status is approved with actual required science, child-content, visual-accessibility, and parent attestations;
+- lesson status is approved with actual required science, student-content, visual-accessibility, and parent attestations;
 - the exact selected eligibility level is recorded: `authored_typed`, `generated_tutor`, or `generated_tutor_voice_input`, with browser read-aloud status recorded separately;
 - real tutor plus mandatory safety reports are reviewed for `generated_tutor`; real STT/media reports are additionally reviewed for `generated_tutor_voice_input`;
 - pre-browser readiness digest and every fallback trace are reviewed and acknowledged for this launch;
@@ -455,7 +455,7 @@ After success and forced failure:
 - no public/share URL exists;
 - the per-launch parent token is available to the supervising parent and absent from URL, logs, profile, and browser storage;
 - no unrelated personal data is visible on the device;
-- child can use typed/choice fallback if audio fails.
+- student can use typed/choice fallback if audio fails.
 
 ### Parent briefing
 
@@ -472,11 +472,11 @@ Explain:
 ### Pilot flow
 
 1. Parent starts session.
-2. Child sees the acceleration visual.
-3. Child explores the authored hook.
-4. If desired and qualified, child uses push-to-talk.
-5. Parent/child reviews transcript before Send.
-6. Child completes explicit retrieval check.
+2. Student sees the acceleration visual.
+3. Student explores the authored hook.
+4. If desired and qualified, student uses push-to-talk.
+5. Parent/student reviews transcript before Send.
+6. Student completes explicit retrieval check.
 7. Parent stops when curiosity drops; do not extend for a target duration.
 8. Parent records structured observation.
 9. Parent reviews local session record.
@@ -553,7 +553,7 @@ Report:
 - exact verification commands and results;
 - test count and failures;
 - capability qualification status;
-- child pilot not run / run with observations;
+- student pilot not run / run with observations;
 - known residual risks;
 - deferred graph/curation work;
 - working-tree summary;
@@ -580,4 +580,4 @@ The first slice is technically complete only when:
 - final diff is reviewed;
 - no commit exists.
 
-The child pilot is a separate evidence event. Technical completion does not imply educational efficacy or broad-release readiness.
+The student pilot is a separate evidence event. Technical completion does not imply educational efficacy or broad-release readiness.

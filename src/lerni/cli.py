@@ -7,7 +7,7 @@ from .db import init_db
 
 # Create main app
 app = typer.Typer(
-    name="study",
+    name="lerni",
     help="Lerni - Learn deeply, remember permanently",
     no_args_is_help=True,
     rich_markup_mode="rich",

@@ -72,7 +72,7 @@ isProject: false
 - One graph edge should not automatically equal one tutor turn. Existing `prerequisite` edges mean “concept requires prerequisite,” while a lesson step means “teach this next”; conflating domain relationships with pedagogy will corrupt both. Week 1 therefore uses an explicit lesson sequence and defers graph integration.
 - Hop count is a useful authoring heuristic, not a validated difficulty metric; authored edge granularity determines the count.
 - The draft Chain-1 line “that 0–60 number has a name: acceleration” is scientifically wrong. A 0–60 figure is elapsed time; acceleration is change in velocity over time. The fact sheet will use the corrected distinction and stable sources, without mutable leaderboard claims.
-- Safety and grounding cannot wait until Week 2 if a child uses Week 1. Provider safety behavior is not an application safety boundary, so this prototype will use bounded content, deterministic local policy checks, buffered output, a turn cap, and parent supervision; it will not claim production-grade moderation or COPPA compliance.
+- Safety and grounding cannot wait until Week 2 if a student uses Week 1. Provider safety behavior is not an application safety boundary, so this prototype will use bounded content, deterministic local policy checks, buffered output, a turn cap, and parent supervision; it will not claim production-grade moderation or COPPA compliance.
 - Audio output is cheap enough for the first usable build through a runtime-detected browser speech capability. Audio input is a separate concern and should follow immediately through an isolated, qualified speech-to-text adapter rather than block the lesson core.
 - FastAPI, NetworkX, shared Study-database state, token streaming, Render, and the garage do not contribute to the first learning signal and are deferred.
 
@@ -80,15 +80,15 @@ isProject: false
 
 - Locked: one repository, two modes; Study is maintenance-only and Explore is active.
 - Locked: Gradio + replaceable tutor capability + app-owned lesson state + Chain-1 grounding/output gate.
-- Locked: generated tutor use for a child additionally requires a qualified input/output harm gate; otherwise authored fallback remains active.
+- Locked: generated tutor use for a student additionally requires a qualified input/output harm gate; otherwise authored fallback remains active.
 - Locked: no plan file assumes an available coding agent, model, provider, credential, speech engine, accelerator, or orchestration tool; runtime adapters are selected through explicit environment qualification.
-- Locked: the first child session includes curated visuals and text/choice interaction, and offers parent-enabled browser read-aloud only when qualified/supported; it does not accept child image uploads. *(Revised 2026-09-25: read-aloud is an optional later capability, not part of the first authored slice — see [roadmap](../docs/roadmap.md) section 10.)*
+- Locked: the first student session includes curated visuals and text/choice interaction, and offers parent-enabled browser read-aloud only when qualified/supported; it does not accept student image uploads. *(Revised 2026-09-25: read-aloud is an optional later capability, not part of the first authored slice — see [roadmap](../docs/roadmap.md) section 10.)*
 - Locked: push-to-talk input follows the core immediately, using Gradio microphone capture and a replaceable speech-to-text contract; the selected adapter's local/external routing and retention are reviewed by parents before use. *(Revised 2026-09-25: speech input is an optional later capability, not a prerequisite for the first authored slice.)*
 - Locked: localhost only (`127.0.0.1`, no share URL), buffered responses, no public deployment.
-- Locked: retain sanitized turns, lesson events, and parent observations in a separate local Explore SQLite database with no child name; provide session-level delete and JSON export controls. Do not add cloud analytics or retain audio. *(Revised 2026-09-25: the first authored slice keeps session state in memory with no persistent student telemetry; these lifecycle requirements apply before any later persistence is used.)*
+- Locked: retain sanitized turns, lesson events, and parent observations in a separate local Explore SQLite database with no student name; provide session-level delete and JSON export controls. Do not add cloud analytics or retain audio. *(Revised 2026-09-25: the first authored slice keeps session state in memory with no persistent student telemetry; these lifecycle requirements apply before any later persistence is used.)*
 - Locked: parent curation begins in portable CSV-backed spreadsheet templates compatible with Google Sheets; interests, nudges, facts, graph edges, and lesson order remain separate records, and only approved content primes the active graph. *(Revised 2026-09-25: educator authoring now starts immediately with [`educator-paths-v1`](./specs/08c-educator-path-authoring.md) — nodes, relationships, connections, paths, path steps, sources — with learner observations kept out of curriculum. Only approved content ever primes an active graph.)*
 - Locked: preserve all pre-existing uncommitted work, including `.claude/`; make no commits.
-- Deferred: integration with the Study database, garage/mastery, Spanish, child image uploads, deployment framework/hosting, graph libraries, automatic sheet synchronization, and any non-family access.
+- Deferred: integration with the Study database, garage/mastery, Spanish, student image uploads, deployment framework/hosting, graph libraries, automatic sheet synchronization, and any non-family access.
 
 ## How to use this plan
 
@@ -97,7 +97,7 @@ isProject: false
 - Detailed technical contracts remain in the numbered specification files; PR-07A is intentionally the combined deployment-specific contract/implementation template because provider details cannot enter core specs.
 - PR labels describe future review units; they do not authorize a commit, push, branch, or hosted pull request.
 - Implementation remains uncommitted until the user explicitly authorizes Git operations.
-- No plan assumes a particular implementation agent, model, provider, credential store, or orchestration product. The host must qualify the filesystem, process, browser, and localhost controls required for child use; an unsupported platform blocks that tier rather than receiving weaker claims.
+- No plan assumes a particular implementation agent, model, provider, credential store, or orchestration product. The host must qualify the filesystem, process, browser, and localhost controls required for student use; an unsupported platform blocks that tier rather than receiving weaker claims.
 
 ## Manual setup tracks
 
@@ -110,7 +110,7 @@ isProject: false
 
 2. **[Private CSV/Google Sheets data priming](./runbooks/data-priming.md).**
    - Legacy-format bundle only. New educator path authoring uses `educator-paths-v1` (see the educator authoring track below) and does not wait for PR-09.
-   - Real source, science, child-content, accessibility, and parent reviews are required before approval.
+   - Real source, science, student-content, accessibility, and parent reviews are required before approval.
    - The filled family workbook/bundle stays private and untracked.
    - Activation and recommendation priming occur only at their later gates.
 
@@ -249,9 +249,9 @@ When a qualified tutor is available, it may phrase an explanation or answer a bo
 
 4. **[Lesson domain and reviewed Chain-1 content](./specs/02-lesson-core.md).** Implement immutable types, a strict TOML catalog, corrected acceleration content, an accessible curated SVG, deterministic intro/teach/check/hint/complete transitions, and installed-package verification.
 
-5. **[Safety, grounding, and tutor boundary](./specs/03-safety-tutor.md), with [normative policy algorithms](./specs/03a-policy-algorithms.md) and [exact harm-probe fixture](./specs/03b-harm-probe-cases.md).** Implement best-effort sanitization, deterministic policy, exact rules/fixtures, fact/number checks, typed tutor contracts, authored fallback, and the mandatory qualified harm gate for any generated child-facing tutor.
+5. **[Safety, grounding, and tutor boundary](./specs/03-safety-tutor.md), with [normative policy algorithms](./specs/03a-policy-algorithms.md) and [exact harm-probe fixture](./specs/03b-harm-probe-cases.md).** Implement best-effort sanitization, deterministic policy, exact rules/fixtures, fact/number checks, typed tutor contracts, authored fallback, and the mandatory qualified harm gate for any generated student-facing tutor.
 
-6. **[Local telemetry and parent controls](./specs/04-telemetry.md).** Add a separate Explore SQLite schema for sanitized turns, structured events, parent observations, retention, export, and transactional deletion; exclude child names, raw rejected content, audio, arbitrary JSON, credentials, and provider identifiers.
+6. **[Local telemetry and parent controls](./specs/04-telemetry.md).** Add a separate Explore SQLite schema for sanitized turns, structured events, parent observations, retention, export, and transactional deletion; exclude student names, raw rejected content, audio, arbitrary JSON, credentials, and provider identifiers.
 
 7. **[Gradio UI, curated visual, and read-aloud](./specs/05-gradio-ui.md).** Build pure presenter callbacks first, then a localhost-only Gradio composition with deterministic controls, optional read-aloud, accessible fallbacks, and parent supervision controls.
 

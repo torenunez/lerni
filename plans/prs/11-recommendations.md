@@ -2,7 +2,7 @@
 
 ## Goal
 
-Add deterministic, explainable, parent-controlled recommendation candidates and crash-recoverable lesson assignments backed by a separate parent-state database. Recommendations never mutate content/graph/readiness or reach the child without explicit parent approval.
+Add deterministic, explainable, parent-controlled recommendation candidates and crash-recoverable lesson assignments backed by a separate parent-state database. Recommendations never mutate content/graph/readiness or reach the student without explicit parent approval.
 
 ## Depends on
 
@@ -21,10 +21,10 @@ Add deterministic, explainable, parent-controlled recommendation candidates and 
 
 Create:
 
-- `src/lerni/explore/parent_state.py`
-- `src/lerni/explore/observation_aggregation.py`
-- `src/lerni/explore/recommendations.py`
-- `src/lerni/explore/assignment_reconcile.py`
+- `src/lerni/student/parent_state.py`
+- `src/lerni/student/observation_aggregation.py`
+- `src/lerni/student/recommendations.py`
+- `src/lerni/student/assignment_reconcile.py`
 - parent-state/aggregation/recommendation/assignment tests
 
 Modify:
@@ -88,13 +88,13 @@ No external service account or credential is needed.
 Run:
 
 ```bash
-"$PYTHON" -m pytest tests/explore/test_parent_state_schema.py -q
-"$PYTHON" -m pytest tests/explore/test_observation_aggregation.py -q
-"$PYTHON" -m pytest tests/explore/test_recommendations.py -q
-"$PYTHON" -m pytest tests/explore/test_assignments.py -q
-"$PYTHON" -m pytest tests/explore/test_data_lifecycle.py -q
-"$PYTHON" -m pytest tests/explore/test_bootstrap.py tests/explore/test_presenter.py tests/explore/test_ui.py -q
-"$PYTHON" -m pytest tests/explore -q
+"$PYTHON" -m pytest tests/student/test_parent_state_schema.py -q
+"$PYTHON" -m pytest tests/student/test_observation_aggregation.py -q
+"$PYTHON" -m pytest tests/student/test_recommendations.py -q
+"$PYTHON" -m pytest tests/student/test_assignments.py -q
+"$PYTHON" -m pytest tests/student/test_data_lifecycle.py -q
+"$PYTHON" -m pytest tests/student/test_bootstrap.py tests/student/test_presenter.py tests/student/test_ui.py -q
+"$PYTHON" -m pytest tests/student -q
 "$PYTHON" -m pytest -q
 ```
 
@@ -102,9 +102,9 @@ Run:
 
 - Parent sees transparent candidates only within saved scope when truthful readiness makes one eligible; a real zero-candidate result is valid.
 - Explicit approve creates one assignment; defer/reject are deterministic and version-aware.
-- No unapproved candidate reaches child UI.
+- No unapproved candidate reaches student UI.
 - Assignment adoption/terminal lifecycle is recoverable across crashes.
-- Cross-store deletion/managed wipe leaves no dangling child-derived parent evidence.
+- Cross-store deletion/managed wipe leaves no dangling student-derived parent evidence.
 - Content, telemetry, and parent-state databases remain separate.
 - No engagement-maximizing metric or automatic graph/readiness mutation exists.
 
@@ -114,6 +114,6 @@ Synthetic reviewed fixtures prove approve/assignment paths even if family readin
 
 - Generated graph/content suggestions.
 - Automatic mastery/readiness.
-- Child-facing recommendation feed.
+- Student-facing recommendation feed.
 - Multi-user/authenticated remote access.
 - Commit, push, or PR creation.

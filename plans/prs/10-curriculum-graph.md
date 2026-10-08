@@ -21,11 +21,11 @@ Stage validated immutable curation batches in a separate SQLite database, compil
 
 Create:
 
-- `src/lerni/explore/curriculum_store.py`
-- `src/lerni/explore/curriculum_graph.py`
-- `src/lerni/explore/curriculum_data/content-schema-v1.json`
-- `src/lerni/explore/observation_export.py`
-- `src/lerni/explore/binding_migration.py`
+- `src/lerni/student/curriculum_store.py`
+- `src/lerni/student/curriculum_graph.py`
+- `src/lerni/student/curriculum_data/content-schema-v1.json`
+- `src/lerni/student/observation_export.py`
+- `src/lerni/student/binding_migration.py`
 - curation operator command/callable for validate, stage, publish, verify, activate
 - store/graph/compiler/observation-export tests
 
@@ -77,10 +77,10 @@ No cloud/service account or credential is needed.
 - Staged binding package/payload hashes come from the precomputed final artifact plan; publication and activation reject any byte/hash divergence.
 - Golden artifact-set/plan/stageable-bundle digests reproduce independently; a tampered caller plan writes nothing and does not consume its batch ID.
 - Repeated activation of the same exact active batch is read/verify idempotent.
-- Any covered post-activation schema/pointer/row/relation/review/binding/approval/artifact mutation blocks child startup.
+- Any covered post-activation schema/pointer/row/relation/review/binding/approval/artifact mutation blocks student startup.
 - Golden readiness transition proves exact v1→v2 field set/digest; v1 rejects graph fields and v2 rejects missing/extra/recommendation fields.
 - Quarantine survives restart/wipe/ordinary activation; wrong token/hash, same quarantined identity, unverified replacement, and unlink failure cannot clear it.
-- Barrier-controlled slow validation/compilation does not delay child Stop; busy gate returns a no-write retry, and source mutation during snapshot copy is rejected.
+- Barrier-controlled slow validation/compilation does not delay student Stop; busy gate returns a no-write retry, and source mutation during snapshot copy is rejected.
 - Application bootstrap performs no curriculum write.
 - Graph contains exactly one interest, two concepts, one related edge, one nudge, and one immutable binding; no draft/proposed content.
 - Prerequisite cycles fail; related cycles do not; lesson order is never inferred.
@@ -92,11 +92,11 @@ No cloud/service account or credential is needed.
 Run:
 
 ```bash
-"$PYTHON" -m pytest tests/explore/test_curriculum_store.py -q
-"$PYTHON" -m pytest tests/explore/test_curriculum_graph.py -q
-"$PYTHON" -m pytest tests/explore/test_content_compile.py -q
-"$PYTHON" -m pytest tests/explore/test_observation_export.py -q
-"$PYTHON" -m pytest tests/explore/test_bootstrap.py -q
+"$PYTHON" -m pytest tests/student/test_curriculum_store.py -q
+"$PYTHON" -m pytest tests/student/test_curriculum_graph.py -q
+"$PYTHON" -m pytest tests/student/test_content_compile.py -q
+"$PYTHON" -m pytest tests/student/test_observation_export.py -q
+"$PYTHON" -m pytest tests/student/test_bootstrap.py -q
 "$PYTHON" -m build
 ```
 
@@ -106,7 +106,7 @@ Run:
 - Human-confirmed exact artifacts publish and match installed distributions.
 - Explicit activation yields the expected approved graph/binding.
 - Startup is read-only and hash-verifies active content.
-- Child app still uses independently approved packaged lesson.
+- Student app still uses independently approved packaged lesson.
 - No recommendation/assignment behavior is accepted in this PR.
 
 ## Out of scope

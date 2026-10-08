@@ -1,8 +1,8 @@
-"""Immutable lesson domain for Explore.
+"""Immutable lesson domain for the student app.
 
 Every type here is frozen and slotted. Nothing carries a provider, model,
 credential, prompt, database id, or graph relationship, and nothing carries raw
-child text. Lesson order is authored data (``Lesson.sequence``), never derived
+student text. Lesson order is authored data (``Lesson.sequence``), never derived
 from a concept graph.
 """
 
@@ -18,9 +18,9 @@ class ApprovalStatus(StrEnum):
 
 class ReviewScope(StrEnum):
     SCIENCE = "science"
-    CHILD_CONTENT = "child_content"
+    STUDENT_CONTENT = "student_content"
     VISUAL_ACCESSIBILITY = "visual_accessibility"
-    PARENT_APPROVAL = "parent_approval"
+    EDUCATOR_APPROVAL = "educator_approval"
 
 
 class StepKind(StrEnum):
@@ -84,7 +84,7 @@ class SourceReference:
 class GroundedFact:
     id: str
     canonical_text: str
-    child_text: str
+    student_text: str
     source_ids: tuple[str, ...]
     allowed_numbers: tuple[str, ...]
 
@@ -247,7 +247,7 @@ class UnknownChoiceError(LessonError, ValueError):
 
 
 def context_for_snapshot(lesson: Lesson, snapshot: LessonSnapshot) -> LessonContext:
-    """Resolve the grounding actually bound to the child's current position.
+    """Resolve the grounding actually bound to the student's current position.
 
     Tutor code must never receive the lesson-wide fact set when only a subset is
     on screen. During ``INTRO``/``TEACH`` the bound facts are the current step's;

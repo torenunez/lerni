@@ -1,6 +1,6 @@
 # Explore Implementation Plans
 
-The implementation bundle for **Explore** — Lerni's parent-supervised, child-facing
+The implementation bundle for **Explore** — Lerni's parent-supervised, student-facing
 mode. The lesson core (PR-02) is implemented; its Chain-1 content is an unapproved
 draft. Educator authoring templates and a drafting checker exist in
 [`../curation/`](../curation/README.md). The runtime, UI, and later work are still
@@ -68,8 +68,8 @@ Three runbooks cover work no PR can do for you:
 
 Educator authoring and a reviewed educator-led walkthrough do **not** wait for any
 PR — they run alongside development (roadmap M1–M2). What stays gated is app use:
-no child uses the app before its technical gate, adult rehearsal, and parent
-authorization pass, and any content a child sees still needs genuine review. The
+no student uses the app before its technical gate, adult rehearsal, and parent
+authorization pass, and any content a student sees still needs genuine review. The
 strict import/publication work (PR-09's validator, PR-10) additionally needs the
 real content reviews in its specs. PRs 09–11 do not begin merely because code is
 ready.
@@ -79,5 +79,5 @@ ready.
 - A PR label names a future review unit. It does not authorize a commit or a push.
 - No plan assumes an available model, provider, credential, speech engine, or
   accelerator. Adapters are selected by explicit runtime qualification.
-- Content a child can see requires recorded human review against an exact content
+- Content a student can see requires recorded human review against an exact content
   hash. Never fabricate an attestation, date, or hash to make a check pass.

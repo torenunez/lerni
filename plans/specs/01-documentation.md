@@ -36,7 +36,7 @@ Do not copy a Desktop draft wholesale. It contains decisions superseded by this 
 Use these terms consistently:
 
 - **Study**: adult Feynman + spaced-repetition CLI; Phase 1 feature-complete; maintenance-only.
-- **Explore**: child interest-to-fundamentals Gradio experience; active development.
+- **Explore**: student interest-to-fundamentals Gradio experience; active development.
 - **Tutor capability**: replaceable text-generation interface configured by the operator.
 - **Speech-to-text capability**: optional replaceable adapter; typed input remains available.
 - **Read-aloud**: browser capability detected at runtime; visible text is authoritative.
@@ -55,7 +55,7 @@ Avoid these claims:
 - Study and Explore already share a working agent runtime;
 - a named model or provider is required;
 - an external moderation API guarantees safety;
-- “child-safe,” “COPPA compliant,” “anonymous,” “PII-free,” or “forensic deletion”;
+- “child-safe,” “student-safe,” “COPPA compliant,” “anonymous,” “PII-free,” or “forensic deletion”;
 - all processing remains on-device unless the selected runtime profile proves it;
 - audio is never retained outside Lerni’s own schema and verified cleanup boundary;
 - public deployment, FastAPI, NetworkX, cloud analytics, or a garage is part of the first milestone.
@@ -115,8 +115,8 @@ Required Week-1 journey:
 
 1. Parent opens the localhost app.
 2. App confirms runtime capabilities without exposing secrets.
-3. Child sees a reviewed acceleration visual and authored hook.
-4. Child responds by typing or, when qualified, records a short utterance.
+3. Student sees a reviewed acceleration visual and authored hook.
+4. Student responds by typing or, when qualified, records a short utterance.
 5. Microphone transcription is shown for correction before submission.
 6. Input policy runs.
 7. A configured tutor capability may phrase a bounded response from current facts.
@@ -128,7 +128,7 @@ Required Week-1 journey:
 Functional acceptance requirements:
 
 - One reviewed Chain-1 lesson loads from packaged data.
-- The child can complete it with no tutor, microphone, or read-aloud capability.
+- The student can complete it with no tutor, microphone, or read-aloud capability.
 - A qualified tutor can enrich wording but cannot advance state.
 - A correct answer completes the lesson.
 - Incorrect answers produce at most the authored hint sequence, then reveal the answer without punishment.
@@ -136,17 +136,17 @@ Functional acceptance requirements:
 - A rejected output never reaches display or telemetry.
 - Audio is not part of the Explore database or export schema.
 - Parent can delete a session and all dependent rows.
-- Parent/educator can describe an interest and reviewed educational nudge without entering a child name, transcript, or audio.
-- Only approved workbook rows can prime the local curriculum graph or compile child-facing lesson content.
+- Parent/educator can describe an interest and reviewed educational nudge without entering a student name, transcript, or audio.
+- Only approved workbook rows can prime the local curriculum graph or compile student-facing lesson content.
 
 Deferred requirements:
 
 - garage/mastery loop;
 - spaced resurfacing;
-- adaptive, generated, or automatically child-visible recommendations beyond the bounded parent-only Phase-2 candidate rules;
+- adaptive, generated, or automatically student-visible recommendations beyond the bounded parent-only Phase-2 candidate rules;
 - parent curation portal;
 - automatic Google Sheets synchronization;
-- child image uploads;
+- student image uploads;
 - Spanish content;
 - public or non-family access;
 - deployment framework and hosting choice.
@@ -212,7 +212,7 @@ Explore roadmap:
 - delayed recall checks;
 - careful integration with spaced scheduling if semantics fit;
 - evidence-informed/adaptive recommendation experiments only after the bounded Phase-2 rules are evaluated;
-- parent approval before child visibility;
+- parent approval before student visibility;
 - bilingual and richer speech work;
 - privacy/legal review before broader access.
 
@@ -331,7 +331,7 @@ Document:
 - optional microphone transcription;
 - transcript preview/edit;
 - recording cleanup attempt;
-- no child image upload.
+- no student image upload.
 
 ### `## Parent Curation and Curriculum Graph Contract`
 
@@ -349,7 +349,7 @@ Document:
 - separate parent-state database for scope, readiness, recommendation decisions, and assignments;
 - parent-attested prerequisite readiness;
 - deterministic, explainable recommendation candidates;
-- mandatory parent approval before a recommendation becomes child-visible;
+- mandatory parent approval before a recommendation becomes student-visible;
 - aggregate observation export without transcripts or audio;
 - optional future sheet-source adapters, with no Google API requirement for the first version.
 
@@ -373,7 +373,7 @@ Target outline:
 7. Testing.
 8. Documentation links.
 
-Do not advertise the child prototype as production-ready or generally available.
+Do not advertise the student prototype as production-ready or generally available.
 
 ## Task 7 — Update `CLAUDE.md`
 
@@ -388,7 +388,7 @@ Required changes:
 - build/test commands using ordinary Python tooling;
 - rule that runtime adapters are selected by qualification, never hardcoded;
 - rule that tests use deterministic fakes and no live model/service;
-- rule that child-facing content requires human approval;
+- rule that student-facing content requires human approval;
 - rule that lesson order is separate from `ConceptEdge`;
 - rule that no commit is made unless explicitly requested.
 
@@ -462,7 +462,7 @@ rg -n "required model|required provider|hardcoded model|hardcoded provider|api[_
 Find superseded requirements:
 
 ```bash
-rg -n "one edge = one tutor turn|FastAPI|NetworkX|Render|COPPA compliant|child-safe|that number has a name" \
+rg -n "one edge = one tutor turn|FastAPI|NetworkX|Render|COPPA compliant|student-safe|that number has a name" \
   README.md CLAUDE.md docs/mission.md docs/PRD.md docs/roadmap.md docs/spec.md docs/todo.md docs/progress.md
 ```
 

@@ -1,4 +1,4 @@
-"""Shared fixtures for Explore tests.
+"""Shared fixtures for student app tests.
 
 Fixtures build domain objects directly. Nothing here reaches the packaged
 production lesson, which must stay draft until human review is recorded.
@@ -8,7 +8,7 @@ from datetime import date
 
 import pytest
 
-from lerni.explore.domain import (
+from lerni.student.domain import (
     ApprovalStatus,
     AssetRef,
     CheckChoice,
@@ -43,14 +43,14 @@ def valid_facts() -> tuple[GroundedFact, ...]:
                 "A 0-to-60 result reports the elapsed time for velocity to change "
                 "from 0 miles per hour to 60 miles per hour."
             ),
-            child_text="A 0-60 result tells how many seconds the speed change took.",
+            student_text="A 0-60 result tells how many seconds the speed change took.",
             source_ids=("nasa-acceleration",),
             allowed_numbers=("0", "60"),
         ),
         GroundedFact(
             id="acceleration-definition",
             canonical_text="Average acceleration is change in velocity divided by elapsed time.",
-            child_text="Acceleration tells how quickly velocity changes.",
+            student_text="Acceleration tells how quickly velocity changes.",
             source_ids=("nasa-acceleration",),
             allowed_numbers=(),
         ),
@@ -60,7 +60,7 @@ def valid_facts() -> tuple[GroundedFact, ...]:
                 "For two straight-line runs with the same initial and final velocities, "
                 "the shorter elapsed time has the greater average acceleration."
             ),
-            child_text=(
+            student_text=(
                 "If both cars make the same speed change, the one that does it in less "
                 "time has greater average acceleration."
             ),
@@ -155,12 +155,12 @@ id = "att-science"
 scope = "science"
 reviewer_role = "test-reviewer"
 reviewed_on = 2026-01-01
-evidence_ref = "tests/explore/conftest.py"
+evidence_ref = "tests/student/conftest.py"
 reviewed_payload_sha256 = "PAYLOAD_HASH"
 
 [[review.attestations]]
-id = "att-child"
-scope = "child_content"
+id = "att-student"
+scope = "student_content"
 reviewer_role = "test-reviewer"
 reviewed_on = 2026-01-01
 reviewed_payload_sha256 = "PAYLOAD_HASH"
@@ -173,8 +173,8 @@ reviewed_on = 2026-01-01
 reviewed_payload_sha256 = "PAYLOAD_HASH"
 
 [[review.attestations]]
-id = "att-parent"
-scope = "parent_approval"
+id = "att-educator"
+scope = "educator_approval"
 reviewer_role = "test-reviewer"
 reviewed_on = 2026-01-01
 reviewed_payload_sha256 = "PAYLOAD_HASH"
@@ -194,14 +194,14 @@ retrieved_on = 2026-01-01
 [[grounding.facts]]
 id = "fact-one"
 canonical_text = "Canonical one."
-child_text = "Child one."
+student_text = "Student one."
 source_ids = ["test-source"]
 allowed_numbers = ["0", "60"]
 
 [[grounding.facts]]
 id = "fact-two"
 canonical_text = "Canonical two."
-child_text = "Child two."
+student_text = "Student two."
 source_ids = ["test-source"]
 allowed_numbers = []
 
@@ -268,7 +268,7 @@ def approved_lesson_toml(draft_lesson_toml) -> str:
     The payload hash excludes review metadata, so it can be computed from the
     draft form of the same lesson and then substituted into the approved form.
     """
-    from lerni.explore.catalog import lesson_payload_sha256, parse_lesson_toml
+    from lerni.student.catalog import lesson_payload_sha256, parse_lesson_toml
 
     digest = lesson_payload_sha256(parse_lesson_toml(draft_lesson_toml))
     return VALID_LESSON_TOML.replace("PAYLOAD_HASH", digest)

@@ -2,7 +2,7 @@
 
 ## Goal
 
-Close first-slice integration gaps, prove distribution/privacy/regression behavior with concrete assertions, and publish an operator runbook for a separate parent-supervised pilot. The child pilot itself is not test data and is not part of the PR.
+Close first-slice integration gaps, prove distribution/privacy/regression behavior with concrete assertions, and publish an operator runbook for a separate parent-supervised pilot. The student pilot itself is not test data and is not part of the PR.
 
 ## Depends on
 
@@ -22,8 +22,8 @@ Create or complete:
 - built wheel/sdist clean-environment tests;
 - launch/readiness/framework qualification fixtures;
 - deterministic crash/race/failure-injection fixtures;
-- a generic parent-supervised pilot runbook with no child data;
-- an execution-record template that excludes secrets/transcripts/audio and child-specific pilot observations.
+- a generic parent-supervised pilot runbook with no student data;
+- an execution-record template that excludes secrets/transcripts/audio and student-specific pilot observations.
 
 Modify only code needed to fix failures demonstrated by these tests; do not add features.
 
@@ -45,7 +45,7 @@ The runbook exposes three cumulative, explicitly named eligibility levels:
 2. `generated_tutor`: level 1 plus one real selected tutor plugin and the mandatory additional-safety plugin, each installed, synthetically qualified, decision-approved, and readiness-acknowledged;
 3. `generated_tutor_voice_input`: level 2 plus one real selected STT plugin and qualified managed browser/WAV path.
 
-Browser read-aloud is reported as a separate `qualified`/`unavailable` capability because visible text always remains. Passing a lower level does not satisfy or imply the requested LLM/voice milestone. The fastest child rehearsal may use level 1 while provider/model choices remain open; any session described as “LLM interaction” requires level 2, and the complete requested audio-input/output experience requires level 3 plus qualified browser read-aloud.
+Browser read-aloud is reported as a separate `qualified`/`unavailable` capability because visible text always remains. Passing a lower level does not satisfy or imply the requested LLM/voice milestone. The fastest student rehearsal may use level 1 while provider/model choices remain open; any session described as “LLM interaction” requires level 2, and the complete requested audio-input/output experience requires level 3 plus qualified browser read-aloud.
 
 ## Implementation tasks
 
@@ -71,12 +71,12 @@ Browser read-aloud is reported as a separate `qualified`/`unavailable` capabilit
 - Missing/stale readiness acknowledgement means launch call count zero.
 - Managed wipe removes every registered family-data path while preserving only profile/generic package/setup records.
 - Existing Study schema/data is not read or migrated by Explore.
-- No live child text/audio in automated tests.
+- No live student text/audio in automated tests.
 
 Run the complete command order in the verification plan, ending with:
 
 ```bash
-"$PYTHON" -m pytest tests/explore -q
+"$PYTHON" -m pytest tests/student -q
 "$PYTHON" -m pytest -q
 "$PYTHON" -m build
 git status --short --branch
@@ -113,5 +113,5 @@ Only after technical acceptance:
 - Graph/curation/recommendations.
 - Automatic interpretation of pilot results.
 - Public/family-external access.
-- Actual child records in Git.
+- Actual student records in Git.
 - Commit, push, or PR creation during the current planning/implementation session.

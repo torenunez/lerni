@@ -3,14 +3,14 @@
 The application owns progression. A tutor can phrase an explanation, but it
 cannot select content, inspect an answer, or advance state — there is no engine
 event a model can emit. Every transition here comes from an explicit
-:class:`~lerni.explore.domain.LessonEvent` raised by a UI control.
+:class:`~lerni.student.domain.LessonEvent` raised by a UI control.
 
 The engine is stateless and pure: the same lesson, state, and event always
 produce the same result, and rejected transitions never mutate the state passed
 in. That is what makes a session replayable and a telemetry record trustworthy.
 """
 
-from lerni.explore.domain import (
+from lerni.student.domain import (
     ChoiceView,
     CompletionKind,
     InvalidLessonStateError,
@@ -103,7 +103,7 @@ class DeterministicLessonEngine:
         Args:
             lesson: The lesson being taught.
             state: The current state, which is never mutated.
-            event: The action the child took.
+            event: The action the student took.
 
         Returns:
             The before state, the event, the after state, and what happened.
@@ -197,7 +197,7 @@ class DeterministicLessonEngine:
 
         next_hint = 0 if state.phase is LessonPhase.CHECK else (state.hint_index or 0) + 1
         if next_hint >= len(lesson.check.hints):
-            # Out of hints. Reveal rather than loop — a child should not be
+            # Out of hints. Reveal rather than loop — a student should not be
             # trapped repeating a question they cannot answer.
             return completed(
                 CompletionKind.ANSWER_REVEALED, TransitionOutcome.COMPLETED_REVEALED
@@ -221,7 +221,7 @@ class DeterministicLessonEngine:
     # --- presentation ----------------------------------------------------
 
     def snapshot(self, lesson: Lesson, state: LessonState) -> LessonSnapshot:
-        """Return exactly what the child may see in ``state``.
+        """Return exactly what the student may see in ``state``.
 
         The answer key, grounding internals, review metadata, and source URLs
         are all absent by construction — :class:`LessonSnapshot` has no field

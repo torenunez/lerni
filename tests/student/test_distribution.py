@@ -22,7 +22,7 @@ import pytest
 pytestmark = pytest.mark.distribution
 
 REPO = pathlib.Path(__file__).resolve().parents[2]
-LESSONS = REPO / "src/lerni/explore/lessons"
+LESSONS = REPO / "src/lerni/student/lessons"
 LESSON_ID = "chain-1-acceleration"
 
 
@@ -88,9 +88,9 @@ def _load_from(site: pathlib.Path, snippet: str) -> str:
 LOAD_SNIPPET = """
 import hashlib
 from importlib import resources
-from lerni.explore.catalog import PackageLessonCatalog, parse_lesson_toml
+from lerni.student.catalog import PackageLessonCatalog, parse_lesson_toml
 
-pkg = resources.files("lerni.explore.lessons")
+pkg = resources.files("lerni.student.lessons")
 lesson_bytes = pkg.joinpath("chain_1_acceleration.toml").read_bytes()
 svg_bytes = pkg.joinpath("assets/chain_1_acceleration.svg").read_bytes()
 lesson = parse_lesson_toml(lesson_bytes.decode("utf-8"))
@@ -115,8 +115,8 @@ def test_installed_distribution_carries_exact_lesson_bytes(built, kind):
 def test_installed_wheel_verifies_lesson_index_hash(built):
     site = _install(built["wheel"])
     snippet = """
-from lerni.explore.catalog import PackageLessonCatalog
-from lerni.explore.domain import LessonNotApprovedError
+from lerni.student.catalog import PackageLessonCatalog
+from lerni.student.domain import LessonNotApprovedError
 try:
     PackageLessonCatalog().load("chain-1-acceleration")
     print("LOADED")
@@ -130,18 +130,18 @@ except LessonNotApprovedError:
 
 def test_installed_wheel_rejects_tampered_svg(built):
     site = _install(built["wheel"])
-    svg = site / "lerni/explore/lessons/assets/chain_1_acceleration.svg"
+    svg = site / "lerni/student/lessons/assets/chain_1_acceleration.svg"
     assert svg.exists(), "asset missing from the installed wheel"
     svg.write_bytes(svg.read_bytes() + b"<!-- tampered -->")
 
     snippet = """
 import tomllib
 from importlib import resources
-from lerni.explore.catalog import PackageLessonCatalog
-from lerni.explore.domain import AssetRef, LessonContentError
+from lerni.student.catalog import PackageLessonCatalog
+from lerni.student.domain import AssetRef, LessonContentError
 
 index = tomllib.loads(
-    resources.files("lerni.explore.lessons").joinpath("lesson_index.toml").read_text()
+    resources.files("lerni.student.lessons").joinpath("lesson_index.toml").read_text()
 )
 entry = index["assets"][0]
 ref = AssetRef(

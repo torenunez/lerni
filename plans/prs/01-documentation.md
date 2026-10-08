@@ -83,7 +83,7 @@ Expected: documentation + plans + agent tooling only; no Explore application mod
 
 ## Out of scope
 
-- Explore application code under `src/lerni/explore/`.
+- Explore application code under `src/lerni/student/`.
 - Provider selection or capability adapters.
-- Content approval / child pilot.
+- Content approval / student pilot.
 - Study feature work.

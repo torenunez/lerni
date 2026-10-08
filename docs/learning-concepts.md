@@ -6,13 +6,13 @@ These concepts guide how we design activities and learning paths. Examples are i
 
 *Example:* Explain why doubling a recipe requires doubling every ingredient. If you cannot explain what happens when only the flour doubles, revisit ratios and revise the explanation.
 
-*In Lerni:* Study's four steps (raw notes, simple explanation, gaps, refined explanation). In Explore, the adult asks the child to explain their reasoning; a correct choice alone is not treated as understanding.
+*In Lerni:* the admin tool's four steps (raw notes, simple explanation, gaps, refined explanation). In the student app, the educator asks the student to explain their reasoning; a correct choice alone is not treated as understanding.
 
 **Spaced repetition.** Revisit material across separate sessions to strengthen retention. The useful spacing depends on the material and how long it needs to be remembered; there is no single best schedule. [Research](https://digitalcommons.usf.edu/psy_facpub/1766/).
 
 *Example:* Ask the learner to explain a ratio today, revisit it a few days later, and return to it the following week. Adjust the timing based on what they remember. These intervals are illustrative.
 
-*In Lerni:* Study schedules reviews with SM-2 and asks you to explain from memory before showing your old answer ([details](reference/study.md#scheduling)). Explore does not schedule revisits yet; a later recall question comes first (roadmap M4).
+*In Lerni:* the admin tool schedules reviews with SM-2 and asks you to explain from memory before showing your old answer ([details](reference/admin.md#scheduling)). The student app checks recall from Release 2 (continuity).
 
 **Analogical scaffolding and transfer.** Analogical scaffolding uses guided comparisons to make an unfamiliar idea easier to understand. Transfer means applying what was learned to a different problem or context. Make the shared principle explicit, then check whether the learner can use it independently. [Research on scaffolding](https://journals.aps.org/prper/abstract/10.1103/PhysRevSTPER.3.010109) · [Research on transfer](https://gwern.net/doc/psychology/1983-gick.pdf).
 
@@ -28,7 +28,7 @@ These concepts guide how we design activities and learning paths. Examples are i
 
 *Example:* Ask the learner to explain a family cooking practice, including home-language terms. Use it to explore measurement and compare methods.
 
-*In Lerni:* each path starts from an interest the educator and parent choose for this child.
+*In Lerni:* each path starts from an interest the educator choose for this student.
 
 **Conceptual bridging.** Connect existing understanding to a new concept through intermediate ideas or examples. A specific research approach, *bridging analogies*, uses a sequence of comparisons to make the connection understandable. [Research](https://onlinelibrary.wiley.com/doi/abs/10.1002/tea.3660301007).
 
@@ -40,7 +40,7 @@ These concepts guide how we design activities and learning paths. Examples are i
 
 *Example:* A learner adds fractions with matching denominators alone and adds fractions with different denominators using fraction strips and prompts. The supported task may fall within their ZPD.
 
-*In Lerni:* each teaching connection carries readiness guidance for the adult. It is guidance, not a stored score.
+*In Lerni:* each teaching connection carries readiness guidance for the educator. It is guidance, not a stored score.
 
 **Scaffold distance.** No standard educational definition or validated measure was found under this name. For Lerni, we could define it as the number of planned teaching transitions from a starting concept to a target. This would be a planning convention, not a measure of difficulty or ZPD.
 

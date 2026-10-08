@@ -126,7 +126,7 @@ Stop before implementation if any standard-library requirement fails.
 
 The product decision fixes Gradio as the first UI, but not a specific installed version.
 
-This is optional Tier B qualification. Its failure blocks the Gradio UI and child pilot, not the headless core.
+This is optional Tier B qualification. Its failure blocks the Gradio UI and student pilot, not the headless core.
 
 The selected Gradio version must demonstrate these capabilities in a minimal throwaway probe:
 
@@ -158,7 +158,7 @@ Qualification must record:
 
 - adapter identifier and version;
 - whether processing is local or external;
-- what child text leaves the machine;
+- what student text leaves the machine;
 - explicit retention and logging declarations;
 - credential source without recording the credential;
 - timeout behavior;
@@ -173,10 +173,10 @@ If no tutor adapter qualifies:
 
 - engineering and deterministic lesson tests continue with `ManualTutor`;
 - the UI remains usable with authored text;
-- the generated-tutor portion of the child pilot is blocked;
+- the generated-tutor portion of the student pilot is blocked;
 - documentation must say “tutor capability unavailable,” not imply generation was exercised.
 
-An enabled child-facing plugin with `unknown` routing, retention, or logging fails qualification and is treated as unavailable. Unknowns may be investigated in an operator-only probe, but parent acknowledgement does not convert missing metadata into qualification.
+An enabled student-facing plugin with `unknown` routing, retention, or logging fails qualification and is treated as unavailable. Unknowns may be investigated in an operator-only probe, but parent acknowledgement does not convert missing metadata into qualification.
 
 ### Additional safety capability
 
@@ -241,12 +241,12 @@ Stop implementation and report the evidence when:
 
 - a proposed edit would overwrite pre-existing user work;
 - a test cannot be made to fail for the intended reason;
-- child-facing content has not received explicit human approval;
+- student-facing content has not received explicit human approval;
 - no tutor adapter qualifies but an LLM pilot is about to begin;
 - a safety failure would expose raw rejected content;
-- a child microphone pilot is about to run but audio cannot be reliably bounded and removed;
+- a student microphone pilot is about to run but audio cannot be reliably bounded and removed;
 - the app exposes a public/share URL;
-- telemetry stores raw blocked text, child names, audio, credentials, arbitrary JSON, or exception details;
+- telemetry stores raw blocked text, student names, audio, credentials, arbitrary JSON, or exception details;
 - the Study CLI or database schema changes unexpectedly;
 - full verification repeatedly fails for reasons introduced by Explore;
 - the only path forward requires a commit.
@@ -262,4 +262,4 @@ This plan set is ready to execute when:
 - the required Tier A core environment has passed qualification;
 - no unresolved choice affects the domain, safety, telemetry, or UI contracts.
 
-The UI, browser speech, tutor, and speech-to-text tiers may remain unavailable while core implementation proceeds. Each must be selected and qualified before its corresponding child-facing capability is claimed.
+The UI, browser speech, tutor, and speech-to-text tiers may remain unavailable while core implementation proceeds. Each must be selected and qualified before its corresponding student-facing capability is claimed.

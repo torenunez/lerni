@@ -18,10 +18,10 @@ Persist only sanitized session evidence in a separate Explore SQLite database an
 
 Create:
 
-- `src/lerni/explore/telemetry_models.py`
-- `src/lerni/explore/telemetry_store.py`
-- `src/lerni/explore/data_lifecycle.py`
-- `src/lerni/explore/export.py`
+- `src/lerni/student/telemetry_models.py`
+- `src/lerni/student/telemetry_store.py`
+- `src/lerni/student/data_lifecycle.py`
+- `src/lerni/student/export.py`
 - telemetry/schema/retention/export/lifecycle/integration tests
 
 Do not modify Study’s database or schema.
@@ -37,7 +37,7 @@ No external account or credential is needed.
 
 ## Implementation tasks
 
-- [ ] Add immutable records with no raw-text/audio/provider/child-name fields.
+- [ ] Add immutable records with no raw-text/audio/provider/student-name fields.
 - [ ] Create schema version, settings, sessions, turns, events, observations, and typed session-deletion requests with exact checks/foreign keys.
 - [ ] Verify the full shared Explore SQLite pragma contract on every connection; disable extensions and WAL/disk temp state.
 - [ ] Require nonzero SQLite thread support and serialize every shared connection/cursor/result lifetime behind its store lock.
@@ -53,7 +53,7 @@ No external account or credential is needed.
 - [ ] Implement token-guarded lifecycle facade; UI cannot call low-level deletion.
 - [ ] Delete generated matching exports on explicit session deletion.
 - [ ] Implement exact-phrase managed wipe with the complete fixed telemetry/curriculum/parent-state DB/sidecar path registry from day one: prove exclusive runtime lock, quiesce, close initialized stores, remove present paths plus exports/audio/private-curation, invalidate tokens, stop.
-- [ ] Preserve runtime profile, generic packaged content/templates, setup records, and non-child quarantine; curriculum/parent-state DB paths remain in PR-05's day-one registry and are removed when present, while PR-10/11 add only store closers/cascades.
+- [ ] Preserve runtime profile, generic packaged content/templates, setup records, and non-student quarantine; curriculum/parent-state DB paths remain in PR-05's day-one registry and are removed when present, while PR-10/11 add only store closers/cascades.
 - [ ] Report residual categories and never claim secure media erasure.
 
 ## Required concrete tests
@@ -75,18 +75,18 @@ No external account or credential is needed.
 - Crash-injected deletion always leaves a resumable telemetry marker until exports/store deletion complete; startup resumes it before launch.
 - Failure after each lifecycle step is retryable and never reports false success.
 - Managed wipe removes DB `-wal`/`-shm`/`-journal`, export/audio/private-curation fixtures, preserves profile/generic package/setup canaries, invalidates tokens, and exits.
-- Crash-injected managed wipe leaves a strict non-child intent; next startup resumes before store creation, removes the marker last, and exits.
+- Crash-injected managed wipe leaves a strict non-student intent; next startup resumes before store creation, removes the marker last, and exits.
 - Wrong token/confirmation and concurrent callback delete nothing.
 
 Run:
 
 ```bash
-"$PYTHON" -m pytest tests/explore/test_telemetry_schema.py -q
-"$PYTHON" -m pytest tests/explore/test_telemetry_store.py -q
-"$PYTHON" -m pytest tests/explore/test_retention.py -q
-"$PYTHON" -m pytest tests/explore/test_export.py -q
-"$PYTHON" -m pytest tests/explore/test_data_lifecycle.py -q
-"$PYTHON" -m pytest tests/explore/test_safety_telemetry_integration.py -q
+"$PYTHON" -m pytest tests/student/test_telemetry_schema.py -q
+"$PYTHON" -m pytest tests/student/test_telemetry_store.py -q
+"$PYTHON" -m pytest tests/student/test_retention.py -q
+"$PYTHON" -m pytest tests/student/test_export.py -q
+"$PYTHON" -m pytest tests/student/test_data_lifecycle.py -q
+"$PYTHON" -m pytest tests/student/test_safety_telemetry_integration.py -q
 ```
 
 ## Acceptance

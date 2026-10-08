@@ -27,7 +27,7 @@ curriculum_repository: CurriculumRepository
 active_curriculum: ActiveCurriculumView | None
 ```
 
-The importer/curation command initializes and mutates the curriculum database. Child-app startup opens the supported schema, reads the active pointer, and verifies publication approval/installed hashes without staging, publishing, or activating. A genuinely new empty store yields explicit `curated-lesson-only` mode; a verified active snapshot yields `active-curriculum`. Hash/schema/corruption mismatch, missing pointer after prior activation, or explicit installed-lesson revocation blocks child launch instead of silently using stale packaged approval. Recommendation and parent-state services remain absent until plan 08b.
+The importer/curation command initializes and mutates the curriculum database. Student-app startup opens the supported schema, reads the active pointer, and verifies publication approval/installed hashes without staging, publishing, or activating. A genuinely new empty store yields explicit `curated-lesson-only` mode; a verified active snapshot yields `active-curriculum`. Hash/schema/corruption mismatch, missing pointer after prior activation, or explicit installed-lesson revocation blocks student launch instead of silently using stale packaged approval. Recommendation and parent-state services remain absent until plan 08b.
 
 The graph extension upgrades `readiness_schema_version` from base `1` to exact `2` and adds `graph_mode`, `active_batch_id`, `active_manifest_sha256`, `active_artifact_set_sha256`, `curriculum_state_sha256`, and nullable `content_quarantine_sha256` to `LaunchReadinessReport`; the strict encoder/decoder rejects fields from another version. Null active fields are allowed only for a genuinely new/empty curated-only store; the quarantine hash is null only when the file is absent. Activation, supersession, revocation/quarantine, publication approval, or any installed-hash change invalidates the acknowledged digest.
 
@@ -46,7 +46,7 @@ class GraphLaunchReadinessReport(LaunchReadinessReport):
 
 Its constructor requires `readiness_schema_version == 2`; base v1 construction rejects these fields. Plan 08b similarly owns the concrete v3 extension.
 
-`curriculum_state_sha256` is also persisted in the singleton active pointer and verified at every open. Compute it with PR-02 `canonical_json_bytes()` over: content schema version, SQL migration hash, and content-schema resource hash; singleton ID/batch/activation time; the selected `import_batches` row; publication approval; sorted published `(path, kind, sha256)` tuples; and every active-batch row from the fixed v1 curriculum/content/relation/review/binding table allowlist, represented by exact column names and values and sorted by declared primary key. Replace asset BLOB values with their verified SHA-256 and omit only `active_content_snapshot.curriculum_state_sha256` itself. Unknown tables/columns, duplicate primary keys, non-canonical values, or a recomputation mismatch block child startup. This hash is database state identity; it is distinct from manifest, lesson payload, package, and artifact-set hashes.
+`curriculum_state_sha256` is also persisted in the singleton active pointer and verified at every open. Compute it with PR-02 `canonical_json_bytes()` over: content schema version, SQL migration hash, and content-schema resource hash; singleton ID/batch/activation time; the selected `import_batches` row; publication approval; sorted published `(path, kind, sha256)` tuples; and every active-batch row from the fixed v1 curriculum/content/relation/review/binding table allowlist, represented by exact column names and values and sorted by declared primary key. Replace asset BLOB values with their verified SHA-256 and omit only `active_content_snapshot.curriculum_state_sha256` itself. Unknown tables/columns, duplicate primary keys, non-canonical values, or a recomputation mismatch block student startup. This hash is database state identity; it is distinct from manifest, lesson payload, package, and artifact-set hashes.
 
 The exact top-level hash object is:
 
@@ -205,7 +205,7 @@ class FactRow:
     status: ContentStatus
     concept_id: str
     canonical_text: str
-    child_text: str
+    student_text: str
     source_ids: tuple[str, ...]
     allowed_numbers: tuple[str, ...]
     scope_note: str
@@ -530,7 +530,7 @@ Binding derivation is normative:
 4. Persist that tuple through `curriculum_binding_concepts.concept_index`; no graph traversal or lexical sort changes it.
 5. Compute `binding_id` as lowercase SHA-256 of `b"curriculum-binding-v1\n"` followed by the eight-lowercase-hex-byte-length, LF, and exact UTF-8 bytes for `batch_id`, `lesson_id`, base-10 `lesson_content_version`, and lowercase `lesson_payload_sha256`, in that order.
 
-The final package hash is deliberately excluded from binding ID because PR-02's exact review status/attestation block may change while canonical child/runtime payload stays fixed; publication approval metadata is never packaged. The binding still stores and verifies the exact final package hash separately.
+The final package hash is deliberately excluded from binding ID because PR-02's exact review status/attestation block may change while canonical student/runtime payload stays fixed; publication approval metadata is never packaged. The binding still stores and verifies the exact final package hash separately.
 
 All mappings are immutable and adjacency values are stable-ID sorted. The view contains active/approved usable entities plus review rows needed to explain approval; paused/rejected/retired/draft entities are excluded from usable tuples.
 
@@ -763,7 +763,7 @@ CREATE TABLE curriculum_facts (
     canonical_text TEXT NOT NULL CHECK (
         length(canonical_text) BETWEEN 1 AND 2000
     ),
-    child_text TEXT NOT NULL CHECK (length(child_text) BETWEEN 1 AND 1000),
+    student_text TEXT NOT NULL CHECK (length(student_text) BETWEEN 1 AND 1000),
     scope_note TEXT NOT NULL CHECK (length(scope_note) BETWEEN 1 AND 1000),
     content_version INTEGER NOT NULL CHECK (content_version >= 1),
     row_sha256 TEXT NOT NULL CHECK (length(row_sha256) = 64),
@@ -1230,8 +1230,8 @@ CREATE TABLE curriculum_review_attestations (
     entity_version INTEGER NOT NULL CHECK (entity_version >= 1),
     review_scope TEXT NOT NULL CHECK (
         review_scope IN (
-            'science', 'child_content',
-            'visual_accessibility', 'parent_approval'
+            'science', 'student_content',
+            'visual_accessibility', 'educator_approval'
         )
     ),
     reviewer_role TEXT NOT NULL CHECK (
@@ -1472,7 +1472,7 @@ An activation audit category may be written to an operator execution log. Do not
 
 Activation is impossible until publication and installed-package hash verification succeed.
 
-At application startup, bootstrap compares the active batch’s publication approval and published artifact hashes with the installed package index. A mismatch, corrupt previously used curriculum DB, or explicit revoked/retired status for the installed lesson blocks child launch; it does not silently fall back to stale packaged approval. Revocation/retirement of an installed lesson writes an atomic strict non-child `content-quarantine.json` containing only schema version, lesson ID/version, package and canonical payload hashes, fixed reason code, manifest hash, and timestamp. Its hash enters readiness; managed family-data wipe preserves it. Curated-only packaged fallback is allowed only when the curriculum store is genuinely new/empty and no quarantine record exists.
+At application startup, bootstrap compares the active batch’s publication approval and published artifact hashes with the installed package index. A mismatch, corrupt previously used curriculum DB, or explicit revoked/retired status for the installed lesson blocks student launch; it does not silently fall back to stale packaged approval. Revocation/retirement of an installed lesson writes an atomic strict non-student `content-quarantine.json` containing only schema version, lesson ID/version, package and canonical payload hashes, fixed reason code, manifest hash, and timestamp. Its hash enters readiness; managed family-data wipe preserves it. Curated-only packaged fallback is allowed only when the curriculum store is genuinely new/empty and no quarantine record exists.
 
 Quarantine is sticky and never disappears on startup, managed wipe, or ordinary activation. A separate parent-token operator action may clear it only with the expected quarantine-file hash and expected current curriculum-state hash, while holding the runtime lock, after a different/newer active approved publication and installed package both pass full verification and no active row revokes/retires that lesson. It unlinks only the pinned regular one-link derived file, fsyncs the parent directory, and verifies absence; after a crash, startup revalidates the replacement regardless of whether the durable unlink completed. Clearing merely to reuse the exact quarantined package identity is rejected.
 

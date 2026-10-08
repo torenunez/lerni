@@ -18,12 +18,12 @@ Add strict provider-neutral runtime configuration, private path derivation/proce
 
 Create:
 
-- `src/lerni/explore/contracts.py`
-- `src/lerni/explore/runtime_config.py`
-- `src/lerni/explore/capability_runner.py`
-- `src/lerni/explore/capability_supervisor.py`
-- `src/lerni/explore/capability_worker.py`
-- `src/lerni/explore/readiness.py`
+- `src/lerni/student/contracts.py`
+- `src/lerni/student/runtime_config.py`
+- `src/lerni/student/capability_runner.py`
+- `src/lerni/student/capability_supervisor.py`
+- `src/lerni/student/capability_worker.py`
+- `src/lerni/student/readiness.py`
 - `examples/explore-runtime-fallback.toml` with the exact disabled-capability schema and an intentionally invalid absolute-root placeholder
 - focused runtime/runner/readiness tests
 
@@ -48,11 +48,11 @@ The fallback-only profile requires no account or key.
 - [ ] Reject unknown keys, unsafe host/path/permissions, secret values, invalid declarations, and invalid credential references.
 - [ ] Derive all mutable paths under the existing operator-owned root.
 - [ ] Add the secret-free fallback profile example; instruct operators to copy it outside the repository and replace only reviewed values/references.
-- [ ] Create missing child directories privately without creating/changing the root.
+- [ ] Create missing student directories privately without creating/changing the root.
 - [ ] Require owner-only root/DB files and hold one exclusive runtime lock before any store.
 - [ ] Implement `env:VARIABLE_NAME` references without resolving values during parsing.
 - [ ] Implement fixed frame grammar plus shared status/error codecs; leave operation payload codecs to their owning PRs.
-- [ ] Launch a blocking minimal supervisor without a shell; only after atomic registry admission may it spawn `python -I -m lerni.explore.capability_worker`.
+- [ ] Launch a blocking minimal supervisor without a shell; only after atomic registry admission may it spawn `python -I -m lerni.student.capability_worker`.
 - [ ] Pass a minimal environment plus only standardized referenced credentials.
 - [ ] Redirect plugin stdout/stderr away from protocol output.
 - [ ] Enforce frame bounds, schema, invocation ID, operation/kind pair, semantic limits, deadline, terminate/kill/join, and cleanup.
@@ -60,14 +60,14 @@ The fallback-only profile requires no account or key.
 - [ ] Add qualified supervisor/worker lifetime channels and out-of-group watchdog behavior that kill the full worker group on parent or supervisor death.
 - [ ] Add only the contract-neutral `ProcessCapabilityClient` for status/framing/supervision; typed tutor/safety/STT adapters belong to PR-04/07.
 - [ ] Implement parent token issue/verify/rotate with in-memory constant-time comparison.
-- [ ] Implement one-time child admission/nonce plus launch/session/capability-call budgets.
+- [ ] Implement one-time student admission/nonce plus launch/session/capability-call budgets.
 - [ ] Implement strict generated capability-qualification records, separate operator decision records that pin them, and generic canonical build/dependency/profile/setup hash primitives; leave policy/framework input finalization to PR-04/06.
 
 ## Required concrete tests
 
 - Missing runtime root is rejected and never created.
 - Relative/symlink/insecure/multi-link/oversized/replaced profile files are rejected without echoing content.
-- Existing private root with absent children succeeds; symlink/insecure child fails.
+- Existing private root with absent students succeeds; symlink/insecure student fails.
 - Literal credential values and secret-like settings fail; valid references parse.
 - Missing referenced value disables only that capability.
 - Real subprocess round-trips shared status/error envelopes; PR-04/07 add tutor/safety/STT operation round-trips.
@@ -85,9 +85,9 @@ The fallback-only profile requires no account or key.
 Run:
 
 ```bash
-"$PYTHON" -m pytest tests/explore/test_runtime_config.py -q
-"$PYTHON" -m pytest tests/explore/test_capability_runner.py -q
-"$PYTHON" -m pytest tests/explore/test_readiness.py -q
+"$PYTHON" -m pytest tests/student/test_runtime_config.py -q
+"$PYTHON" -m pytest tests/student/test_capability_runner.py -q
+"$PYTHON" -m pytest tests/student/test_readiness.py -q
 ```
 
 ## Acceptance

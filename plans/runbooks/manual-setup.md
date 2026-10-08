@@ -2,13 +2,13 @@
 
 ## Purpose
 
-This runbook covers operator work that cannot be completed safely by code alone. It applies before implementation qualification, before each capability is enabled, and before a child pilot.
+This runbook covers operator work that cannot be completed safely by code alone. It applies before implementation qualification, before each capability is enabled, and before a student pilot.
 
 The baseline local slice requires no cloud account, API key, hosted Gradio account, Google account, tutor service, speech service, or deployment service. Manual tutor fallback, typed input, reviewed content, local SQLite, and visible text remain usable without them.
 
 ## Setup decision record
 
-Keep a private operator record outside the repository and outside child-facing content. For each optional capability record:
+Keep a private operator record outside the repository and outside student-facing content. For each optional capability record:
 
 - capability: tutor, speech-to-text, additional safety, browser speech, or spreadsheet editor;
 - selected adapter ID/version and installation source;
@@ -23,7 +23,7 @@ Keep a private operator record outside the repository and outside child-facing c
 - qualification result and readiness-report digest;
 - parent decision: enabled, disabled, or blocked pending clarification.
 
-Do not record child names, raw child text/audio, secrets, key suffixes, or account recovery data.
+Do not record student names, raw student text/audio, secrets, key suffixes, or account recovery data.
 
 ## Required local setup
 
@@ -37,10 +37,10 @@ Do not record child names, raw child text/audio, secrets, key suffixes, or accou
 - [ ] Use a current browser and verify the local Gradio server binds only to `127.0.0.1`.
 - [ ] Use a dedicated minimal browser profile with account sync/history extensions disabled for the pilot.
 - [ ] Disable public sharing, tunnels, and hosted notebook proxying.
-- [ ] Keep the child device/session free of unrelated personal information.
+- [ ] Keep the student device/session free of unrelated personal information.
 - [ ] Copy `examples/explore-runtime-fallback.toml` to an owner-only location outside the repository, replace the runtime root/reviewed settings, and keep credential references—not values—only.
 
-The application creates derived runtime children; it does not create or change the operator-owned root.
+The application creates derived runtime students; it does not create or change the operator-owned root.
 
 ## Optional tutor or additional-safety service account
 
@@ -48,7 +48,7 @@ No account is required when manual authored fallback and deterministic policy ar
 
 Before enabling an external service:
 
-1. Confirm the service permits the intended parent-supervised processing of a child’s text. Parent consent does not override service terms, age restrictions, or applicable law.
+1. Confirm the service permits the intended parent-supervised processing of a student’s text. Parent consent does not override service terms, age restrictions, or applicable law.
 2. Review whether submitted data is retained, logged, used for training, reviewed by humans, or transferred to another region/subprocessor.
    Treat submitted “sanitized” text as best-effort pseudonymized, not anonymous; missed identifiers or distinctive wording can remain identifying.
 3. Create a parent-owned project/workspace dedicated to this family prototype.
@@ -65,7 +65,7 @@ api_key = "env:LERNI_TUTOR_API_KEY"
 ```
 
 10. Place the value in a launch-scoped environment through a trusted secret manager or non-echoing shell input. Never paste it into TOML, source, tests, `.env` committed to Git, chat, issue, PR, terminal command history, or spreadsheet.
-11. Run synthetic qualification before any child input; atomically write the strict generated `<kind>.qualification.json`, then review/write the separate `<kind>.json` operator decision that pins its hash.
+11. Run synthetic qualification before any student input; atomically write the strict generated `<kind>.qualification.json`, then review/write the separate `<kind>.json` operator decision that pins its hash.
 12. For generated tutor use, qualify the separate mandatory input/output harm gate against the exact installed 56-case v1 fixture from `specs/03b-harm-probe-cases.md`; any missing, blocked-benign, allowed-harmful, timeout, or drifted case disables generated mode.
 13. Keep the capability disabled if any route, retention, logging, training, age-use, deletion, or harm-gate answer is unknown.
 
@@ -83,20 +83,20 @@ Typed input remains the mandatory freeform fallback during `INTRO`/`TEACH`; dete
 
 For an external STT account, repeat the account/credential steps above and additionally:
 
-- confirm the service permits child voice processing;
+- confirm the service permits student voice processing;
 - treat raw voice as potentially identifying and unsanitized because audio is routed before transcript policy can run;
 - review audio and transcript retention separately;
 - determine whether audio is used for product improvement or training;
 - set the smallest practical request/audio limits;
 - verify deletion/revocation instructions;
 - run only synthetic WAV fixtures during qualification;
-- obtain both parents’ explicit decision before first child audio.
+- obtain both parents’ explicit decision before first student audio.
 
 For a local STT adapter:
 
 - record package and speech-artifact versions/hashes/licenses;
 - confirm whether first use downloads files or contacts a registry;
-- pre-download and verify artifacts before the child session;
+- pre-download and verify artifacts before the student session;
 - qualify supported WAV sample widths/rates/channels;
 - verify managed audio cleanup on success, timeout, crash, and malformed output.
 
@@ -123,11 +123,11 @@ If using Google Sheets:
 2. Create a private workbook; disable link/public/domain-wide sharing.
 3. Share only with the consenting parent/educator roles that need to edit or review.
 4. Do not install add-ons, Apps Script, external connectors, or automatic AI features for this workbook.
-5. Do not enter child name, account ID, school, address, contact details, raw transcript/audio, medical/diagnostic labels, secrets, or credentials.
+5. Do not enter student name, account ID, school, address, contact details, raw transcript/audio, medical/diagnostic labels, secrets, or credentials.
 6. Treat spreadsheet validation/protection as editing convenience, not an approval or security boundary.
 7. Export tabs manually as UTF-8 CSV.
 8. Inspect for formulas before setting `formula_free_attested=true`.
-9. Validate and hash locally; never let the running child app read the live sheet.
+9. Validate and hash locally; never let the running student app read the live sheet.
 10. Treat Google revision history, sync copies, trash, backups, and provider retention as outside Lerni’s managed wipe; review/accept that boundary or use a local editor.
 
 No Google Cloud project, OAuth client, service account, API key, or Sheets API enablement is needed. Automatic synchronization remains deferred.
@@ -167,10 +167,10 @@ For maximum privacy, use a local CSV-capable editor. Keep the filled family copy
 - Review only sanitized local records.
 - Delete or retain the session under the selected policy.
 - Confirm managed audio temp is empty.
-- Close the child browser tab/profile.
+- Close the student browser tab/profile.
 - Clear or close the launching terminal if desired; the app cannot reliably erase terminal scrollback.
 - Revoke microphone permission when no longer needed.
-- Review external provider dashboards for unexpected usage without uploading child data.
+- Review external provider dashboards for unexpected usage without uploading student data.
 - Request/confirm provider deletion when available, or record the declared retention-expiry date and explicitly accept the residual when deletion cannot be verified.
 - Reconfirm training-use opt-out/account setting after the session when an external service was used.
 - Revoke or rotate temporary credentials.
@@ -180,9 +180,9 @@ For maximum privacy, use a local CSV-capable editor. Keep the filled family copy
 
 ## Blockers
 
-Do not enable the affected capability or run the child pilot when:
+Do not enable the affected capability or run the student pilot when:
 
-- service terms or child-data handling are unclear;
+- service terms or student-data handling are unclear;
 - retention/logging/training route is unknown;
 - a credential appears in a file, log, report, command history, or spreadsheet;
 - localhost-only launch cannot be demonstrated;

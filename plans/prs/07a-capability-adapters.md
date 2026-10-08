@@ -20,10 +20,10 @@ Create outside the provider-neutral core package:
 - one or more non-editable, fully recorded Python adapter distributions;
 - typed factories implementing only the existing `TutorBackend`, `AdditionalSafetyBackend`, and/or `SpeechToTextBackend` contracts;
 - provider wire codecs that emit only each capability decision's exact reviewed `data_sent` categories;
-- synthetic contract/qualification fixtures containing no child or family data;
+- synthetic contract/qualification fixtures containing no student or family data;
 - package-local tests and operator instructions for building/installing a reproducible artifact.
 
-Do not add provider SDKs, endpoint names, model IDs, account identifiers, secrets, or provider response objects to `src/lerni/explore`, telemetry, exports, readiness JSON, lesson packages, or CSV/Google Sheets.
+Do not add provider SDKs, endpoint names, model IDs, account identifiers, secrets, or provider response objects to `src/lerni/student`, telemetry, exports, readiness JSON, lesson packages, or CSV/Google Sheets.
 
 ## Manual prerequisites
 
@@ -31,7 +31,7 @@ Do not add provider SDKs, endpoint names, model IDs, account identifiers, secret
 2. For each service, complete the account/terms/privacy/retention/logging/training/quota/billing review.
 3. Create a least-privilege credential and place it in the selected credential store under the profile's opaque reference name.
 4. Record the exact package artifact hash, adapter ID/version, service/model deployment declaration, route, retention/logging declaration, timeout, and reviewed wire categories in the private qualification and decision records.
-5. Keep live provider probes manual, synthetic, bounded, non-child, and separate from repeatable test runs.
+5. Keep live provider probes manual, synthetic, bounded, non-student, and separate from repeatable test runs.
 
 ## Implementation tasks
 
@@ -57,7 +57,7 @@ Do not add provider SDKs, endpoint names, model IDs, account identifiers, secret
 - Additional safety cannot relax a deterministic denial; timeout/error/unsafe result selects authored fallback and circuit-breaks generated tutoring.
 - STT receives only validated worker-owned WAV, and every success/failure/cancel/timeout path proves managed cleanup.
 - Built wheel/sdist identity and dependency RECORD verification reproduce the readiness artifact hashes.
-- One manual synthetic smoke per selected real service proves the exact adapter/decision/qualification binding without child data.
+- One manual synthetic smoke per selected real service proves the exact adapter/decision/qualification binding without student data.
 - Fallback-only launch still works when all adapter decisions are disabled.
 
 ## Acceptance
@@ -66,7 +66,7 @@ Do not add provider SDKs, endpoint names, model IDs, account identifiers, secret
 - Credentials cross neither UI state nor supervisor protocol.
 - `generated_tutor` eligibility is possible only with real qualified tutor and mandatory safety adapters.
 - `generated_tutor_voice_input` eligibility additionally requires real qualified STT, managed-media qualification, and the token-guarded parent microphone enable action.
-- If any adapter is unavailable, the exact lower eligibility level and authored fallback are parent-visible; no fake satisfies a child-pilot claim.
+- If any adapter is unavailable, the exact lower eligibility level and authored fallback are parent-visible; no fake satisfies a student-pilot claim.
 
 ## Non-goals
 
@@ -74,4 +74,4 @@ Do not add provider SDKs, endpoint names, model IDs, account identifiers, secret
 - Automatic account creation, secret provisioning, or billing changes
 - Cloud deployment
 - Provider failover or model routing
-- Sending real child/family data during qualification
+- Sending real student/family data during qualification

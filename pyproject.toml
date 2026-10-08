@@ -33,7 +33,7 @@ dev = [
 ]
 
 [project.scripts]
-study = "lerni.cli:app"
+lerni = "lerni.cli:app"
 
 [tool.setuptools]
 include-package-data = true
@@ -42,7 +42,7 @@ include-package-data = true
 where = ["src"]
 
 [tool.setuptools.package-data]
-"lerni.explore.lessons" = [
+"lerni.student.lessons" = [
   "*.toml",
   "assets/*.svg",
 ]

@@ -81,7 +81,7 @@ Confirmed? ☐ yes ☐ no — notes: ______________________________
 
 ## The simplified wording
 
-What the child actually reads. The risk is that simplifying makes a claim
+What the student actually reads. The risk is that simplifying makes a claim
 *stronger* than the evidence supports.
 
 - [ ] "A 0–60 result tells how many seconds the speed change took."
@@ -115,5 +115,5 @@ Your name isn't recorded, only your role. The hex string fingerprints the exact
 wording you approved — edit the lesson later and it stops matching, so it goes
 back for review.
 
-One of four checks: `science`, `child_content`, `visual_accessibility`, and `parent_approval`.
+One of four checks: `science`, `student_content`, `visual_accessibility`, and `educator_approval`.
 All four must reference the same fingerprint.

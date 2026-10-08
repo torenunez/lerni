@@ -6,7 +6,7 @@ Implement a standard-library lesson core that:
 
 - is independent of Study’s `Question`, `Answer`, `Review`, and `ConceptEdge` semantics;
 - loads a strict, source-backed lesson snapshot from packaged TOML;
-- exposes only child-safe presentation data;
+- exposes only approved presentation data;
 - advances through deterministic application events;
 - cannot be advanced by tutor output;
 - remains testable without Gradio, a model, credentials, network access, or a database.
@@ -16,7 +16,7 @@ Implement a standard-library lesson core that:
 Create:
 
 ```text
-src/lerni/explore/
+src/lerni/student/
 ├── __init__.py
 ├── canonical.py
 ├── domain.py
@@ -29,7 +29,7 @@ src/lerni/explore/
     └── assets/
         └── chain_1_acceleration.svg
 
-tests/explore/
+tests/student/
 ├── __init__.py
 ├── conftest.py
 ├── test_domain.py
@@ -68,9 +68,9 @@ class ApprovalStatus(StrEnum):
 
 class ReviewScope(StrEnum):
     SCIENCE = "science"
-    CHILD_CONTENT = "child_content"
+    STUDENT_CONTENT = "student_content"
     VISUAL_ACCESSIBILITY = "visual_accessibility"
-    PARENT_APPROVAL = "parent_approval"
+    EDUCATOR_APPROVAL = "educator_approval"
 
 
 class StepKind(StrEnum):
@@ -134,7 +134,7 @@ class SourceReference:
 class GroundedFact:
     id: str
     canonical_text: str
-    child_text: str
+    student_text: str
     source_ids: tuple[str, ...]
     allowed_numbers: tuple[str, ...]
 
@@ -302,7 +302,7 @@ class UnknownChoiceError(LessonError, ValueError):
 Domain exclusions:
 
 - no provider, model, credential, prompt, or SDK fields;
-- no raw child text;
+- no raw student text;
 - no database IDs;
 - no `ConceptEdge`, relationship, hop, graph, or traversal fields;
 - no mutable collection exposed by a frozen object.
@@ -321,7 +321,7 @@ It resolves the exact current step/check fact IDs, preserves source order, rejec
 
 ## Task 1 — Domain types through TDD
 
-Write `tests/explore/test_domain.py`.
+Write `tests/student/test_domain.py`.
 
 Required tests:
 
@@ -353,14 +353,14 @@ def test_lesson_sequence_is_explicit_data(valid_lesson):
 Add:
 
 - `test_grounding_uses_ordered_immutable_tuples`;
-- `test_state_contains_no_child_text`;
+- `test_state_contains_no_student_text`;
 - `test_snapshot_has_no_correct_choice_id`;
 - `test_event_requires_explicit_action`.
 
 Red:
 
 ```bash
-"$PYTHON" -m pytest tests/explore/test_domain.py -q
+"$PYTHON" -m pytest tests/student/test_domain.py -q
 ```
 
 Before adding each test, scaffold an importable module with the public symbol and deliberately incomplete behavior. Each recorded red failure must be a behavior-specific assertion, not a missing-module or missing-symbol error.
@@ -409,7 +409,7 @@ class PackageLessonCatalog:
         ...
 ```
 
-`PackageLessonCatalog.load()` is the child-safe approved boundary. It rejects missing, draft, hash-mismatched, or index-mismatched content.
+`PackageLessonCatalog.load()` is the approved-content boundary. It rejects missing, draft, hash-mismatched, or index-mismatched content.
 
 The package index maps stable lesson IDs to resource names and SHA-256 hashes:
 
@@ -428,7 +428,7 @@ media_type = "image/svg+xml"
 sha256 = "generated from the exact reviewed SVG bytes"
 ```
 
-Literal hashes are generated from actual files and then reviewed; the quoted values above describe the index schema and are never copied as literal hashes. Tests that need draft parsing call `parse_lesson_toml()` directly. There is no child-facing raw package loader.
+Literal hashes are generated from actual files and then reviewed; the quoted values above describe the index schema and are never copied as literal hashes. Tests that need draft parsing call `parse_lesson_toml()` directly. There is no student-facing raw package loader.
 
 `LessonPackageIdentity.package_sha256` is exactly the index `[[lessons]].sha256`: SHA-256 of the final lesson TOML bytes. Those bytes pin every referenced asset hash, so asset changes require a TOML/index update and change package identity transitively. It is not a directory/archive hash.
 
@@ -466,7 +466,7 @@ Literal hashes are generated from actual files and then reviewed; the quoted val
     "grounding": {
         "scope": ..., "fallback_text": ..., "redirect_text": ...,
         "facts": [{
-            "id": ..., "canonical_text": ..., "child_text": ...,
+            "id": ..., "canonical_text": ..., "student_text": ...,
             "source_ids": [...], "allowed_numbers": [...]
         }, ...],
         "sources": [{
@@ -480,7 +480,7 @@ Literal hashes are generated from actual files and then reviewed; the quoted val
 }
 ```
 
-`review` is the only omitted `Lesson` field. Approved visual objects retain their nested non-null SHA-256; `referenced_assets` intentionally repeats the identity tuple and is sorted by UTF-8 bytes of `(resource_name, media_type, sha256)`, with one entry per unique referenced visual. Sequence/tuple fields preserve declared order; only frozenset-backed scope/reply fields use the stated sort. PR-02 creates `canonical_json_bytes()` in `canonical.py` using sorted mapping keys, compact separators, UTF-8, `ensure_ascii=False`, finite numbers only, arrays for tuples, and no trailing bytes. Reject unknown/missing keys, duplicate assets, null approved hashes, or non-finite/noncanonical values. A single installed golden fixture is shared by PR-02 and PR-09. This identity changes for any child-visible or grounding/runtime behavior but not reviewer role/date/evidence metadata. `PackageLessonCatalog` independently reconstructs and verifies it before returning an approved lesson.
+`review` is the only omitted `Lesson` field. Approved visual objects retain their nested non-null SHA-256; `referenced_assets` intentionally repeats the identity tuple and is sorted by UTF-8 bytes of `(resource_name, media_type, sha256)`, with one entry per unique referenced visual. Sequence/tuple fields preserve declared order; only frozenset-backed scope/reply fields use the stated sort. PR-02 creates `canonical_json_bytes()` in `canonical.py` using sorted mapping keys, compact separators, UTF-8, `ensure_ascii=False`, finite numbers only, arrays for tuples, and no trailing bytes. Reject unknown/missing keys, duplicate assets, null approved hashes, or non-finite/noncanonical values. A single installed golden fixture is shared by PR-02 and PR-09. This identity changes for any student-visible or grounding/runtime behavior but not reviewer role/date/evidence metadata. `PackageLessonCatalog` independently reconstructs and verifies it before returning an approved lesson.
 
 Package reads are bounded before full decode/allocation: lesson index `65_536` bytes, one lesson TOML `256_000` bytes, and one SVG asset `1_000_000` bytes. Read at most limit plus one from the `importlib.resources` binary stream, reject overage, then hash and parse those exact bytes.
 
@@ -496,7 +496,7 @@ Any mismatch fails closed before bytes reach the visual renderer.
 Use:
 
 ```python
-importlib.resources.files("lerni.explore.lessons")
+importlib.resources.files("lerni.student.lessons")
 ```
 
 Do not convert package resources to `Path`; installed zipped resources need not have filesystem paths.
@@ -538,7 +538,7 @@ Reject:
 - no hints;
 - approved lesson with a blank reviewer role/date in any attestation;
 - approved lesson with a missing, malformed, non-identical, or recomputation-mismatched `reviewed_payload_sha256`;
-- approved lesson missing science, child-content, visual-accessibility, or parent-approval attestation;
+- approved lesson missing science, student-content, visual-accessibility, or parent-approval attestation;
 - draft lesson with any attestation;
 - step/check fact reference to an unknown fact;
 - empty current-step fact set or scope terms;
@@ -555,7 +555,7 @@ The parser validates and stores only those canonical casefolded token strings be
 
 ## Task 2 — Catalog parser through TDD
 
-Create a complete valid TOML string fixture in `tests/explore/conftest.py`. The fixture may be approved with a fixed test-only review date because it is not production content.
+Create a complete valid TOML string fixture in `tests/student/conftest.py`. The fixture may be approved with a fixed test-only review date because it is not production content.
 
 Write:
 
@@ -582,7 +582,7 @@ Every expectation is a literal derived independently from the parser.
 Red:
 
 ```bash
-"$PYTHON" -m pytest tests/explore/test_catalog.py -q
+"$PYTHON" -m pytest tests/student/test_catalog.py -q
 ```
 
 Expected: one specific validation assertion fails against the scaffolded parser. Do not count an import error as red evidence.
@@ -628,28 +628,28 @@ retrieved_on = 2026-08-22
 [[grounding.facts]]
 id = "zero-to-sixty-is-time"
 canonical_text = "A 0-to-60 result reports the elapsed time for velocity to change from 0 miles per hour to 60 miles per hour."
-child_text = "A 0–60 result tells how many seconds the speed change took."
+student_text = "A 0–60 result tells how many seconds the speed change took."
 source_ids = ["nasa-acceleration"]
 allowed_numbers = ["0", "60"]
 
 [[grounding.facts]]
 id = "acceleration-definition"
 canonical_text = "Average acceleration is change in velocity divided by elapsed time."
-child_text = "Acceleration tells how quickly velocity changes."
+student_text = "Acceleration tells how quickly velocity changes."
 source_ids = ["nasa-acceleration"]
 allowed_numbers = []
 
 [[grounding.facts]]
 id = "shorter-time-greater-average"
 canonical_text = "For two straight-line runs with the same initial and final velocities, the shorter elapsed time has the greater average acceleration."
-child_text = "If both cars make the same speed change, the one that does it in less time has greater average acceleration."
+student_text = "If both cars make the same speed change, the one that does it in less time has greater average acceleration."
 source_ids = ["nasa-acceleration"]
 allowed_numbers = ["0", "4", "8", "60"]
 
 [[grounding.facts]]
 id = "average-not-instant"
 canonical_text = "A 0-to-60 elapsed time can support average acceleration over the interval but does not reveal acceleration at every instant."
-child_text = "A car can accelerate differently during the run, so 0–60 supports an average."
+student_text = "A car can accelerate differently during the run, so 0–60 supports an average."
 source_ids = ["nasa-acceleration"]
 allowed_numbers = ["0", "60"]
 
@@ -732,7 +732,7 @@ label = "They have the same average acceleration"
 
 The hypothetical 4- and 8-second values are lesson examples, not claims about real vehicles.
 
-The catalog never fetches a source URL at runtime or during ordinary tests. Before approval, a reviewer must be able to inspect the source or a lawful repository-relative review artifact and record actual evidence. If source evidence is unavailable, the lesson remains draft and child use is blocked.
+The catalog never fetches a source URL at runtime or during ordinary tests. Before approval, a reviewer must be able to inspect the source or a lawful repository-relative review artifact and record actual evidence. If source evidence is unavailable, the lesson remains draft and student use is blocked.
 
 ## Curated SVG requirements
 
@@ -772,10 +772,10 @@ Tests:
 Red:
 
 ```bash
-"$PYTHON" -m pytest tests/explore/test_chain_1_content.py -q
+"$PYTHON" -m pytest tests/student/test_chain_1_content.py -q
 ```
 
-Create a parseable draft production resource first. Add each structural/content test against a deliberately incomplete or incorrect field and record its behavior-specific failure before correcting that field. The test-only draft fixture must always fail closed through the child catalog. The production approved-load test remains blocked/failing until the human gate is completed; do not satisfy it with fabricated attestations.
+Create a parseable draft production resource first. Add each structural/content test against a deliberately incomplete or incorrect field and record its behavior-specific failure before correcting that field. The test-only draft fixture must always fail closed through the student catalog. The production approved-load test remains blocked/failing until the human gate is completed; do not satisfy it with fabricated attestations.
 
 Human gate:
 
@@ -786,7 +786,7 @@ Human gate:
 5. A reviewer checks the exact SVG bytes/hash and alt text.
 6. A parent records explicit approval for this family pilot.
 7. Record four `[[review.attestations]]` entries. Each contains a stable `id`, one required scope, actual `reviewer_role`, actual TOML local-date `reviewed_on`, optional repository-relative `evidence_ref`, and the same exact `reviewed_payload_sha256`.
-8. Use distinct IDs and the scopes `science`, `child_content`, `visual_accessibility`, and `parent_approval`; then change production review status to approved.
+8. Use distinct IDs and the scopes `science`, `student_content`, `visual_accessibility`, and `educator_approval`; then change production review status to approved.
 9. Generate the final lesson TOML/package hash and package index, verify that removing review metadata reproduces the attested payload hash, and review the final diff/hashes.
 10. Rerun the content and package-index tests.
 
@@ -866,7 +866,7 @@ Reject without state mutation:
 - Complete/correct: success text.
 - Complete/revealed: reveal text.
 - Never expose `correct_choice_id`.
-- Never expose grounding internals, review metadata, or source URLs to the child view.
+- Never expose grounding internals, review metadata, or source URLs to the student view.
 
 ## Task 4 — Engine TDD
 
@@ -892,7 +892,7 @@ Tests:
 Red:
 
 ```bash
-"$PYTHON" -m pytest tests/explore/test_engine.py -q
+"$PYTHON" -m pytest tests/student/test_engine.py -q
 ```
 
 Green:
@@ -910,7 +910,7 @@ Add:
 include-package-data = true
 
 [tool.setuptools.package-data]
-"lerni.explore.lessons" = [
+"lerni.student.lessons" = [
   "*.toml",
   "assets/*.svg",
 ]
@@ -938,7 +938,7 @@ If source-distribution content is missing, add the minimal `MANIFEST.in` rule an
 - No brand/ranking claim is packaged.
 - Lesson sequence is explicit and graph-independent.
 - Engine behavior is deterministic.
-- Child snapshots hide the answer key.
+- Student snapshots hide the answer key.
 - Wheel and source distribution contain the lesson and visual.
 - Existing Study tests still pass.
 - No commit is made.

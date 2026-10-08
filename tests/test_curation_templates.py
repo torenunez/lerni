@@ -348,7 +348,7 @@ def test_reviewed_without_metadata_is_an_error_and_is_not_filled_in(
 
 
 def test_review_pair_must_be_complete(bundle: Path, capsys: pytest.CaptureFixture[str]) -> None:
-    edit(bundle, "CONNECTIONS", "c-005", reviewer_role="parent")
+    edit(bundle, "CONNECTIONS", "c-005", reviewer_role="educator")
     _, report = run(bundle, capsys)
     assert ("review-pair-incomplete", "CONNECTIONS", "c-005", "review_date") in keyed(report)
 

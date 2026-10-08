@@ -4,18 +4,18 @@ The one checklist. Owners in brackets. Milestones and what completes them: [road
 
 ## Now (in parallel)
 
-- [ ] **[educator + parent]** Choose an interest and a goal, sketch 3–5 activities, and prepare the first. How: [curation guide](../curation/README.md).
+- [ ] **[educator]** Choose an interest and a goal, sketch 3–5 activities, and prepare the first. How: [curation guide](../curation/README.md).
 - [ ] **[educator]** Try the templates in a spreadsheet app; report what is confusing.
 - [ ] **[admin]** Update the technical requirements and checks for [Release 1](prd/student.md#release-1-run-a-seeded-activity) before building it.
 
 ## Next
 
-- [ ] **[educator + parent]** Review the first activity, try a short walkthrough, keep notes private, revise one thing.
+- [ ] **[educator]** Review the first activity, try a short walkthrough, keep notes private, revise one thing.
 - [ ] **[admin]** Build the local app against test content.
 - [ ] **[admin]** Turn the reviewed activity into the app's lesson format.
 - [ ] **[reviewers]** Approve that activity's exact wording and pictures.
 - [ ] **[admin]** Show Release 1 working in the installed app.
-- [ ] **[parent]** Rehearse it as an adult, then authorize student use.
+- [ ] **[educator]** Rehearse it, then authorize student use.
 
 ## Tooling
 
@@ -28,5 +28,5 @@ The one checklist. Owners in brackets. Milestones and what completes them: [road
 - [ ] Clear ruff lint debt in `src/` (99 findings on 2026-08-23, mostly style).
 - [ ] Run mypy and fix type errors.
 - [ ] Consolidate the duplicate `get_lerni_dir()`.
-- [ ] Add `study --version`.
+- [ ] Add `lerni --version`.
 - [ ] Check empty-database, invalid-ID, and concurrent-access behavior.

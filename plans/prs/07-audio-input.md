@@ -20,11 +20,11 @@ Add parent-enabled microphone capture, strict managed WAV validation, replaceabl
 
 Create:
 
-- `src/lerni/explore/recordings.py`
-- `src/lerni/explore/audio_presenter.py`
-- `src/lerni/explore/speech_to_text_process.py`
-- `tests/explore/test_recordings.py`
-- `tests/explore/test_audio_presenter.py`
+- `src/lerni/student/recordings.py`
+- `src/lerni/student/audio_presenter.py`
+- `src/lerni/student/speech_to_text_process.py`
+- `tests/student/test_recordings.py`
+- `tests/student/test_audio_presenter.py`
 
 Extend:
 
@@ -42,7 +42,7 @@ No named STT SDK/model is added to core dependencies.
 ## Manual prerequisites
 
 - [ ] Decide typed-only, local STT, or external STT.
-- [ ] For external STT, review child-voice terms, route, retention, logging/training, account, quota, key, and revocation.
+- [ ] For external STT, review student-voice terms, route, retention, logging/training, account, quota, key, and revocation.
 - [ ] Parents explicitly acknowledge that raw voice reaches STT before transcript redaction and may contain identifying speech.
 - [ ] For local STT, preinstall/verify package and speech artifacts/licenses and observe network behavior.
 - [ ] Parents review qualification notice and both consent to the selected audio route.
@@ -52,12 +52,12 @@ Audio remains disabled if any prerequisite is unresolved.
 
 ## Environment-specific capability realization
 
-The generic STT path can complete with fakes and typed fallback, but that does not deliver voice input. Before PR-08 can report `generated_tutor_voice_input`, the implementation environment must install a reviewed compatible STT plugin distribution or implement one in a separate provider-specific adapter change/package. Keep its SDK/model/artifact dependencies outside core, build a non-editable recorded artifact, qualify real route/media metadata with synthetic WAV only, and keep any explicit live probe child-data-free.
+The generic STT path can complete with fakes and typed fallback, but that does not deliver voice input. Before PR-08 can report `generated_tutor_voice_input`, the implementation environment must install a reviewed compatible STT plugin distribution or implement one in a separate provider-specific adapter change/package. Keep its SDK/model/artifact dependencies outside core, build a non-editable recorded artifact, qualify real route/media metadata with synthetic WAV only, and keep any explicit live probe student-data-free.
 
 ## Implementation tasks
 
 - [ ] Add exact `Transcript` and `SpeechToTextBackend` contracts.
-- [ ] Add child-process-only STT loader and process wrapper operation.
+- [ ] Add student-process-only STT loader and process wrapper operation.
 - [ ] Qualify complete media/sample metadata and optional synthetic probe.
 - [ ] Configure the qualified Gradio temp root before framework import/server construction; require uploads under pinned `audio-temp/framework/`.
 - [ ] Under the exclusive runtime lock, empty and verify managed framework/quarantine roots at startup; disable microphone on any integrity/cleanup failure.
@@ -92,10 +92,10 @@ The generic STT path can complete with fakes and typed fallback, but that does n
 Run:
 
 ```bash
-"$PYTHON" -m pytest tests/explore/test_plugin_loader.py -q
-"$PYTHON" -m pytest tests/explore/test_qualification.py -q
-"$PYTHON" -m pytest tests/explore/test_recordings.py -q
-"$PYTHON" -m pytest tests/explore/test_audio_presenter.py -q
+"$PYTHON" -m pytest tests/student/test_plugin_loader.py -q
+"$PYTHON" -m pytest tests/student/test_qualification.py -q
+"$PYTHON" -m pytest tests/student/test_recordings.py -q
+"$PYTHON" -m pytest tests/student/test_audio_presenter.py -q
 ```
 
 ## Acceptance
@@ -104,7 +104,7 @@ Run:
 - Qualified push-to-talk produces only an editable transcript.
 - Managed audio directory is empty after success and forced failure.
 - No audio data/path enters persistent stores.
-- Parents review actual route/retention before child audio.
+- Parents review actual route/retention before student audio.
 
 ## Out of scope
 

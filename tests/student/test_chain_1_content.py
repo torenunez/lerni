@@ -14,12 +14,12 @@ import xml.etree.ElementTree as ET
 
 import pytest
 
-from lerni.explore.catalog import (
+from lerni.student.catalog import (
     PackageLessonCatalog,
     lesson_payload_sha256,
     parse_lesson_toml,
 )
-from lerni.explore.domain import (
+from lerni.student.domain import (
     ApprovalStatus,
     LessonNotApprovedError,
     LessonPhase,
@@ -29,7 +29,7 @@ from lerni.explore.domain import (
 )
 
 LESSON_ID = "chain-1-acceleration"
-LESSONS_DIR = pathlib.Path(__file__).resolve().parents[2] / "src/lerni/explore/lessons"
+LESSONS_DIR = pathlib.Path(__file__).resolve().parents[2] / "src/lerni/student/lessons"
 
 
 @pytest.fixture
@@ -40,8 +40,8 @@ def chain_1():
 
 
 @pytest.fixture
-def all_child_text(chain_1) -> str:
-    """Every string the child can actually read, lowercased."""
+def all_student_text(chain_1) -> str:
+    """Every string the student can actually read, lowercased."""
     parts = [chain_1.title]
     for step in chain_1.steps:
         parts += [step.heading, step.body]
@@ -50,7 +50,7 @@ def all_child_text(chain_1) -> str:
     check = chain_1.check
     parts += [check.prompt, check.success_text, check.reveal_text, *check.hints]
     parts += [c.label for c in check.choices]
-    parts += [f.child_text for f in chain_1.grounding.facts]
+    parts += [f.student_text for f in chain_1.grounding.facts]
     return " ".join(parts).lower()
 
 
@@ -62,7 +62,7 @@ def test_chain_1_uses_explicit_sequence(chain_1):
 def test_chain_1_calls_zero_to_sixty_elapsed_time(chain_1):
     fact = next(f for f in chain_1.grounding.facts if f.id == "zero-to-sixty-is-time")
     assert "elapsed time" in fact.canonical_text
-    assert "seconds" in fact.child_text
+    assert "seconds" in fact.student_text
 
 
 def test_chain_1_defines_average_acceleration_as_velocity_change_over_time(chain_1):
@@ -80,21 +80,21 @@ def test_chain_1_qualifies_the_comparison_claim(chain_1):
     # Without the same-endpoints qualifier the comparison claim is simply false.
     fact = next(f for f in chain_1.grounding.facts if f.id == "shorter-time-greater-average")
     assert "same initial and final velocities" in fact.canonical_text
-    assert "same speed change" in fact.child_text
+    assert "same speed change" in fact.student_text
 
 
-def test_chain_1_contains_no_false_name_claim(all_child_text):
+def test_chain_1_contains_no_false_name_claim(all_student_text):
     # The rejected draft line was "that 0-60 number has a name: acceleration".
     # A 0-60 figure is elapsed time; naming it acceleration is wrong.
-    assert not re.search(r"(has a name|is called|called)\s*:?\s*acceleration", all_child_text)
+    assert not re.search(r"(has a name|is called|called)\s*:?\s*acceleration", all_student_text)
 
 
-def test_chain_1_contains_no_brand_or_mutable_ranking(all_child_text):
+def test_chain_1_contains_no_brand_or_mutable_ranking(all_student_text):
     brands = ("tesla", "ferrari", "porsche", "bugatti", "lamborghini", "corvette", "bmw")
     for brand in brands:
-        assert brand not in all_child_text
+        assert brand not in all_student_text
     for phrase in ("fastest", "quickest", "world record", "best car", "top speed"):
-        assert phrase not in all_child_text
+        assert phrase not in all_student_text
 
 
 def test_chain_1_presents_seconds_as_hypothetical(chain_1):
@@ -155,7 +155,7 @@ def test_context_for_each_snapshot_contains_only_bound_facts(chain_1):
     )
     context = context_for_snapshot(chain_1, intro)
     assert [f.id for f in context.grounding.facts] == ["zero-to-sixty-is-time"]
-    # The intro must not leak the teach step's facts, which the child has not
+    # The intro must not leak the teach step's facts, which the student has not
     # reached, nor the check's, which would hand a tutor the answer's grounding.
     assert "acceleration-definition" not in {f.id for f in context.grounding.facts}
 
@@ -243,7 +243,7 @@ def test_chain_1_is_still_draft(chain_1):
     assert chain_1.review.attestations == ()
 
 
-def test_child_catalog_refuses_draft_chain_1():
+def test_student_catalog_refuses_draft_chain_1():
     with pytest.raises(LessonNotApprovedError):
         PackageLessonCatalog().load(LESSON_ID)
 
@@ -254,14 +254,14 @@ def test_child_catalog_refuses_draft_chain_1():
     "fabricating review metadata.",
     strict=True,
 )
-def test_child_catalog_loads_approved_chain_1():
+def test_student_catalog_loads_approved_chain_1():
     lesson = PackageLessonCatalog().load(LESSON_ID)
     assert lesson.review.status is ApprovalStatus.APPROVED
     assert {a.scope for a in lesson.review.attestations} == {
         "science",
-        "child_content",
+        "student_content",
         "visual_accessibility",
-        "parent_approval",
+        "educator_approval",
     }
 
 

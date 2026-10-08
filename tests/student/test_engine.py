@@ -9,7 +9,7 @@ import dataclasses
 
 import pytest
 
-from lerni.explore.domain import (
+from lerni.student.domain import (
     CompletionKind,
     InvalidLessonStateError,
     InvalidTransitionError,
@@ -20,7 +20,7 @@ from lerni.explore.domain import (
     TransitionOutcome,
     UnknownChoiceError,
 )
-from lerni.explore.engine import DeterministicLessonEngine
+from lerni.student.engine import DeterministicLessonEngine
 
 CONTINUE = LessonEvent(action=LessonAction.CONTINUE)
 RESTART = LessonEvent(action=LessonAction.RESTART)

@@ -1,18 +1,18 @@
 # Admin tool reference
 
-The admin tool (the `study` command) runs in the terminal. Its current features test two learning mechanics: explaining an idea to find gaps, and returning to it later. It is available and maintained while the student app is built. This reference describes the checked implementation; it does not promise the parked AI, analytics, export, or native-app features.
+The admin tool (the `lerni` command) runs in the terminal. Its current features test two learning mechanics: explaining an idea to find gaps, and returning to it later. It is available and maintained while the student app is built. This reference describes the checked implementation; it does not promise the parked AI, analytics, export, or native-app features.
 
 ## Daily use
 
 After the [repository setup](../../README.md#setup), run:
 
 ```bash
-study new                  # prompts for the question and explanation
-study new --quick          # question and raw notes only
-study today
-study review               # due questions
-study review <id>           # one question
-study skip <id>             # tomorrow; SM-2 state unchanged
+lerni new                  # prompts for the question and explanation
+lerni new --quick          # question and raw notes only
+lerni today
+lerni review               # due questions
+lerni review <id>           # one question
+lerni skip <id>             # tomorrow; SM-2 state unchanged
 ```
 
 The full authoring flow collects raw notes, a simple explanation, gaps/questions, a refined explanation, and analogies. Add `--editor` to new, edit, snapshot, or review to use an external editor instead of inline input.
@@ -21,25 +21,25 @@ A review hides the previous answer while you explain from memory. If you report 
 
 | Task | Command |
 |---|---|
-| Revise current answer in place | `study edit <id>` |
-| Preserve an earlier version | `study snapshot <id>` |
-| Inspect content or versions | `study show <id>`, `study history <id>` |
-| Remove a question | `study delete <id>` |
-| Browse or search | `study list`, `study list --due`, `study list --concept "Name"`, `study search "text"` |
-| Organize | `study assign <id> "Concept"`, `study meta <id> --difficulty 3 --source "citation"` |
-| Manage concepts | `study concept new "Name"`, `list`, `show <id>`, `delete <id>` |
-| Link concepts | `study concept link "A" "B" --type prerequisite` |
-| Remove links | `study concept unlink "A" "B"` |
-| macOS notification | `study notify`, `study notify --setup` |
+| Revise current answer in place | `lerni edit <id>` |
+| Preserve an earlier version | `lerni snapshot <id>` |
+| Inspect content or versions | `lerni show <id>`, `lerni history <id>` |
+| Remove a question | `lerni delete <id>` |
+| Browse or search | `lerni list`, `lerni list --due`, `lerni list --concept "Name"`, `lerni search "text"` |
+| Organize | `lerni assign <id> "Concept"`, `lerni meta <id> --difficulty 3 --source "citation"` |
+| Manage concepts | `lerni concept new "Name"`, `list`, `show <id>`, `delete <id>` |
+| Link concepts | `lerni concept link "A" "B" --type prerequisite` |
+| Remove links | `lerni concept unlink "A" "B"` |
+| macOS notification | `lerni notify`, `lerni notify --setup` |
 
-Concept subcommands share the `study concept` prefix. `notify --setup` prints scheduling instructions; it does not install a schedule. Use a command's `--help` for its options.
+Concept subcommands share the `lerni concept` prefix. `notify --setup` prints scheduling instructions; it does not install a schedule. Use a command's `--help` for its options.
 
 ## Records and storage
 
 The SQLite database is `~/.lerni/lerni.db`; optional settings are in `~/.lerni/config.toml`. The admin tool has no implemented AI runtime or cloud synchronization. These are the admin tool's records, separate from the student app's curriculum and learner observations.
 
 - **Concept:** unique name, aliases, description, identifier, creation time.
-- **ConceptEdge:** source concept, destination concept, relationship. `parent` points from child to parent; `prerequisite` points from concept to prerequisite; `related` is interpreted bidirectionally.
+- **ConceptEdge:** source concept, destination concept, relationship. `parent` points from a narrower concept to a broader one; `prerequisite` points from concept to prerequisite; `related` is interpreted bidirectionally.
 - **Question:** prompt, optional concept, current answer, next review, schedule state, difficulty, references, timestamps.
 - **Answer:** question, the five explanation fields, identifier, creation time. A snapshot adds a version; `edit` mutates the existing answer, so history is not strictly immutable.
 - **Review:** question/answer references, scheduled/completed times, status, grade, attempted explanation, recall flag, gaps, notes. Status is pending, completed, or skipped. The AI-session field is unused.

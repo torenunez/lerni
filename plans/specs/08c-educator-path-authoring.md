@@ -18,7 +18,7 @@ no database, no publication step, and no change to the installed lesson format.
 This contract is **not** import-compatible with the older delivery-oriented
 schema in [`08-graph-recommendations.md`](./08-graph-recommendations.md) (the
 `curation/templates/v1/` tables), and it is not the runtime lesson TOML read by
-`src/lerni/explore/catalog.py`. Getting an authored activity into the app needs a
+`src/lerni/student/catalog.py`. Getting an authored activity into the app needs a
 deliberate semantic mapping — renaming columns is not enough. That adapter is
 later work (roadmap M5); until then the handoff from a path step to a packaged
 lesson is manual.
@@ -123,7 +123,7 @@ path_id,title,entry_node_id,learning_goal,intended_audience,starting_knowledge,s
 One educator-curated route. Required: the first four fields and `status`. The
 entry node is an available starting topic, not a record of any student's
 preference. `intended_audience` and `starting_knowledge` stay generalized — no
-child name or personal profile. Two routes from one interest are two Paths
+student name or personal profile. Two routes from one interest are two Paths
 records with the same `entry_node_id`; there is no branching syntax inside a
 path.
 
@@ -198,7 +198,7 @@ details.
    control/format characters) is flagged so it is kept literal when opened in a
    spreadsheet. The drafting checker never evaluates or changes it. The stricter
    production importer policy in spec 08 is separate.
-9. **Privacy.** Keep child identity, actual interests, observations, engagement
+9. **Privacy.** Keep student identity, actual interests, observations, engagement
    scores, progress, transcripts, and session dates out of these tables. "Music"
    as a starting topic is curriculum; "this student enjoyed music" is a private
    observation and belongs in a separate learner record.
@@ -212,15 +212,15 @@ details.
 | `needs_revision` | Previously considered content needs changes. | Revise, clear stale review fields, get a fresh review. |
 | `retired` | Kept for identity and history; not for new use. | Redirect new paths explicitly. |
 
-`reviewed` requires `reviewer_role` (`educator`, `parent`, or `subject_expert`)
+`reviewed` requires `reviewer_role` (`educator` or `subject_expert`)
 and `review_date`. If either is supplied, both are required. Nothing — no
 script, checker, or agent — fills these in; they are entered by the person who
 did the review, after it happened. Shipped examples leave both blank.
 
 **A `reviewed` row is curation review only.** It is not application approval.
 The installed lesson catalog reads exact-content attestations from the lesson
-TOML's `review.attestations` (scopes `science`, `child_content`,
-`visual_accessibility`, `parent_approval`, all pinning one
+TOML's `review.attestations` (scopes `science`, `student_content`,
+`visual_accessibility`, `educator_approval`, all pinning one
 `reviewed_payload_sha256`). Nothing in these CSVs updates that.
 
 ## Readiness levels
@@ -276,7 +276,7 @@ JSON output carries `schema_version`, `mode`, `counts`, `summary`, `issues`
 record, field, then code. Messages explain the rule and never echo raw cell
 text; `record_id` appears only when it is a well-formed ID. Every report ends
 by stating that structural checks do not approve content or make anything ready
-for a child. There is no "approved" or "safe to test" flag.
+for a student. There is no "approved" or "safe to test" flag.
 
 ## Relationship to the older curation specs
 
@@ -302,7 +302,7 @@ noticed:
 3. Record a proposal: rationale, origin, references, possible duplicates.
 4. The educator accepts, revises, merges, defers, or rejects it.
 5. Accepted additions become ordinary records with stable IDs.
-6. Any child-facing activity built on them gets its own content review.
+6. Any student-facing activity built on them gets its own content review.
 
 Until a proposal workflow exists, note proposals in `educator_notes` or a private
 planning backlog. Generalized educational conclusions may shape shared

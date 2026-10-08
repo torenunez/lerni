@@ -1,6 +1,6 @@
 """Strict lesson TOML parsing and the approved-content boundary.
 
-Every rule here fails closed. Content a child can see must be exactly what a
+Every rule here fails closed. Content a student can see must be exactly what a
 human reviewed, so ambiguity, drift, and missing review are rejected rather than
 tolerated.
 """
@@ -9,11 +9,11 @@ import re
 
 import pytest
 
-from lerni.explore.catalog import (
+from lerni.student.catalog import (
     lesson_payload_sha256,
     parse_lesson_toml,
 )
-from lerni.explore.domain import ApprovalStatus, LessonContentError, ReviewScope
+from lerni.student.domain import ApprovalStatus, LessonContentError, ReviewScope
 
 
 def _without(toml_text: str, block: str) -> str:
@@ -129,7 +129,7 @@ def test_rejects_approved_without_attestation(approved_lesson_toml):
 
 
 def test_rejects_duplicate_review_scope(approved_lesson_toml):
-    bad = approved_lesson_toml.replace('scope = "science"', 'scope = "child_content"')
+    bad = approved_lesson_toml.replace('scope = "science"', 'scope = "student_content"')
     with pytest.raises(LessonContentError, match="duplicate review scope"):
         parse_lesson_toml(bad)
 
@@ -151,7 +151,7 @@ def test_rejects_attestations_disagreeing_on_payload(approved_lesson_toml):
 
 
 def test_rejects_content_edited_after_approval(approved_lesson_toml):
-    # The realistic drift: someone tweaks child-facing text without re-reviewing.
+    # The realistic drift: someone tweaks student-facing text without re-reviewing.
     bad = approved_lesson_toml.replace(
         'body = "Teach body."', 'body = "Edited after review."'
     )

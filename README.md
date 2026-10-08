@@ -1,27 +1,27 @@
 # Lerni
 
-Lerni helps people understand ideas by explaining them and returning to them over time. It is built on two techniques: the **Feynman technique** (explain an idea simply to find what you don't understand) and **spaced repetition** (review at growing intervals so it sticks). [Learning concepts](docs/learning-concepts.md) covers these and the other ideas we design with.
+Lerni is a learning app that facilitates interest exploration, provides users a deeper understanding of these interests, and helps them connect key concepts, reinforce them, and commit them to memory. It is built on key learning concepts such as the **Feynman technique** (explain an idea simply to find what you don't understand) and **spaced repetition** (review at growing intervals so it sticks). [Learning concepts](docs/learning-concepts.md) covers these and the other ideas we design with.
 
 Lerni has two parts:
 
-- **Supervised student app — the main product.** A child explores ideas by voice on an iPad while an adult supervises. An educator seeds the first activities and supervises from the app's supervisor view; a parent approves what the child sees and can stop any session. Adult involvement steps down over time as the system learns to draft activities. We are building it in steps: first text, pictures, and choices; then remembering what the child explored and building on it; then speaking and listening. The authoring tools and activity engine exist; the app is not built yet.
-- **Admin tool — in the terminal.** Full access: learn topics with it, try out anything a student would see, and tune the learning mechanics before the student app relies on them. Available now. Educators and parents never need it.
+- **Educator-supervised student app — the main product.** A student explores ideas by voice on an iPad while an educator supervises. The educator seeds the first activities, approves what the student sees, supervises from the educator view, and can stop any session. Educator involvement steps down over time as the system learns to draft activities. We are building it in steps: first text, pictures, and choices; then remembering what the student explored and building on it; then speaking and listening. The authoring tools and activity engine exist; the app is not built yet.
+- **Admin tool — in the terminal.** Full access: learn topics with it, try out anything a student would see, and tune the learning mechanics before the student app relies on them. Available now. Educators never need it.
 
-In the code, the student app is `explore` and the admin tool is `study`.
-
-The student app treats knowledge as a map: **nodes** are ideas, and **edges** link them, either by how they relate or by which makes a good next step. A path starts at a child's core interest (cars, music, cooking) and follows edges toward an underlying idea. The map grows by branching to nearby ideas. It strengthens when the same idea is reached again from a different interest, so fractions met through music and again through cooking become one connected idea. Educators build the map today; suggesting where to go next comes later.
+The student app treats knowledge as a map: **nodes** are ideas, and **edges** link them, either by how they relate or by which makes a good next step. A path starts at a student's core interest (cars, music, cooking) and follows edges toward an underlying idea. The map grows by branching to nearby ideas. It strengthens when the same idea is reached again from a different interest, so fractions met through music and again through cooking become one connected idea. Educators build the map today; suggesting where to go next comes later.
 
 ## Read in this order
 
-1. [Student app PRD](docs/prd/student.md): what we're building, for whom, and why. The [educator and parent PRD](docs/prd/educator.md) covers every adult task; the [admin tool PRD](docs/prd/admin.md) covers the terminal tool.
-2. [Learning concepts](docs/learning-concepts.md): the learning ideas behind Lerni.
-3. [Architecture](docs/ARCHITECTURE.md): how the parts fit together.
-4. [Roadmap](docs/roadmap.md): what comes next and who owns it.
-5. [Progress](docs/progress.md): what exists and what remains unverified.
+1. [Student app PRD](docs/prd/student.md): what we're building, for whom, and why.
+2. [Educator PRD](docs/prd/educator.md): every educator task.
+3. [Admin tool PRD](docs/prd/admin.md): the terminal tool.
+4. [Learning concepts](docs/learning-concepts.md): the learning ideas behind Lerni.
+5. [Architecture](docs/ARCHITECTURE.md): how the parts fit together.
+6. [Roadmap](docs/roadmap.md): what comes next and who owns it.
+7. [Progress](docs/progress.md): what exists and what remains unverified.
 
-Educators can then open the [curation guide](curation/README.md) to prepare a path. Admins can use the [implementation index](plans/README.md) to find detailed specifications and tasks. The [admin tool reference](docs/reference/study.md) covers its commands and behavior.
+Educators can then open the [curation guide](curation/README.md) to prepare a path. Admins can use the [implementation index](plans/README.md) to find detailed specifications and tasks. The [admin tool reference](docs/reference/admin.md) covers its commands and behavior.
 
-The educator and admin can start now, in parallel. A reviewed activity can be tried without the app; student app use needs the separate preparation described in the product requirements.
+The educator and admin can start now, in parallel. A reviewed activity can be tried without the app; student app use needs the separate preparation described in the [student app PRD](docs/prd/student.md).
 
 ## Setup
 
@@ -31,7 +31,7 @@ For admins: run these commands from a repository checkout with Python 3.11 or ne
 python3 -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
 pytest
-study --help
+lerni --help
 ```
 
 The admin tool stores data locally in `~/.lerni/`. The student app is for supervised use by one family.

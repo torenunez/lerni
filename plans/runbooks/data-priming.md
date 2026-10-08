@@ -17,7 +17,7 @@ Produce the smallest truthful, reviewed content bundle that can:
 3. bind later telemetry without reinterpreting history;
 4. support parent-approved recommendation experiments after the first pilot.
 
-The spreadsheet is a curation surface, not a child profile or live runtime database.
+The spreadsheet is a curation surface, not a student profile or live runtime database.
 
 ## Authoritative schema
 
@@ -48,13 +48,13 @@ Only tabs 3–15 plus the asset enter the curriculum bundle. `OBSERVATIONS` is a
 
 Never enter:
 
-- child name, initials, account ID, birthday, school, address, contact details, or exact location;
+- student name, initials, account ID, birthday, school, address, contact details, or exact location;
 - raw transcript, audio, chat, prompt, or generated response;
 - medical, behavioral, diagnostic, or protected-class labels;
 - credentials, account recovery details, private family notes, or secrets;
 - current car rankings or claims that have not been reviewed against a stable source.
 
-`child_phrase_sanitized` is an optional short paraphrase, not a raw quote archive. `parent_observation_sanitized` explains the interest without identifying the child.
+`child_phrase_sanitized` is an optional short paraphrase, not a raw quote archive. `parent_observation_sanitized` explains the interest without identifying the student.
 
 ## Minimum seed inventory
 
@@ -72,7 +72,7 @@ Create exactly one initial interest:
 - first/last observed dates: truthful dates, not plan placeholders
 - entered role: `parent` or `educator`
 
-Replace the sample child phrase and parent observation with truthful sanitized wording, or leave optional child wording blank.
+Replace the sample student phrase and parent observation with truthful sanitized wording, or leave optional student wording blank.
 
 ### Concepts
 
@@ -132,7 +132,7 @@ Create `compare-same-speed-change`:
 - reviewed reveal text;
 - source: `nasa-acceleration`.
 
-This is a candidate teaching move, not automatic child-visible content.
+This is a candidate teaching move, not automatic student-visible content.
 
 ### Edge
 
@@ -192,18 +192,18 @@ No review row may be fabricated. Use actual role and date; do not store a review
 
 The minimum approved seed requires 25 active attestations:
 
-- interest: 1 `parent_approval`;
+- interest: 1 `educator_approval`;
 - source: 1 `science`;
-- two concepts: 2 each (`science`, `child_content`);
-- four facts: 2 each (`science`, `child_content`);
-- nudge: 3 (`science`, `child_content`, `parent_approval`);
-- edge: 2 (`science`, `child_content`);
-- asset: 2 (`visual_accessibility`, `parent_approval`);
-- lesson version: 4 (`science`, `child_content`, `visual_accessibility`, `parent_approval`).
+- two concepts: 2 each (`science`, `student_content`);
+- four facts: 2 each (`science`, `student_content`);
+- nudge: 3 (`science`, `student_content`, `educator_approval`);
+- edge: 2 (`science`, `student_content`);
+- asset: 2 (`visual_accessibility`, `educator_approval`);
+- lesson version: 4 (`science`, `student_content`, `visual_accessibility`, `educator_approval`).
 
-Use a stable unique attestation ID, version 1, exact entity ID/version, active status, actual `reviewed_on`, and optional repository-relative evidence reference. Every lesson review records the same exact read-only child-facing payload hash; asset reviews record the exact SVG hash.
+Use a stable unique attestation ID, version 1, exact entity ID/version, active status, actual `reviewed_on`, and optional repository-relative evidence reference. Every lesson review records the same exact read-only student-facing payload hash; asset reviews record the exact SVG hash.
 
-Both-parent pilot consent belongs in the private operator setup record. The content schema’s single active `parent_approval` scope is an approval control, not a complete consent ledger.
+Both-parent pilot consent belongs in the private operator setup record. The content schema’s single active `educator_approval` scope is an approval control, not a complete consent ledger.
 
 ## Draft-to-approved workflow
 
@@ -213,8 +213,8 @@ Both-parent pilot consent belongs in the private operator setup record. The cont
 4. Generate the final SVG hash locally.
 5. Export every imported tab as UTF-8 CSV.
 6. Run parser/validator while all rows are draft; fix schema, reference, privacy, and content errors.
-7. Run the read-only compile preview and record its canonical child-facing payload hash.
-8. Perform science, child-content, accessibility, and parent reviews against that exact preview.
+7. Run the read-only compile preview and record its canonical student-facing payload hash.
+8. Perform science, student-content, accessibility, and parent reviews against that exact preview.
 9. Add actual `REVIEWS` rows with the required payload/asset hashes.
 10. Change only reviewed entities to approved; keep the interest lifecycle active.
 11. Re-export all tabs; do not patch individual CSVs after review.
@@ -271,7 +271,7 @@ Do this only after plan 08b is implemented and the first pilot data exists:
 3. Review sanitized aggregate observations; do not import transcript/audio.
 4. Attest `zero-to-sixty-time` readiness only if a parent/educator actually observed it. Otherwise leave readiness `unknown`.
 5. Refresh candidates.
-6. Parent explicitly approves, defers, or rejects; no candidate is child-visible automatically.
+6. Parent explicitly approves, defers, or rejects; no candidate is student-visible automatically.
 
 No spreadsheet row or observation automatically changes readiness, content approval, graph edges, or assignment state.
 
@@ -285,6 +285,6 @@ Priming is complete only when:
 - activation is explicit and transactional;
 - active adjacency and binding equal the expected inventory;
 - the packaged lesson compiles deterministically;
-- no prohibited child data or credential exists in sheet/CSV/manifest;
+- no prohibited student data or credential exists in sheet/CSV/manifest;
 - a second import of identical bytes is idempotent;
 - changed bytes under the same batch ID are rejected.

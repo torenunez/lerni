@@ -4,7 +4,7 @@
 
 Build a provider-neutral boundary in which:
 
-- deterministic application policy examines child input before any tutor call;
+- deterministic application policy examines student input before any tutor call;
 - only sanitized, in-scope input reaches a configured tutor capability;
 - the tutor receives the current lesson snapshot and reviewed grounding facts;
 - tutor output is treated as untrusted, buffered, grounded, and gated;
@@ -12,14 +12,14 @@ Build a provider-neutral boundary in which:
 - authored fallback text works without any model or external service;
 - no tutor or safety adapter can advance lesson state.
 
-These controls reduce risk but do not make the prototype generally child-safe, legally compliant, or appropriate without active parent supervision.
+These controls reduce risk but do not make the prototype generally student-safe, legally compliant, or appropriate without active parent supervision.
 
 ## File map
 
 Create:
 
 ```text
-src/lerni/explore/
+src/lerni/student/
 ├── plugin_loader.py
 ├── qualification.py
 ├── tutor_process.py
@@ -30,7 +30,7 @@ src/lerni/explore/
 └── qualification_data/
     └── harm_probe_cases_v1.toml
 
-tests/explore/
+tests/student/
 ├── fakes.py
 ├── test_contracts.py
 ├── test_plugin_loader.py
@@ -43,7 +43,7 @@ tests/explore/
 └── test_tutor_service.py
 ```
 
-Extend the PR-03-owned `src/lerni/explore/contracts.py` with tutor/additional-safety request, result, and protocol types; PR-04 does not recreate or replace that module.
+Extend the PR-03-owned `src/lerni/student/contracts.py` with tutor/additional-safety request, result, and protocol types; PR-04 does not recreate or replace that module.
 
 No module imports a provider SDK.
 Use `from __future__ import annotations` in contract/loader modules so raw plugin protocol types may be declared after loader signatures without runtime-name coupling.
@@ -109,7 +109,7 @@ Contract rules:
 - input text is already sanitized;
 - context contains only the current snapshot’s approved facts and scope;
 - the helper-process runner enforces the configured execution deadline;
-- parent-process backends accept null scope/registry only for synthetic qualification; every child-session generate/assess call requires both;
+- parent-process backends accept null scope/registry only for synthetic qualification; every student-session generate/assess call requires both;
 - adapter returns a complete structured draft, never a token iterator;
 - adapter exceptions are mapped to a sanitized application exception;
 - the interface does not pass lesson engine, answer key, database, telemetry store, runtime profile/secrets, or parent notes;
@@ -171,7 +171,7 @@ Import-reference grammar:
 python.module.path:factory_name
 ```
 
-PR-04 implements `ProcessTutorBackend` and `ProcessAdditionalSafetyBackend` in `tutor_process.py` by composing PR-03's generic `ProcessCapabilityClient`; PR-03 never imports these later-owned protocols. The application parent validates import-reference grammar without importing it, constructs one of those typed adapters, and performs status/probes through the versioned runner protocol. Child-side loading validates:
+PR-04 implements `ProcessTutorBackend` and `ProcessAdditionalSafetyBackend` in `tutor_process.py` by composing PR-03's generic `ProcessCapabilityClient`; PR-03 never imports these later-owned protocols. The application parent validates import-reference grammar without importing it, constructs one of those typed adapters, and performs status/probes through the versioned runner protocol. Student-side loading validates:
 
 - one colon;
 - absolute dotted module path;
@@ -183,7 +183,7 @@ PR-04 implements `ProcessTutorBackend` and `ProcessAdditionalSafetyBackend` in `
 - plugin settings reject secret/key/token/password-like keys;
 - import/factory errors become sanitized qualification errors.
 
-This is dependency injection, not a security sandbox. Only operator-approved plugins may be loaded. A raw object returned by these loaders never crosses the child-process boundary.
+This is dependency injection, not a security sandbox. Only operator-approved plugins may be loaded. A raw object returned by these loaders never crosses the student-process boundary.
 
 Use PR-03 `CapabilityQualification` and implement tutor qualification in `qualification.py`:
 
@@ -254,11 +254,11 @@ def qualify_additional_safety_backend(
 
 The direction is validated as `input` or `output`.
 
-The deterministic/manual lesson works without this backend. A generated tutor may be enabled for child use only when this backend qualifies against the reviewed minimum input/output taxonomy: violence/weapons/dangerous acts, self-harm, abuse/exploitation/grooming, sexual content, illegal drugs/crime, hate/harassment, and requests for harmful instructions. Probe cases include obvious, obfuscated, lesson-scope-overlap, and benign neighboring controls in both directions.
+The deterministic/manual lesson works without this backend. A generated tutor may be enabled for student use only when this backend qualifies against the reviewed minimum input/output taxonomy: violence/weapons/dangerous acts, self-harm, abuse/exploitation/grooming, sexual content, illegal drugs/crime, hate/harassment, and requests for harmful instructions. Probe cases include obvious, obfuscated, lesson-scope-overlap, and benign neighboring controls in both directions.
 
 The exact reviewed probe set is one bounded installed package resource, `qualification_data/harm_probe_cases_v1.toml`, loaded by both operator qualification and tests. Its complete schema, IDs, texts, and expected dispositions are normative in [Harm-probe fixture appendix](./03b-harm-probe-cases.md): exactly seven taxonomy categories × four variants (`obvious`, `obfuscated`, `lesson_overlap`, `benign`) × two directions, or 56 unique cases. Qualification rejects missing/extra/duplicate/reordered cases or any byte drift from the reviewed resource. Its source hash enters the qualification record; no clean-install check reads `tests/`.
 
-The backend may tighten a decision. It may never change an app-owned redirect, block, escalation, or fallback into allow. If it is missing, unavailable, malformed, times out, or fails any required harm/benign probe, bootstrap selects `ManualTutor` for the child pilot even when a tutor plugin itself qualifies.
+The backend may tighten a decision. It may never change an app-owned redirect, block, escalation, or fallback into allow. If it is missing, unavailable, malformed, times out, or fails any required harm/benign probe, bootstrap selects `ManualTutor` for the student pilot even when a tutor plugin itself qualifies.
 
 It runs through the same helper-process deadline and trusted-plugin limitations as tutor/STT capabilities.
 
@@ -515,7 +515,7 @@ Never:
 - promise confidentiality;
 - claim emergency monitoring;
 - imply a human has been notified;
-- expose exception or adapter details to the child.
+- expose exception or adapter details to the student.
 
 The exact normalization, regular expressions, sentence splitting, stop words, significant-term rule, numeric grammar, and golden fixtures are normative in [Policy algorithm appendix](./03a-policy-algorithms.md). Implementations may be more restrictive only after tests and documentation are updated together.
 
@@ -540,7 +540,7 @@ For every `TutorSentence`:
 - draft has `1..max_generated_sentences` records and each record’s text is exactly one sentence under the normative splitter before joining;
 - at least one fact citation;
 - every cited ID exists in the current grounding bundle;
-- sentence contains at least one normalized significant term from a cited fact’s canonical or child text;
+- sentence contains at least one normalized significant term from a cited fact’s canonical or student text;
 - every numeric token appears in a cited fact’s `allowed_numbers`;
 - no more than the sentence and character limits;
 - caller supplies the once-joined text separately to deterministic output policy; the grounding gate evaluates the still-bounded typed records/citations.
@@ -667,7 +667,7 @@ The launch-scoped circuit breaker is monotonic: only process restart plus fresh 
 
 ## Deterministic fakes
 
-Implement in `tests/explore/fakes.py`.
+Implement in `tests/student/fakes.py`.
 
 ```python
 @dataclass
@@ -722,7 +722,7 @@ Tests:
 Red:
 
 ```bash
-"$PYTHON" -m pytest tests/explore/test_contracts.py -q
+"$PYTHON" -m pytest tests/student/test_contracts.py -q
 ```
 
 Green:
@@ -744,7 +744,7 @@ Then add plugin/qualification tests:
 Run:
 
 ```bash
-"$PYTHON" -m pytest tests/explore/test_plugin_loader.py tests/explore/test_qualification.py -q
+"$PYTHON" -m pytest tests/student/test_plugin_loader.py tests/student/test_qualification.py -q
 ```
 
 ## Task 2 — Sanitization
@@ -792,7 +792,7 @@ Add:
 Red/green:
 
 ```bash
-"$PYTHON" -m pytest tests/explore/test_sanitization.py -q
+"$PYTHON" -m pytest tests/student/test_sanitization.py -q
 ```
 
 ## Task 3 — Input policy
@@ -816,7 +816,7 @@ Tests:
 Red/green:
 
 ```bash
-"$PYTHON" -m pytest tests/explore/test_input_policy.py -q
+"$PYTHON" -m pytest tests/student/test_input_policy.py -q
 ```
 
 ## Task 4 — Output policy and grounding
@@ -837,7 +837,7 @@ Tests:
 Red/green:
 
 ```bash
-"$PYTHON" -m pytest tests/explore/test_grounding.py tests/explore/test_output_policy.py -q
+"$PYTHON" -m pytest tests/student/test_grounding.py tests/student/test_output_policy.py -q
 ```
 
 ## Task 5 — Orchestration
@@ -872,7 +872,7 @@ Use canary strings and assert they are absent from:
 Red/green:
 
 ```bash
-"$PYTHON" -m pytest tests/explore/test_tutor_service.py -q
+"$PYTHON" -m pytest tests/student/test_tutor_service.py -q
 ```
 
 ## Runtime adapter qualification tests
@@ -889,13 +889,13 @@ Any concrete tutor plugin selected later must pass a shared contract suite:
 - the request object contains no Study engine/state or telemetry reference;
 - network behavior and retention are documented by the operator.
 
-These contract tests may run against a local controlled stub. They must not call a live child-facing service in the automated suite.
+These contract tests may run against a local controlled stub. They must not call a live student-facing service in the automated suite.
 
 ## Completion criteria
 
 - All deterministic policy tests pass.
 - Blocked input cannot reach tutor.
-- Rejected output cannot reach caller as child text.
+- Rejected output cannot reach caller as student text.
 - Tutor cannot advance lesson.
 - Manual fallback works.
 - No provider SDK or model name appears in core modules or tests.

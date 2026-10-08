@@ -13,14 +13,14 @@ Define one portable application assembly path that:
 - builds a complete dependency bundle or a deterministic fallback bundle;
 - never changes lesson, safety, telemetry, or UI code for a different adapter.
 
-The runtime profile is configuration, not a source of lesson content or child data.
+The runtime profile is configuration, not a source of lesson content or student data.
 
 ## File map
 
 Create:
 
 ```text
-src/lerni/explore/
+src/lerni/student/
 ├── runtime_config.py
 ├── capability_runner.py
 ├── capability_supervisor.py
@@ -28,7 +28,7 @@ src/lerni/explore/
 ├── readiness.py
 └── bootstrap.py
 
-tests/explore/
+tests/student/
 ├── test_runtime_config.py
 ├── test_capability_runner.py
 ├── test_readiness.py
@@ -37,7 +37,7 @@ tests/explore/
 
 This plan uses contracts defined in the lesson, tutor/safety, telemetry, UI, and audio plans. Implement the parser types early, then complete bootstrap wiring as each capability exists.
 
-Modify `src/lerni/explore/contracts.py` for shared capability metadata. `runtime_config.py` imports from `contracts.py`; `contracts.py` never imports runtime configuration, avoiding a cycle.
+Modify `src/lerni/student/contracts.py` for shared capability metadata. `runtime_config.py` imports from `contracts.py`; `contracts.py` never imports runtime configuration, avoiding a cycle.
 
 ## Runtime profile
 
@@ -259,7 +259,7 @@ Reject:
 - port outside 1024–65535;
 - relative, missing, symlinked, or non-directory runtime root;
 - runtime root inside repository checkout;
-- runtime root or any already-existing derived child with any group/other permission bit (`mode & 0o077 != 0`) when POSIX modes are available;
+- runtime root or any already-existing derived student with any group/other permission bit (`mode & 0o077 != 0`) when POSIX modes are available;
 - enabled plugin without import reference;
 - disabled plugin with non-empty settings, credential references, or import reference;
 - timeout outside 0.5–120 seconds;
@@ -291,7 +291,7 @@ api_key = "env:LERNI_TUTOR_API_KEY"
 
 At qualification probes and each non-status invocation, the parent resolves the named source variable. Missing/empty values make that capability unavailable with a sanitized reason. Standalone `status` receives no credential values and must be local, idempotent, and non-billable; qualification observes/reviews that behavior, otherwise the adapter is unavailable. Parent code never intentionally places resolved values in dataclasses with default `repr`, requests, status, readiness, telemetry, exports, exception text, or disk files. Because trusted plugin code could return a secret, the parent rejects any response frame containing an exact resolved secret byte sequence, disables the capability, and tells the operator to rotate it. This detects exact reflection only and is not a containment guarantee.
 
-The helper is started with a minimal explicit environment and receives each secret only as `LERNI_CAPABILITY_CREDENTIAL_<LOGICAL_NAME_UPPER>`. The configured source variable name and unrelated inherited environment variables are not passed. The plugin contract reads only those standardized child variables. This is accidental-secret minimization, not a sandbox: trusted plugin code can still read accessible files or call operating-system APIs.
+The helper is started with a minimal explicit environment and receives each secret only as `LERNI_CAPABILITY_CREDENTIAL_<LOGICAL_NAME_UPPER>`. The configured source variable name and unrelated inherited environment variables are not passed. The plugin contract reads only those standardized student variables. This is accidental-secret minimization, not a sandbox: trusted plugin code can still read accessible files or call operating-system APIs.
 
 External capability setup is optional. The operator owns account creation, billing/usage limits, key creation/rotation/revocation, acceptance of service terms, and confirmation of routing/retention/logging. A local/manual fallback requires no service account or credential.
 
@@ -324,7 +324,7 @@ For each enabled plugin, require strict canonical `capability-decisions/<kind>.j
 }
 ```
 
-Reject unknown/missing fields, personal/account identifiers, credential values, text over fixed bounds, a mismatched capability/adapter/artifact/qualification, `unresolved_items` for child use, or false required reviews. `data_sent` is not free text: it must exactly equal the parent-owned wire-codec category allowlist for that capability (`tutor`: sanitized learner text, reviewed current lesson context, state without answer key; `additional_safety`: sanitized learner text and candidate generated text; `speech_to_text`: managed local audio descriptor, bounded child voice audio, locale, and media metadata). Local adapters use truthful local declarations rather than pretending a service account exists.
+Reject unknown/missing fields, personal/account identifiers, credential values, text over fixed bounds, a mismatched capability/adapter/artifact/qualification, `unresolved_items` for student use, or false required reviews. `data_sent` is not free text: it must exactly equal the parent-owned wire-codec category allowlist for that capability (`tutor`: sanitized learner text, reviewed current lesson context, state without answer key; `additional_safety`: sanitized learner text and candidate generated text; `speech_to_text`: managed local audio descriptor, bounded student voice audio, locale, and media metadata). Local adapters use truthful local declarations rather than pretending a service account exists.
 
 `qualification_sha256` is the exact SHA-256 of strict sibling `<kind>.qualification.json`, not a self-hash. That fixed v1 generated record contains capability kind, adapter/artifact/effective-metadata hashes, platform/Python identifiers, qualification probe-suite source hash, fixed check IDs/results/counts, qualification date, and overall `pass`/`fail`; it contains no credential, probe payload/output, account identifier, absolute path, or free-form exception. Startup revalidates the pointer plus current artifact/profile/status metadata and runs status through the helper; it does not silently repeat a live/billable probe. Changed code, profile semantics, probe suite, platform, or failed/nonmatching status requires explicit requalification and a new decision.
 
@@ -354,7 +354,7 @@ The operator creates only `runtime.root` ahead of time with private permissions.
 - root must already exist;
 - create each missing derived directory with owner-only permissions where supported;
 - do not create, chmod, or replace the root itself;
-- re-open/re-stat root and every derived child after creation and before use;
+- re-open/re-stat root and every derived student after creation and before use;
 - reject symlinks at every path segment;
 - reject unexpected POSIX ACL entries when the platform exposes an ACL inspection API; otherwise record that ACL verification is unavailable;
 - acquire a nonblocking exclusive advisory lock on `.lerni-explore.lock` before creating/opening any store and hold it through shutdown/managed wipe;
@@ -581,12 +581,12 @@ Allowed operation pairs:
 
 PR-03 implements framing plus plugin-status/error envelopes. PR-04 adds tutor/additional-safety payload codecs; PR-07 adds STT payload codecs. No earlier PR imports a later-owned contract.
 
-Use a fresh credential-free control handshake per invocation. The parent launches `python -I -m lerni.explore.capability_supervisor`; only that minimal supervisor, after registration, may launch `python -I -m lerni.explore.capability_worker` in the target process group:
+Use a fresh credential-free control handshake per invocation. The parent launches `python -I -m lerni.student.capability_supervisor`; only that minimal supervisor, after registration, may launch `python -I -m lerni.student.capability_worker` in the target process group:
 
 1. Parent validates/encodes one protocol frame and reserves the invocation ID atomically in the registry before resolving credentials or creating a process; a pre-cancelled scope creates nothing. Qualification uses an internal one-call registry.
 2. Parent resolves only required credentials, creates a dedicated lifetime/control channel, and launches the minimal supervisor with the minimal environment, stdin/stdout pipes, and no shell; the supervisor blocks before worker/plugin creation.
    - `STATUS` resolves/passes no credentials; non-status operations resolve only their declared references;
-   - runtime child-session calls require both scope and registry; qualification creates neither at the API boundary but the runner still uses its private reservation;
+   - runtime student-session calls require both scope and registry; qualification creates neither at the API boundary but the runner still uses its private reservation;
    - atomically attach supervisor ownership to the reservation before sending the fixed start control; a concurrently cancelled reservation terminates the blocked supervisor without worker creation;
    - after start, the supervisor creates the worker in a new target process group and reports that group into the same registry; cancellation at any handshake barrier terminates both;
    - supervisor/worker lifetime pipes are arranged so unexpected parent or supervisor death causes an out-of-group watcher to kill the target worker group; worker/plugin descendants never inherit a lifetime-channel write end;
@@ -597,7 +597,7 @@ Use a fresh credential-free control handshake per invocation. The parent launche
 6. Worker calls exactly the selected protocol method.
 7. Worker writes only the allowlisted contract response or one fixed error code: `invalid_request`, `load_failed`, `status_failed`, `unavailable`, `call_failed`, `invalid_result`, or `internal_failure`.
 8. Parent writes/closes stdin and reads a bounded response while waiting until the monotonic deadline derived from the configured application timeout.
-9. On timeout, scope cancellation, wipe, or unexpected parent death, terminate the complete process group, kill it after a bounded grace period, wait/reap where still parent-owned, and verify a test descendant is gone. If process-tree/lifetime containment cannot be qualified, credential-bearing/generated/audio plugins are unavailable for child use.
+9. On timeout, scope cancellation, wipe, or unexpected parent death, terminate the complete process group, kill it after a bounded grace period, wait/reap where still parent-owned, and verify a test descendant is gone. If process-tree/lifetime containment cannot be qualified, credential-bearing/generated/audio plugins are unavailable for student use.
 10. Parent scans raw response bytes and every decoded string scalar for exact resolved credential values before contract construction; a match becomes `SECRET_REFLECTION`, disables the capability, and requires rotation.
 11. Parent unregisters only the same invocation, closes pipes/process handles, and drops resolved credential values in all paths.
 12. Parent validates frame size, protocol version, invocation ID, result kind, exact schema, and semantic output limits before constructing a contract object.
@@ -641,7 +641,7 @@ class ProcessSpeechToTextBackend(SpeechToTextBackend):
     ...
 ```
 
-The generic client owns framing/supervision only. Each typed adapter stores/uses only validated import reference, public settings, credential-reference names, qualified status, canonical qualified-metadata hash, and timeout—never resolved values. `status()` returns that immutable qualified status. Each operational protocol method creates one `CapabilityInvocation`; the child rechecks live status against the qualified baseline before the call. Application services never load or call a configured plugin object directly.
+The generic client owns framing/supervision only. Each typed adapter stores/uses only validated import reference, public settings, credential-reference names, qualified status, canonical qualified-metadata hash, and timeout—never resolved values. `status()` returns that immutable qualified status. Each operational protocol method creates one `CapabilityInvocation`; the student rechecks live status against the qualified baseline before the call. Application services never load or call a configured plugin object directly.
 
 Qualification itself invokes `status` and any explicit probe through this protocol. It validates the full metadata round-trip:
 
@@ -766,8 +766,8 @@ Startup may print a separate sanitized deletion-recovery summary before readines
 
 Hash inputs:
 
-- application build: sorted package-relative regular-file paths and SHA-256 values under the resolved `lerni/explore` package roots plus project version; reject symlinks/special files and exclude only fixed generated cache suffixes/directories, never operator-selected globs;
-- dependency set: the normalized transitive closure declared by the Explore extra plus configured plugin distributions, including Gradio, with sorted names/versions, metadata/RECORD hash, and verification of every recorded file hash; an enabled plugin outside the application build must be installed from a complete non-editable recorded distribution, while editable/unrecorded third-party distributions fail child qualification;
+- application build: sorted package-relative regular-file paths and SHA-256 values under the resolved `lerni/student` package roots plus project version; reject symlinks/special files and exclude only fixed generated cache suffixes/directories, never operator-selected globs;
+- dependency set: the normalized transitive closure declared by the Explore extra plus configured plugin distributions, including Gradio, with sorted names/versions, metadata/RECORD hash, and verification of every recorded file hash; an enabled plugin outside the application build must be installed from a complete non-editable recorded distribution, while editable/unrecorded third-party distributions fail student qualification;
 - runtime profile: every normalized non-secret effective field, including host/port, runtime-root string, safety limits, retention, capability declarations/settings/credential-reference names, and browser-speech declarations;
 - policy profile: policy schema/version, golden-fixture hash, phrase/regex/stop-word/number-rule hash, and effective `PolicyLimits`;
 - framework qualification: exact strict private `capability-decisions/framework.json` hash, revalidated against the installed Gradio RECORD, current platform/Python, and probe-suite source hash;
@@ -775,14 +775,14 @@ Hash inputs:
 
 An enabled plugin requires a matching decision record and installed artifact/dependency identity. Bootstrap rehashes files/config/records immediately before launch. `--acknowledge-readiness-sha256` is compared with the freshly recomputed report, so edits after `--print-readiness` invalidate it. External account settings cannot be mechanically re-read by this local hash and remain an operator declaration.
 
-The runner prints the sanitized report to the launching terminal only after all qualification and package checks. Before opening a browser or accepting a child event, a parent must either:
+The runner prints the sanitized report to the launching terminal only after all qualification and package checks. Before opening a browser or accepting a student event, a parent must either:
 
 - interactively type `LAUNCH <first-12-report-hash-characters>` in a TTY; or
 - supply `--acknowledge-readiness-sha256 <full-hash>` obtained from a prior `--print-readiness` invocation.
 
 The acknowledgement is one-launch, in-memory state. A changed build/dependency, profile/policy, lesson package, framework result, capability decision/qualification, telemetry mode/retention or post-maintenance purge status, browser declaration, or fallback changes the digest and requires a new acknowledgement. The parent accordion shows the same digest and fallback list after launch. No raw plugin error, input, secret, or parent token enters the report.
 
-Immediately after acknowledgement and before issuing launch secrets, importing Gradio, or constructing a browser app, call the read-only readiness provider and require exact digest equality. This is separate from the same fresh check before every child Start.
+Immediately after acknowledgement and before issuing launch secrets, importing Gradio, or constructing a browser app, call the read-only readiness provider and require exact digest equality. This is separate from the same fresh check before every student Start.
 
 ## Parent control guard
 
@@ -860,22 +860,22 @@ Requirements:
 - compared with constant-time comparison;
 - rotate on explicit parent action;
 - protected callbacks require the current token;
-- protected browser callbacks always require the qualified exact Host/same-origin Origin checks below; unavailable metadata makes child UI ineligible;
+- protected browser callbacks always require the qualified exact Host/same-origin Origin checks below; unavailable metadata makes student UI ineligible;
 - failed checks emit category only.
 
-Child-session admission requirements:
+Student-session admission requirements:
 
 - page load renders only the supervision/admission screen and creates no telemetry session;
 - parent enters a separate one-time launch code shown in the terminal; the component is cleared immediately;
 - five failed admission-code attempts invalidate that code and require a fresh terminal-issued code; failures are fixed-category/rate-limited without echoing candidates;
 - every mutating browser request must expose an exact loopback `Host`/port and exact same-origin `Origin`; missing, duplicate, malformed, or mismatched values fail before nonce/binding lookup;
 - admission creates one active browser session and an unguessable in-memory CSRF nonce bound to its epoch;
-- admission holds its one-time `AdmissionGrant` server-side behind a parent launch/data-management landing; it does not itself create telemetry or enable child interaction;
+- admission holds its one-time `AdmissionGrant` server-side behind a parent launch/data-management landing; it does not itself create telemetry or enable student interaction;
 - only `csrf_nonce` enters an ephemeral hidden browser component; the server registry retains its digest/session/epoch binding, while `AdmissionGrant` passes directly between server-side callback/controller layers and is never serialized to the browser;
 - `ExploreSessionPort.start()` atomically consumes the exact grant once; later callbacks call `authorize_mutation()` before invoking the session service;
-- nonce is required on every child and parent mutation, never appears in URL/log/export, and is invalidated on stop/wipe/shutdown;
-- first slice permits one active child session, at most `max_sessions_per_launch`, and at most `max_capability_calls_per_session`;
-- the capability-call budget counts each runtime helper invocation separately (input harm, tutor, output harm, or STT), including timeout/error attempts; startup qualification and browser-local speech do not consume a child-session budget;
+- nonce is required on every student and parent mutation, never appears in URL/log/export, and is invalidated on stop/wipe/shutdown;
+- first slice permits one active student session, at most `max_sessions_per_launch`, and at most `max_capability_calls_per_session`;
+- the capability-call budget counts each runtime helper invocation separately (input harm, tutor, output harm, or STT), including timeout/error attempts; startup qualification and browser-local speech do not consume a student-session budget;
 - after separate parent-token and mutation authorization, any parent-started additional/reset session uses `issue_parent_session_grant()`; it invalidates any old epoch, consumes the same session budget, and returns a one-time server-only grant;
 - grant issuance reserves that launch-budget slot even if later setup fails; reservations are not refunded or reusable, preventing retry races from bypassing the cap;
 - an unconsumed grant expires after `admission_grant_ttl_seconds`; expiry leaves its slot consumed, and a still-authorized parent may request a new parent-session grant if budget remains;
@@ -883,7 +883,7 @@ Child-session admission requirements:
 
 This is lightweight local admission/authorization, not user authentication or protection against malicious code running as the same operating-system user.
 
-Tier-B framework qualification must prove the callback/request API exposes trustworthy raw `Host` and `Origin` values for every mutating route. If it cannot, Gradio child UI is ineligible and bootstrap must use headless authored-core verification or a separately reviewed HTTP boundary; the implementation may not silently downgrade to nonce-only checks.
+Tier-B framework qualification must prove the callback/request API exposes trustworthy raw `Host` and `Origin` values for every mutating route. If it cannot, Gradio student UI is ineligible and bootstrap must use headless authored-core verification or a separately reviewed HTTP boundary; the implementation may not silently downgrade to nonce-only checks.
 
 ## Bootstrap
 
@@ -919,7 +919,7 @@ PR-07 later inserts STT qualification after step 10 and populates v1's existing 
 Failure behavior:
 
 - invalid profile: do not start;
-- lesson missing/not approved: do not start child UI;
+- lesson missing/not approved: do not start student UI;
 - telemetry unavailable: may start in visibly non-recording mode after parent acknowledgement;
 - tutor unavailable: start with manual fallback;
 - browser speech unavailable: start with visible text;
@@ -947,7 +947,7 @@ Failure blocks all implementation verification.
 - no public/share URL;
 - framework data-handling controls.
 
-Failure blocks UI and child pilot, not headless core.
+Failure blocks UI and student pilot, not headless core.
 
 ### Tier C — optional read-aloud
 
@@ -986,7 +986,7 @@ Tests:
 - relative/repository/symlink runtime root rejected;
 - insecure permissions rejected where testable;
 - mode `0755` root and non-private ACL are rejected; SQLite files are `0600`, regular, one-link, and inode-stable;
-- existing private root with absent children parses and bootstrap creates private children;
+- existing private root with absent students parses and bootstrap creates private students;
 - missing root is rejected and never auto-created;
 - second process using the runtime root is rejected before any store opens;
 - derived paths exact;
@@ -1001,12 +1001,12 @@ Tests:
 Run:
 
 ```bash
-"$PYTHON" -m pytest tests/explore/test_runtime_config.py -q
+"$PYTHON" -m pytest tests/student/test_runtime_config.py -q
 ```
 
 ## Runner TDD
 
-Use test plugins only. Build a tiny fixture-plugin wheel under `tests/explore/fixtures/capability_plugin_package/`, install it with the local project into a temporary isolated environment, and point the runner at that environment’s absolute Python. Do not rely on the repository `tests` package or `PYTHONPATH`; isolated `-I` workers cannot import them.
+Use test plugins only. Build a tiny fixture-plugin wheel under `tests/student/fixtures/capability_plugin_package/`, install it with the local project into a temporary isolated environment, and point the runner at that environment’s absolute Python. Do not rely on the repository `tests` package or `PYTHONPATH`; isolated `-I` workers cannot import them.
 
 Tests:
 
@@ -1031,7 +1031,7 @@ Tests:
 Run:
 
 ```bash
-"$PYTHON" -m pytest tests/explore/test_capability_runner.py -q
+"$PYTHON" -m pytest tests/student/test_capability_runner.py -q
 ```
 
 ## Bootstrap TDD
@@ -1039,7 +1039,7 @@ Run:
 Tests:
 
 - fallback-only profile builds;
-- missing approved lesson blocks child UI;
+- missing approved lesson blocks student UI;
 - unavailable tutor selects manual fallback;
 - unavailable browser speech keeps text;
 - telemetry failure produces explicit no-recording state;
@@ -1057,14 +1057,14 @@ Readiness tests additionally prove:
 - manual fallback hash equals the approved lesson-authored text;
 - report hashing is deterministic and excludes no displayed decision field;
 - changed source/build/dependency/policy/profile/decision record/qualification/content/retention/browser mode invalidates prior acknowledgement;
-- browser launch and child callbacks are unreachable before exact acknowledgement;
+- browser launch and student callbacks are unreachable before exact acknowledgement;
 - report and parent UI contain the same digest/fallback IDs;
-- report contains no canary secret, raw adapter error, parent token, or child text.
+- report contains no canary secret, raw adapter error, parent token, or student text.
 
 Run:
 
 ```bash
-"$PYTHON" -m pytest tests/explore/test_bootstrap.py -q
+"$PYTHON" -m pytest tests/student/test_bootstrap.py -q
 ```
 
 ## Completion criteria

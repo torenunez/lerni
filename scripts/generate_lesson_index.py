@@ -21,9 +21,9 @@ import sys
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / "src"))
 
-from lerni.explore.catalog import lesson_payload_sha256, parse_lesson_toml  # noqa: E402
+from lerni.student.catalog import lesson_payload_sha256, parse_lesson_toml  # noqa: E402
 
-LESSONS = pathlib.Path(__file__).resolve().parents[1] / "src/lerni/explore/lessons"
+LESSONS = pathlib.Path(__file__).resolve().parents[1] / "src/lerni/student/lessons"
 MEDIA_TYPES = {".svg": "image/svg+xml"}
 
 

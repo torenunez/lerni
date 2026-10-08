@@ -6,7 +6,7 @@
 > **planned delivery/import format** and is not implemented. Two of its semantics
 > conflict with the newer authoring model and need an explicit adapter/spec revision
 > before any production importer is built: (1) the INTERESTS table records a
-> particular child's phrases, observations, strength, and dates — those are learner
+> particular student's phrases, observations, strength, and dates — those are learner
 > records and must stay out of shared curriculum; (2) CONCEPTS fixes permanent
 > roles (`kind`, `track`), whereas a node's anchor/bridge/fundamental role depends on
 > the path. Its approval, security, and activation requirements are unchanged.
@@ -15,11 +15,11 @@
 
 Give parents and educators a practical spreadsheet schema, usable in Google Sheets or another CSV-capable editor, for:
 
-- recording a child’s interests without storing a child name or raw transcript;
+- recording a student’s interests without storing a student name or raw transcript;
 - defining educational concepts and source-backed facts;
 - authoring parent/educator nudges from an interest toward a concept;
 - defining domain relationships separately from lesson order;
-- reviewing and approving content before child visibility;
+- reviewing and approving content before student visibility;
 - exporting a portable CSV bundle;
 - validating and importing approved content into an early local curriculum graph;
 - using local pilot observations to improve future parent-approved recommendations.
@@ -32,7 +32,7 @@ The normative artifacts are versioned CSV templates, a local README/LISTS specif
 
 The workbook treats these as different records:
 
-- **Interest**: something the child repeatedly asks about or enjoys.
+- **Interest**: something the student repeatedly asks about or enjoys.
 - **Concept**: a stable piece of knowledge.
 - **Fact**: reviewed content that may be shown or supplied to a tutor.
 - **Nudge**: a parent-authored educational move connecting an interest or concept to a target concept.
@@ -41,21 +41,21 @@ The workbook treats these as different records:
 - **Lesson step**: explicit pedagogical order.
 - **Observation**: parent-entered evidence from a pilot session.
 
-An edge never implies a tutor turn. A nudge never becomes child-visible merely because it exists. A lesson sequence never rewrites graph semantics.
+An edge never implies a tutor turn. A nudge never becomes student-visible merely because it exists. A lesson sequence never rewrites graph semantics.
 
 ### Approval is data, not an assumption
 
-Every child-facing interest, concept, source, fact, nudge, edge, asset, and lesson has an approval status and review attestations.
+Every student-facing interest, concept, source, fact, nudge, edge, asset, and lesson has an approval status and review attestations.
 
 Only `approved` rows with all required active attestations may enter the active graph or compiled lesson bundle.
 
-Rows with `draft`, `proposed`, `rejected`, `paused`, or `retired` status remain unavailable to the child.
+Rows with `draft`, `proposed`, `rejected`, `paused`, or `retired` status remain unavailable to the student.
 
-### The sheet is a curation surface, not a child-data store
+### The sheet is a curation surface, not a student-data store
 
 Do not place these in Google Sheets:
 
-- child name;
+- student name;
 - account identifier;
 - exact address, school, phone, email, or location;
 - raw audio;
@@ -104,7 +104,7 @@ Create CSV templates or spreadsheet tabs with these exact names:
 - No list item may contain `|`. Non-list free text must not contain `|`.
 - Empty optional cells are blank, not `N/A`, `none`, or `-`.
 - Human-readable text is Unicode plain text. After NFKC/control handling and leading-space trim, reject a first `=`, `+`, `@`, or `-`; leading `-` is allowed only for a complete valid typed-number field or a numeric-list item validated before joining. This literal formula defense complements, but cannot replace, the formula-free workbook attestation.
-- Curriculum import never “neutralizes then accepts” a dangerous prefix, because that would change reviewed child-facing content and defeat literal-prefix tests. Prefix neutralization is reserved solely for app-generated spreadsheet-facing `notes_sanitized` observation exports under the separate manifest/count contract below.
+- Curriculum import never “neutralizes then accepts” a dangerous prefix, because that would change reviewed student-facing content and defeat literal-prefix tests. Prefix neutralization is reserved solely for app-generated spreadsheet-facing `notes_sanitized` observation exports under the separate manifest/count contract below.
 - Every row has a stable ID or a documented composite key. Row numbers are never identifiers.
 - A content version is a positive integer.
 - Approval is established by content status plus required active attestations in `REVIEWS`; inline reviewer fields are not used.
@@ -131,7 +131,7 @@ approved -> paused
 approved/paused -> retired
 ```
 
-Only an educator/parent review may move child-facing content to `approved`.
+Only an educator/parent review may move student-facing content to `approved`.
 
 ## Tab 2 — `LISTS`
 
@@ -148,7 +148,7 @@ step_kind: intro, teach
 understanding_level: not_observed, not_yet, partial, clear
 entered_by_role: parent, educator
 locale: en-US, es-US
-review_scope: science, child_content, visual_accessibility, parent_approval
+review_scope: science, student_content, visual_accessibility, educator_approval
 review_status: active, revoked
 entity_type: interest, concept, source, fact, nudge, edge, asset, lesson
 ```
@@ -232,7 +232,7 @@ Rules:
 Seed rows:
 
 ```csv
-nasa-acceleration,draft,"Displacement, Velocity, Acceleration","NASA Glenn Research Center",https://www.grc.nasa.gov/WWW/K-12/airplane/disvelac.html,2026-08-22,"Use as scientific reference; paraphrase for child text.",1
+nasa-acceleration,draft,"Displacement, Velocity, Acceleration","NASA Glenn Research Center",https://www.grc.nasa.gov/WWW/K-12/airplane/disvelac.html,2026-08-22,"Use as scientific reference; paraphrase for student text.",1
 ```
 
 The retrieval date reflects the research used to draft this plan. Recheck source availability before approval and use the actual review date.
@@ -242,16 +242,16 @@ The retrieval date reflects the research used to draft this plan. Recheck source
 CSV header:
 
 ```csv
-fact_id,status,concept_id,canonical_text,child_text,source_ids,allowed_numbers,scope_note,content_version
+fact_id,status,concept_id,canonical_text,student_text,source_ids,allowed_numbers,scope_note,content_version
 ```
 
 Rules:
 
 - `concept_id` must reference an approved concept for an approved fact.
 - `source_ids` are pipe-separated.
-- `allowed_numbers` are exact normalized forms that child-facing output may use, pipe-separated.
+- `allowed_numbers` are exact normalized forms that student-facing output may use, pipe-separated.
 - `scope_note` states what the fact does not establish.
-- Canonical and child text must not contain unsupported mutable rankings.
+- Canonical and student text must not contain unsupported mutable rankings.
 
 Seed rows:
 
@@ -278,12 +278,12 @@ Rules:
 - `expected_signal` describes observable understanding, not time-on-app.
 - Hints progress from smaller to larger.
 - Approved nudges require approved target concepts and sources.
-- A nudge is a candidate teaching move; it is not automatically shown to the child.
+- A nudge is a candidate teaching move; it is not automatically shown to the student.
 
 Seed row:
 
 ```csv
-compare-same-speed-change,draft,fast-cars,,average-acceleration,comparison,"Connect 0–60 interest to average acceleration without claiming the time is acceleration.","Car A goes from 0 to 60 in 4 seconds. Car B takes 8 seconds. Which car has greater average acceleration?","Child identifies Car A and explains that the same speed change took less time.","Both cars make the same speed change: 0 to 60 miles per hour.","The same change in less time means greater average acceleration.","It is Car A. Both cars go from 0 to 60, but Car A does it in less time.",5,zero-to-sixty-time,nasa-acceleration,en-US,1
+compare-same-speed-change,draft,fast-cars,,average-acceleration,comparison,"Connect 0–60 interest to average acceleration without claiming the time is acceleration.","Car A goes from 0 to 60 in 4 seconds. Car B takes 8 seconds. Which car has greater average acceleration?","Student identifies Car A and explains that the same speed change took less time.","Both cars make the same speed change: 0 to 60 miles per hour.","The same change in less time means greater average acceleration.","It is Car A. Both cars go from 0 to 60, but Car A does it in less time.",5,zero-to-sixty-time,nasa-acceleration,en-US,1
 ```
 
 ## Tab 8 — `EDGES`
@@ -323,7 +323,7 @@ Rules:
 - `sha256` is lowercase 64-character hexadecimal calculated from exact bytes.
 - title, description, and alt text are required.
 - `source_id` is blank for an original project-authored diagram or references a reviewed source.
-- status approval requires active `visual_accessibility` and `parent_approval` attestations.
+- status approval requires active `visual_accessibility` and `educator_approval` attestations.
 - the bundle includes the exact asset file and its manifest hash.
 
 The seed asset row is created by a local helper after the SVG exists so no placeholder hash can be mistaken for a real one. Its stable ID is `chain-1-acceleration-visual`.
@@ -446,7 +446,7 @@ Rules:
 - `reviewer_role` is actual role, not a person’s name;
 - `reviewed_on` is actual review date;
 - `evidence_ref` is optional repository-relative evidence ID/path, never an external private path;
-- `reviewed_payload_sha256` is required for lesson reviews and equals the exact read-only canonical child-facing compile-preview payload hash; for asset reviews it equals the asset SHA-256; it is blank for other entities;
+- `reviewed_payload_sha256` is required for lesson reviews and equals the exact read-only canonical student-facing compile-preview payload hash; for asset reviews it equals the asset SHA-256; it is blank for other entities;
 - each attestation version is immutable;
 - revocation carries the same `attestation_id`, increments `attestation_version`, and changes status to revoked in a newer full snapshot;
 - replacement approval uses a new attestation ID at version 1;
@@ -455,14 +455,14 @@ Rules:
 
 Required scopes:
 
-- interest: `parent_approval`;
+- interest: `educator_approval`;
 - source: `science`;
-- concept/fact/edge: `science` and `child_content`;
-- nudge: `science`, `child_content`, and `parent_approval`;
-- asset: `visual_accessibility` and `parent_approval`;
-- lesson version: `science`, `child_content`, `visual_accessibility`, and `parent_approval`.
+- concept/fact/edge: `science` and `student_content`;
+- nudge: `science`, `student_content`, and `educator_approval`;
+- asset: `visual_accessibility` and `educator_approval`;
+- lesson version: `science`, `student_content`, `visual_accessibility`, and `educator_approval`.
 
-Lesson approval covers its steps, check, choices, hints, grounding, and SVG only when all required lesson attestations carry the exact same compile-preview payload SHA-256. The preview hash excludes the TOML review-attestation section to avoid a self-reference, but includes every child-visible/runtime grounding byte. A separate publication approval binds the final TOML/SVG/index artifact set after attestations are compiled.
+Lesson approval covers its steps, check, choices, hints, grounding, and SVG only when all required lesson attestations carry the exact same compile-preview payload SHA-256. The preview hash excludes the TOML review-attestation section to avoid a self-reference, but includes every student-visible/runtime grounding byte. A separate publication approval binds the final TOML/SVG/index artifact set after attestations are compiled.
 
 `reviewed_payload_sha256` is emitted into each strict PR-02 `ReviewAttestation` TOML object and must equal the package index’s recomputed lesson-payload identity. The review section, including this field, is excluded from payload hashing to avoid self-reference; publication/activation also verify it from curriculum persistence.
 
@@ -484,7 +484,7 @@ class ReviewPayload:
 
 `payload_bytes` is the exact PR-02 canonical lesson-payload JSON: every runtime lesson field except review metadata plus sorted referenced asset identities/hashes. `payload_sha256` hashes those exact bytes and must equal the installed package index’s `lesson_payload_sha256` for version 1. Preview writes only beneath pinned derived `curation-private/previews/` with private atomic no-replace semantics, never SQLite, an arbitrary path, or package resources; managed wipe covers it.
 
-Reviewers inspect the rendered child-visible text/visual plus exact grounding/source projection and attest this payload hash. After review rows are added, the compiler builds final TOML with attestations; PR-10 separately presents and records the final artifact-set hash before publication.
+Reviewers inspect the rendered student-visible text/visual plus exact grounding/source projection and attest this payload hash. After review rows are added, the compiler builds final TOML with attestations; PR-10 separately presents and records the final artifact-set hash before publication.
 
 ## Tab 16 — `OBSERVATIONS`
 
@@ -498,7 +498,7 @@ observation_id,session_ref,observed_at,interest_id,lesson_id,lesson_content_vers
 
 Rules:
 
-- `session_ref` is a random session identifier, not a child identity.
+- `session_ref` is a random session identifier, not a student identity.
 - No transcript or audio.
 - `engagement_1_5` is a parent observation.
 - `understanding`: `not_observed`, `not_yet`, `partial`, or `clear`.
@@ -642,14 +642,14 @@ Create:
 - `curation/templates/v1/LISTS.csv`
 - blank header-only CSV templates for tabs 3–16
 - `curation/examples/chain-1-v1-draft/` with documented draft seed rows, empty reviews/observations, and no manifest
-- `src/lerni/explore/curation_models.py`
-- `src/lerni/explore/curation_csv.py`
-- `src/lerni/explore/curation_validation.py`
-- `src/lerni/explore/curriculum_store.py`
-- `src/lerni/explore/curriculum_graph.py`
-- `src/lerni/explore/content_compile.py`
-- `src/lerni/explore/recommendations.py`
-- corresponding tests under `tests/explore/`
+- `src/lerni/student/curation_models.py`
+- `src/lerni/student/curation_csv.py`
+- `src/lerni/student/curation_validation.py`
+- `src/lerni/student/curriculum_store.py`
+- `src/lerni/student/curriculum_graph.py`
+- `src/lerni/student/content_compile.py`
+- `src/lerni/student/recommendations.py`
+- corresponding tests under `tests/student/`
 
 Protocols:
 
@@ -697,7 +697,7 @@ Messages use fixed field/code-oriented wording and never echo raw cell values. N
 
 Warnings may be emitted for:
 
-- long child text;
+- long student text;
 - missing optional aliases;
 - an active interest with no approved nudge;
 - an approved concept with no facts;
@@ -776,17 +776,17 @@ Never auto-activate a newly downloaded or modified sheet.
 
 For the first slice:
 
-1. Generate the v1 seed rows from the installed PR-02 lesson artifact and assert every child-facing/source/review field round-trips; hand-maintained drift is an error.
+1. Generate the v1 seed rows from the installed PR-02 lesson artifact and assert every student-facing/source/review field round-trips; hand-maintained drift is an error.
 2. Read the active `chain-1-acceleration` lesson, steps, check, ordered choices, and ordered hints.
 3. Resolve referenced concepts, nudge, facts, sources, asset bytes/hash, scope terms, allowed replies, maximum turns, and review attestations.
 4. Produce the strict lesson TOML, package index, and asset contract from the lesson-core plan.
 5. Produce a deterministic content manifest with input batch/hash and output hash.
 6. Require the compiled v1 `lesson_payload_sha256` to equal the installed pilot package index’s `lesson_payload_sha256`. The only permitted metadata-only TOML difference is the exact `[review]` status and `[[review.attestations]]` fields defined by PR-02; the only resulting package-index difference is that lesson entry’s final TOML `sha256`. Index `lesson_payload_sha256`, all asset entries/bytes/hashes, and every non-review TOML field must remain identical. Publication approval metadata lives only in curriculum persistence/private publication manifest and never changes lesson/index schema. Any other difference requires content version 2 and makes the v1 pilot session intentionally unbindable.
-7. Require human review before changing status to child-loadable.
+7. Require human review before changing status to student-loadable.
 
 The runtime never reads a live spreadsheet directly.
 
-The packaged TOML remains the child-facing immutable snapshot for the first milestone. The content database and sheet establish its curation provenance and future graph mapping.
+The packaged TOML remains the student-facing immutable snapshot for the first milestone. The content database and sheet establish its curation provenance and future graph mapping.
 
 ## Priming the early graph
 
@@ -822,7 +822,7 @@ Graph invariants:
 
 Telemetry stores only the `curriculum_binding_id`; interest/nudge/concept mappings are resolved from the immutable content snapshot. The binding survives later graph edits and prevents historical sessions from being reinterpreted.
 
-The first pre-graph pilot records lesson ID, content version, exact package hash, and canonical lesson-payload hash with a null binding. After activation, a parent-token-protected migration may attach the new binding only when ID/version and payload hash exactly match. A package difference limited to PR-02's exact review block/resulting index lesson SHA is disclosed but does not reinterpret child/runtime payload. Sessions whose payload or assets differ remain unbound and are excluded from graph feedback; no fuzzy inference is allowed.
+The first pre-graph pilot records lesson ID, content version, exact package hash, and canonical lesson-payload hash with a null binding. After activation, a parent-token-protected migration may attach the new binding only when ID/version and payload hash exactly match. A package difference limited to PR-02's exact review block/resulting index lesson SHA is disclosed but does not reinterpret student/runtime payload. Sessions whose payload or assets differ remain unbound and are excluded from graph feedback; no fuzzy inference is allowed.
 
 PR-10 implements `binding_migration.py`:
 
@@ -863,7 +863,7 @@ Preview is deterministic/read-only and shows IDs/hashes only. `exact_match` mean
 
 This section is design input for plan 08b. It is not implemented or accepted as part of the curation/graph milestone.
 
-Initial recommendations are deterministic candidates shown to a parent, never directly to the child.
+Initial recommendations are deterministic candidates shown to a parent, never directly to the student.
 
 The exact readiness model, eligibility filters, warning behavior, scope object, persistence, observation aggregation, ordering tuple, defer/reject behavior, and lesson-assignment state are defined only in [Recommendation and feedback contract](./08b-recommendation-feedback.md). This graph plan intentionally duplicates none of those rules.
 
@@ -906,7 +906,7 @@ Every suggestion:
 
 - enters with `proposed` status;
 - identifies inputs and rationale;
-- contains no child-visible content by default;
+- contains no student-visible content by default;
 - requires source review;
 - requires parent/educator approval;
 - is never auto-activated;
@@ -931,7 +931,7 @@ Local telemetry maps sessions to:
 
 The local aggregate exporter may produce `OBSERVATIONS.csv`.
 
-PR-10 owns `src/lerni/explore/observation_export.py`:
+PR-10 owns `src/lerni/student/observation_export.py`:
 
 ```python
 @dataclass(frozen=True, slots=True)
@@ -962,7 +962,7 @@ def write_observations(
     ...
 ```
 
-The separate export manifest is canonical JSON with schema version, random export ID, exact `observation_bundle` kind, UTC creation time, active batch/manifest identity, stable-sorted exact source session/observation UUID arrays plus matching counts, `spreadsheet_neutralized=true`, nonnegative `neutralized_note_count`, and exactly `{"OBSERVATIONS.csv": <sha256>}`. These opaque local IDs let lifecycle deletion identify and remove an affected aggregate export without retaining child text. Under the shared mutation lock, write re-queries/recomputes the complete preview using the preview’s fixed export ID/creation time and requires the same IDs/hashes before publishing; a concurrent delete/change rejects and discards the stale preview. Preview bytes equal written bytes. Publish beneath the derived export root with atomic no-replace semantics, fsync file/directory, and no browser path.
+The separate export manifest is canonical JSON with schema version, random export ID, exact `observation_bundle` kind, UTC creation time, active batch/manifest identity, stable-sorted exact source session/observation UUID arrays plus matching counts, `spreadsheet_neutralized=true`, nonnegative `neutralized_note_count`, and exactly `{"OBSERVATIONS.csv": <sha256>}`. These opaque local IDs let lifecycle deletion identify and remove an affected aggregate export without retaining student text. Under the shared mutation lock, write re-queries/recomputes the complete preview using the preview’s fixed export ID/creation time and requires the same IDs/hashes before publishing; a concurrent delete/change rejects and discards the stale preview. Preview bytes equal written bytes. Publish beneath the derived export root with atomic no-replace semantics, fsync file/directory, and no browser path.
 
 For spreadsheet-facing `notes_sanitized` only, after ordinary sanitization/trim, a first non-space `=`, `+`, `-`, or `@` is neutralized by prefixing one literal ASCII apostrophe and incrementing the manifest count. If that would exceed the 500-character field limit, emit fixed `[WITHHELD:spreadsheet_formula_prefix]` instead of truncating. No other cell is rewritten; an unsafe non-note field blocks export.
 
@@ -974,7 +974,7 @@ Before a parent imports it into any spreadsheet:
 
 - omit turns and transcripts;
 - omit audio and file paths;
-- omit child identifiers;
+- omit student identifiers;
 - omit runtime adapter names and credentials;
 - sanitize notes again;
 - show a preview;
@@ -996,7 +996,7 @@ Tests:
 - malformed IDs/dates/enums are rejected;
 - multi-value IDs parse in stable order;
 - unknown columns are rejected;
-- forbidden child-name/audio/transcript columns are rejected.
+- forbidden student-name/audio/transcript columns are rejected.
 
 ### Referential integrity
 
@@ -1064,7 +1064,7 @@ Tests:
 - compiled asset and package-index hashes match;
 - current-step fact/scope bindings match;
 - output contains no sheet-only private notes;
-- output hash changes when child-facing content changes;
+- output hash changes when student-facing content changes;
 - output does not change when a parent-only observation changes;
 - unapproved source blocks compilation.
 
@@ -1077,14 +1077,14 @@ Tests:
 - stable ID breaks ties;
 - duration and message count are absent from scoring input;
 - recommendation returns an explanation;
-- no recommendation is child-visible without parent approval;
+- no recommendation is student-visible without parent approval;
 - rejected candidate does not reappear until its content version changes.
 
 ### Observation export
 
 Tests:
 
-- aggregate export contains no transcript/audio/child-name columns;
+- aggregate export contains no transcript/audio/student-name columns;
 - sanitized notes only;
 - leading formula characters are neutralized in spreadsheet-facing notes;
 - export manifest records neutralization;
@@ -1097,15 +1097,15 @@ Tests:
 Run the focused suites in red/green order, then:
 
 ```bash
-"$PYTHON" -m pytest tests/explore/test_curation_csv.py -q
-"$PYTHON" -m pytest tests/explore/test_curation_validation.py -q
-"$PYTHON" -m pytest tests/explore/test_curriculum_store.py -q
-"$PYTHON" -m pytest tests/explore/test_curriculum_graph.py -q
-"$PYTHON" -m pytest tests/explore/test_content_compile.py -q
-"$PYTHON" -m pytest tests/explore/test_observation_export.py -q
+"$PYTHON" -m pytest tests/student/test_curation_csv.py -q
+"$PYTHON" -m pytest tests/student/test_curation_validation.py -q
+"$PYTHON" -m pytest tests/student/test_curriculum_store.py -q
+"$PYTHON" -m pytest tests/student/test_curriculum_graph.py -q
+"$PYTHON" -m pytest tests/student/test_content_compile.py -q
+"$PYTHON" -m pytest tests/student/test_observation_export.py -q
 ```
 
-Then rerun the graph-specific automated suites, full regression, distribution check, privacy canaries, and final no-commit audit from the verification plan. The first child pilot is not automatically repeated merely because graph plumbing changed; a new pilot requires parent review of the new active snapshot.
+Then rerun the graph-specific automated suites, full regression, distribution check, privacy canaries, and final no-commit audit from the verification plan. The first student pilot is not automatically repeated merely because graph plumbing changed; a new pilot requires parent review of the new active snapshot.
 
 ## Milestone acceptance
 

@@ -2,7 +2,7 @@
 
 ## Goal
 
-Route sanitized in-scope child text through an optional tutor capability, then accept only short structured output grounded in the current reviewed lesson context. Manual authored fallback must work with no service.
+Route sanitized in-scope student text through an optional tutor capability, then accept only short structured output grounded in the current reviewed lesson context. Manual authored fallback must work with no service.
 
 ## Depends on
 
@@ -20,15 +20,15 @@ Route sanitized in-scope child text through an optional tutor capability, then a
 
 Create:
 
-- `src/lerni/explore/plugin_loader.py`
-- `src/lerni/explore/qualification.py`
-- `src/lerni/explore/tutor_process.py`
-- `src/lerni/explore/policy.py`
-- `src/lerni/explore/sanitization.py`
-- `src/lerni/explore/grounding.py`
-- `src/lerni/explore/tutor_service.py`
-- `src/lerni/explore/policy_data/policy_cases_v1.toml`
-- `src/lerni/explore/qualification_data/harm_probe_cases_v1.toml`
+- `src/lerni/student/plugin_loader.py`
+- `src/lerni/student/qualification.py`
+- `src/lerni/student/tutor_process.py`
+- `src/lerni/student/policy.py`
+- `src/lerni/student/sanitization.py`
+- `src/lerni/student/grounding.py`
+- `src/lerni/student/tutor_service.py`
+- `src/lerni/student/policy_data/policy_cases_v1.toml`
+- `src/lerni/student/qualification_data/harm_probe_cases_v1.toml`
 - deterministic fakes, golden fixtures, and focused tests
 
 Extend `contracts.py` and process codecs only through the exact shared types.
@@ -37,11 +37,11 @@ Extend `contracts.py` and process codecs only through the exact shared types.
 
 - No account is required for `ManualTutor`.
 - Any tutor/harm-gate adapter must pass the account, terms, routing, retention, logging, credential, quota, and synthetic qualification gates; generated tutor use requires both.
-- No child input may be used for qualification.
+- No student input may be used for qualification.
 
 ## Environment-specific capability realization
 
-This core PR may complete in fallback-only mode, but that does not deliver an LLM pilot. Before PR-08 can report `generated_tutor`, the implementation environment must either install an already reviewed compatible plugin distribution or implement one in a separate provider-specific adapter change/package. It may expose tutor and safety factories from one recorded distribution, but each factory has its own status, metadata, qualification, decision, deadline, and failure path. Provider SDKs/endpoints and their tests stay outside core contracts/dependencies; build a non-editable recorded artifact, use only synthetic probes in repeatable tests, and keep any live operator probe manual and child-data-free.
+This core PR may complete in fallback-only mode, but that does not deliver an LLM pilot. Before PR-08 can report `generated_tutor`, the implementation environment must either install an already reviewed compatible plugin distribution or implement one in a separate provider-specific adapter change/package. It may expose tutor and safety factories from one recorded distribution, but each factory has its own status, metadata, qualification, decision, deadline, and failure path. Provider SDKs/endpoints and their tests stay outside core contracts/dependencies; build a non-editable recorded artifact, use only synthetic probes in repeatable tests, and keep any live operator probe manual and student-data-free.
 
 ## Implementation tasks
 
@@ -52,7 +52,7 @@ This core PR may complete in fallback-only mode, but that does not deliver an LL
 - [ ] Add bounded serious-distress, secrecy/relationship, instruction-override, and scope checks.
 - [ ] Add output markup/Unicode/contact/personal-data/relationship/dependency/coercion/meeting checks.
 - [ ] Implement `ManualTutor` as unavailable generation plus lesson-authored fallback.
-- [ ] Implement child-process-only plugin loaders and qualification through process wrappers.
+- [ ] Implement student-process-only plugin loaders and qualification through process wrappers.
 - [ ] Build minimal `TutorRequest` from sanitized text and current context only.
 - [ ] Validate citations, significant-term traceability, exact allowed numbers, sentence count, and output length.
 - [ ] Allow the harm gate only to tighten; operational failure uses fallback and circuit-breaks generated tutoring for the launch.
@@ -78,14 +78,14 @@ This core PR may complete in fallback-only mode, but that does not deliver an LL
 Run:
 
 ```bash
-"$PYTHON" -m pytest tests/explore/test_plugin_loader.py -q
-"$PYTHON" -m pytest tests/explore/test_qualification.py -q
-"$PYTHON" -m pytest tests/explore/test_sanitization.py -q
-"$PYTHON" -m pytest tests/explore/test_input_policy.py -q
-"$PYTHON" -m pytest tests/explore/test_output_policy.py -q
-"$PYTHON" -m pytest tests/explore/test_grounding.py -q
-"$PYTHON" -m pytest tests/explore/test_tutor_service.py -q
-"$PYTHON" -m pytest tests/explore/test_policy_golden.py -q
+"$PYTHON" -m pytest tests/student/test_plugin_loader.py -q
+"$PYTHON" -m pytest tests/student/test_qualification.py -q
+"$PYTHON" -m pytest tests/student/test_sanitization.py -q
+"$PYTHON" -m pytest tests/student/test_input_policy.py -q
+"$PYTHON" -m pytest tests/student/test_output_policy.py -q
+"$PYTHON" -m pytest tests/student/test_grounding.py -q
+"$PYTHON" -m pytest tests/student/test_tutor_service.py -q
+"$PYTHON" -m pytest tests/student/test_policy_golden.py -q
 ```
 
 ## Acceptance
@@ -98,7 +98,7 @@ Run:
 
 ## Out of scope
 
-- General-purpose child moderation.
+- General-purpose student moderation.
 - Legal/compliance certification.
 - Live provider tests in the automated suite.
 - State advancement or mastery scoring from generation.

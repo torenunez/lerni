@@ -1,8 +1,8 @@
 """Strict lesson loading and the approved-content boundary.
 
 Two jobs live here. :func:`parse_lesson_toml` turns authored TOML into a
-:class:`~lerni.explore.domain.Lesson`, rejecting anything ambiguous rather than
-coercing it. :class:`PackageLessonCatalog` is the boundary a child's session
+:class:`~lerni.student.domain.Lesson`, rejecting anything ambiguous rather than
+coercing it. :class:`PackageLessonCatalog` is the boundary a student's session
 crosses: it serves only content that is approved, hash-verified against the
 package index, and identical to what a human reviewed.
 
@@ -18,8 +18,8 @@ from datetime import date
 from importlib import resources
 from typing import Any, NoReturn, Protocol
 
-from lerni.explore.canonical import canonical_json_bytes
-from lerni.explore.domain import (
+from lerni.student.canonical import canonical_json_bytes
+from lerni.student.domain import (
     ApprovalStatus,
     AssetRef,
     CheckChoice,
@@ -47,7 +47,7 @@ __all__ = [
     "parse_lesson_toml",
 ]
 
-LESSON_PACKAGE = "lerni.explore.lessons"
+LESSON_PACKAGE = "lerni.student.lessons"
 LESSON_INDEX_RESOURCE = "lesson_index.toml"
 
 #: Read limits applied before any decode or allocation. A hostile or corrupt
@@ -327,7 +327,7 @@ def _parse_grounding(v: _V, node: Any) -> GroundingBundle:
     for i, entry in enumerate(raw_facts):
         path = f"grounding.facts[{i}]"
         ft = v.keys(
-            entry, path, {"id", "canonical_text", "child_text", "source_ids", "allowed_numbers"}
+            entry, path, {"id", "canonical_text", "student_text", "source_ids", "allowed_numbers"}
         )
         fid = v.identifier(ft, path, "id")
         v.when(fid in seen_fact_ids, path, f"duplicate fact id {fid!r}")
@@ -352,7 +352,7 @@ def _parse_grounding(v: _V, node: Any) -> GroundingBundle:
             GroundedFact(
                 id=fid,
                 canonical_text=v.text(ft, path, "canonical_text"),
-                child_text=v.text(ft, path, "child_text"),
+                student_text=v.text(ft, path, "student_text"),
                 source_ids=source_ids,
                 allowed_numbers=allowed_numbers,
             )
@@ -496,7 +496,7 @@ def parse_lesson_toml(text: str, *, origin: str = "<memory>") -> Lesson:
 
     This is the draft-tolerant entry point. It validates structure, references,
     and review consistency, but it does not check package hashes — use
-    :class:`PackageLessonCatalog` for anything a child will see.
+    :class:`PackageLessonCatalog` for anything a student will see.
 
     Args:
         text: The lesson TOML source.
@@ -624,8 +624,8 @@ def _lesson_payload(lesson: Lesson) -> dict[str, Any]:
 
     ``review`` is the only omitted field. That omission is the whole point: a
     reviewer's role, date, or evidence reference can change without changing
-    what the child sees, so it must not change the hash their approval is bound
-    to. Anything child-visible or grounding/runtime-affecting is included.
+    what the student sees, so it must not change the hash their approval is bound
+    to. Anything student-visible or grounding/runtime-affecting is included.
     """
     referenced: dict[tuple[str, str, str | None], dict[str, Any]] = {}
     for step in lesson.steps:
@@ -686,7 +686,7 @@ def _lesson_payload(lesson: Lesson) -> dict[str, Any]:
                 {
                     "id": f.id,
                     "canonical_text": f.canonical_text,
-                    "child_text": f.child_text,
+                    "student_text": f.student_text,
                     "source_ids": list(f.source_ids),
                     "allowed_numbers": list(f.allowed_numbers),
                 }
@@ -717,7 +717,7 @@ def lesson_payload_sha256(lesson: Lesson) -> str:
     """Return the canonical review-independent content hash for ``lesson``.
 
     This is the value every review attestation records. It changes for any
-    child-visible or grounding change and for any asset change, but not for a
+    student-visible or grounding change and for any asset change, but not for a
     change to reviewer role, date, or evidence reference.
 
     Args:
@@ -773,7 +773,7 @@ class _IndexEntry:
 
 
 class PackageLessonCatalog:
-    """The child-safe boundary over packaged lesson resources.
+    """The approved-content boundary over packaged lesson resources.
 
     :meth:`load` returns a lesson only when it is approved, its bytes match the
     package index, and its independently recomputed payload hash matches what
@@ -869,7 +869,7 @@ class PackageLessonCatalog:
         if lesson.review.status is not ApprovalStatus.APPROVED:
             raise LessonNotApprovedError(
                 f"{lesson_id}: status is {lesson.review.status.value}; "
-                "a child catalog serves approved content only"
+                "a student catalog serves approved content only"
             )
         if lesson.id != lesson_id:
             raise LessonContentError(

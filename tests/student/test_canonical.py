@@ -10,7 +10,7 @@ import math
 
 import pytest
 
-from lerni.explore.canonical import canonical_json_bytes
+from lerni.student.canonical import canonical_json_bytes
 
 
 def test_mapping_keys_are_sorted():

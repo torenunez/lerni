@@ -18,16 +18,16 @@ Add a standard-library, deterministic lesson domain and one packaged, source-bac
 
 Create:
 
-- `src/lerni/explore/__init__.py`
-- `src/lerni/explore/canonical.py`
-- `src/lerni/explore/domain.py`
-- `src/lerni/explore/catalog.py`
-- `src/lerni/explore/engine.py`
-- `src/lerni/explore/lessons/__init__.py`
-- `src/lerni/explore/lessons/lesson_index.toml`
-- `src/lerni/explore/lessons/chain_1_acceleration.toml`
-- `src/lerni/explore/lessons/assets/chain_1_acceleration.svg`
-- lesson/domain/catalog/engine/distribution tests under `tests/explore/`
+- `src/lerni/student/__init__.py`
+- `src/lerni/student/canonical.py`
+- `src/lerni/student/domain.py`
+- `src/lerni/student/catalog.py`
+- `src/lerni/student/engine.py`
+- `src/lerni/student/lessons/__init__.py`
+- `src/lerni/student/lessons/lesson_index.toml`
+- `src/lerni/student/lessons/chain_1_acceleration.toml`
+- `src/lerni/student/lessons/assets/chain_1_acceleration.svg`
+- lesson/domain/catalog/engine/distribution tests under `tests/student/`
 
 Modify `pyproject.toml` for package resources. Modify `MANIFEST.in` only if source-distribution evidence requires it.
 
@@ -37,7 +37,7 @@ Do not modify Study models, database, SM-2, or commands.
 
 - [ ] Recheck every source and record the actual retrieval date.
 - [ ] Parent/educator reviews the corrected distinction: 0–60 is elapsed time; acceleration is velocity change over time.
-- [ ] Perform real science, child-content, visual-accessibility, and parent-approval reviews.
+- [ ] Perform real science, student-content, visual-accessibility, and parent-approval reviews.
 - [ ] Generate exact final SVG, canonical lesson-payload, and TOML/package SHA-256 values.
 
 No tutor/STT account or credential is needed.
@@ -51,7 +51,7 @@ all manual prerequisites above remain open: they need genuine human review.
 - [x] Write behavior-specific failing tests for frozen types and constructor invariants.
 - [x] Implement immutable lesson/source/fact/step/check/review types and the shared strict canonical-JSON encoder used by lesson payload identity and later readiness records.
 - [x] Write failing strict-TOML and package-index tests.
-- [x] Implement `importlib.resources` loading, exact schema rejection, hash verification, and child catalog filtering.
+- [x] Implement `importlib.resources` loading, exact schema rejection, hash verification, and student catalog filtering.
 - [x] Write failing event/state transition tests.
 - [x] Implement intro, teach, check, progressive hint, correct completion, and revealed completion transitions.
 - [x] Ensure snapshots omit answer keys and internal review/source detail.
@@ -64,7 +64,7 @@ all manual prerequisites above remain open: they need genuine human review.
 
 - Invalid enum/ID/version/index/hash/review scope fails closed.
 - Index/TOML/SVG limit-plus-one fixtures fail before unbounded decode/render.
-- Draft content never enters child catalog.
+- Draft content never enters student catalog.
 - Approved content without each required attestation fails.
 - Every approved attestation must carry the same independently recomputed canonical lesson-payload hash.
 - Duplicate/mismatched attestations fail.
@@ -78,11 +78,11 @@ all manual prerequisites above remain open: they need genuine human review.
 Run:
 
 ```bash
-"$PYTHON" -m pytest tests/explore/test_domain.py -q
-"$PYTHON" -m pytest tests/explore/test_catalog.py -q
-"$PYTHON" -m pytest tests/explore/test_chain_1_content.py -q
-"$PYTHON" -m pytest tests/explore/test_engine.py -q
-"$PYTHON" -m pytest tests/explore/test_distribution.py -q
+"$PYTHON" -m pytest tests/student/test_domain.py -q
+"$PYTHON" -m pytest tests/student/test_catalog.py -q
+"$PYTHON" -m pytest tests/student/test_chain_1_content.py -q
+"$PYTHON" -m pytest tests/student/test_engine.py -q
+"$PYTHON" -m pytest tests/student/test_distribution.py -q
 ```
 
 ## Acceptance

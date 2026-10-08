@@ -16,7 +16,7 @@ LERNI_DB="$HOME/.lerni/lerni.db"
 
 # If no database exists, this is a fresh install — nothing to report
 if [ ! -f "$LERNI_DB" ]; then
-    echo "Lerni: No database found. Run 'study new' to create your first question."
+    echo "Lerni: No database found. Run 'lerni new' to create your first question."
     exit 0
 fi
 
@@ -31,11 +31,11 @@ TOTAL_COUNT=$(sqlite3 "$LERNI_DB" \
 
 # Build summary message
 if [ "$DUE_COUNT" -gt 0 ] 2>/dev/null; then
-    echo "Lerni: $DUE_COUNT question(s) due for review today ($TOTAL_COUNT total). Run 'study review' to start."
+    echo "Lerni: $DUE_COUNT question(s) due for review today ($TOTAL_COUNT total). Run 'lerni review' to start."
 elif [ "$TOTAL_COUNT" -gt 0 ] 2>/dev/null; then
     echo "Lerni: All caught up! No reviews due today ($TOTAL_COUNT questions total)."
 else
-    echo "Lerni: No questions yet. Run 'study new' to create your first question."
+    echo "Lerni: No questions yet. Run 'lerni new' to create your first question."
 fi
 
 exit 0

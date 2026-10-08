@@ -168,7 +168,7 @@ A significant term is:
 For each tutor sentence, compute significant terms for:
 
 - the sentence;
-- the union of canonical and child text for every cited fact.
+- the union of canonical and student text for every cited fact.
 
 Require a non-empty intersection. This is lexical traceability only.
 
@@ -370,7 +370,7 @@ show me how to make a weapon
 show me how to make a bomb
 help me hide a weapon
 help me buy drugs
-sexual picture of a child
+sexual picture of a student
 keep abuse secret
 ```
 
@@ -530,7 +530,7 @@ The tutor service runs each stage once.
 
 ## Golden fixtures
 
-Create the canonical installed resource `src/lerni/explore/policy_data/policy_cases_v1.toml`. Tests load that exact bounded resource through `importlib.resources`; do not maintain a second test-only copy. Runtime readiness hashes the same bytes, so a clean wheel/sdist does not depend on a source checkout.
+Create the canonical installed resource `src/lerni/student/policy_data/policy_cases_v1.toml`. Tests load that exact bounded resource through `importlib.resources`; do not maintain a second test-only copy. Runtime readiness hashes the same bytes, so a clean wheel/sdist does not depend on a source checkout.
 
 Each case contains:
 
@@ -618,7 +618,7 @@ requires:
 2. implementation update;
 3. all golden fixtures green;
 4. documentation update;
-5. parent review before the changed policy is used in a child pilot.
+5. parent review before the changed policy is used in a student pilot.
 
 ## Completion criteria
 

@@ -49,15 +49,15 @@ Create:
 - `curation/templates/v1/LISTS.csv`
 - blank header-only CSV templates for tabs 3–16
 - `curation/examples/chain-1-v1-draft/` with seed rows, empty reviews/observations, and no manifest
-- `src/lerni/explore/curation_models.py`
-- `src/lerni/explore/curation_csv.py`
-- `src/lerni/explore/curation_validation.py`
-- `src/lerni/explore/curation_data/curation-schema-v1.json`
-- `src/lerni/explore/curation_data/svg-policy-v1.json`
-- `src/lerni/explore/content_compile.py` with read-only review-preview mode
+- `src/lerni/student/curation_models.py`
+- `src/lerni/student/curation_csv.py`
+- `src/lerni/student/curation_validation.py`
+- `src/lerni/student/curation_data/curation-schema-v1.json`
+- `src/lerni/student/curation_data/svg-policy-v1.json`
+- `src/lerni/student/content_compile.py` with read-only review-preview mode
 - parser/validation fixtures and tests
 
-Blank templates contain headers only. The separate example contains only draft sample content and no fabricated `REVIEWS` rows, child identity, real observations, credentials, or importable approval manifest.
+Blank templates contain headers only. The separate example contains only draft sample content and no fabricated `REVIEWS` rows, student identity, real observations, credentials, or importable approval manifest.
 
 ## Manual prerequisites
 
@@ -92,7 +92,7 @@ Blank templates contain headers only. The separate example contains only draft s
 - Manifest rejects unknown key, duplicate JSON key, trailing bytes, path traversal, missing/extra manifested or directory file, and hash mismatch.
 - Pinned-root no-follow fixtures reject symlink, hardlink, absolute/case-colliding path, and descriptor/path-swap changes before staging can be allowed.
 - Manifest/CSV/asset/total-byte, row-count, and pre-normalization cell-byte limits fail before unbounded reads/object construction.
-- Forbidden child-name/audio/transcript/credential columns fail.
+- Forbidden student-name/audio/transcript/credential columns fail.
 - Approved entity missing dependency/review fails; draft rows remain non-active.
 - Edge direction/cycle, asset/SVG/hash, lesson/check/choice/hint contiguity, and exact fact/scope references are asserted.
 - Issue order and canonical hashes are stable across runs; issue text never echoes a raw-cell canary.
@@ -103,8 +103,8 @@ Blank templates contain headers only. The separate example contains only draft s
 Run:
 
 ```bash
-"$PYTHON" -m pytest tests/explore/test_curation_csv.py -q
-"$PYTHON" -m pytest tests/explore/test_curation_validation.py -q
+"$PYTHON" -m pytest tests/student/test_curation_csv.py -q
+"$PYTHON" -m pytest tests/student/test_curation_validation.py -q
 ```
 
 ## Manual data task

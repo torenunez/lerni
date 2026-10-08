@@ -4,7 +4,7 @@ Repository snapshot checked on 2026-10-07 at `b523254`. Human activity may exist
 
 | Area | What we know | Next |
 |---|---|---|
-| Study | Adult terminal tool and review scheduling exist; maintenance gaps remain. | See [Study reference](reference/study.md#maintenance). |
+| Study | Educator terminal tool and review scheduling exist; maintenance gaps remain. | See [Study reference](reference/admin.md#maintenance). |
 | Authoring | Six draft paths, templates, and offline checks delivered in merged GitHub PR #2. | Educator tries the spreadsheet workflow. |
 | Lesson foundation | Lesson format, catalog, engine, and tests exist. The packaged acceleration lesson is draft with zero approvals. | Prepare a reviewed activity for the app; cars are optional. |
 | Human activity | Activity reviews, walkthroughs, and student app sessions: not recorded in repository evidence. | Prepare and review one activity. |

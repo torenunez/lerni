@@ -11,7 +11,7 @@ The microphone path must:
 - record only after an explicit user action;
 - accept a short bounded clip;
 - pass the clip to a qualified speech-to-text capability;
-- show the transcript for parent/child review and correction;
+- show the transcript for parent/student review and correction;
 - never auto-submit the transcript;
 - route submitted transcript text through the same input policy as typed text;
 - attempt immediate recording deletion in success and failure paths;
@@ -22,12 +22,12 @@ The microphone path must:
 Create:
 
 ```text
-src/lerni/explore/
+src/lerni/student/
 ├── recordings.py
 ├── audio_presenter.py
 └── speech_to_text_process.py
 
-tests/explore/
+tests/student/
 ├── test_recordings.py
 ├── test_audio_presenter.py
 └── fixtures/
@@ -35,12 +35,12 @@ tests/explore/
 
 Modify:
 
-- `src/lerni/explore/contracts.py` to add speech-to-text contracts.
-- `src/lerni/explore/plugin_loader.py` to add speech-to-text factory validation.
-- `src/lerni/explore/qualification.py` to add speech-to-text qualification.
-- `src/lerni/explore/ui.py` to add the qualified microphone component.
-- `src/lerni/explore/launch.py` to configure the managed temporary-audio root before microphone use.
-- `tests/explore/test_plugin_loader.py` and `tests/explore/test_qualification.py` with speech-to-text cases.
+- `src/lerni/student/contracts.py` to add speech-to-text contracts.
+- `src/lerni/student/plugin_loader.py` to add speech-to-text factory validation.
+- `src/lerni/student/qualification.py` to add speech-to-text qualification.
+- `src/lerni/student/ui.py` to add the qualified microphone component.
+- `src/lerni/student/launch.py` to configure the managed temporary-audio root before microphone use.
+- `tests/student/test_plugin_loader.py` and `tests/student/test_qualification.py` with speech-to-text cases.
 
 Do not add a specific speech-recognition dependency to the normative plan. The selected environment may install a plugin package separately.
 
@@ -87,14 +87,14 @@ class SpeechToTextPlugin(Protocol):
 Rules:
 
 - `recording` is an absolute path to an application-created quarantine copy within the managed audio root;
-- parent-process backend has a finite timeout and accepts null scope/registry only for synthetic qualification; child transcription requires both;
+- parent-process backend has a finite timeout and accepts null scope/registry only for synthetic qualification; student transcription requires both;
 - adapter returns complete text, not a stream;
 - adapter returns a canonical BCP-47 language in its qualified `supported_languages`;
 - adapter does not delete or move the file;
 - the application interface does not pass lesson state, telemetry, tutor, runtime profile, or credentials;
 - logging/retention/routing are explicit plugin/operator declarations and cannot be proven solely by the interface;
 - adapter maps implementation errors to `SpeechToTextError` without sensitive detail;
-- adapter status declares local/external routing in its human-readable operator metadata, but that routing is not persisted in child telemetry.
+- adapter status declares local/external routing in its human-readable operator metadata, but that routing is not persisted in student telemetry.
 
 Speech audio reaches the selected STT capability before transcript sanitization can inspect it. Therefore an external route may receive names, voices, locations, or other identifying speech; supervision and a reviewed route/retention decision are mandatory, and the app must never imply that transcript redaction protected the submitted audio.
 
@@ -191,7 +191,7 @@ Checks:
 
 Do not run a real microphone probe automatically. It requires an explicit operator action.
 
-Before the first child audio session, the parent reviews the qualification notice and confirms the selected routing/retention tradeoff.
+Before the first student audio session, the parent reviews the qualification notice and confirms the selected routing/retention tradeoff.
 
 Microphone authorization is a server-side per-session-epoch boolean, default false and cleared on Reset/Stop/Delete/wipe. A token-guarded parent action may set it true only after displaying the exact qualified route/retention notice. The browser control/permission request remains disabled until then, and every upload/transcription callback rechecks the flag under the session lock before accepting bytes. A direct disabled/stale upload is never transcribed and may unlink only its verified managed framework entry; cleanup failure disables audio and alerts the parent.
 
@@ -212,7 +212,7 @@ Requirements:
 - not inside repository;
 - not inside telemetry/export directories;
 - created before Gradio microphone component is enabled;
-- contains separate pinned `framework/` and `quarantine/` children;
+- contains separate pinned `framework/` and `quarantine/` students;
 - is configured through the qualified Gradio version’s supported temp-root setting (environment or API, set before framework import/server construction) so microphone uploads land only in `framework/`.
 
 If the qualified Gradio version cannot ensure microphone files land inside the managed root, disable microphone input for this milestone. Do not delete arbitrary framework paths.
@@ -306,7 +306,7 @@ Startup, while holding the exclusive runtime lock:
 
 - securely empty `framework/` and `quarantine/` without following links, because no prior process may still own a recording;
 - reject unexpected directory types/hardlinks and surface failures to the parent;
-- verify both children are empty before enabling microphone;
+- verify both students are empty before enabling microphone;
 - disable microphone if cleanup integrity or the framework temp-root setting cannot be established.
 
 Reset, Stop, session end, retention/session deletion, and managed family-data wipe also remove every known recording for the affected scope. No age threshold is used for crash leftovers.
@@ -362,7 +362,7 @@ If validation, transcription, or cleanup fails:
 
 - no transcript is returned;
 - typed input remains enabled;
-- child sees short fallback;
+- student sees short fallback;
 - parent sees sanitized category;
 - raw exception and path are not shown or stored.
 
@@ -400,7 +400,7 @@ Recording completion never triggers Send.
 
 PR-07 also modifies `CapabilityBundle`, bootstrap, and readiness to add `speech_to_text: SpeechToTextBackend`, qualification status, process codec, and the stable typed-input fallback trace. PR-06 contains no STT field/import.
 
-The child/parent must be able to:
+The student/parent must be able to:
 
 1. review transcript;
 2. correct it;
@@ -426,7 +426,7 @@ Tests:
 Red:
 
 ```bash
-"$PYTHON" -m pytest tests/explore/test_plugin_loader.py -q
+"$PYTHON" -m pytest tests/student/test_plugin_loader.py -q
 ```
 
 Green:
@@ -450,7 +450,7 @@ Tests:
 Red/green:
 
 ```bash
-"$PYTHON" -m pytest tests/explore/test_qualification.py -q
+"$PYTHON" -m pytest tests/student/test_qualification.py -q
 ```
 
 ## Task 3 — Recording lifecycle TDD
@@ -479,7 +479,7 @@ Tests:
 Red/green:
 
 ```bash
-"$PYTHON" -m pytest tests/explore/test_recordings.py -q
+"$PYTHON" -m pytest tests/student/test_recordings.py -q
 ```
 
 ## Task 4 — Audio presenter TDD
@@ -504,7 +504,7 @@ Tests:
 Red/green:
 
 ```bash
-"$PYTHON" -m pytest tests/explore/test_audio_presenter.py -q
+"$PYTHON" -m pytest tests/student/test_audio_presenter.py -q
 ```
 
 ## Task 5 — UI integration
@@ -523,7 +523,7 @@ Tests:
 Run:
 
 ```bash
-"$PYTHON" -m pytest tests/explore/test_ui.py tests/explore/test_audio_presenter.py -q
+"$PYTHON" -m pytest tests/student/test_ui.py tests/student/test_audio_presenter.py -q
 ```
 
 ## Manual audio smoke
