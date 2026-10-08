@@ -32,6 +32,7 @@ Commands and behavior: [admin tool reference](../reference/study.md). Open maint
 - Run the curation checker and other admin tasks from the same tool.
 - Package a reviewed activity for the student app, recording the approvals real people gave.
 - Tune the mechanics the student app shares, once the shared core is designed.
+- Connect cloud services and a Claude account for drafting and conversation, behind a replaceable adapter.
 
 ## Out of scope
 

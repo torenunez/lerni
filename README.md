@@ -4,7 +4,7 @@ Lerni helps people understand ideas by explaining them and returning to them ove
 
 Lerni has two parts:
 
-- **Supervised student app — the main product.** A child explores ideas by voice while an adult supervises. An educator seeds the first activities and supervises from the app's supervisor view; a parent approves what the child sees and can stop any session. Adult involvement steps down over time as the system learns to draft activities. We are building it in steps: first text, pictures, and choices; then speaking and listening. The authoring tools and activity engine exist; the app is not built yet.
+- **Supervised student app — the main product.** A child explores ideas by voice on an iPad while an adult supervises. An educator seeds the first activities and supervises from the app's supervisor view; a parent approves what the child sees and can stop any session. Adult involvement steps down over time as the system learns to draft activities. We are building it in steps: first text, pictures, and choices; then remembering what the child explored and building on it; then speaking and listening. The authoring tools and activity engine exist; the app is not built yet.
 - **Admin tool — in the terminal.** Full access: learn topics with it, try out anything a student would see, and tune the learning mechanics before the student app relies on them. Available now. Educators and parents never need it.
 
 In the code, the student app is `explore` and the admin tool is `study`.

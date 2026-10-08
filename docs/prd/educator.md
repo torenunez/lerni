@@ -19,7 +19,7 @@ Adults bootstrap the system, then step back in stages:
 2. **Draft and approve.** The system drafts new activities in the seeded pattern; an adult approves each one before a child sees it.
 3. **Guardrails and spot checks.** Once drafting is reliable, adults set limits and sample-check.
 
-Each step needs evidence from the one before. Releases 1 and 2 are at stage 1.
+Each step needs evidence from the one before. Student app Releases 1–3 are at stage 1, Release 4 is stage 2, and Release 5 is stage 3.
 
 ## Constraints
 
@@ -29,6 +29,7 @@ These hold for every release.
 - An adult is present for every session and can stop it at any moment.
 - The parent writes a list of off-limits topics before the first session and can add to it at any time. Nothing on it is seeded, drafted, or suggested.
 - No child identity or private observations go into shared curriculum.
+- Before first use, the parent agrees to which outside services receive the child's data, and can withdraw that at any time.
 
 ## Release 1: seed, approve, and supervise
 
@@ -67,7 +68,22 @@ As a supervising adult, I want a short summary when the activity ends, so that I
 - WHEN the activity ends or is stopped THE SYSTEM SHALL show the supervisor which choices were picked, which hints were used, and how long it took.
 - WHEN the supervisor leaves the recap or presses Reset THE SYSTEM SHALL discard it; nothing is saved. Adults keep any notes privately, outside the app.
 
-## Release 2: voice
+## Release 2: continuity
+
+### Story: Educator links activities to earlier ideas
+
+As an educator, I want to write a short reminder and a recall question for each idea, so that the app can build on what the child explored before.
+
+- WHEN an activity's idea is reached THE SYSTEM SHALL use only the reminder and recall question the educator wrote and adults approved.
+
+### Story: Parent sees and deletes what the app remembers
+
+As a parent, I want to see and delete the record of my child's progress, so that I control what is kept.
+
+- WHEN the parent opens the progress view THE SYSTEM SHALL show which activities were finished, which ideas were reached, and recall results.
+- WHEN the parent deletes the record THE SYSTEM SHALL remove it from Lerni's storage. Copies an outside service keeps follow that service's rules.
+
+## Release 3: voice
 
 ### Story: Supervisor controls the microphone
 
@@ -78,9 +94,8 @@ As a supervising adult, I want to decide when the microphone is on, so that the 
 
 ## Later
 
-- **Review drafts (stage 2):** see each activity the system drafts, then approve it, send it back, or reject it.
-- **Set guardrails and spot-check (stage 3):** set limits, then sample what the system runs.
-- **Choose from suggestions:** pick the next idea from the system's suggestions.
+- **Review drafts (stage 2, student app Release 4):** see each activity the system proposes and drafts, then approve it, send it back, or reject it.
+- **Set guardrails and spot-check (stage 3, Release 5):** set limits, then sample what the system runs.
 
 ## Out of scope
 
@@ -97,6 +112,6 @@ Running the admin tool. Editing app code or lesson files directly.
 ## Open questions
 
 - [NEEDS CLARIFICATION] What evidence shows drafting is reliable enough to move from approving each activity to spot checks?
-- [NEEDS CLARIFICATION] Where would drafting run, given that Releases 1 and 2 make no outbound requests?
+- [NEEDS CLARIFICATION] Whose Claude account powers drafting and conversation: the admin's or the educator's?
 - [NEEDS CLARIFICATION] What goes on the starting off-limits list, and where is it kept?
 - [NEEDS CLARIFICATION] Do adults review drafts in the supervisor view or a separate screen?

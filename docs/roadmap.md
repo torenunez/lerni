@@ -6,10 +6,11 @@ This is the proposed sequence. [Progress](progress.md) records what has happened
 |---|---|---|
 | M1 — Authoring | Admin + educator | Templates, draft examples, and checker exist; educator tries them in a spreadsheet. |
 | M2 — Discovery round | Educator + parent; usable templates | One activity tried by hand; the signals below are clear enough to design the app. |
-| M3 — Local app | Admin + parent; reviewed activity | Meet [Release 1](prd/student.md#release-1-run-a-seeded-activity) in the installed app; rehearse and obtain parent authorization. |
-| M4 — Test reuse | Student + adults + admin; M3 | Distinguish content from interface issues; reuse a concept across interests; check later recall. |
-| M5 — Conversion | Admin + educator; M4 | Reviewed activities transfer into the app with a readable preview; incomplete drafts cannot publish. |
-| M6 — Recommendations | Admin + educator; M5 | Explain reviewed options; educator decides graph additions before separate activity approval. |
+| M3 — First app | Admin + parent; reviewed activity | Meet [Release 1](prd/student.md#release-1-run-a-seeded-activity) on the iPad; rehearse and obtain parent authorization. |
+| M4 — Continuity | Student + adults + admin; M3 | Meet [Release 2](prd/student.md#release-2-continuity): the app remembers progress and builds on it; an idea is reused across two interests; later recall is checked. |
+| M5 — Voice | Admin + parent; M4 and the voice decisions | Meet [Release 3](prd/student.md#release-3-voice) on the iPad; both parents agree to the setup. |
+| M6 — New ideas on old ones | Admin + educator; M5 | Meet [Release 4](prd/student.md#release-4-new-ideas-that-build-on-old-ones): the app proposes and drafts connected activities; adults approve each. |
+| M7 — Self-directed | Admin + educator + parent; M6 reliable | Meet [Release 5](prd/student.md#release-5-self-directed-within-limits) within adult-set limits, with spot checks. |
 
 ## M2 — Discovery round
 
@@ -33,4 +34,4 @@ Record only what actually happened; leave gaps blank. A correct choice alone is 
 
 Next actions, with owners, are in [todo.md](todo.md).
 
-Voice is Release 2 in the [student app PRD](prd/student.md#release-2-voice). AI drafting, saved learner records, and scheduled revisits need separate decisions and checks. Admin tool maintenance: [todo](todo.md#admin-tool-maintenance).
+Each milestone delivers one student app release; the [student app PRD](prd/student.md#where-this-goes) describes them. Admin tool maintenance: [todo](todo.md#admin-tool-maintenance).
