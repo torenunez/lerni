@@ -1,207 +1,141 @@
 # Architecture
 
-How Lerni works: what runs where, how an activity reaches the student, and where to find things in the code. What to build is in the [PRDs](prd/); what's done is in [progress](progress.md). Diagrams mark parts that don't exist yet as *planned*.
+How Lerni works: what runs where, how an activity reaches the student, who owns which data, and which boundaries must hold. What to build is in the [PRDs](prd/); what's done is in [progress](progress.md). Parts that don't exist yet are marked *planned*.
 
 ## Bird's-eye view
 
-The educator plans a learning path in a spreadsheet. One step of that path becomes an **activity**: a short sequence of questions with choices, hints, and a picture. The activity is stored as a file, and it can reach the student only after the educator approves its exact content. The student app loads approved activities, runs them one step at a time, and shows them on an iPad. The educator starts and stops each session.
+The educator plans a learning path in a spreadsheet. One step of that path becomes an **activity**: a few teaching screens followed by one multiple-choice question, with hints and a picture. The activity file reaches the student only after the educator approves its exact content. The student app runs on a home server; the student uses it on an iPad, and the educator controls it from their own phone or laptop.
 
-Separately, the admin tool (`lerni` in a terminal) is the admin's own learning and testing tool. It has its own data and shares no code with the student app yet.
+The admin tool (`lerni` in a terminal) is separate: the admin's own learning and testing tool, with its own data. Code and filenames say "lesson"; the docs say "activity". They mean the same thing.
 
-Code and filenames say "lesson"; the docs say "activity". They mean the same thing.
-
-## Context: who and what is involved
+## Context
 
 ```mermaid
 flowchart LR
-    student([Student])
-    educator([Educator])
-    admin([Admin])
+    student([Student]) -- taps --> ipad[iPad<br/>student screen]
+    educator([Educator]) -- Start / Stop / Reset --> edev[Phone or laptop<br/>educator view]
+    admin([Admin]) -- terminal --> server
 
-    subgraph home[Home Wi-Fi]
-        ipad[iPad, Safari]
-        mac[Home server<br/>always-on Mac]
+    subgraph home[Home network only]
+        ipad -- HTTP --> server[Home server<br/>always-on Mac]
+        edev -- HTTP, passcode --> server
     end
 
-    hf[Outside hosting<br/>e.g. Hugging Face Spaces<br/>only if needed]
-    ai[Model and speech services<br/>planned, Release 3]
-
-    student -- taps --> ipad
-    educator -- Start / Stop / Reset --> ipad
-    educator -- plans and approves activities --> admin
-    admin -- terminal --> mac
-    ipad -- HTTP; HTTPS from Release 3 --> mac
-    ipad -. later, if needed .-> hf
-    mac -. via adapter, Release 3 .-> ai
+    server -. Release 3, via adapters .-> ai[Speech and model services]
 ```
 
-Everything runs on a home server, an always-on Mac, and the iPad connects over the home Wi-Fi. Releases 1–2 use plain HTTP. Release 3 adds HTTPS on the same server, because browsers allow the microphone only over HTTPS or on the device's own localhost ([MDN](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia)). Hosting outside the home, such as Hugging Face Spaces, waits until the student needs the app away from home.
+Releases 1–2 use plain HTTP on the home network; there is no microphone, so HTTPS isn't required yet, and the app is never exposed to the internet. Release 3 adds HTTPS on the same server, because browsers allow the microphone only over HTTPS or on the device's own localhost ([MDN](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia)). Hosting outside the home waits until it's needed.
 
-## Containers: what runs on the home server
+## How an activity runs
 
 ```mermaid
-flowchart TB
-    subgraph browser[iPad browser]
-        screen[Student screen<br/>planned]
-        eview[Educator view<br/>planned]
-    end
-
-    subgraph server[Student app server: Python + Gradio, on the home server]
-        ctrl[Session controller<br/>planned: one session in memory]
+flowchart LR
+    subgraph server[Home server: Python + Gradio]
+        ctrl[Session controller<br/>planned]
         engine[Engine<br/>built]
         catalog[Catalog<br/>built]
     end
+    files[(Activity files<br/>+ index)]
+    ipad[Student screen<br/>planned]
+    edev[Educator view<br/>planned]
 
-    files[(Activity files + pictures<br/>+ lesson_index.toml)]
-
-    subgraph cli[Admin tool, separate]
-        lerni[lerni command<br/>built]
-        db[(SQLite<br/>~/.lerni/lerni.db)]
-    end
-
-    screen <-- taps / snapshot --> ctrl
-    eview <-- Start, Stop, Reset / recap --> ctrl
-    ctrl --> engine
-    ctrl --> catalog
-    catalog --> files
-    lerni --> db
+    edev -- "1 Start" --> ctrl
+    ctrl -- "2 load approved" --> catalog --> files
+    ipad -- "3 tap" --> ctrl
+    ctrl -- "4 transition" --> engine
+    engine -- "5 snapshot" --> ctrl
+    ctrl -- "6 draw" --> ipad
+    ctrl -- "recap" --> edev
 ```
 
-The line between the browser and the server is the **trust boundary**. The answer key, sources, and approval records stay on the server. The browser receives only a *snapshot*: the text, choices, and picture for the current step. Gradio keeps each visitor's state on the server, separately, and a page reload starts a new session ([Gradio](https://www.gradio.app/guides/state-in-blocks)).
+1. The educator picks an approved activity and presses Start.
+2. The **catalog** loads it only if it is approved and unaltered (below).
+3. The student taps a choice. The tap carries the session and the screen it was drawn from, so the controller can ignore late or repeated taps. Contract: [MVP plan](../plans/release-1-mvp.md#to-build).
+4. The **engine** takes the activity, the current state, and the event, and returns the next state. It is a pure function: the same inputs give the same result, and no model chooses content or moves the activity forward. Steps: [transition rules](../plans/specs/02-lesson-core.md#transition-rules).
+5. The engine's **snapshot** holds only what the screen may show: the text, the choices (an ID and a label each), the hint, and the picture. Which choice is correct, the sources, and the approval records never leave the server. The answer appears only in the completion text, once the activity ends.
+6. The student screen redraws. The educator sees the recap when the activity ends or is stopped.
 
-## How one tap works
+**How an activity gets approved:** path step in the spreadsheet → activity file written by hand → four recorded approvals (science, student wording, pictures and accessibility, OK to use) → catalog. Each approval records the hash of the activity's reviewable content, including its pictures. Review records themselves are left out of that hash, so adding an approval doesn't invalidate it, but any change to the content does. A clean checker report, or a spreadsheet row marked `reviewed`, is not an approval.
 
-```mermaid
-sequenceDiagram
-    participant S as Student screen
-    participant C as Session controller (planned)
-    participant E as Engine
-    S->>C: tap choice "B" (with session ID)
-    C->>C: ignore if stopped, stale, or repeated
-    C->>E: transition(activity, state, submit_choice B)
-    E-->>C: new state (check, hint, or complete)
-    C->>E: snapshot(activity, new state)
-    E-->>C: text, choices, hint, picture: no answer key
-    C-->>S: draw the snapshot
-```
+## Who owns each kind of data
 
-The engine is a pure function: the same activity, state, and event always give the same result, and it keeps nothing between calls. An event is one of three actions: *continue*, *submit a choice*, or *restart*. A state that the engine could not have produced raises an error instead of guessing. No model chooses content or moves an activity forward.
+| Data | What it is | Owner | Where |
+|---|---|---|---|
+| Curriculum | Reusable concepts, how they relate, possible next steps, and authored paths. Path sequence numbers set order; relationships never do. | Educator | Spreadsheet files (built) |
+| Activities | Reviewed teaching content for one path step, with its approvals | Educator approves; admin packages | `src/lerni/student/lessons/` (built) |
+| Session | The live state of one activity run, and its recap | The app | Memory only; discarded on Reset or server restart (planned) |
+| Learner record | Which activity revision was tried, concepts met, recall results. Meeting a concept is not the same as understanding it. | Educator can view and delete | Server storage (Release 2) |
+| Admin data | The admin's own questions, concepts, and reviews | Admin | SQLite at `~/.lerni/lerni.db` (built) |
 
-The steps of one activity:
+## Boundaries that must hold
 
-```mermaid
-stateDiagram-v2
-    [*] --> intro
-    intro --> teach: continue
-    intro --> check: continue (no teach steps)
-    teach --> teach: continue
-    teach --> check: continue
-    check --> complete: right choice
-    check --> hint: wrong choice
-    hint --> hint: wrong, more hints left
-    hint --> complete: right choice, or hints run out (answer revealed)
-    complete --> intro: restart
-```
+If a change would break one of these, stop and ask.
 
-## How an activity reaches the student
-
-```mermaid
-flowchart LR
-    sheet[Educator's spreadsheet<br/>six tables] -->|checker: reads only| ok{errors?}
-    ok -->|fix| sheet
-    ok -->|none| hand[Admin writes the activity file<br/>by hand, no importer yet]
-    hand --> idx[generate_lesson_index.py<br/>records fingerprints]
-    idx --> rev[Educator reviews:<br/>science, wording,<br/>pictures and accessibility, OK to use]
-    rev --> att[Approvals recorded in the file,<br/>each tied to the content fingerprint]
-    att --> idx2[Regenerate the index]
-    idx2 --> cat{"Catalog checks: listed?<br/>fingerprint matches?<br/>approved? all four approvals<br/>match the content?"}
-    cat -->|yes| app[Offered in the educator view]
-    cat -->|no| refuse[Refused]
-```
-
-A **fingerprint** is a hash of the exact content. Any edit changes it, so old approvals stop matching and the activity is refused until it is reviewed again. Regenerating the index never approves anything. Pictures are covered by the content fingerprint and checked again whenever they are read. A clean checker report, or a spreadsheet row marked `reviewed`, is not an approval.
+1. **Only approved, unaltered activities reach the student.** The catalog refuses anything else, and a raw index entry is never treated as approved.
+2. **The answer key stays on the server.** The snapshot type has no field for it.
+3. **The engine decides progression, never a model.**
+4. **Session updates are atomic and ignore stale input.** Stop and Reset win over any tap in flight.
+5. **Home network only.** No public share links, no port forwarding, analytics off. Nothing about the student is written to disk in Release 1.
+6. **Outside services go behind an adapter**, with credentials as `env:VAR` references, and only to services the educator agreed to. Tests use fakes.
+7. **The student core imports only itself and the standard library.** Gradio stays an optional install.
 
 ## Codemap
 
-| Where | What |
-|---|---|
-| `src/lerni/student/domain.py` | The data types: activity, step, state, event, snapshot, approvals, errors. Frozen dataclasses. |
-| `src/lerni/student/catalog.py` | `PackageLessonCatalog`: reads and checks activity files and pictures; parses TOML strictly. |
-| `src/lerni/student/engine.py` | `DeterministicLessonEngine`: `initial_state`, `transition`, `snapshot`. |
-| `src/lerni/student/canonical.py` | Turns content into exact bytes, so fingerprints are stable. |
-| `src/lerni/student/lessons/` | Activity files (`*.toml`), pictures (`assets/*.svg`), and the generated `lesson_index.toml`. One draft: car acceleration. |
-| `src/lerni/cli.py`, `commands/` | The admin tool's commands: questions, reviews, concepts, reminders. |
-| `src/lerni/db.py`, `sm2.py` | The admin tool's SQLite storage and SM-2 review scheduling. |
-| `scripts/generate_lesson_index.py` | Rebuilds `lesson_index.toml` after any activity or picture change. |
-| `scripts/validate_curation_templates.py` | The offline checker for the educator's spreadsheet files. |
-| `curation/` | Spreadsheet templates, the [schema](../curation/schemas/educator-paths-v1.json), and examples (cars, sharks, soccer). |
-| `tests/` | Pytest, fakes only, no network. `tests/student/` covers the student core. |
-| `plans/` | Build plans by release; [release-1-mvp.md](../plans/release-1-mvp.md) is current. |
-
-## Invariants
-
-These must stay true. If a change would break one, stop and ask.
-
-1. **Only approved, unaltered activities reach the student.** The catalog refuses anything else.
-2. **The browser never gets the answer key.** The snapshot type has no field for it. The answer appears only in the completion text, after the activity ends.
-3. **The engine decides progression, never a model.**
-4. **Teaching order comes from path-step sequence numbers**, never from concept relationships.
-5. **Outside services go behind an adapter**, with credentials as `env:VAR` references. Tests use fakes.
-6. **Student data goes only to services the educator agreed to.** In Release 1, nothing about the student is written to disk, and logs hold no student content.
-7. **The student core imports only itself and the standard library.** Gradio stays an optional install.
+- `src/lerni/student/`: `domain.py` (data types), `catalog.py` (loads and checks activities), `engine.py` (steps and snapshots), `canonical.py` (stable bytes for hashing), `lessons/` (activity files, pictures, generated index).
+- `src/lerni/cli.py`, `commands/`, `db.py`, `sm2.py`: the admin tool.
+- `scripts/`: the index generator and the curation checker. `curation/`: templates, [schema](../curation/schemas/educator-paths-v1.json), examples.
+- `tests/`: pytest, fakes only. `plans/`: build plans by release.
 
 ## Target architecture (not built)
 
-Where the system is headed by Release 5. This shows the seams that early code must leave room for; it is not a design for each release. Each release's detailed design goes in its [build plan](../plans/README.md) when that release starts.
+Where the system is headed by Release 5: the seams early code must leave room for, not a design for each release. Each release's design goes in its [build plan](../plans/README.md) when it starts.
 
 ```mermaid
 flowchart TB
-    subgraph browser[iPad browser, over HTTPS]
-        screen[Student screen<br/>tap and voice]
-        eview[Educator view<br/>settings, recap, concept map, consent]
-    end
+    screen[Student screen<br/>tap, then voice R3]
+    eview[Educator view<br/>settings, concept map, consent, drafts]
 
-    subgraph space[Student app on the home server]
+    subgraph server[Home server]
         ctrl[Session controller]
-        guard[Allowlist and exclusion-list checks<br/>R3: questions and replies, R5: every turn]
         engine[Engine]
-        catalog[Catalog]
-        drafter[Activity drafter<br/>R4]
+        checks[Allowlist and exclusion-list checks<br/>R3 questions and replies, R5 every turn]
+        drafter[Activity drafter R4]
     end
 
-    subgraph store[Storage on the server]
-        files[(Approved activities)]
-        record[(Progress record<br/>R2)]
-        map[(Concept map, lists, settings<br/>R4–R5)]
+    subgraph data[Storage]
+        curriculum[(Curriculum + lists<br/>educator's)]
+        activities[(Approved activities)]
+        record[(Learner record R2)]
     end
 
-    subgraph adapters[Adapters, keys as env:VAR]
-        speech[Speech-to-text, text-to-speech<br/>R3]
-        model[Model, admin's Claude account<br/>R3–R5]
+    subgraph adapters[Adapters]
+        stt[Speech to text R3]
+        model[Model R3]
+        tts[Text to speech R3]
     end
 
-    screen <--> ctrl
-    eview <--> ctrl
-    ctrl --> guard
+    screen --> ctrl
+    eview --> ctrl
     ctrl --> engine
-    ctrl --> catalog
-    catalog --> files
+    ctrl -- catalog --> activities
     ctrl --> record
-    guard --> map
-    drafter --> map
-    drafter -. drafts for approval .-> eview
-    ctrl --> speech
-    guard --> model
+    screen -. audio .-> stt -. transcript to confirm .-> screen
+    ctrl --> checks --> model --> checks
+    checks -. checked reply .-> tts -.-> screen
     drafter --> model
+    drafter -. draft .-> eview
+    eview -. approve .-> activities
+    eview -. accept proposal .-> curriculum
+    checks --> curriculum
 ```
 
 | Piece | Release | Seam to leave room for now |
 |---|---|---|
-| Progress record | 2 | The session controller reads and writes state through one interface, so moving from memory to storage changes one place. If hosting ever moves to Hugging Face Spaces, its default disk is wiped on restart, so the record would need attached storage ([HF](https://huggingface.co/docs/hub/spaces-storage)). |
-| HTTPS on the home server | 3 | Nothing depends on a particular address or network, so adding HTTPS, or moving off the home server later, changes only configuration. The microphone needs HTTPS. |
-| Speech adapter | 3 | The screen sends events, not raw input, so a spoken answer becomes the same event as a tap after the student confirms it. Recordings are deleted after use. |
-| Question and reply checks | 3 | Every generated text passes the checks before the student sees or hears it. |
-| Concept map and activity drafter | 4 | Drafts enter the same approval flow as hand-written activities; the catalog doesn't change. |
-| Exclusion-list mode, concept-map view, consent | 5 | Settings and lists are read on every turn and take effect at once. |
+| Learner record | 2 | The controller saves state through one interface. Each activity revision maps to the concepts it teaches, so reminders and recall have something stable to point at. |
+| HTTPS | 3 | Nothing depends on a particular address, so adding HTTPS changes configuration only. |
+| Voice | 3 | Audio goes to speech-to-text before any text exists to confirm, so that service must be one the educator approved. After the student confirms, the transcript becomes the same kind of event as a tap. Recordings are deleted after use. |
+| Replies | 3 | Every generated reply passes the checks before it is shown or spoken, and a reply that arrives after Stop is dropped. |
+| Drafts and proposals | 4 | A drafted activity goes through the same four approvals. Accepting a proposed concept into the curriculum is a separate educator decision. |
+| Free conversation | 5 | Lists and settings are read on every turn and take effect at once. |
 
-Open questions that affect this: how to add HTTPS at home, and which parts of the admin tool the student app reuses ([admin PRD](prd/admin.md#open-questions)).
+Open questions that affect this: how to add HTTPS at home, and which parts of the admin tool the student app reuses ([admin PRD](prd/admin.md#open-questions)); where speech-to-text runs ([student PRD](prd/student.md#open-questions)).

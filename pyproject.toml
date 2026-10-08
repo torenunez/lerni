@@ -34,6 +34,7 @@ dev = [
 
 [project.scripts]
 lerni = "lerni.cli:app"
+study = "lerni.cli:study_alias"  # deprecated alias
 
 [tool.setuptools]
 include-package-data = true

@@ -59,10 +59,10 @@ Approval covers four checks: the science is right, the wording suits the student
 
 As an educator, I want to start, stop, and reset activities, so that I stay in control.
 
-- WHEN the app opens THE SYSTEM SHALL show the educator view, listing approved activities only.
-- WHEN the educator presses Start THE SYSTEM SHALL show the activity's first step to the student.
+- WHEN the educator opens the educator view on their own device THE SYSTEM SHALL list approved activities only.
+- WHEN the educator presses Start THE SYSTEM SHALL show the activity's first step on the student's iPad.
 - WHEN the educator presses Stop THE SYSTEM SHALL end the interaction at once.
-- WHEN the educator presses Reset THE SYSTEM SHALL clear progress and return to the educator view.
+- WHEN the educator presses Reset THE SYSTEM SHALL clear progress and return the student's screen to waiting.
 
 ### Story: See a recap
 
@@ -133,6 +133,7 @@ Running the admin tool. Editing app code or lesson files directly.
 - 2026-10-08: Drafting and conversation use the admin's Claude account, so keys and billing stay with whoever runs the system.
 - 2026-10-08: The educator reviews drafts in the educator view.
 - 2026-10-08: The starting exclusion list covers violence, weapons, sexual content, self-harm, and drugs.
+- 2026-10-08: The educator view runs on the educator's own device (a phone or laptop), separate from the student's iPad, and controls the same session.
 
 ## Open questions
 

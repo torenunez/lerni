@@ -5,7 +5,7 @@ Build plans, one per release. Product requirements live in the [PRDs](../docs/pr
 | Release | Plan | Status |
 |---|---|---|
 | 1 — MVP | [release-1-mvp.md](release-1-mvp.md) | Current |
-| 2 — Remembering | Not written. Start from [later/prs/05-telemetry-lifecycle.md](later/prs/05-telemetry-lifecycle.md) | Later |
+| 2 — Remembering | Not written. First dependency: map each activity revision to the concepts it teaches. Start from [later/prs/05-telemetry-lifecycle.md](later/prs/05-telemetry-lifecycle.md) | Later |
 | 3 — Voice and questions | Not written. Start from [later/prs/07-audio-input.md](later/prs/07-audio-input.md), [later/prs/07a-capability-adapters.md](later/prs/07a-capability-adapters.md), [later/prs/04-safety-tutor.md](later/prs/04-safety-tutor.md) | Later |
 | 4 — New ideas | Not written. Start from [later/prs/11-recommendations.md](later/prs/11-recommendations.md) | Later |
 | 5 — Free conversation | Not written. Start from [later/prs/10-curriculum-graph.md](later/prs/10-curriculum-graph.md) | Later |

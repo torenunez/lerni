@@ -49,6 +49,7 @@ Use by educators or students.
 - 2026-10-07: The admin has full access: learn topics, try anything the student would see, and run or tune the system.
 - 2026-10-07: The student app relies on mechanics the admin tunes here, so the two share a core.
 - 2026-10-07: The student app is a Gradio web app used on an iPad rather than as a native app.
+- 2026-10-08: The command `study` was renamed `lerni`; `study` stays as a deprecated alias so existing scripts keep working.
 - 2026-10-08: The student app runs on a home server first: plain HTTP on the home Wi-Fi for Releases 1–2, then HTTPS on the same server for the microphone in Release 3. Hosting outside the home (such as Hugging Face Spaces) waits until it's needed.
 - 2026-10-07: For now, student data may leave the device, under educator supervision.
 

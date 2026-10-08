@@ -135,5 +135,5 @@ Public access and a native iPad app.
 - [NEEDS CLARIFICATION] (Release 2) Should the student see their own map of ideas, as a way to feel progress?
 - [NEEDS CLARIFICATION] (Release 3) How does the app decide a question or reply suits a student, beyond the two lists?
 - [NEEDS CLARIFICATION] (Release 3) How does the app judge a spoken answer: against prepared answers, or with its own understanding?
-- [NEEDS CLARIFICATION] (Release 3) Which speech-to-text service and which reading-aloud voice?
+- [NEEDS CLARIFICATION] (Release 3) Which speech-to-text service and which reading-aloud voice? Audio must reach the speech-to-text service before there is any text to confirm, so "send nothing until confirmed" covers what happens after transcription. Does transcription run on the home server or at an outside service the educator approved?
 - [NEEDS CLARIFICATION] (Release 5) How does a consent request reach the educator, and how long does the student wait?

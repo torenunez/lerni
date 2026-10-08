@@ -18,7 +18,7 @@ These concepts guide how we design activities and learning paths. Examples are i
 
 *Example:* Compare doubling a recipe with enlarging a scale model: both preserve ratios. Then ask the learner to work out a paint mixture without that prompt.
 
-*In Lerni:* reaching the same concept from two interests (speed through cars and through sharks) is a transfer check.
+*In Lerni:* reaching the same concept from two interests (speed through cars and through sharks) is a chance to check transfer, not proof of it. After the cars activity, ask the student to reason about a shark's speed without pointing out the connection.
 
 **Anchored instruction.** Organize learning around a meaningful problem or story. The problem gives the learner a reason to investigate and apply several concepts throughout the activity. [Research](https://journals.sagepub.com/doi/abs/10.3102/0013189X019006002).
 
