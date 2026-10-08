@@ -22,16 +22,21 @@ concept_app = typer.Typer(
 console = Console()
 
 
+# Commands that must not touch the admin tool's database.
+_NO_DB_COMMANDS = {"serve"}
+
+
 @app.callback()
-def main_callback():
-    """Initialize database on first run."""
-    init_db()
+def main_callback(ctx: typer.Context):
+    """Initialize the admin database on first run (not for `serve`)."""
+    if ctx.invoked_subcommand not in _NO_DB_COMMANDS:
+        init_db()
 
 
 # Import and register commands after app is created to avoid circular imports
 def register_commands():
     """Register all command modules."""
-    from .commands import notify, organize, question, review
+    from .commands import notify, organize, question, review, serve
 
     # Question commands (at root level)
     app.command("new")(question.new_question)
@@ -63,6 +68,9 @@ def register_commands():
 
     # Notification commands
     app.command("notify")(notify.notify_cmd)
+
+    # Student app
+    app.command("serve")(serve.serve_cmd)
 
 
 # Register commands

@@ -1,0 +1,27 @@
+"""The `lerni serve` command: run the student app on the home server."""
+
+import typer
+from rich.console import Console
+
+console = Console()
+
+
+def serve_cmd(
+    host: str = typer.Option("0.0.0.0", help="Address to bind; 0.0.0.0 reaches the home network."),
+    port: int = typer.Option(7860, help="Port to listen on."),
+    passcode_env: str = typer.Option(
+        "LERNI_EDUCATOR_PASSCODE",
+        help="Environment variable that holds the educator passcode.",
+    ),
+) -> None:
+    """Run the student app: the student screen and the passcode-protected educator view."""
+    try:
+        from lerni.student.web.serve import MissingPasscodeError, serve
+    except ImportError:
+        console.print('[red]The student app needs Gradio: pip install -e ".[student]"[/red]')
+        raise typer.Exit(1) from None
+    try:
+        serve(host=host, port=port, passcode_env=passcode_env)
+    except MissingPasscodeError as exc:
+        console.print(f"[red]{exc}[/red]")
+        raise typer.Exit(1) from None
