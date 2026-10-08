@@ -49,7 +49,7 @@ def review_cmd(
 
         if not questions:
             console.print("[green]No questions due for review![/green]")
-            console.print("[dim]Use 'study today' to see upcoming reviews.[/dim]")
+            console.print("[dim]Use 'lerni today' to see upcoming reviews.[/dim]")
             return
 
         console.print(f"\n[bold]Review Session[/bold] - {len(questions)} question(s) due\n")
@@ -60,7 +60,7 @@ def review_cmd(
 
             if i < len(questions):
                 if not typer.confirm("\nContinue to next question?", default=True):
-                    console.print("[dim]Session paused. Run 'study review' to continue.[/dim]")
+                    console.print("[dim]Session paused. Run 'lerni review' to continue.[/dim]")
                     break
 
         console.print("\n[green bold]Review session complete![/green bold]")
@@ -261,7 +261,7 @@ def today_cmd():
 
             console.print(table)
             console.print(f"\n[bold green]{len(due_today)}[/bold green] question(s) due for review")
-            console.print("[dim]Run 'study review' to start.[/dim]")
+            console.print("[dim]Run 'lerni review' to start.[/dim]")
         else:
             console.print("[green]All caught up! No reviews due today.[/green]")
 

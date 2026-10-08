@@ -30,10 +30,12 @@ dev = [
     "pytest-cov>=4.0.0",
     "mypy>=1.8.0",
     "ruff>=0.3.0",
+    "build>=1.0",
 ]
 
 [project.scripts]
-study = "lerni.cli:app"
+lerni = "lerni.cli:app"
+study = "lerni.cli:study_alias"  # deprecated alias
 
 [tool.setuptools]
 include-package-data = true
@@ -42,7 +44,7 @@ include-package-data = true
 where = ["src"]
 
 [tool.setuptools.package-data]
-"lerni.explore.lessons" = [
+"lerni.student.lessons" = [
   "*.toml",
   "assets/*.svg",
 ]

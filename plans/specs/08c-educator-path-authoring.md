@@ -16,9 +16,9 @@ no database, no publication step, and no change to the installed lesson format.
 | Tests | [`tests/test_curation_templates.py`](../../tests/test_curation_templates.py) |
 
 This contract is **not** import-compatible with the older delivery-oriented
-schema in [`08-graph-recommendations.md`](./08-graph-recommendations.md) (the
+schema in [`08-graph-recommendations.md`](../later/specs/08-graph-recommendations.md) (the
 `curation/templates/v1/` tables), and it is not the runtime lesson TOML read by
-`src/lerni/explore/catalog.py`. Getting an authored activity into the app needs a
+`src/lerni/student/catalog.py`. Getting an authored activity into the app needs a
 deliberate semantic mapping — renaming columns is not enough. That adapter is
 later work (roadmap M5); until then the handoff from a path step to a packaged
 lesson is manual.
@@ -63,7 +63,7 @@ One reusable topic or concept. Required: `node_id`, `label`, `definition`,
 
 | Field | Meaning |
 |---|---|
-| `node_id` | Stable ID, e.g. `n-fractions`. Reuse it across paths; changing the label does not change it. |
+| `node_id` | Stable ID, e.g. `n-distance`. Reuse it across paths; changing the label does not change it. |
 | `label` | Short human-readable name. |
 | `definition` | Adult-facing statement of what the node means. Never a learner observation. |
 | `aliases` | Alternative labels, `\|`-separated. For search; not distinct concepts. |
@@ -86,10 +86,10 @@ context — not a generic "these are related".
 | Type | Direction and meaning | Example | Common mistake |
 |---|---|---|---|
 | `is_a` | From is a narrower kind of To. | Average speed → rate | Reading taxonomy as "teach this first". |
-| `part_of` | From is a component of To. | Plant parts → plants | Confusing a component with a subtype. |
+| `part_of` | From is a component of To. | Fins → animal body parts | Confusing a component with a subtype. |
 | `example_of` | From illustrates or instantiates To. | Steady beat → repeating pattern | Treating every related idea as an example. |
 | `uses` | From uses To in the stated context. | Perimeter → length | Claiming every comparison must be numerical. |
-| `explains` | Understanding From helps account for To. | Equal parts → fractions | Presenting a speculative link as a proven cause. |
+| `explains` | Understanding From helps account for To. | Force → change in motion | Presenting a speculative link as a proven cause. |
 | `related_to` | Symmetric association justified by the rationale. | Rhythm ↔ steady beat | Omitting why the association is useful. |
 
 These types are never lesson order. `related_to` has no direction, so a reversed
@@ -123,7 +123,7 @@ path_id,title,entry_node_id,learning_goal,intended_audience,starting_knowledge,s
 One educator-curated route. Required: the first four fields and `status`. The
 entry node is an available starting topic, not a record of any student's
 preference. `intended_audience` and `starting_knowledge` stay generalized — no
-child name or personal profile. Two routes from one interest are two Paths
+student name or personal profile. Two routes from one interest are two Paths
 records with the same `entry_node_id`; there is no branching syntax inside a
 path.
 
@@ -138,7 +138,7 @@ fields and `status`.
 
 **Order.** `sequence` alone determines order: a positive integer, starting at 1,
 unique and contiguous within each path. Sorting rows must not change a path. The
-visible suffix of an ID such as `p-building-s04` does not control order.
+visible suffix of an ID such as `p-soccer-kick-s04` does not control order.
 
 **Continuity.** Group by `path_id`, sort numerically by `sequence`, then:
 
@@ -198,9 +198,9 @@ details.
    control/format characters) is flagged so it is kept literal when opened in a
    spreadsheet. The drafting checker never evaluates or changes it. The stricter
    production importer policy in spec 08 is separate.
-9. **Privacy.** Keep child identity, actual interests, observations, engagement
-   scores, progress, transcripts, and session dates out of these tables. "Music"
-   as a starting topic is curriculum; "this student enjoyed music" is a private
+9. **Privacy.** Keep student identity, actual interests, observations, engagement
+   scores, progress, transcripts, and session dates out of these tables. "Sharks"
+   as a starting topic is curriculum; "this student enjoyed sharks" is a private
    observation and belongs in a separate learner record.
 
 ## Status and review
@@ -212,15 +212,15 @@ details.
 | `needs_revision` | Previously considered content needs changes. | Revise, clear stale review fields, get a fresh review. |
 | `retired` | Kept for identity and history; not for new use. | Redirect new paths explicitly. |
 
-`reviewed` requires `reviewer_role` (`educator`, `parent`, or `subject_expert`)
+`reviewed` requires `reviewer_role` (`educator` or `subject_expert`)
 and `review_date`. If either is supplied, both are required. Nothing — no
 script, checker, or agent — fills these in; they are entered by the person who
 did the review, after it happened. Shipped examples leave both blank.
 
 **A `reviewed` row is curation review only.** It is not application approval.
 The installed lesson catalog reads exact-content attestations from the lesson
-TOML's `review.attestations` (scopes `science`, `child_content`,
-`visual_accessibility`, `parent_approval`, all pinning one
+TOML's `review.attestations` (scopes `science`, `student_content`,
+`visual_accessibility`, `educator_approval`, all pinning one
 `reviewed_payload_sha256`). Nothing in these CSVs updates that.
 
 ## Readiness levels
@@ -276,19 +276,19 @@ JSON output carries `schema_version`, `mode`, `counts`, `summary`, `issues`
 record, field, then code. Messages explain the rule and never echo raw cell
 text; `record_id` appears only when it is a well-formed ID. Every report ends
 by stating that structural checks do not approve content or make anything ready
-for a child. There is no "approved" or "safe to test" flag.
+for a student. There is no "approved" or "safe to test" flag.
 
 ## Relationship to the older curation specs
 
-- [`08-graph-recommendations.md`](./08-graph-recommendations.md) and the
+- [`08-graph-recommendations.md`](../later/specs/08-graph-recommendations.md) and the
   `curation/templates/v1/` tables remain the **legacy delivery-format draft**.
   Its INTERESTS table mixes reusable topics with learner observations, CONCEPTS
   fixes permanent roles (`kind`, `track`), and NUDGES bundles teaching moves with
   hints and reveals. `educator-paths-v1` separates those concerns. Reconciling the
   two is an explicit adapter/spec revision before any production importer is
   built (roadmap M5), not a column rename.
-- [`08a-curriculum-persistence.md`](./08a-curriculum-persistence.md) and
-  [`08b-recommendation-feedback.md`](./08b-recommendation-feedback.md) are
+- [`08a-curriculum-persistence.md`](../later/specs/08a-curriculum-persistence.md) and
+  [`08b-recommendation-feedback.md`](../later/specs/08b-recommendation-feedback.md) are
   unchanged. Their security, approval, and activation requirements still apply
   to any later publication path.
 
@@ -302,7 +302,7 @@ noticed:
 3. Record a proposal: rationale, origin, references, possible duplicates.
 4. The educator accepts, revises, merges, defers, or rejects it.
 5. Accepted additions become ordinary records with stable IDs.
-6. Any child-facing activity built on them gets its own content review.
+6. Any student-facing activity built on them gets its own content review.
 
 Until a proposal workflow exists, note proposals in `educator_notes` or a private
 planning backlog. Generalized educational conclusions may shape shared

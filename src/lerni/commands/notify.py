@@ -81,7 +81,7 @@ def _show_setup_instructions():
     console.print("[bold cyan]Option 1: Crontab (simple)[/bold cyan]\n")
     console.print("Add this line to your crontab ([dim]crontab -e[/dim]):\n")
     console.print(
-        f"[green]{minute} {hour} * * * ~/.lerni/.venv/bin/study notify 2>/dev/null[/green]"
+        f"[green]{minute} {hour} * * * ~/.lerni/.venv/bin/lerni notify 2>/dev/null[/green]"
     )
     console.print(
         "\n[dim]This runs at {reminder_time} daily. Adjust path if needed.[/dim]"
@@ -100,7 +100,7 @@ def _show_setup_instructions():
     <array>
         <string>/bin/zsh</string>
         <string>-c</string>
-        <string>~/.lerni/.venv/bin/study notify</string>
+        <string>~/.lerni/.venv/bin/lerni notify</string>
     </array>
     <key>StartCalendarInterval</key>
     <dict>

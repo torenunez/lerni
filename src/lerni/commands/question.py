@@ -184,7 +184,7 @@ def edit_question(
     Opens the current answer in your editor. Changes are saved
     to the existing answer without creating a new snapshot.
 
-    Use 'study snapshot' to create a new version instead.
+    Use 'lerni snapshot' to create a new version instead.
     """
     with get_connection() as conn:
         question_repo = QuestionRepository(conn)

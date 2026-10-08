@@ -7,7 +7,7 @@ from .db import init_db
 
 # Create main app
 app = typer.Typer(
-    name="study",
+    name="lerni",
     help="Lerni - Learn deeply, remember permanently",
     no_args_is_help=True,
     rich_markup_mode="rich",
@@ -31,7 +31,7 @@ def main_callback():
 # Import and register commands after app is created to avoid circular imports
 def register_commands():
     """Register all command modules."""
-    from .commands import question, review, organize, notify
+    from .commands import notify, organize, question, review
 
     # Question commands (at root level)
     app.command("new")(question.new_question)
@@ -72,6 +72,18 @@ register_commands()
 def main():
     """Entry point for the CLI."""
     app()
+
+
+def study_alias() -> None:
+    """Deprecated ``study`` entry point, kept so old scripts keep working.
+
+    Prints a notice to stderr, then runs the ``lerni`` app unchanged.
+
+    Example:
+        ``study today`` behaves like ``lerni today``.
+    """
+    typer.echo("Note: `study` is deprecated; use `lerni`.", err=True)
+    app(prog_name="lerni")
 
 
 if __name__ == "__main__":

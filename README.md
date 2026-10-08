@@ -1,123 +1,37 @@
 # Lerni
 
-A local-first, privacy-preserving learning system. One repository, two modes:
-**Study**, a Feynman-technique and spaced-repetition CLI for adults, and
-**Explore**, a parent-supervised experience that walks a child from something
-they already care about down to the idea underneath it.
+Lerni is a learning app that facilitates interest exploration, provides users a deeper understanding of these interests, and helps them connect key concepts, reinforce them, and commit them to memory. It is built on key learning concepts such as the **Feynman technique** (explain an idea simply to find what you don't understand) and **spaced repetition** (review at growing intervals so it sticks). [Learning concepts](docs/learning-concepts.md) covers these and the other ideas we design with.
 
-## Modes
+Lerni has two parts:
 
-| | Study | Explore |
-|---|---|---|
-| For | A self-directed adult | A child (~7–9) with a parent present |
-| Interface | Terminal — `study` | Local browser page, `127.0.0.1` only |
-| Status | Feature-complete, maintenance-only | **In development — not usable yet** |
+- **Educator-supervised student app — the main product.** A student explores ideas by voice on an iPad while an educator supervises. The educator seeds the first activities, approves what the student sees, supervises from the educator view, and can stop any session. Educator involvement steps down over time: at first the app explores only concepts on the educator's allowlist; eventually the student converses freely about anything not on the educator's exclusion list, and the educator reviews a map of the concepts explored, blocks paths, and answers the rare consent request for a sensitive subject. We are building it in steps: first text, pictures, and choices; then remembering what the student explored and building on it; then speaking and listening. The authoring tools and activity engine exist; the app is not built yet.
+- **Admin tool — in the terminal.** Full access: learn topics with it, try out anything a student would see, and tune the learning mechanics before the student app relies on them. Available now. Educators never need it.
 
-**Study** — capture what you know, explain it simply, find the gaps, refine, then
-review on an SM-2 schedule.
+The student app treats knowledge as a map: **nodes** are ideas, and **edges** link them, either by how they relate or by which makes a good next step. A path starts at a student's core interest (cars, sharks, soccer) and follows edges toward an underlying idea. The map grows by branching to nearby ideas. It strengthens when the same idea is reached again from a different interest, so speed met through cars and again through sharks becomes one connected idea. Educators plan it in plain language today, and the admin turns their plans into the map; suggesting where to go next comes later.
 
-**Explore** — an educator-curated path takes a child from an interest they already
-have (cars, music, cooking, plants, building…) to an underlying idea, one short
-reviewed activity at a time. The application owns the lesson; any AI capability is optional,
-replaceable, and cannot decide what is taught or whether an answer was right.
+## Read in this order
 
-## Current Status
+1. [Student app PRD](docs/prd/student.md): what we're building, for whom, and why.
+2. [Educator PRD](docs/prd/educator.md): every educator task.
+3. [Admin tool PRD](docs/prd/admin.md): the terminal tool.
+4. [Learning concepts](docs/learning-concepts.md): the learning ideas behind Lerni.
+5. [Architecture](docs/ARCHITECTURE.md): how the parts fit together.
+6. [Roadmap](docs/roadmap.md): what comes next and who owns it.
+7. [Progress](docs/progress.md): where things stand, and a dated log of what was done.
 
-**Study Phase 1 is complete and working.** Data layer, Feynman workflow, SM-2
-scheduling, concept graph, and CLI are all functional. It receives fixes, not new
-features. Feature-complete is not the same as hardened — see [`docs/todo.md`](docs/todo.md)
-for open test and lint debt.
+Educators can then open the [curation guide](curation/README.md) to prepare a path. Admins can use the [implementation index](plans/README.md) to find detailed specifications and tasks. The [admin tool reference](docs/reference/admin.md) covers its commands and behavior.
 
-**Explore has a lesson core but no app yet.** The lesson domain, catalog, and
-deterministic engine exist in `src/lerni/explore/`, with one draft (unreviewed)
-lesson. Educators can outline learning paths today with the templates in
-[`curation/`](curation/README.md) and check them offline. There is no app to run;
-see [`docs/roadmap.md`](docs/roadmap.md) for milestones M1–M6.
+The educator and admin can start now, in parallel. The first thing the student tries is the MVP app (Release 1); it needs an approved activity, prepared as described in the [educator PRD](docs/prd/educator.md#release-1-seed-approve-and-supervise).
 
-## Study Quick Start
+## Setup
+
+For admins: run these commands from a repository checkout with Python 3.11 or newer.
 
 ```bash
-study new "How does TCP congestion control work?"   # 4-step Feynman flow
-study new "Quick thought" --quick                   # capture step 1 only
-study today                                         # what's due
-study review                                        # run a review session
-study list --due                                    # filter by due date
-study search "congestion"                           # full-text search
-
-study concept new "Networking"                      # knowledge graph
-study concept link "TCP" "Networking" --type parent
-study concept list
-```
-
-Data lives in `~/.lerni/`. Nothing leaves your machine.
-
-## Explore — Development Status
-
-> **Not usable.** Explore is under active development and has no working entry
-> point. It is being built for one family, for supervised use on a single machine.
-
-When it does run, it will bind to `127.0.0.1` only, with no share URL and no
-public deployment. It is a prototype with prototype guardrails plus a parent in
-the room — it is **not** a moderation system, **not** a COPPA compliance posture,
-and **not** production-ready software. Any use outside the immediate family would
-require a separate privacy, safety, and legal review that has not been done.
-
-No model, provider, or hosted service is required. Text generation and
-speech-to-text are optional capabilities selected by explicit runtime
-qualification. With none configured, the lesson still runs on authored content.
-
-## Installation
-
-```bash
-git clone https://github.com/torenunez/lerni.git
-cd lerni
 python3 -m venv .venv && source .venv/bin/activate
-```
-
-**Core (Study)** — everything needed for the CLI:
-
-```bash
-pip install -e .
-```
-
-**Development** — adds pytest, mypy, and ruff:
-
-```bash
 pip install -e ".[dev]"
+pytest
+lerni --help
 ```
 
-**Explore UI** — *planned, not yet available.* Will install the local UI
-framework as an optional extra; the core install will not require it.
-
-**Optional runtime adapters** — *planned, environment-specific.* Any tutor,
-speech-to-text, or additional harm-gate capability is installed separately as its
-own reviewed distribution, chosen by the operator. None is bundled, and none is
-required. Credentials are supplied as environment references, never written into
-configuration files or committed.
-
-Requires Python 3.11+.
-
-## Testing
-
-```bash
-pytest                       # full suite
-pytest tests/test_sm2.py -v  # one file
-pytest -k "interval"         # one pattern
-ruff check src/              # lint (carries known debt — see docs/todo.md)
-mypy src/                    # types
-```
-
-## Documentation
-
-- [Mission](docs/mission.md) — vision, two modes, core beliefs
-- [Product Requirements](docs/PRD.md) — requirements and safety boundaries
-- [Technical Specification](docs/spec.md) — data model, CLI, Explore contracts
-- [Roadmap](docs/roadmap.md) — Explore milestones M1–M6; parked Study phases
-- [Backlog](docs/todo.md) — active Explore work, parked Study work
-- [Curation](curation/README.md) — educator path-authoring templates, examples, and offline checker
-- [Progress Log](docs/progress.md) — dated implementation history
-- [`plans/`](plans/) — Explore implementation bundle: [master plan](plans/cursor_master_plan.plan.md), plus `prs/` (execution units), `specs/` (technical contracts), and `runbooks/` (manual procedures)
-
-## License
-
-[MIT](LICENSE)
+The admin tool stores data locally in `~/.lerni/`. The student app is designed for supervised use.

@@ -5,7 +5,7 @@
   "integer_pattern": "^[1-9][0-9]*$",
   "list_separator": "|",
   "statuses": ["draft", "reviewed", "needs_revision", "retired"],
-  "reviewer_roles": ["educator", "parent", "subject_expert"],
+  "reviewer_roles": ["educator", "subject_expert"],
   "relationship_types": ["is_a", "part_of", "example_of", "uses", "explains", "related_to"],
   "symmetric_relationship_types": ["related_to"],
   "taxonomy_relationship_types": ["is_a", "part_of"],

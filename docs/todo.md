@@ -1,122 +1,62 @@
-# Lerni — Backlog
+# To do
 
-Explore is active. Study work below is parked, not cancelled — it is kept so it
-can be resumed if Explore does not justify continuing. Completed work is recorded
-in [`progress.md`](./progress.md), not here.
+Open tasks by who does the work. The educator and admin tracks run in parallel: building and troubleshooting the app never waits for content, and content never waits for the app. Within each role, **Now** comes first and later work is grouped by release. When a task is done, delete it; if it changed where things stand, add a dated entry to [progress](progress.md). What completes each release: [roadmap](roadmap.md).
 
-## Explore — Active
+## Educator
 
-Milestones are defined in [`roadmap.md`](./roadmap.md). Implemented code, human
-review, app qualification, and a student session are separate kinds of progress.
-Owners are in brackets.
+### Now: Release 1 MVP
 
-### Next up — two things can start in parallel
-1. **[educator + parent]** M2: choose an interest and goal, sketch activities, prepare and review the first.
-2. **[developer]** M3 step 1: reconcile the reduced-slice specs.
+- [ ] Choose an interest and a goal, fill in the plan sheet (3–5 rows) and one activity card, and send them to the admin. How: [curation guide](../curation/README.md).
+- [ ] Tell the admin what was confusing about the plan sheet or the card.
+- [ ] Review the car activity's science with the [review sheet](../plans/runbooks/chain-1-source-review.md). It's the activity for the MVP, because it already exists as a draft; your own activity card comes next.
 
-### M1 — Educator authoring and documentation
-Repository work is merged into `main` (GitHub PR #2); see [progress.md](./progress.md). One item remains:
-- [ ] **[educator]** Try the templates in a real spreadsheet app and report what is confusing; fix wording, and treat any schema change as a new version
+### Later: Release 1 MVP
 
-### M2 — First reviewed walkthrough (no app needed)
-- [ ] **[educator + parent]** Choose a fitting interest and one concrete learning goal
-- [ ] **[educator]** Sketch three to five activities; fully prepare only the first
-- [ ] **[educator + parent]** Genuinely review that activity's exact wording and materials
-- [ ] **[educator + parent]** Optional 5–10 minute walkthrough; private observations; revise one thing
+- [ ] Approve the activity's four checks: science, wording, pictures and accessibility, and OK to use.
+- [ ] Log in to the app from your own device as soon as the admin has it running, and say what's confusing, even before there's any content.
+- [ ] Rehearse the MVP on the iPad and your own device, including Stop and Reset, then authorize student use.
+- [ ] Watch the student try it, keep notes private, and revise one thing.
 
-### M3 — Authored local app slice
-In order. Steps 1–2 can start now; step 3 needs M2's reviewed activity.
-1. [ ] **[developer]** Reconcile PR-03 runtime, PR-06 UI, and PR-08 verification specs for the reduced slice; write its acceptance checks (PRD APP-01–APP-08) before relying on them
-2. [ ] **[developer + operator]** Environment qualification for whatever runtime tier the reconciled specs require; setup decisions recorded outside the repo
-3. [ ] **[developer]** Translate one reviewed path step into one packaged lesson, with a separate path/step/revision mapping record. (Alternative: use the existing draft Chain-1 lesson instead, if it fits the chosen interest.)
-4. [ ] **[human reviewers]** Genuine exact-content attestations for that lesson (TOML `review.attestations`, all four scopes)
-5. [ ] **[developer]** Local UI: visible text, curated visuals and text alternatives, authored choices, hints, completion, parent Start/Stop/Reset, in-memory state
-6. [ ] **[developer]** Verify session ownership, Stop/Reset, approval and integrity checks, no persistent storage, no outbound requests, Study compatibility
-7. [ ] **[parent]** Adult rehearsal, then parent authorization
+## Admin
 
-### Later (M4–M6 and optional capabilities)
-- [ ] M4 — student app session, second path from a different interest, follow-up recall
-- [ ] M5 — `educator-paths-v1` delivery mapping, then strict import/compilation (PR-09) and curriculum persistence (PR-10)
-- [ ] M6 — explainable recommendations from reviewed connections; reviewed graph-growth proposals (PR-11)
-- [ ] Optional, each with its own qualification: deterministic safety/grounding and tutor capability (PR-04, PR-07A), telemetry lifecycle (PR-05), read-aloud, push-to-talk (PR-07)
+### Now: Release 1 MVP
 
-## Study — Optional hardening
+Build from the [Release 1 plan](../plans/release-1-mvp.md), in this order:
 
-Study is feature-complete but not hardened. These are open.
+- [ ] Walking skeleton: `lerni serve` on the home server; the educator logs in with the passcode from their own device; the iPad shows a waiting screen. Check the network boundary: home network only, no share links, analytics off, no outbound requests, nothing written to disk.
+- [ ] The catalog lists approved activities, plus drafts for educator-only preview.
+- [ ] The session controller: one shared session in memory, the tap contract, and Stop and Reset winning over taps in flight.
+- [ ] The activity on both screens: the student screen (iPad) and the educator view with Start, Stop, Reset, the recap, and draft preview.
 
-### Tests
-- [ ] Fix `tests/conftest.py` fixtures to use current models
-- [ ] Add database layer tests (`db.py` CRUD operations)
-- [ ] Add CLI integration tests (typer `CliRunner`)
-- [ ] Manual end-to-end test: full Feynman workflow → review → grade cycle
+### Now: docs and tooling
 
-### Code quality
-- [ ] Clear ruff lint debt in `src/` — 99 violations as of 2026-08-23, 74 auto-fixable. Breakdown: 55 `UP045` (`Optional[X]` → `X | None`), 19 `E501` line length, 9 `F541` empty f-strings, 6 `B904` missing `raise ... from`, 6 `I001` import order, 3 assorted. None are correctness bugs. Needs its own PR — the pre-commit gate lints only staged files, so this debt is invisible until touched.
-- [ ] Consolidate duplicate `get_lerni_dir()` into one module
-- [ ] Add `study --version` flag
-- [ ] Run mypy — fix type errors
-- [ ] Review edge cases: empty DB, invalid UUIDs, concurrent access
+- [ ] Merge [PR #4](https://github.com/torenunez/lerni/pull/4) (the docs reset) after the owner's review.
+- [ ] Cut `tests/test_curation_templates.py` from 48 tests to about 15 covering the checker's key behavior.
 
-## Study Phase 2 — Parked AI Agents and Skills
+### Later: Release 1 MVP
 
-### Infrastructure
-- [ ] Base agent class (`src/lerni/agents/base.py`) — API call abstraction, turn management, transcript capture
-- [ ] `AISession` model for transcript storage
-- [ ] Schema migration v4 — add `ai_sessions` table
-- [ ] Prompt file loading with variable substitution (`{topic_title}`, `{simple_explanation}`, etc.)
-- [ ] API key configuration in `config.toml`
-- [ ] Default prompt files (`agents/beginner.md`, `agents/expert.md`)
+- [ ] Turn the educator's plan sheet and activity card into the authoring tables and an activity file; run the checker.
+- [ ] Record the educator's four approvals in the chosen activity's file.
 
-### Beginner Agent
-- [ ] Socratic mode — probing "why" and "how" questions
-- [ ] ELI5 mode — confused beginner roleplay
-- [ ] Analogy mode — push for real-world examples
-- [ ] 3–5 turn session management with configurable limit
+### Later: Release 2 Remembering
 
-### Expert Agent
-- [ ] Rigor levels 1–5 (Gentle → Harsh)
-- [ ] Gap identification from final explanation
-- [ ] SM-2 grade suggestion
+- [ ] Write `plans/release-2-remembering.md`, starting with mapping each activity revision to the concepts it teaches.
 
-### CLI Integration
-- [ ] `--ai` flag on `study review`
-- [ ] `--mode` option (socratic, eli5, analogy)
-- [ ] `--rigor` option (1–5)
-- [ ] `study coach <id> --agent <beginner|expert>` — standalone sessions
-- [ ] `study sessions <id>` — list AI sessions for a topic
-- [ ] `study session <session_id>` — view transcript
+### Later: Release 3 Voice
 
-### Tests
-- [ ] Unit tests for agent base class (mock API)
-- [ ] Integration tests for beginner/expert agents
-- [ ] CLI tests for `--ai` flag and agent commands
+- [ ] Before choosing speech or model services, check each one's data retention for a student's audio and text, and get the educator's agreement.
 
-## Study Phase 3–5 — Parked
+### Admin tool maintenance
 
-### Analytics and export
-- [ ] `study stats` — global statistics (total topics, reviews, average grade, streaks)
-- [ ] `study stats <id>` — per-topic analytics
-- [ ] Grade trend visualization (ASCII charts)
-- [ ] `study export --all` — full JSON backup
-- [ ] `study import` — restore from backup
-- [ ] `study export-graph` — knowledge graph JSON
+- [ ] Fix outdated test fixtures in `tests/conftest.py`.
+- [ ] Add database, CLI, and full-workflow tests.
+- [ ] Clear ruff lint debt in `src/` (99 findings on 2026-08-23, mostly style).
+- [ ] Run mypy and fix type errors.
+- [ ] Add `lerni --version`.
+- [ ] Check empty-database, invalid-ID, and concurrent-access behavior.
 
-### Visualization
-- [ ] Plotly HTML reports for grade progression
-- [ ] Neo4j export for graph visualization
-- [ ] `launchd` integration (persistent notifications replacing cron)
-- [ ] Configurable reminder times
+## Student
 
-### Native apps
-- [ ] macOS menu bar app (quick review access)
-- [ ] iOS companion app (review on mobile)
-- [ ] Interactive mindmap UI
+### Later: Release 1 MVP
 
-### Additional agents
-- [ ] Interviewer Agent — technical interview simulation
-- [ ] Connector Agent — suggests links between topics
-
-### Advanced features
-- [ ] Rich media support (images, LaTeX)
-- [ ] Local LLM support (ollama) for offline AI
-- [ ] Collaborative features (share topic packs)
+- [ ] Try the MVP with the educator beside them. They can say no or stop at any time.

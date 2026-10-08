@@ -10,5 +10,4 @@ relationship_type,uses,From uses To in the context stated in the rationale.
 relationship_type,explains,Understanding From helps account for To. A substantive claim that needs review.
 relationship_type,related_to,Symmetric association justified in the rationale. No direction; a reversed copy is a duplicate.
 reviewer_role,educator,Educator reviewer.
-reviewer_role,parent,Parent or supervising adult reviewer.
 reviewer_role,subject_expert,Subject-matter expert reviewer.

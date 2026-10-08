@@ -8,7 +8,7 @@ creates no database, fetches no URL, and generates no review hash or attestation
 
 Structural validity is not approval. A clean report means the IDs, references,
 and path order are coherent. It says nothing about scientific accuracy, fit for
-a particular child, or whether a human review happened.
+a particular student, or whether a human review happened.
 
 Usage, from the repository root::
 
@@ -48,7 +48,7 @@ SCHEMA_PATH = REPO_ROOT / "curation" / "schemas" / "educator-paths-v1.json"
 
 NOTICE = (
     "Structural checks only. A valid result, a complete activity, or a 'reviewed' "
-    "status does not approve content, qualify the app, or make anything ready for a child."
+    "status does not approve content, qualify the app, or make anything ready for a student."
 )
 FORMULA_PREFIXES = ("=", "+", "-", "@")
 SEVERITY_RANK = {"error": 0, "warning": 1, "info": 2}
@@ -781,11 +781,11 @@ def _cycle_components(edges: list[tuple[str, str]]) -> dict[str, int]:
         stack = [(start, iter(graph[start]))]
         visited.add(start)
         while stack:
-            node, children = stack[-1]
-            for child in children:
-                if child not in visited:
-                    visited.add(child)
-                    stack.append((child, iter(graph[child])))
+            node, successors = stack[-1]
+            for nxt in successors:
+                if nxt not in visited:
+                    visited.add(nxt)
+                    stack.append((nxt, iter(graph[nxt])))
                     break
             else:
                 order.append(node)
@@ -801,10 +801,10 @@ def _cycle_components(edges: list[tuple[str, str]]) -> dict[str, int]:
         while stack2:
             node = stack2.pop()
             component.append(node)
-            for parent in reverse[node]:
-                if parent not in assigned:
-                    assigned.add(parent)
-                    stack2.append(parent)
+            for prev in reverse[node]:
+                if prev not in assigned:
+                    assigned.add(prev)
+                    stack2.append(prev)
         if len(component) > 1:
             label = len(set(cyclic.values()))
             cyclic.update(dict.fromkeys(component, label))
