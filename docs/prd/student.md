@@ -43,7 +43,7 @@ These hold for every release.
 
 ## Release 1: answer questions about something you love
 
-The app asks short questions about one of the one or two activities an educator wrote, and the student answers by tapping. Nothing about the student is saved. Built after the [discovery round](../roadmap.md#m2--discovery-round).
+The app asks short questions about one of the one or two activities an educator wrote, and the student answers by tapping. Nothing about the student is saved. This is the MVP: the first thing the student tries ([roadmap M2](../roadmap.md#m2--mvp)).
 
 ### Story: Work it out myself
 
@@ -121,7 +121,6 @@ Public access and a native iPad app.
 - 2026-08-23: The student app is the main product; the admin tool gets maintenance only. (No reason was recorded.)
 - 2026-09-25: The first release uses text, pictures, and taps, as the smallest app that can run a reviewed activity.
 - 2026-10-07: Voice is the student app's goal and key unlock; text and pictures come first as a stepping stone.
-- 2026-10-07: A discovery round comes before building, because watching a real session tells us what the app must do.
 - 2026-10-07: The app leads a student from idea to idea, building on what they already explored.
 - 2026-10-07: Remembering comes before voice.
 - 2026-10-07: A session starts with the app asking, or (from Release 3) the student asking. The app answers allowed questions briefly, then leads back to the learning plan.
@@ -129,6 +128,7 @@ Public access and a native iPad app.
 - 2026-10-07: The end state is free conversation without an educator involved; only sensitive subjects wait for consent, and that should be rare.
 - 2026-10-08: Sensitive subjects are allowed but personal (death, illness, the body, family matters, religion, politics).
 - 2026-10-08: The student's progress record is kept until the educator deletes it; the educator can turn remembering off.
+- 2026-10-08: There is no hand-run trial first. Release 1 is the MVP the student tests, and watching those first sessions shapes what comes next. (Replaces the 2026-10-07 discovery-round decision.)
 
 ## Open questions
 

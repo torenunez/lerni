@@ -19,25 +19,25 @@ The implementation target is a parent-supervised, local Gradio application that:
 
 These files define the technical contracts:
 
-1. [Runtime profile and bootstrap](./00a-runtime-bootstrap.md)
-2. [Documentation alignment](./01-documentation.md)
-3. [Lesson domain and content](./02-lesson-core.md)
-4. [Safety, grounding, and tutor boundary](./03-safety-tutor.md)
-5. [Normative policy algorithms](./03a-policy-algorithms.md)
-6. [Local telemetry and parent controls](./04-telemetry.md)
-7. [Gradio UI, curated visual, and read-aloud](./05-gradio-ui.md)
-8. [Push-to-talk audio input](./06-audio-input.md)
-9. [First-slice verification and supervised pilot](./07-verification.md)
-10. [Portable curation workbook and early graph](./08-graph-recommendations.md)
-11. [Curriculum persistence](./08a-curriculum-persistence.md)
-12. [Recommendation and feedback](./08b-recommendation-feedback.md)
+1. [Runtime profile and bootstrap](00a-runtime-bootstrap.md)
+2. [Documentation alignment](01-documentation.md)
+3. [Lesson domain and content](../../specs/02-lesson-core.md)
+4. [Safety, grounding, and tutor boundary](03-safety-tutor.md)
+5. [Normative policy algorithms](03a-policy-algorithms.md)
+6. [Local telemetry and parent controls](04-telemetry.md)
+7. [Gradio UI, curated visual, and read-aloud](05-gradio-ui.md)
+8. [Push-to-talk audio input](06-audio-input.md)
+9. [First-slice verification and supervised pilot](07-verification.md)
+10. [Portable curation workbook and early graph](08-graph-recommendations.md)
+11. [Curriculum persistence](08a-curriculum-persistence.md)
+12. [Recommendation and feedback](08b-recommendation-feedback.md)
 13. Rerun the graph-specific and full-regression sections of the verification plan after graph/recommendation implementation.
 
-The [master PR index](../cursor_master_plan.plan.md) owns execution order and gates. The [manual setup](../runbooks/manual-setup.md) and [private data priming](../runbooks/data-priming.md) runbooks own operator-only work.
+The [master PR index](../../README.md) owns execution order and gates. The [manual setup](../runbooks/manual-setup.md) and [private data priming](../runbooks/data-priming.md) runbooks own operator-only work.
 
 Runtime-profile/path/process primitives are PR-03; complete `build_application()` is PR-06 after lesson, tutor, telemetry, and UI interfaces exist. Graph and recommendation extensions occur only in PRs 10–11.
 
-The master index is [Explore Safe Slice](../cursor_master_plan.plan.md).
+The master index is [Explore Safe Slice](../../README.md).
 
 ## Authority and conflict resolution
 
@@ -207,7 +207,7 @@ No named voice, operating system, or local-only guarantee may be assumed.
 
 ## Step 4 — Create the runtime profile and bootstrap
 
-Follow the exact schema, derived paths, capability metadata, trust boundary, helper-process deadline, parent token, and bootstrap contract in [Runtime profile and bootstrap](./00a-runtime-bootstrap.md).
+Follow the exact schema, derived paths, capability metadata, trust boundary, helper-process deadline, parent token, and bootstrap contract in [Runtime profile and bootstrap](00a-runtime-bootstrap.md).
 
 Tests parse in-memory TOML and deterministic test plugins. They do not read the operator’s live profile or credentials.
 

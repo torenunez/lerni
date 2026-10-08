@@ -7,7 +7,7 @@ Guidance for AI coding agents in this repository. Product context: [README](READ
 - `src/lerni/student/`: the student app's core: activity format, catalog, and engine. The app itself is not built.
 - `src/lerni/` (the rest): the admin tool, the `lerni` command.
 - `curation/`: educator authoring templates and examples. `scripts/`: the curation checker and lesson index generator.
-- `docs/prd/`: the source of truth for requirements, one PRD per role. `plans/`: older detailed specs; a PRD wins where they disagree.
+- `docs/prd/`: the source of truth for requirements, one PRD per role. `plans/`: one build plan per release ([release-1-mvp.md](plans/release-1-mvp.md) is current); `plans/later/` holds older designs for reference. A PRD wins where they disagree.
 
 Python 3.11+, standard library first; typer and rich for the CLI; SQLite for admin data in `~/.lerni/`.
 

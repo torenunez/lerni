@@ -6,7 +6,7 @@
 
 These seven curriculum tables follow **part of** the older planned delivery
 schema in
-[`plans/specs/08-graph-recommendations.md`](../../../plans/specs/08-graph-recommendations.md).
+[`plans/specs/08-graph-recommendations.md`](../../../plans/later/specs/08-graph-recommendations.md).
 Their headers match that spec. That is all a header match means: **no importer
 exists**, and this folder is **not a complete import bundle**.
 
@@ -14,7 +14,7 @@ A complete delivery bundle under that spec would also need these tables, which
 are absent here: `ASSETS.csv`, `LESSONS.csv`, `LESSON_STEPS.csv`,
 `LESSON_CHECKS.csv`, `CHECK_CHOICES.csv`, and `CHECK_HINTS.csv` — plus the asset
 bytes, a manifest with integrity handling, compilation, validation, and genuine
-approvals. None of that is built ([PR-09](../../../plans/prs/09-curation-csv.md)
+approvals. None of that is built ([PR-09](../../../plans/later/prs/09-curation-csv.md)
 and later).
 
 `educator-paths-v1` is a different, separately versioned authoring contract. It

@@ -16,7 +16,7 @@ no database, no publication step, and no change to the installed lesson format.
 | Tests | [`tests/test_curation_templates.py`](../../tests/test_curation_templates.py) |
 
 This contract is **not** import-compatible with the older delivery-oriented
-schema in [`08-graph-recommendations.md`](./08-graph-recommendations.md) (the
+schema in [`08-graph-recommendations.md`](../later/specs/08-graph-recommendations.md) (the
 `curation/templates/v1/` tables), and it is not the runtime lesson TOML read by
 `src/lerni/student/catalog.py`. Getting an authored activity into the app needs a
 deliberate semantic mapping — renaming columns is not enough. That adapter is
@@ -280,15 +280,15 @@ for a student. There is no "approved" or "safe to test" flag.
 
 ## Relationship to the older curation specs
 
-- [`08-graph-recommendations.md`](./08-graph-recommendations.md) and the
+- [`08-graph-recommendations.md`](../later/specs/08-graph-recommendations.md) and the
   `curation/templates/v1/` tables remain the **legacy delivery-format draft**.
   Its INTERESTS table mixes reusable topics with learner observations, CONCEPTS
   fixes permanent roles (`kind`, `track`), and NUDGES bundles teaching moves with
   hints and reveals. `educator-paths-v1` separates those concerns. Reconciling the
   two is an explicit adapter/spec revision before any production importer is
   built (roadmap M5), not a column rename.
-- [`08a-curriculum-persistence.md`](./08a-curriculum-persistence.md) and
-  [`08b-recommendation-feedback.md`](./08b-recommendation-feedback.md) are
+- [`08a-curriculum-persistence.md`](../later/specs/08a-curriculum-persistence.md) and
+  [`08b-recommendation-feedback.md`](../later/specs/08b-recommendation-feedback.md) are
   unchanged. Their security, approval, and activation requirements still apply
   to any later publication path.
 

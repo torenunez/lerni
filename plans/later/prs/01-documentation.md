@@ -18,7 +18,7 @@ normative product story; `plans/` is the normative implementation contract.
 ## Normative plan
 
 - [Documentation alignment](../specs/01-documentation.md)
-- [Master plan](../cursor_master_plan.plan.md)
+- [Master plan](../../README.md)
 
 ## Files
 

@@ -342,7 +342,7 @@ proceed in parallel.
 
 ### Next
 
-- [PR-03 — Runtime profile and capability process boundary](../plans/prs/03-runtime-boundary.md):
+- [PR-03 — Runtime profile and capability process boundary](../plans/later/prs/03-runtime-boundary.md):
   strict provider-neutral profile parsing, private path derivation and process
   lock, `env:VAR` credential references, bounded helper-subprocess IPC, and
   readiness primitives.
@@ -468,3 +468,10 @@ anything.
 - PRDs are split by who acts: student, educator, and admin tool.
 - No requirement IDs for now; releases and stories are referred to by name.
 - The unit of learning is an "activity", not a "lesson" (the code still calls it a lesson).
+
+## 2026-10-08 (Docs reset and renames, PR #4)
+
+- Docs cut to a small set: README, three PRDs (student, educator, admin tool), learning concepts, architecture, roadmap, todo, progress.
+- Roles are only student, educator, and admin; `lerni.explore` became `lerni.student` and the `study` command became `lerni`.
+- Product direction recorded: releases 1–5 from a seeded activity to free conversation; allowlist then exclusion list; educator settings.
+- Example paths redrafted around cars, sharks, and soccer. Tests: 196 passed, 2 expected failures.

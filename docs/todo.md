@@ -6,16 +6,14 @@ The one checklist. Owners in brackets. Milestones and what completes them: [road
 
 - [ ] **[educator]** Choose an interest and a goal, sketch 3–5 activities, and prepare the first. How: [curation guide](../curation/README.md).
 - [ ] **[educator]** Try the templates in a spreadsheet app; report what is confusing.
-- [ ] **[admin]** Update the technical requirements and checks for [Release 1](prd/student.md#release-1-answer-questions-about-something-you-love) before building it.
+- [ ] **[educator]** Review the car activity's science with the [review sheet](../plans/runbooks/chain-1-source-review.md), the quickest activity to approve for the MVP.
+- [ ] **[admin]** Build the MVP from the [Release 1 plan](../plans/release-1-mvp.md): session controller, student screen, educator view, and running it for the iPad.
 
 ## Next
 
-- [ ] **[educator]** Review the first activity, try a short walkthrough, keep notes private, revise one thing.
-- [ ] **[admin]** Build the local app against test content.
-- [ ] **[admin]** Turn the reviewed activity into the app's lesson format.
-- [ ] **[reviewers]** Approve that activity's exact wording and pictures.
-- [ ] **[admin]** Show Release 1 working in the installed app.
-- [ ] **[educator]** Rehearse it, then authorize student use.
+- [ ] **[admin]** Record the educator's four approvals in the chosen activity's file.
+- [ ] **[educator]** Rehearse the MVP on the iPad, including Stop and Reset, then authorize student use.
+- [ ] **[educator]** Watch the student try the MVP, keep notes private, revise one thing.
 
 ## Tooling
 

@@ -10,7 +10,7 @@ Add a standard-library, deterministic lesson domain and one packaged, source-bac
 
 ## Normative plan
 
-- [Lesson domain and content](../specs/02-lesson-core.md)
+- [Lesson domain and content](../../specs/02-lesson-core.md)
 - [Policy algorithms](../specs/03a-policy-algorithms.md) for token/number compatibility
 - [Data priming](../runbooks/data-priming.md) for later schema parity
 

@@ -4,34 +4,34 @@ This is the proposed sequence. [Progress](progress.md) records what has happened
 
 | Milestone | Owner and dependency | What completes it |
 |---|---|---|
-| M1 — Authoring | Admin + educator | Templates, draft examples, and checker exist; educator tries them in a spreadsheet. |
-| M2 — Discovery round | Educator; usable templates | One activity tried by hand; the signals below are clear enough to design the app. |
-| M3 — First app | Admin + educator; reviewed activity | Meet [Release 1](prd/student.md#release-1-answer-questions-about-something-you-love) on the iPad; rehearse and obtain educator authorization. |
-| M4 — Continuity | Student + educators + admin; M3 | Meet [Release 2](prd/student.md#release-2-the-app-remembers-me): the app remembers progress and builds on it; an idea is reused across two interests; later recall is checked. |
-| M5 — Voice | Admin + educator; M4 and the voice decisions | Meet [Release 3](prd/student.md#release-3-talk-with-the-app) on the iPad; the educator agrees to the setup. |
-| M6 — New ideas on old ones | Admin + educator; M5 | Meet [Release 4](prd/student.md#release-4-new-ideas-grow-from-old-ones): the app proposes and drafts connected activities; educators approve each. |
-| M7 — Free conversation | Admin + educator; M6 reliable | Meet [Release 5](prd/student.md#release-5-explore-freely): the student converses without an educator involved; the educator monitors the concept map and answers rare consent requests. |
+| M1 — Authoring | Admin + educator | Templates, draft examples, and checker exist; the educator tries them in a spreadsheet. |
+| M2 — MVP | Admin + educator; one approved activity | [Release 1](prd/student.md#release-1-answer-questions-about-something-you-love) runs on the iPad, the educator rehearses and authorizes it, and the student tries it. The signals below are recorded. |
+| M3 — Continuity | Admin + educator; M2 | [Release 2](prd/student.md#release-2-the-app-remembers-me): the app remembers progress and builds on it; an idea is reused across two interests; later recall is checked. |
+| M4 — Voice | Admin + educator; M3 and the voice decisions | [Release 3](prd/student.md#release-3-talk-with-the-app) runs on the iPad; the educator agrees to the setup. |
+| M5 — New ideas on old ones | Admin + educator; M4 | [Release 4](prd/student.md#release-4-new-ideas-grow-from-old-ones): the app proposes and drafts connected activities; the educator approves each. |
+| M6 — Free conversation | Admin + educator; M5 reliable | [Release 5](prd/student.md#release-5-explore-freely): the student converses without an educator involved; the educator monitors the concept map and answers rare consent requests. |
 
-## M2 — Discovery round
+## M2 — MVP
 
-Research before building: run one activity by hand, with no app, to learn how this should work.
+The first thing the student tries is the smallest working app: one approved activity on the iPad, answered by tapping, with the educator beside them. There is no hand-run trial first; the MVP itself is how we learn.
 
-The educator chooses an interest and goal, sketches 3–5 activities, and prepares the first. Educator review it. The student tries a short walkthrough and can stop whenever they want. The educators write private notes afterward and revise one thing. Meanwhile, the admin works with test content.
+The educator chooses an interest and goal, sketches three to five activities, and prepares and approves the first. The admin builds Release 1 around it. The student tries it and can stop whenever they want. Afterward, the educator writes brief private notes and revises one thing.
 
-Signals to collect for the app:
+What to watch for in the first sessions:
 
 | Watch for | Shapes |
 |---|---|
-| How the student answers: talking, pointing, or tapping | How soon voice matters and how answers are taken |
+| Whether the student would rather talk, point, or tap | How soon voice matters |
 | Where they get stuck, and which hints help | Hint design |
 | When attention drops | Activity length and step size |
 | Whether the pictures help | Which visuals the app needs |
 | What the educator had to do: re-read, rephrase, encourage | What the app must do itself vs. leave to the educator |
 | Whether they can explain, not just pick | How understanding is checked |
+| What confused the student about the screen itself | The app's design, separate from the content |
 | How long prep took and what confused the educator | Authoring tools |
 
-Record only what actually happened; leave gaps blank. A correct choice alone is not mastery. The round succeeds when these signals are clear enough to design the first app.
+Record only what actually happened; leave gaps blank. A correct choice alone is not mastery.
 
 Next actions, with owners, are in [todo.md](todo.md).
 
-Each milestone delivers one student app release; the [student app PRD](prd/student.md#how-the-experience-grows) describes them. Admin tool maintenance: [todo](todo.md#admin-tool-maintenance).
+Each milestone from M2 delivers one student app release; the [student app PRD](prd/student.md#how-the-experience-grows) describes them. Admin tool maintenance: [todo](todo.md#admin-tool-maintenance).

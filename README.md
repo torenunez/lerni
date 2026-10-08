@@ -21,7 +21,7 @@ The student app treats knowledge as a map: **nodes** are ideas, and **edges** li
 
 Educators can then open the [curation guide](curation/README.md) to prepare a path. Admins can use the [implementation index](plans/README.md) to find detailed specifications and tasks. The [admin tool reference](docs/reference/admin.md) covers its commands and behavior.
 
-The educator and admin can start now, in parallel. A reviewed activity can be tried without the app; student app use needs the separate preparation described in the [student app PRD](docs/prd/student.md).
+The educator and admin can start now, in parallel. The first thing the student tries is the MVP app (Release 1); it needs an approved activity and the preparation described in the [student app PRD](docs/prd/student.md).
 
 ## Setup
 

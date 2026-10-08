@@ -7,12 +7,10 @@ The student app and the admin tool share a repository and Python. Today they kee
 ```text
 Authoring tables [available]
         ↓ prepare and review one activity
-        ├→ educator-led walkthrough [no app needed]
-        └→ prepare app lesson → approve exact content
-                                  ↓
-                     Catalog + engine [available]
-                                  ↓
-                Web app on iPad + educator view [planned]
+        ↓ admin turns it into the app's format; educator approves the exact content
+Catalog + engine [available]
+        ↓
+Web app on iPad + educator view: the MVP the student tries [planned]
 ```
 
 These are the steps in the process, not completed reviews. The [product requirements](prd/student.md#release-1-answer-questions-about-something-you-love) define readiness for student app use; [progress](progress.md) records what exists.

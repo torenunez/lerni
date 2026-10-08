@@ -1,6 +1,6 @@
 # Curation: start here
 
-This folder is where an educator prepares learning paths. No app is needed.
+This folder is where an educator prepares learning paths. No coding is needed.
 
 ## What to do
 
@@ -8,17 +8,17 @@ This folder is where an educator prepares learning paths. No app is needed.
 2. **Sketch 3–5 activities** in the [templates](templates/educator-paths-v1/README.md). Each needs a target idea, an order number, the teaching move that leads to it, and a goal. See the [six example paths](examples/educator-paths-v1-draft/README.md) for shape; they are drafts, not approved lessons.
 3. **Prepare only the first activity:** opening question, what you'll do, how you'll check understanding, what you hope to see, materials (or `none`).
 4. **Review it.** Read the exact wording and materials. Only then mark it `reviewed`, with your role and the real date.
-5. **Optionally try it** as a short walkthrough (below).
+5. **Watch the student try it** in the app (below).
 6. **Revise one thing,** then prepare the next activity.
 
 Send your files to the admin, who runs a checker for mistakes. A clean result means the files are consistent, not that the content is correct or approved.
 
-## A short walkthrough
+## Watching the student try it
 
-- One prepared, reviewed activity. An educator is present throughout.
+- The student tries the approved activity in the app, with you beside them.
 - Offer it in one sentence; the student may say no or stop at any time.
 - About 5–10 minutes. Finishing is not the goal.
-- Ask the prepared question. If you gave a hint, note it.
+- Notice where they get stuck, which hints help, and whether the screen itself confuses them. The [roadmap](../docs/roadmap.md#m2--mvp) lists what to watch for.
 - Afterwards, write brief private notes: what caught their interest, what confused them, what to change. Keep what happened separate from what you think it means.
 
 ## Never write in these files

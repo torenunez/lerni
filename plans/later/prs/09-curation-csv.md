@@ -5,7 +5,7 @@
 This work package is now two separate deliveries:
 
 1. **Early authoring (delivered at roadmap M1, not part of this PR's acceptance).**
-   The [`educator-paths-v1`](../specs/08c-educator-path-authoring.md) contract,
+   The [`educator-paths-v1`](../../specs/08c-educator-path-authoring.md) contract,
    blank templates, draft examples, and the offline **drafting** checker
    `scripts/validate_curation_templates.py`. That checker explains incomplete
    drafts; it is not this PR's strict parser, it does not produce
