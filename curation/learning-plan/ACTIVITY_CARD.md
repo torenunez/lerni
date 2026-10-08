@@ -1,10 +1,10 @@
 # Activity card
 
-Fill this in for the first activity only. Write it the way you would say it to the student.
+Fill this in for the next activity you're preparing, one card per activity. Write it the way you would say it to the student.
 
 **Interest:**
 **Goal for the whole plan:**
-**This activity (from your plan sheet, row 1):**
+**This activity (row number on your plan sheet):**
 
 ## What the student sees
 

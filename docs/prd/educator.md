@@ -54,7 +54,7 @@ As an educator, I want to approve an activity's exact wording and pictures, so t
 - WHEN its wording or pictures change THE SYSTEM SHALL require approval again.
 - WHEN the educator previews a draft THE SYSTEM SHALL run it only in the educator view, marked as a draft, and never on the student's screen.
 
-Approval covers four checks: the science is right, the wording suits the student, the pictures work, and it's OK to use. Approve only after the admin's technical checks pass and you have tried the activity yourself. Marking a row `reviewed` in the authoring tables is a drafting note, not approval.
+Approval covers four checks: the science is right (`science`), the wording suits the student (`student_content`), the pictures work and are described in words (`visual_accessibility`), and it's OK to use (`educator_approval`). The names in brackets are how the activity file records them. Approve only after the admin's technical checks pass and you have tried the activity yourself. Marking a row `reviewed` in the authoring tables is a drafting note, not approval.
 
 ### Story: Run a session
 

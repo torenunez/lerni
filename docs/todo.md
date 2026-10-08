@@ -8,7 +8,7 @@ Open tasks by who does the work. The educator and admin tracks run in parallel: 
 
 - [ ] Choose an interest and a goal, fill in the plan sheet (3–5 rows) and one activity card, and send them to the admin. How: [curation guide](../curation/README.md).
 - [ ] Tell the admin what was confusing about the plan sheet or the card.
-- [ ] Review the car activity's science with the [review sheet](../plans/runbooks/chain-1-source-review.md). It is the quickest activity to approve for the MVP.
+- [ ] Review the car activity's science with the [review sheet](../plans/runbooks/chain-1-source-review.md). It's the activity for the MVP, because it already exists as a draft; your own activity card comes next.
 
 ### Later: Release 1 MVP
 
@@ -42,13 +42,16 @@ Build from the [Release 1 plan](../plans/release-1-mvp.md), in this order:
 
 - [ ] Write `plans/release-2-remembering.md`, starting with mapping each activity revision to the concepts it teaches.
 
+### Later: Release 3 Voice
+
+- [ ] Before choosing speech or model services, check each one's data retention for a student's audio and text, and get the educator's agreement.
+
 ### Admin tool maintenance
 
 - [ ] Fix outdated test fixtures in `tests/conftest.py`.
 - [ ] Add database, CLI, and full-workflow tests.
 - [ ] Clear ruff lint debt in `src/` (99 findings on 2026-08-23, mostly style).
 - [ ] Run mypy and fix type errors.
-- [ ] Consolidate the duplicate `get_lerni_dir()`.
 - [ ] Add `lerni --version`.
 - [ ] Check empty-database, invalid-ID, and concurrent-access behavior.
 

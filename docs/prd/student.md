@@ -85,7 +85,7 @@ As a student, I want the app to talk with me and hear my answers, so that I can 
 
 - WHEN a step is read aloud THE SYSTEM SHALL keep its text visible.
 - WHEN the educator has authorized voice THE SYSTEM SHALL listen whenever the student holds the talk button.
-- WHEN speech is turned into text THE SYSTEM SHALL show it for correction and send nothing until confirmed.
+- WHEN speech is turned into text THE SYSTEM SHALL show it for correction and send no transcript to the conversation until the student confirms it. The audio itself goes only to a speech-to-text service the educator approved.
 - WHEN the student answers by voice THE SYSTEM SHALL judge the answer without a tap.
 - WHEN voice is unavailable THE SYSTEM SHALL still accept taps.
 - WHEN a recording has been used THE SYSTEM SHALL delete it.

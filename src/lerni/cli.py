@@ -83,7 +83,7 @@ def study_alias() -> None:
         ``study today`` behaves like ``lerni today``.
     """
     typer.echo("Note: `study` is deprecated; use `lerni`.", err=True)
-    app()
+    app(prog_name="lerni")
 
 
 if __name__ == "__main__":

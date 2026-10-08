@@ -28,7 +28,7 @@ These concepts guide how we design activities and learning paths. Examples are i
 
 *Example:* Ask the learner to explain a family cooking practice, including home-language terms. Use it to explore measurement and compare methods.
 
-*In Lerni:* each path starts from an interest the educator choose for this student.
+*In Lerni:* each path starts from an interest the educator chose for this student.
 
 **Conceptual bridging.** Connect existing understanding to a new concept through intermediate ideas or examples. A specific research approach, *bridging analogies*, uses a sequence of comparisons to make the connection understandable. [Research](https://onlinelibrary.wiley.com/doi/abs/10.1002/tea.3660301007).
 

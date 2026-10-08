@@ -1,6 +1,6 @@
-# Checking the Lesson's Science
+# Checking the Activity's Science
 
-The lesson teaches one idea: **a car's "0–60 time" is how many seconds something
+The activity teaches one idea: **a car's "0–60 time" is how many seconds something
 took — not the same thing as acceleration.** It makes four claims, all citing one
 NASA page. Read the quotes below, say whether they hold up.
 
@@ -17,7 +17,7 @@ system working.
 
 ### 1. What a 0–60 number actually means
 
-> **The lesson says:** "A 0-to-60 result reports the elapsed time for velocity to
+> **The activity says:** "A 0-to-60 result reports the elapsed time for velocity to
 > change from 0 miles per hour to 60 miles per hour."
 
 **What the NASA page says about this:** nothing. The page is about aircraft and
@@ -32,7 +32,7 @@ Your decision: ______________________________________________
 
 ### 2. What acceleration is
 
-> **The lesson says:** "Average acceleration is change in velocity divided by
+> **The activity says:** "Average acceleration is change in velocity divided by
 > elapsed time."
 
 **What the NASA page says:**
@@ -49,7 +49,7 @@ Confirmed? ☐ yes ☐ no — notes: ______________________________
 
 ### 3. Comparing two cars
 
-> **The lesson says:** "For two straight-line runs with the same initial and final
+> **The activity says:** "For two straight-line runs with the same initial and final
 > velocities, the shorter elapsed time has the greater average acceleration."
 
 **What the NASA page says:** it gives the formula `a = (V1 - V0) / (t1 - t0)`,
@@ -66,7 +66,7 @@ Confirmed? ☐ yes ☐ no — notes: ______________________________
 
 ### 4. Average isn't the whole story
 
-> **The lesson says:** "A 0-to-60 elapsed time can support average acceleration
+> **The activity says:** "A 0-to-60 elapsed time can support average acceleration
 > over the interval but does not reveal acceleration at every instant."
 
 **What the NASA page says:** it gives average acceleration as
@@ -96,8 +96,8 @@ Also confirm: no brand, no logo, no current-rankings claim, and that the 4- and
 
 ## Recording it
 
-Hand this part off if you like. What matters is that the role and date are real
-and came from you.
+The admin records this in the activity file for you. What matters is that the
+role and date are real and came from you; nobody else, and no agent, writes it.
 
 ```toml
 [[review.attestations]]
@@ -112,7 +112,7 @@ reviewed_payload_sha256 = "<the exact hash you were shown>"
 Set `retrieved_on` to the date **you** opened the page.
 
 Your name isn't recorded, only your role. The hex string fingerprints the exact
-wording you approved — edit the lesson later and it stops matching, so it goes
+wording you approved — edit the activity later and it stops matching, so it goes
 back for review.
 
 One of four checks: `science`, `student_content`, `visual_accessibility`, and `educator_approval`.

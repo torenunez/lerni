@@ -1,6 +1,6 @@
 # Older designs
 
-Earlier work packages and specs, kept unchanged for reference. They predate the current PRDs: they assume a bigger first app and use older terms (child, parent, Explore, Study). Read them for ideas when their release comes; the [PRDs](../../docs/prd/) decide what gets built.
+Earlier work packages and specs, kept for reference; only their paths and package names were updated. They predate the current PRDs: they assume a bigger first app and use older terms (child, parent, Explore, Study). Read them for ideas when their release comes; the [PRDs](../../docs/prd/) decide what gets built.
 
 | File | Useful for |
 |---|---|

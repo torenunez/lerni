@@ -18,8 +18,8 @@ status = "draft"
 
 [grounding]
 scope = "Straight-line 0-to-60 elapsed time, velocity change, and average acceleration. Excludes current car rankings, brand performance, crashes, and buying advice."
-fallback_text = "That question goes beyond this lesson. Let's save it for a grown-up to check, and come back to 0–60 time and acceleration."
-redirect_text = "Let's stay with 0–60 time and average acceleration. A grown-up can help save that other question for later."
+fallback_text = "That question goes beyond this lesson. Let's save it for your educator to check, and come back to 0–60 time and acceleration."
+redirect_text = "Let's stay with 0–60 time and average acceleration. Your educator can help save that other question for later."
 
 [[grounding.sources]]
 id = "nasa-acceleration"

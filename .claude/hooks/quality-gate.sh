@@ -41,17 +41,19 @@ if [ "$HAS_STAGED_PY" -eq 1 ]; then
     fi
 fi
 
-# Check 2: pytest — full suite, skipped only when every staged path (including
-# deletions) is Markdown. CSV/JSON are not skipped: tests read curation data.
+# Check 2: pytest — full suite, skipped only when every changed path is Markdown.
+# Staged and unstaged changes both count (so `git commit -a` can't sneak Python
+# past the skip), renames count by both names, and CSV/JSON always run tests
+# because tests read curation data.
 DOCS_ONLY=1
-STAGED=$(cd "$CWD" && git diff --cached --name-only 2>/dev/null)
-if [ -z "$STAGED" ] || echo "$STAGED" | grep -qvE '\.(md|mdc)$'; then
+CHANGED=$(cd "$CWD" && { git diff --cached --name-only --no-renames; git diff --name-only --no-renames; } 2>/dev/null)
+if [ -z "$CHANGED" ] || grep -qvE '\.(md|mdc)$' <<<"$CHANGED"; then
     DOCS_ONLY=0
 fi
 
 PYTEST=$(resolve_tool pytest)
 if [ "$DOCS_ONLY" -eq 1 ]; then
-    echo "=== pytest skipped: only Markdown staged ===" >&2
+    echo "=== pytest skipped: only Markdown changed ===" >&2
 elif [ -z "$PYTEST" ]; then
     ERRORS="${ERRORS}pytest unavailable (install .venv or put pytest on PATH). "
 else
