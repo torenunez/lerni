@@ -8,11 +8,16 @@ Record each kind of "done" only when it actually happens, with the date: code bu
 
 - **Built:** the student app's core (activity format, catalog, engine), the admin tool (`lerni`, with `study` as a deprecated alias), the educator's plan sheet and activity card (with a cars example), the admin's authoring tables, six draft example paths, and the checker. Tests: 197 passed, 2 expected failures.
 - **Not yet:** the student app's screens; any approved activity (the car activity is a draft with no approvals); any student session. The educator hasn't tried the plan sheet or card yet.
-- **Open:** the docs reset is on [pull request #4](https://github.com/torenunez/lerni/pull/4), not yet merged. The checker warns that the shark, soccer, and force records have no sources yet.
+- **Open:** the example paths have no sources for many records yet; the checker reports 51 warnings and 0 errors.
 
 When something changes, update this section and add a log entry below.
 
 ## Log
+
+### 2026-10-08 (PR #4 merged)
+
+- The docs reset, [PR #4](https://github.com/torenunez/lerni/pull/4), merged into `main` as `c930ed3` after two rounds of outside review.
+- Next: the educator's plan sheet and car-activity review, and the admin's walking skeleton, in parallel ([to-do list](todo.md)).
 
 ### 2026-10-08 (Architecture, home server, and PR #4 review)
 
