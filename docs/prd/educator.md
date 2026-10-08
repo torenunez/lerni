@@ -1,6 +1,6 @@
 # PRD: Educator tools
 
-An educator is initially heavily involved in developing and supervising the learning plan, and later steps back to occasionally monitor activities to ensure they are appropriate and safe. The educator never gates every interaction: they review the map of concepts the student explored, not transcripts. What the student experiences is in the [student app PRD](student.md). The admin's terminal work is in the [admin tool PRD](admin.md).
+An educator is initially heavily involved in developing and supervising the learning plan, and later steps back to occasionally monitor activities to ensure they are appropriate and safe. The educator never gates every interaction: they see and hear most sessions first-hand, and review the map of concepts the student explored instead of reading transcripts. What the student experiences is in the [student app PRD](student.md). The admin's terminal work is in the [admin tool PRD](admin.md).
 
 ## Outcome
 
@@ -27,7 +27,7 @@ Each step needs evidence from the one before. Student app Releases 1–3 are at 
 These hold for every release.
 
 - No terminal and no code. Educators work in the authoring spreadsheet and the app's educator view.
-- An educator is present for every session and can stop it at any moment.
+- In Release 1, the educator is present for every session. From Release 2, the educator is around for most sessions and sees and hears them first-hand, but not always. The educator can stop any session at any moment.
 - The educator keeps two lists. The **allowlist** holds the concepts and questions the app may explore while in allowlist mode; approving an activity adds to it. The **exclusion list** holds concepts never to explore, in any mode; the educator writes it before the first session and can add to it at any time. Nothing on the exclusion list is seeded, drafted, or suggested.
 - No student identity or private observations go into shared curriculum.
 - Before first use, the educator agrees to which outside services receive the student's data, and can withdraw that at any time.
@@ -137,6 +137,7 @@ Running the admin tool. Editing app code or lesson files directly.
 - 2026-10-07: Every educator task lives in this PRD; the student app PRD covers only the student. Admin terminal work stays in the admin tool PRD.
 - 2026-10-07: Moving from allowlist mode to exclusion-list mode is an educator setting, off by default and reversible; it never switches automatically.
 - 2026-10-07: The educator keeps an allowlist (used through Release 4) and an exclusion list (used in every release), set before first use and added to over time.
+- 2026-10-07: The educator is present for every Release 1 session, then usually but not always; first-hand observation plus the concept map replace reading transcripts.
 - 2026-10-07: The educator reviews the explored-concept map, not transcripts, and never gates every interaction. Consent is asked only for sensitive subjects.
 - 2026-10-07: The educator agrees to the voice setup before the microphone is first used.
 

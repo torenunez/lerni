@@ -8,7 +8,7 @@ Eventually the student talks back and forth with the app about their interests, 
 
 ## Users
 
-- **Student, about 7–9, in one family:** explores ideas that start from their own interests on an iPad, with an educator present. The goal is a conversation by voice.
+- **Student, about 7–9, in one family:** explores ideas that start from their own interests on an iPad. In Release 1 an educator is present for every session; from Release 2, usually but not always. The goal is a conversation by voice.
 
 ## Where this goes
 
@@ -32,6 +32,7 @@ These hold for every release.
 - Data about the student may leave the device, but only to services the educator has agreed to.
 - **Allowlist mode (Releases 1–4):** the app explores only concepts and questions on the educator's allowlist. Approving an activity adds its concepts to the allowlist.
 - **Exclusion-list mode (Release 5):** the app explores freely, except for concepts on the educator's exclusion list. The educator turns this mode on as a setting; the app never switches on its own.
+- The app's checks work whether or not an educator is watching.
 - In both modes, the student never sees an excluded concept or a path the educator blocked, and a sensitive subject waits for the educator's consent.
 - A session can be stopped at any moment. Stopping or resetting clears the student's screen at once, and any delayed, repeated, or earlier-session action is ignored.
 - The admin tool's commands and data keep working.
