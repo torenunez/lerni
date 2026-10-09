@@ -4,14 +4,13 @@ How Lerni works: what runs where, how a conversation grows a student's interest 
 
 ## Bird's-eye view
 
-**Built (steps 1–6):** everyone signs in at `/signin` to one app at `/app/`. Independent students (educators included) have **Ask**, one ongoing text conversation with Claude. Everyone has Learn; independent students also have Guide and My account; educators also have Students, Learning plans, and Sessions. Step 7 replaces Learn, Guide, Learning plans, and Sessions with the maps.
+**Built (steps 1–7):** everyone signs in at `/signin` to one app at `/app/`.
 
-**Planned (steps 7–10):**
+- **Independent students** (educators included) have **Ask**, one ongoing text conversation with Claude. After each exchange, a small background call (the tagger) updates their **interest map**: interests (sized by the days they come up), links, and bridges. They see it on **My map** and set their own goals there. Each exchange is kept 7 days in logs the admin reads (`lerni logs`).
+- **Educators** also have **Maps**, where they add goals to a supervised student's map and watch it, and **Students**.
+- **Supervised students** see a waiting screen until their conversation arrives.
 
-- **Every student** talks with Lerni. After each exchange, a small second call updates the student's **interest map**: interests (sized by the days they come up), links, and bridges.
-- **Educators** add **goals** to a supervised student's map (by hand, or by uploading notes Claude turns into proposed interests and goals), watch the map on **Maps**, and leave **feedback** for the admin.
-- **Independent students** see **My map** and set their own goals (things to practice).
-- **Supervised students** see only the conversation, full screen, with an adult nearby (a household rule).
+**Planned (steps 8–10):** Upload (notes Claude turns into proposed interests and goals) and **feedback** for the admin (step 8); the supervised student's conversation, full screen, with an adult nearby, a household rule (step 9); removing the old activity path (step 10).
 
 It assumes one household, a few students, one map per student. Students use an iPad or any browser on the home network. The admin tool (`lerni` in a terminal) is separate: the admin's own learning tool with its own data, plus `lerni student` and (planned) `lerni feedback`.
 
@@ -38,7 +37,7 @@ Releases 1–2 use plain HTTP on the home network and are never exposed to the i
 ```mermaid
 flowchart LR
     screen["Ask / conversation"] -- "1 question" --> convo["Conversations<br/>memory only"]
-    maps[("Interest maps<br/>planned")] -- "2 map as information" --> convo
+    maps[("Interest maps")] -- "2 map as information" --> convo
     convo -- "3 prompt" --> claude["Claude: answer<br/>(streamed)"]
     claude -- "4 answer" --> screen
     convo -. "5 the exchange" .-> tagger["Claude: tagger<br/>(small, background)"]
@@ -77,9 +76,9 @@ flowchart LR
 | Data | What it is | Owner | Where |
 |---|---|---|---|
 | Student accounts | Username, display name, kind, password hash, session version, educator flag, archived flag | Educator manages; an independent student changes their own name and password | `~/.lerni/student/students/` (built) |
-| Interest map | Entries (name, interest or goal, notes, seconds, mentions, dates) and links (related or bridge) | Educators for a supervised student; an independent student for their own | `~/.lerni/student/maps/<username>.json` (planned, step 7) |
+| Interest map | Entries (name, interest or goal, notes, days, mentions, explained and bounce dates) and links (related or bridge) | Educators for a supervised student; an independent student for their own | `~/.lerni/student/maps/<username>.json` (built) |
 | Conversation | The last 20 messages, one ongoing conversation per student | That student | Memory only; gone on New conversation or a server restart (built) |
-| Conversation logs | Each exchange and what the tagger did with it | The admin reads them (`lerni logs`) | `~/.lerni/student/logs/<username>/<date>.jsonl`, deleted after 7 days (planned, step 7) |
+| Conversation logs | Each exchange and what the tagger did with it | The admin reads them (`lerni logs`) | `~/.lerni/student/logs/<username>/<date>.jsonl`, deleted after 7 days (built) |
 | Feedback | Date, who, which map, the educator's text, the agent's summary | The admin processes it | `~/.lerni/student/feedback.jsonl` (planned, step 8) |
 | Sign-in | The signing secret; wrong-password delays | The app | `~/.lerni/student/secret.key`; delays in memory (built) |
 | Learning plans, packaged activities | The older activity path | — | `plans/`, `lessons/` (built; removed in step 10) |
@@ -95,15 +94,15 @@ If a change would break one of these, stop and ask.
 4. **Home network only.** See [trust boundaries](#trust-boundaries).
 5. **Every request resolves the signed-in account on the server** by re-reading its record. A student never reaches another student's map or conversation, or an educator action.
 6. **Outside services go behind an adapter**, with credentials as `env:VAR` references. Tests use fakes.
-7. **The core never imports Gradio.** The core (`students`, `signin`, `jsonfiles`, `conversation`, and the planned `interests`) uses only the standard library. Provider SDKs live only in `adapters/`; screens (`web/`) may import Gradio, an optional install. The student package never opens the admin tool's database.
+7. **The core never imports Gradio.** The core (`students`, `signin`, `jsonfiles`, `conversation`, `interests`, `tagging`, `logs`) uses only the standard library. Provider SDKs live only in `adapters/`; screens (`web/`) may import Gradio, an optional install. The student package never opens the admin tool's database.
 
 ## Codemap
 
 Every code file, one line each: [code manifest](code-manifest.md).
 
-- `src/lerni/student/`: `students.py` (accounts and passwords), `signin.py` (the signed cookie, who's signed in), `jsonfiles.py` (atomic JSON writes), `conversation.py` (the prompt, in-memory conversations), `personas/` (one starting persona per kind of student), `adapters/claude_code.py` (Claude through the Claude Code CLI; prototype). Planned: `interests.py` (the map and its store). Removed in step 10: `domain.py`, `catalog.py`, `engine.py`, `canonical.py`, `lessons/`, `plans.py`, `plan_import.py`, `seed/`.
-- `src/lerni/student/web/`: the Gradio screens: `signin_page.py`, `main.py` (tabs by role), `ask.py`, `accounts.py`, and today's `educator.py` (replaced by Maps in step 7).
-- `src/lerni/cli.py`, `commands/`, `db.py`, `sm2.py`: the admin tool.
+- `src/lerni/student/`: `students.py` (accounts and passwords), `signin.py` (the signed cookie, who's signed in), `jsonfiles.py` (atomic JSON writes), `conversation.py` (the prompt, in-memory conversations), `personas/` (one starting persona per kind of student), `interests.py` (the map, its rules, and its store), `tagging.py` (the tagger and the map keeper), `logs.py` (7-day conversation logs), `adapters/claude_code.py` (Claude through the Claude Code CLI, including the tagger; prototype). Removed in step 10: `domain.py`, `catalog.py`, `engine.py`, `canonical.py`, `lessons/`, `plans.py`, `plan_import.py`, `seed/`.
+- `src/lerni/student/web/`: the Gradio screens: `signin_page.py`, `main.py` (tabs by role), `ask.py`, `maps.py` (My map and Maps), `mapdraw.py` (the inline SVG picture and the list), `accounts.py`; `educator.py` is off the screens and goes in step 10.
+- `src/lerni/cli.py`, `commands/`, `db.py`, `sm2.py`: the admin tool, plus `commands/student.py` and `commands/logs.py` for the student app.
 - `tests/`: pytest, fakes only. `plans/`: build plans and specs.
 
 ## Later releases

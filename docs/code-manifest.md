@@ -74,6 +74,7 @@ What every code file does, in the order a request flows through it. When you add
 | `src/lerni/commands/question.py` | Create, edit, show, and delete study questions and their explanation history. |
 | `src/lerni/commands/review.py` | The daily review: explain from memory, grade yourself, schedule the next review. |
 | `src/lerni/commands/organize.py` | List, search, and tag questions; manage the admin's own concept tree. |
+| `src/lerni/commands/logs.py` | `lerni logs [USERNAME]`: the admin reads the last 7 days of conversations, each with what the tagger did, to check the maps. |
 | `src/lerni/commands/student.py` | `lerni student add`, `reset-password`, `educator`, and `list`: the admin's way to add the first educator account and to recover; passwords at a hidden prompt. |
 | `src/lerni/commands/notify.py` | macOS reminders for reviews that are due. |
 | `src/lerni/commands/__init__.py` | Marks the commands package. |
@@ -87,6 +88,7 @@ What every code file does, in the order a request flows through it. When you add
 
 | File | What it does |
 |---|---|
+| `scripts/eval_tagger.py` | Tagger evals: three real cases (an interest and a dislike, a bridge, a personal detail), run by hand with the admin's Claude account. |
 | `scripts/generate_lesson_index.py` | Rebuilds `lesson_index.toml` from the real bytes after an activity or picture changes. It never approves anything. |
 
 ## Tests
@@ -111,7 +113,7 @@ Minimal on purpose: one happy path per module, plus a test for each safety guara
 | `tests/student/test_claude_code_adapter.py` | Every Claude call (drafter, chat, tagger) runs with no tools, no settings, and no saved transcripts. |
 | `tests/student/test_plan_import.py` | Rough notes become an unsaved plan; nothing is sent to Claude without consent. |
 | `tests/student/test_web_signin.py` | Signed-out visits go to the sign-in form; a right password opens the app; Sign out ends it; a first start says how to add the first account. |
-| `tests/student/test_cli_student.py` | The admin adds the first educator account from the terminal. |
+| `tests/student/test_cli_student.py` | The admin adds the first educator account from the terminal, and reads the conversation logs. |
 | `tests/student/test_serve.py` | Ctrl-C stops the server within a few seconds, even with pages open. |
 | `tests/student/test_web_roles.py` | Students can't manage accounts; cleared fields each get their own update; the page config carries no plans or other students' names; each role opens on a tab it can see; only independent students can ask; a map is reached only by its owner, or by an educator for a supervised student. |
 | `tests/student/test_core_imports.py` | The core imports only the standard library (never Gradio or a provider SDK). |

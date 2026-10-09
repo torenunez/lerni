@@ -29,10 +29,9 @@ How PRs are split:
 
 | # | PR | Branch | Ships | Done when | Status |
 |---|---|---|---|---|---|
-| 1 | Step 7: the interest map | `feat/interest-map` | `interests.py` and its store; the tagger; the 7-day logs and `lerni logs`; the steering prompt; My map and Maps (inline SVG picture, the list); old tabs and the Topic picker removed | The admin sees their interests on their map, checks it against the logs, adds a goal, and sees a bridge | Not started |
-| 2 | Step 8: upload and feedback | `feat/upload-and-feedback` | Upload proposes interests and goals, for educators and independent students; the Feedback box; `lerni feedback`; upload evals | The educator uploads notes and adds goals; the admin sees feedback summarized | Not started |
-| 3 | Step 9: the supervised conversation | `feat/supervised-conversation` | First the "before step 9" items below; then the supervised student's full-screen conversation; the supervised persona and rules; their map grows | The supervised student talks with Lerni, the educator beside them, and the map grows | Not started |
-| 4 | Step 10: remove the old activity path | `chore/remove-activities` | Plans, the old import, catalog, engine, lessons, seed, the index script, and their tests and docs | Tests pass; the code manifest matches | Not started |
+| 1 | Step 8: upload and feedback | `feat/upload-and-feedback` | Upload proposes interests and goals, for educators and independent students; the Feedback box; `lerni feedback`; upload evals | The educator uploads notes and adds goals; the admin sees feedback summarized | Not started |
+| 2 | Step 9: the supervised conversation | `feat/supervised-conversation` | First the "before step 9" items below; then the supervised student's full-screen conversation; the supervised persona and rules; their map grows | The supervised student talks with Lerni, the educator beside them, and the map grows | Not started |
+| 3 | Step 10: remove the old activity path | `chore/remove-activities` | Plans, the old import, catalog, engine, lessons, seed, the index script, and their tests and docs | Tests pass; the code manifest matches | Not started |
 
 After these, Release 1 needs sessions, not code: the educator sets goals, rehearses, and sits beside the supervised student (Educator and Student tasks above and below).
 
@@ -45,6 +44,10 @@ After these, Release 1 needs sessions, not code: the educator sets goals, rehear
 - [ ] Try Ask on the iPad and a phone with the keyboard open; then a VoiceOver and keyboard-only pass.
 - [ ] Maybe: a daily cap per student once others use it.
 - [ ] Before anyone outside the family uses Ask: a short notice of where messages go and that answers can be wrong.
+
+### Interest map: later
+
+- [ ] When a map outgrows the picture (more than 15 entries drawn): show more, for example by grouping or a focus on one entry and its links; the list below already has them all.
 
 ### Later: Release 2 Remembering
 

@@ -23,7 +23,7 @@ console = Console()
 
 
 # Commands that must not touch the admin tool's database.
-_NO_DB_COMMANDS = {"serve", "student"}
+_NO_DB_COMMANDS = {"serve", "student", "logs"}
 
 
 @app.callback()
@@ -36,7 +36,7 @@ def main_callback(ctx: typer.Context):
 # Import and register commands after app is created to avoid circular imports
 def register_commands():
     """Register all command modules."""
-    from .commands import notify, organize, question, review, serve, student
+    from .commands import logs, notify, organize, question, review, serve, student
 
     # Question commands (at root level)
     app.command("new")(question.new_question)
@@ -72,6 +72,7 @@ def register_commands():
     # Student app
     app.command("serve")(serve.serve_cmd)
     app.add_typer(student.student_app, name="student")
+    app.command("logs")(logs.logs_cmd)
 
 
 # Register commands

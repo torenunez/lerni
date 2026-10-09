@@ -14,3 +14,13 @@ def test_admin_adds_the_first_educator_from_the_terminal():
     )
     assert result.exit_code == 0, result.output
     assert StudentStore().get("alba").educator
+
+
+def test_logs_shows_the_last_exchanges():
+    from lerni.student.logs import ConversationLog
+
+    ConversationLog().write("sam", {"question": "I love cars", "answer": "Vroom!",
+                                    "tags": {"new_interests": ["cars"]}})
+    result = CliRunner().invoke(app, ["logs", "sam"])
+    assert result.exit_code == 0, result.output
+    assert "I love cars" in result.output and "new_interests" in result.output
