@@ -147,9 +147,9 @@ def propose_for(
 
 def add_proposals(
     maps: MapStore, students: StudentStore, viewer: Viewer | None, requested: str | None,
-    proposals: list[Proposal], picked: list[str],
+    proposals: list[Proposal], picked: list[str], proposed_for: str | None = None,
 ) -> str:
-    """Add the ticked proposals to a map this viewer may edit."""
+    """Add the ticked proposals to a map this viewer may edit, if they were made for it."""
     chosen = [p for p in proposals if p.label in set(picked or [])]
     if not chosen:
         return "⚠️ Tick at least one first."
@@ -157,6 +157,8 @@ def add_proposals(
         owner = map_owner(students, viewer, requested)
     except NotAllowed as exc:
         return f"⚠️ {exc}"
+    if proposed_for is not None and owner != proposed_for:
+        return "⚠️ Those ideas were for another map. Ask Claude again for this one."
     added, skipped = maps.change(owner, lambda m: apply_proposals(m, chosen))
     message = f"✅ Added {added}."
     return message + (" Skipped: " + "; ".join(skipped) if skipped else "")
@@ -232,7 +234,7 @@ def map_tab(
             ideas_notes = gr.Markdown()
             ideas = gr.CheckboxGroup(label="Tick what to add", choices=[])
             add_ideas = gr.Button("Add ticked", variant="primary")
-            held = gr.State([])  # the proposals shown, kept on the server for this page
+            held = gr.State({})  # the ideas shown and whose map they're for, kept on the server
         if not mine:
             with gr.Accordion("Feedback for the admin", open=False):
                 fb_text = gr.Textbox(label="What should change? (the app, or this map)",
@@ -280,17 +282,24 @@ def map_tab(
                                                 requested_of(requested), t, path)
             shown_notes = "\n".join(f"- {n}" for n in notes)
             labels = [p.label for p in found]
+            try:  # remember whose map the ideas are for
+                owner = map_owner(students, viewer, requested_of(requested))
+            except NotAllowed:
+                owner = None
+            found = {"owner": owner, "ideas": found}
             # the file is gone from the server either way; clear the box and the picker
             return [message, shown_notes, gr.update(choices=labels, value=[]), found,
-                    *cleared(1, bool(found)), None]
+                    *cleared(1, bool(labels)), None]
 
         def on_add_ideas(picked: list[str], found: list[Any], requested: str | None,
                          current: str | None, request: gr.Request) -> list[Any]:
             viewer = signin.viewer(request.username)
-            message = add_proposals(maps, students, viewer, requested_of(requested), found, picked)
+            held_ideas = found.get("ideas", []) if isinstance(found, dict) else []
+            message = add_proposals(maps, students, viewer, requested_of(requested), held_ideas,
+                                    picked, proposed_for=found.get("owner") if held_ideas else None)
             done = message.startswith("✅")
             box = gr.update(choices=[], value=[]) if done else gr.update()
-            return [message, box, [] if done else found, *show(requested, current, request)]
+            return [message, box, {} if done else found, *show(requested, current, request)]
 
         shown = [picture, words, entry]  # order matches show()
         # Gradio needs a component for "which student"; My map passes a hidden empty one

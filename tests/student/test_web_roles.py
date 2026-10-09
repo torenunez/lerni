@@ -167,3 +167,18 @@ def test_upload_and_feedback_check_who_is_asking(tmp_path):
     assert save_feedback(store, students, EDUCATOR, "zoe", "hi", "").startswith("⚠️")
     assert save_feedback(store, students, EDUCATOR, "lee", "more soccer", "").startswith("✅")
     assert [(f.who, f.map) for f in store.entries()] == [("alba", "lee")]
+
+
+def test_ideas_made_for_one_student_never_land_on_another(tmp_path):
+    # regression: switching the Student dropdown after Upload added A's ideas to B's map
+    from lerni.student.interests import MapStore
+    from lerni.student.upload import Proposal
+    from lerni.student.web.maps import add_proposals
+
+    students, maps = StudentStore(tmp_path), MapStore(tmp_path)
+    for name in ("lee", "kim"):
+        students.add(name, name.title(), Kind.SUPERVISED, "1234")
+    ideas = [Proposal("goal", "Fractions")]
+    message = add_proposals(maps, students, EDUCATOR, "kim", ideas, [ideas[0].label],
+                            proposed_for="lee")
+    assert message.startswith("⚠️") and maps.get("kim").entries == []
