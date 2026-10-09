@@ -65,17 +65,18 @@ def serve(host: str, port: int, passcode_env: str = DEFAULT_PASSCODE_ENV) -> Non
 
     Raises:
         MissingPasscodeError: If the passcode variable is unset or empty.
+        ValueError: If the passcode is shorter than 8 characters.
     """
     passcode = resolve_passcode(passcode_env)
 
     import uvicorn
 
-    from lerni.student.web.app import EDUCATOR_PATH, build_app
+    from lerni.student.web.app import build_app
 
     drafter = _claude_drafter()
     app = build_app(passcode, drafter=drafter)
-    print(f"Student screen:  http://<this-computer>:{port}/", flush=True)
-    print(f"Educator view:   http://<this-computer>:{port}{EDUCATOR_PATH}/", flush=True)
+    print(f"Sign in:  http://<this-computer>:{port}/", flush=True)
+    print("Educator: username 'educator' and the passcode. Students: their own.", flush=True)
     status = f"on ({drafter.model})" if drafter else "off (the claude CLI isn't installed)"
     print(f"Plan import with Claude: {status}", flush=True)
     print("Home network only. Press Ctrl-C to stop.", flush=True)

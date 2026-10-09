@@ -10,7 +10,9 @@ What every code file does, in the order a request flows through it. When you add
 |---|---|
 | `src/lerni/commands/serve.py` | The `lerni serve` command: reads its options and starts the student app, with a friendly message if Gradio isn't installed. |
 | `src/lerni/student/web/serve.py` | Reads the educator passcode from its environment variable, picks the Claude drafter if the `claude` CLI is installed, builds the app, and runs the web server. |
-| `src/lerni/student/web/app.py` | Builds the server: the student screen at `/` (no login) and the educator view at `/educator/` behind the passcode. Turns off Gradio's analytics, run history, API pages, and other extras, and sets the look (system fonts, the playful waiting screen). |
+| `src/lerni/student/web/app.py` | Builds the server: the sign-in page, and one Gradio app at `/app/` that Gradio's `auth_dependency` re-checks on every request. Turns off Gradio's analytics, run history, API pages, and other extras, and sets the look (system fonts, the playful waiting screen). Refuses an educator passcode under 8 characters. |
+| `src/lerni/student/web/signin_page.py` | The sign-in page: a plain HTML form Safari can save, the signed cookie, Sign out (this device only), and sending signed-out visits to it. |
+| `src/lerni/student/web/main.py` | The one app's page: the header and the tabs by role. |
 
 **The screens** (the only code that imports Gradio)
 
@@ -92,7 +94,7 @@ Minimal on purpose: one happy path per module, plus a test for each safety guara
 | `tests/student/test_students.py` | An account saves and checks its password; bad, reserved, and archived usernames are refused. |
 | `tests/student/test_signin.py` | A cookie stops working after a reset; wrong passwords wait without signing anyone out. |
 | `tests/student/test_plan_import.py` | Rough notes become an unsaved plan; nothing is sent to Claude without consent. |
-| `tests/student/test_web_skeleton.py` | The student screen is open; the educator view refuses requests without the passcode and opens with it. |
+| `tests/student/test_web_signin.py` | Signed-out visits go to the sign-in form; a right password opens the app; Sign out ends it; a short passcode is refused. |
 | `tests/student/test_core_imports.py` | The core imports only the standard library (never Gradio or a provider SDK). |
 | `tests/student/test_distribution.py` | The built package ships the activity files byte for byte (slow; needs `build`). |
 | `tests/student/conftest.py` | Shared test data: a synthetic activity, and a temporary data folder for every test. |

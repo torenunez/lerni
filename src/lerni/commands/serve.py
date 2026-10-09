@@ -14,7 +14,7 @@ def serve_cmd(
         help="Environment variable that holds the educator passcode.",
     ),
 ) -> None:
-    """Run the student app: the student screen and the passcode-protected educator view."""
+    """Run the student app: the sign-in page and the app with tabs by role."""
     try:
         from lerni.student.web.serve import MissingPasscodeError, serve
     except ImportError:
@@ -22,6 +22,6 @@ def serve_cmd(
         raise typer.Exit(1) from None
     try:
         serve(host=host, port=port, passcode_env=passcode_env)
-    except MissingPasscodeError as exc:
+    except (MissingPasscodeError, ValueError) as exc:
         console.print(f"[red]{exc}[/red]")
         raise typer.Exit(1) from None

@@ -1,33 +1,31 @@
-"""Build the student app: two Gradio apps on one server.
+"""Build the student app: a sign-in page and one Gradio app with tabs by role.
 
-The student screen is mounted at ``/`` with no login. The educator view is a
-separate app mounted at ``/educator`` behind the educator's passcode, so the
-server checks the passcode for every educator request. See the trust
-boundaries in ``docs/ARCHITECTURE.md``.
+Signed-out visits go to ``/signin``; the app lives at ``/app/``. Gradio's
+``auth_dependency`` re-checks the signed cookie on every request, and every
+handler re-resolves the viewer. See the trust boundaries in
+``docs/ARCHITECTURE.md``.
 """
 
 from __future__ import annotations
 
-import hmac
 import os
-from typing import TYPE_CHECKING
+from pathlib import Path
 
 # Must be set before Gradio is imported: it also disables the version check.
 os.environ["GRADIO_ANALYTICS_ENABLED"] = "False"
 
 import gradio as gr  # noqa: E402
-from fastapi import FastAPI  # noqa: E402
+from fastapi import FastAPI, Request  # noqa: E402
 
 from lerni.student.catalog import PackageLessonCatalog  # noqa: E402
 from lerni.student.plan_import import PlanDrafter  # noqa: E402
-from lerni.student.plans import PlanStore  # noqa: E402
-from lerni.student.web.educator import build_educator_view  # noqa: E402
+from lerni.student.plans import PlanStore, default_data_dir  # noqa: E402
+from lerni.student.signin import COOKIE_NAME, SignIn, load_secret  # noqa: E402
+from lerni.student.students import StudentStore  # noqa: E402
+from lerni.student.web.main import build_main_view  # noqa: E402
+from lerni.student.web.signin_page import APP_PATH, add_signin_routes  # noqa: E402
 
-if TYPE_CHECKING:
-    from collections.abc import Callable
-
-EDUCATOR_PATH = "/educator"
-EDUCATOR_USERNAME = "educator"
+MIN_PASSCODE = 8
 
 # System fonts only, so the iPad never loads fonts from the internet.
 _SYSTEM_FONTS = ("-apple-system", "system-ui", "Helvetica Neue", "Arial", "sans-serif")
@@ -113,88 +111,53 @@ def _theme() -> gr.themes.Base:
     return gr.themes.Base(font=_SYSTEM_FONTS, font_mono=_MONO_FONTS)
 
 
-def passcode_checker(passcode: str) -> Callable[[str, str], bool]:
-    """Return a login check for the educator view.
-
-    Args:
-        passcode: The educator's passcode. Must not be empty.
-
-    Returns:
-        A function Gradio calls with the typed username and password. It
-        accepts only the username ``educator`` and the exact passcode, using a
-        constant-time comparison.
-
-    Raises:
-        ValueError: If ``passcode`` is empty.
-
-    Example:
-        >>> check = passcode_checker("s3cret")
-        >>> check("educator", "s3cret"), check("educator", "guess")
-        (True, False)
-    """
-    if not passcode:
-        raise ValueError("the educator passcode must not be empty")
-    expected = passcode.encode("utf-8")
-
-    def check(username: str, password: str) -> bool:
-        user_ok = hmac.compare_digest(username.encode("utf-8"), EDUCATOR_USERNAME.encode())
-        pass_ok = hmac.compare_digest(password.encode("utf-8"), expected)
-        return user_ok and pass_ok
-
-    return check
-
-
-def _student_screen() -> gr.Blocks:
-    """The iPad screen. For now it greets the student and waits for the educator."""
-    with gr.Blocks(title="Lerni", analytics_enabled=False) as blocks:
-        gr.HTML(_WELCOME_HTML)
-    return blocks
+MIN_PASSCODE_MESSAGE = f"The educator passcode needs at least {MIN_PASSCODE} characters."
 
 
 def build_app(
     passcode: str,
+    *,
+    data_root: Path | None = None,
     store: PlanStore | None = None,
     catalog: PackageLessonCatalog | None = None,
     drafter: PlanDrafter | None = None,
 ) -> FastAPI:
-    """Build the server with the student screen and the educator view.
+    """Build the server: the sign-in page and the app at ``/app/``.
 
     Args:
-        passcode: The educator's passcode, already resolved from the
-            environment by the caller. Must not be empty.
-        store: Where learning plans are saved; defaults to the home
-            server's plan folder (``$LERNI_STUDENT_DATA`` or ``~/.lerni/student``).
-        catalog: The activity catalog; defaults to the packaged activities.
-        drafter: Claude behind an adapter for importing rough plans; ``None``
-            turns the import off.
-
-    Returns:
-        A FastAPI app with the educator view at ``/educator`` (passcode
-        required) and the student screen at ``/`` (no login).
+        passcode: The educator passcode, already read from the environment.
+        data_root: The home server's data folder; defaults to ``$LERNI_STUDENT_DATA``
+            or ``~/.lerni/student``.
+        store: Learning plans; defaults to the plan folder under ``data_root``.
+        catalog: Packaged activities; defaults to the ones shipped with Lerni.
+        drafter: Claude behind an adapter for imports; ``None`` turns imports off.
 
     Raises:
-        ValueError: If ``passcode`` is empty.
+        ValueError: The passcode is shorter than 8 characters.
     """
-    check = passcode_checker(passcode)
+    if len(passcode) < MIN_PASSCODE:
+        raise ValueError(MIN_PASSCODE_MESSAGE)
+    root = data_root or default_data_dir()
+    students = StudentStore(root)
+    signin = SignIn(students, passcode, load_secret(root))
     # our own server; we turn off its docs pages too
     app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
-    # Mount the educator view first so "/" doesn't swallow its path.
-    app = gr.mount_gradio_app(
+    add_signin_routes(app, signin)
+
+    def current_user(request: Request) -> str | None:
+        # runs on every request: no valid cookie, no access
+        viewer = signin.viewer_from_cookie(request.cookies.get(COOKIE_NAME))
+        return viewer.username if viewer else None
+
+    view = build_main_view(
+        signin, store or PlanStore(root), catalog or PackageLessonCatalog(), students, drafter
+    )
+    return gr.mount_gradio_app(
         app,
-        build_educator_view(store or PlanStore(), catalog or PackageLessonCatalog(), drafter),
-        path=EDUCATOR_PATH,
-        auth=check,
-        auth_message="Enter the username <b>educator</b> and your passcode.",
+        view,
+        path=APP_PATH,
+        auth_dependency=current_user,
         theme=_theme(),
         css=_CSS,
         **_MOUNT_OPTIONS,
     )
-    app = gr.mount_gradio_app(
-        app,
-        _student_screen(),
-        path="/",
-        theme=_theme(),
-        css=_CSS,
-        **_MOUNT_OPTIONS,
-    )
-    return app
