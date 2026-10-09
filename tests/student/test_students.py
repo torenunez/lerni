@@ -1,5 +1,7 @@
 """Student accounts: saved, checked, and refused when the username isn't canonical."""
 
+import subprocess
+import sys
 import threading
 import time
 
@@ -69,3 +71,43 @@ def test_a_rename_can_not_undo_an_archive_made_meanwhile(tmp_path, monkeypatch):
     store.archive("sam")
     rename.join()
     assert real_get("sam").archived
+
+
+# a separate process (like `lerni student`) renames, pausing between its read and write
+_SLOW_RENAME = """
+import sys, time
+from pathlib import Path
+from lerni.student.students import StudentStore
+root = Path(sys.argv[1])
+store, real_get = StudentStore(root), StudentStore.get
+def slow_get(self, username):
+    s = real_get(self, username)
+    (root / "read").touch()  # tell the test the old record is read
+    time.sleep(0.5)  # the reset tries to land here
+    return s
+StudentStore.get = slow_get
+store.rename("sam", "Samuel")
+"""
+
+
+def test_a_reset_in_another_process_is_not_undone(tmp_path):
+    store = StudentStore(tmp_path)
+    store.add("sam", "Sam", Kind.INDEPENDENT, "long enough")
+    child = subprocess.Popen([sys.executable, "-c", _SLOW_RENAME, str(tmp_path)])
+    for _ in range(100):  # wait up to 10 s for the child to read
+        if (tmp_path / "read").exists():
+            break
+        time.sleep(0.1)
+    store.reset_password("sam", "a new password")
+    assert child.wait(timeout=10) == 0
+    sam = store.get("sam")
+    assert sam.session_version == 2 and verify_password("a new password", sam.password)
+
+
+def test_an_archived_account_can_not_become_an_educator(tmp_path):
+    store = StudentStore(tmp_path)
+    store.add("sam", "Sam", Kind.INDEPENDENT, "long enough")
+    store.archive("sam")
+    with pytest.raises(AccountError):
+        store.set_educator("sam", True)
+    assert not store.get("sam").educator

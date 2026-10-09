@@ -4,15 +4,20 @@ Where things really stand, then a dated log, newest first. Completed work is rec
 
 Record each kind of "done" only when it actually happens, with the date: code built, content approved, app ready, a student session held. Passing tests show code behaves as specified; they don't make anything ready for a student.
 
-## Current state (2026-10-09, steps 1–6 merged; interest map designed)
+## Current state (2026-10-09, steps 1–6 merged; interest map designed and approved)
 
-- **Built:** the student app's core (activity format, catalog, engine, learning plans, the Claude import, student accounts, sign-in, Ask Lerni's conversations); `lerni serve` with a sign-in page and one app with tabs by role: everyone's Learn; an independent student's Ask (one ongoing text conversation with Claude, phone first), Guide, and My account; and an educator's Sessions, Learning plans, and Students on top. The admin tool (`lerni`, with `lerni student` for the first educator and recovery). A [code manifest](code-manifest.md) of every file. Tests: 60 passed, 2 expected failures.
-- **Designed:** the interest map, goals, the tagger, upload, feedback, and the supervised conversation ([specs/04-interest-map.md](../plans/specs/04-interest-map.md)); upload and the build order are proposals awaiting the admin's review.
+- **Built:** the student app's core (activity format, catalog, engine, learning plans, the Claude import, student accounts, sign-in, Ask Lerni's conversations); `lerni serve` with a sign-in page and one app with tabs by role: everyone's Learn; an independent student's Ask (one ongoing text conversation with Claude, phone first), Guide, and My account; and an educator's Sessions, Learning plans, and Students on top. The admin tool (`lerni`, with `lerni student` for the first educator and recovery). A [code manifest](code-manifest.md) of every file. Tests: 63 passed, 2 expected failures.
+- **Designed:** the interest map, goals, the tagger, upload, feedback, and the supervised conversation ([specs/04-interest-map.md](../plans/specs/04-interest-map.md)); approved with PR #12.
 - **Not yet:** the interest map and tagger (step 7); upload and feedback (step 8); the supervised conversation (step 9); removing the old activity path (step 10); any supervised student session.
 
 When something changes, update this section and add a log entry below.
 
 ## Log
+
+### 2026-10-09 (PR #12 merged: the interest map design; review follow-ups)
+
+- PR #12 (the interest map design and the docs reframed) merged after two outside reviews. The admin's calls: interests sized by the days they come up and goals by the days the student explained them back (Lerni's guess), not time; every student's conversation kept for 7 days in logs the admin reads (`lerni logs`), so the map can be checked against what was said; no app-enforced co-presence or automatic reply check in Release 1 (a household rule keeps an adult nearby); no API key planned; Remove means gone for good; a wrong "explained" is corrected through Feedback; the docs describe no student by age.
+- Review follow-ups: account writes now take a lock file shared by the server and `lerni student`, so a terminal reset can't be undone by an edit in the app; sign-in makes its cookie from the record whose password it checked, so a reset during sign-in still wins; the commit check reads a last line with no newline; new tests for the Students handlers' roster and for archived accounts and educator access.
 
 ### 2026-10-09 (direction change: the interest map; PR #11 merged)
 

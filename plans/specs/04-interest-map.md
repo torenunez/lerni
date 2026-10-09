@@ -1,6 +1,6 @@
 # The interest map: one conversation, interests and goals
 
-Approved in conversation on 2026-10-09 (sections "What each person sees" through "Educator feedback"), then revised the same day after two outside reviews. "Upload" and "Build order" are proposals for the admin's review. It replaces the activity cards, learning plans, approvals, Explore freely, and the plan import from [spec 03](03-student-accounts.md); that spec's accounts and sign-in sections still hold. Requirements: [student PRD](../../docs/prd/student.md), [educator PRD](../../docs/prd/educator.md). Paths below are under the student data folder, `~/.lerni/student/` (or `$LERNI_STUDENT_DATA`).
+Approved in conversation on 2026-10-09 (sections "What each person sees" through "Educator feedback"), then revised the same day after two outside reviews; the whole spec, Upload and Build order included, approved when PR #12 merged. It replaces the activity cards, learning plans, approvals, Explore freely, and the plan import from [spec 03](03-student-accounts.md); that spec's accounts and sign-in sections still hold. Requirements: [student PRD](../../docs/prd/student.md), [educator PRD](../../docs/prd/educator.md). Paths below are under the student data folder, `~/.lerni/student/` (or `$LERNI_STUDENT_DATA`).
 
 ## Why
 
@@ -95,7 +95,7 @@ Left out of the map to keep it minimal: stepping-stone ideas between an interest
 - The conversation runs through the admin's Claude account, like everything else in the prototype. An API key is not planned; revisit before anyone outside the family uses the app.
 - **No automatic reply check in Release 1.** Replies stream; the adult nearby and the 7-day logs are the check. The supervised persona and the supervised rules are prompt instructions kept in code: short, gentle, never "wrong"; subjects on the starting exclusion list (violence, weapons, sexual content, self-harm, drugs) and anything scary or sad get a kind redirect to their educator and something fun instead. Lerni says plainly it's a computer helper and never pretends to be a person. Personas describe a style (short, simple, playful), never an age; step 9 rewords `supervised.md` and `independent.md` to match.
 
-## Upload (proposed)
+## Upload
 
 - On Maps and on My map (so independent students can use it too), **Upload**: paste notes in any shape, or upload a .txt, .md, .docx, or .pdf, as the plan import accepts today. Module: `src/lerni/student/upload.py`.
 - Claude returns a list of proposed entries, each labeled **interest** (something they love, to seed the map) or **goal** (with short notes), for that kind of student. The prompt keeps today's instruction to write "the student" instead of any real name. Nothing is saved until the person ticks which to add and presses **Add**, so the goals and notes are still set by a person. Uploaded interests start with no days and grow as they come up.
@@ -110,7 +110,7 @@ Left out of the map to keep it minimal: stepping-stone ideas between an interest
 - Saved to `feedback.jsonl`: date, who, which student's map (if any), their text, and the summary.
 - The admin processes it in the terminal: `lerni feedback` lists entries, `lerni feedback --summary` asks Claude to group the open ones into themes, `lerni feedback done N` marks one handled. Changes are made by hand.
 
-## Build order (proposed)
+## Build order
 
 One PR per step, each from `main`, in this order. Steps 1–6 are built ([Release 1 plan](../release-1-mvp.md)).
 

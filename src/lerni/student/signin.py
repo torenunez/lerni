@@ -23,6 +23,7 @@ from lerni.student.students import (
     USERNAME_RE,
     AccountError,
     Kind,
+    Student,
     StudentStore,
     hash_password,
     verify_password,
@@ -149,14 +150,16 @@ class SignIn:
 
     # --- passwords -------------------------------------------------------------
 
-    def _check(self, username: str, password: str) -> bool:
+    def _check(self, username: str, password: str) -> Student | None:
+        """The account record the password matched, or None."""
         try:
             student = self.students.get(username)
         except AccountError:
             # same work as a real account, so timing doesn't reveal who exists
             verify_password(password, self._dummy)
-            return False
-        return not student.archived and verify_password(password, student.password)
+            return None
+        ok = not student.archived and verify_password(password, student.password)
+        return student if ok else None
 
     def attempt(self, username: str, password: str) -> tuple[str | None, str]:
         """Try to sign in.
@@ -173,9 +176,10 @@ class SignIn:
                 # refused without checking; waiting doesn't extend the delay
                 wait = int(f.until - now) + 1
                 return None, f"Too many tries. Wait {wait} second{'s' if wait > 1 else ''}."
-            if self._check(username, password):
+            if student := self._check(username, password):
                 self._failures.pop(username, None)
-                return self._cookie(username, self._version(username) or ""), ""
+                # the version of the record that was checked, so a reset meanwhile still wins
+                return self._cookie(username, str(student.session_version)), ""
             if tracked:
                 if username not in self._failures and len(self._failures) >= MAX_TRACKED:
                     self._failures.pop(next(iter(self._failures)))  # forget the oldest

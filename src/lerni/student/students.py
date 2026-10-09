@@ -8,13 +8,15 @@ username is never reused. Standard library only.
 from __future__ import annotations
 
 import base64
+import fcntl
 import hashlib
 import hmac
 import json
 import os
 import re
 import threading
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass, replace
 from datetime import date
 from enum import StrEnum
@@ -164,6 +166,14 @@ class StudentStore:
         # canonical usernames only, so a name can never point outside the folder
         return self.root / f"{check_username(username)}.json"
 
+    @contextmanager
+    def _locked(self) -> Iterator[None]:
+        """One account change at a time, across threads and processes (server and CLI)."""
+        self.root.mkdir(parents=True, exist_ok=True)
+        with _WRITE_LOCK, open(self.root / ".lock", "w") as lock:
+            fcntl.flock(lock, fcntl.LOCK_EX)  # released when the file closes
+            yield
+
     def _save(self, student: Student) -> Student:
         write_json_atomic(self._path(student.username), _to_dict(student))
         return student
@@ -201,7 +211,7 @@ class StudentStore:
         self, username: str, display_name: str, kind: Kind, password: str, educator: bool = False
     ) -> Student:
         """Create an account. Archived usernames stay taken; only independent accounts educate."""
-        with _WRITE_LOCK:  # two adds of one name can't both succeed
+        with self._locked():  # two adds of one name can't both succeed
             return self._add(username, display_name, kind, password, educator)
 
     def _add(
@@ -222,7 +232,7 @@ class StudentStore:
 
     def _update(self, username: str, change: Callable[[Student], Student]) -> Student:
         """Read, change, and write one account with no other write in between."""
-        with _WRITE_LOCK:  # so a rename can't undo an archive made meanwhile
+        with self._locked():  # so a rename can't undo an archive or reset made meanwhile
             return self._save(change(self.get(username)))
 
     def reset_password(self, username: str, new: str) -> Student:
