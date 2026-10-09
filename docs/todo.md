@@ -47,6 +47,7 @@ After these, Release 1 needs sessions, not code: the educator sets goals, rehear
 
 ### Interest map: later
 
+- [ ] Small, from the step 7 review: at a full map a just-added interest can be dropped by the next one; the map block's 1,500-character cut can cut a line mid-word; top interests rank by all-time days rather than the last 30; a faded explained goal can be listed twice in the block; the Maps timer ticks on every page; an unreadable map file shows a Gradio error; `lerni logs` can fail if a purge runs mid-read.
 - [ ] Step 8: Upload's Claude call needs a second turn for its JSON answer (`max_turns` ≥ 2), like the tagger; the old import's drafter had one turn.
 - [ ] When a map outgrows the picture (more than 15 entries drawn): show more, for example by grouping or a focus on one entry and its links; the list below already has them all.
 
