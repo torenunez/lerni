@@ -20,6 +20,7 @@ What every code file does, in the order a request flows through it. When you add
 |---|---|
 | `src/lerni/student/web/educator.py` | The educator's Guide, Sessions, and Learning plans tabs (plan table, activity-card form, Claude import). Handlers are plain functions; each Gradio handler re-checks on the server that the viewer is the educator. |
 | `src/lerni/student/web/ask.py` | The Ask tab for independent students: topic, chat, one-line question box (Enter sends), a Send button that becomes Stop while answering, New conversation; one ongoing conversation per student; phone first (the chat and the box grow with content); educators can try the supervised-student voice. Topics and the role are checked on the server. |
+| `src/lerni/student/web/mapdraw.py` | Draws a map as inline SVG (at most 15 entries in a stable ring, three sizes, color-blind-safe green and coral, dashed bridges, every name escaped) and says the same in words. |
 | `src/lerni/student/web/accounts.py` | The Students tab (add, reset password, archive) and an independent student's My account (name, and password with the current one); handlers take the server-resolved viewer and refuse other roles. |
 | `src/lerni/student/web/guide.md` | The educator's instructions, shown in the Guide tab. Not code, but shipped with it. |
 | `src/lerni/student/web/__init__.py` | Marks the screens package; says it's the only place Gradio is imported. |
@@ -103,6 +104,7 @@ Minimal on purpose: one happy path per module, plus a test for each safety guara
 | `tests/student/test_students.py` | An account saves and checks its password; bad, reserved, and archived usernames are refused. |
 | `tests/student/test_interests.py` | People's goal edits are saved; a goal takes over an interest of the same name; a full map says so; the tagger only adds what the student said and never touches goals; the prompt block stays short. |
 | `tests/student/test_tagging.py` | An exchange grows the map and is logged (a stopped one isn't tagged); a late result never undoes a person or a new conversation; logs older than 7 days are deleted. |
+| `tests/student/test_mapdraw.py` | The map picture escapes names and draws at most 15 entries; the list says the same in words. |
 | `tests/student/test_signin.py` | A cookie stops working after a reset; wrong passwords wait without signing anyone out. |
 | `tests/student/test_conversation.py` | Answers stream in and history stays short; the map comes before the rules and never says who is asking; each exchange is reported, stopped or not; New conversation during a reply isn't undone. |
 | `tests/student/test_claude_code_adapter.py` | Every Claude call (drafter, chat, tagger) runs with no tools, no settings, and no saved transcripts. |
