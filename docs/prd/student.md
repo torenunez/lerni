@@ -10,10 +10,10 @@ A student keeps coming back to talk about their interests, and can explain the i
 
 Every student signs in, and is one of two kinds, set by supervision, not age:
 
-- **Supervised student:** talks with Lerni with an educator's guidance, usually on an iPad. The educator chooses the goals and is beside them in every Release 1 session. Often a child; we design for around 7–9, because if it is intuitive at that age, it works for older students too.
-- **Independent student:** their own educator. They talk with Lerni, see their own map, and add their own "things to practice". Often an adult; the educator and admin each use the app this way too.
+- **Supervised student:** talks with Lerni with an educator's guidance, usually on an iPad. The educator chooses the goals and is beside them in every Release 1 session.
+- **Independent student:** their own educator. They talk with Lerni, see their own map, and add their own "things to practice". The educator and admin each use the app this way too.
 
-Both kinds share the same conversation and map. One person can be a student and also the educator or admin.
+Both kinds share the same conversation and map, and the experience is simple and engaging for people of all ages. One person can be a student and also the educator or admin.
 
 ## How the experience grows
 
@@ -40,7 +40,7 @@ These hold for every release.
 
 **For every student:**
 
-- Conversation text is never saved to disk, logs, or browser storage: one ongoing conversation per student lives in memory until New conversation or a server restart. What's saved is the account and the interest map (interest names, educator notes, time, and links).
+- Conversation text is kept on the home server only in 7-day logs the admin can read, then deleted; never in browser storage. The ongoing conversation lives in memory until New conversation or a server restart. Also saved: the account and the interest map (interest names, goals and notes, dates, and links).
 - No account details (name, username) are sent to Claude; their own messages can still contain anything.
 - Goals come only from a person: an educator, or an independent student for their own map. The agent only records interests, time, and links.
 - Nothing is sent to an outside service without consent at the moment of sending. In the family prototype, pressing Send (or Upload) is that consent: everyone in the household knows where messages go, so the screen carries no notice. A short notice comes back before anyone outside the family uses it.
@@ -49,8 +49,8 @@ These hold for every release.
 
 **For a supervised student, also:**
 
-- An educator is beside them in every Release 1 session.
-- Replies are short and gentle. Subjects on the educator's starting exclusion list (violence, weapons, sexual content, self-harm, drugs), and anything scary or sad, get a kind redirect to their educator and something fun instead.
+- An adult is nearby whenever they use it (a household rule the app doesn't enforce), and Lerni says plainly it's a computer helper.
+- Replies are short and gentle. Subjects on the starting exclusion list (violence, weapons, sexual content, self-harm, drugs), and anything scary or sad, get a kind redirect to their educator and something fun instead.
 - It behaves the same whether or not an educator is watching.
 
 ## Release 1: talk about what you love
@@ -82,7 +82,7 @@ As a student, I want to ask anything by text and get clear, short answers, so th
 
 As a student, I want what I talk about to be remembered as interests, so that the next conversation starts from what I love.
 
-- WHEN an exchange ends THE SYSTEM SHALL record which interests it was about, any new interest, and any bridge, and add the time spent (capped at 3 minutes per exchange).
+- WHEN an exchange ends THE SYSTEM SHALL record which interests it was about, any new interest, and any bridge, and the day it came up; interests grow with the days they come up.
 - WHEN a new conversation starts THE SYSTEM SHALL start from the map: their top interests and the goals.
 - WHEN an independent student opens My map THE SYSTEM SHALL show their map and let them add, rename, and remove entries, set their own goals (things to practice), and Upload notes that Claude turns into proposed interests and goals, saving only the ones they tick.
 
@@ -121,28 +121,29 @@ Public access and a native iPad app.
 ## Decisions
 
 - 2026-08-23: The student app is the main product; the admin tool gets maintenance only. (No reason was recorded.)
-- 2026-09-25: The first release uses text, pictures, and taps, as the smallest app that can run a reviewed activity.
+- 2026-09-25: The first release uses text, pictures, and taps, as the smallest app that can run a reviewed activity. (Replaced 2026-10-09 by the interest map.)
 - 2026-10-07: Voice is the student app's goal and key unlock; text and pictures come first as a stepping stone.
 - 2026-10-07: The app leads a student from idea to idea, building on what they already explored.
 - 2026-10-07: Remembering comes before voice.
-- 2026-10-07: A session starts with the app asking, or (from Release 3) the student asking. The app answers allowed questions briefly, then leads back to the learning plan.
-- 2026-10-07: The app explores only the allowlist first, then anything not excluded once the educator turns that on.
+- 2026-10-07: A session starts with the app asking, or (from Release 3) the student asking. The app answers allowed questions briefly, then leads back to the learning plan. (Replaced 2026-10-09 by the interest map.)
+- 2026-10-07: The app explores only the allowlist first, then anything not excluded once the educator turns that on. (Replaced 2026-10-09 by the interest map.)
 - 2026-10-07: The end state is free conversation without an educator involved; only sensitive subjects wait for consent, and that should be rare.
 - 2026-10-08: Sensitive subjects are allowed but personal (death, illness, the body, family matters, religion, politics).
-- 2026-10-08: The student's progress record is kept until the educator deletes it; the educator can turn remembering off.
+- 2026-10-08: The student's progress record is kept until the educator deletes it; the educator can turn remembering off. (Replaced 2026-10-09 by the interest map.)
 - 2026-10-08: There is no hand-run trial first. Release 1 is the MVP the student tests, and watching those first sessions shapes what comes next. (Replaces the 2026-10-07 discovery-round decision.)
-- 2026-10-09: A student is supervised or independent, set by supervision, not age. One PRD covers both; they share the same activities, engine, and screens.
+- 2026-10-09: A student is supervised or independent, set by supervision, not age. One PRD covers both; they share the same activities, engine, and screens. (Replaced 2026-10-09 by the interest map.)
 - 2026-10-09: Every student signs in on a standard sign-in form the browser can save, and the account is re-checked on every request, so archive and reset take effect at once. One app, with tabs by role. (Gradio's built-in login was considered first; it checks only at sign-in and isn't a form browsers save.)
-- 2026-10-09: An independent student is their own educator: they plan, import with Claude, and approve their own activities. Explore freely, their own switch, lets Claude's full drafts play unchecked, labeled.
+- 2026-10-09: An independent student is their own educator: they plan, import with Claude, and approve their own activities. Explore freely, their own switch, lets Claude's full drafts play unchecked, labeled. (Replaced 2026-10-09 by the interest map.)
 - 2026-10-09: "Nothing needs a keyboard" becomes a goal: designed for touch first.
 - 2026-10-09: A supervised student's iPad is signed in only as that student; the educator and admin dogfood on their own devices.
 - 2026-10-09: Release 5 is renamed "free conversation", so it isn't confused with Explore freely.
-- 2026-10-09: Release 1 saves the account and an independent student's plans, but still no progress record. (Replaces "nothing about the student is saved".)
+- 2026-10-09: Release 1 saves the account and an independent student's plans, but still no progress record. (Replaces "nothing about the student is saved".) (Replaced 2026-10-09 by the interest map.)
 - 2026-10-09: The app is AI-enabled from Release 1: independent students get Ask Lerni, a text conversation with Claude (open questions, kept only in memory). It comes before cards, and Release 3 adds voice on top of it.
 - 2026-10-09: Ask Lerni is one ongoing conversation per student, not one per visit: the start of a companion that, from Release 2, remembers what each student likes. For an independent student it helps them study directly. Confirmed by the admin's first real use: after answering "what's the fastest car?", it asked whether they were more interested in top speed or acceleration. Narrowing follow-ups like that are the direction to keep.
-- 2026-10-09: A supervised student's AI conversation is Release 3, not Release 1. Their whole screen is the conversation: one button they hold to talk and release when done. The agent is a companion that starts from the student's interests and gracefully steers back to the educator-approved learning plan, so learning feels like play; it isn't an open chat. It runs on an API key under Anthropic's commercial terms (never the admin's consumer account, which is for people 18 and over), with reply checks, and the educator can see the conversation.
-- 2026-10-09: The interest map replaces activity cards, learning plans, approvals, Explore freely, and the plan import. The conversation is the whole activity; interests grow from it (sized by time), the educator adds goals, and the agent bridges between them. Upload is just a way to add goals. Only educators see a supervised student's map. (Replaces the Release 1 cards-and-taps design and "Remembering comes before voice".)
-- 2026-10-09: A supervised student talks with Lerni by text in Release 1, through the admin's Claude account, with an educator beside them in every session. No API key is planned. The admin chose this knowing Anthropic's consumer terms are for people 18 and over and consumer Claude has no filtering for children. (Replaces the earlier decision to wait for Release 3 and an API key.)
+- 2026-10-09: A supervised student's AI conversation is Release 3, not Release 1. Their whole screen is the conversation: one button they hold to talk and release when done. The agent is a companion that starts from the student's interests and gracefully steers back to the educator-approved learning plan, so learning feels like play; it isn't an open chat. It runs on an API key under Anthropic's commercial terms, with reply checks, and the educator can see the conversation. (Replaced 2026-10-09 by the interest map.)
+- 2026-10-09: The interest map replaces activity cards, learning plans, approvals, Explore freely, and the plan import. The conversation is the whole activity; interests grow from it, the educator adds goals, and the agent bridges between them. Upload is a way to add interests and goals. Only educators see a supervised student's map. (Replaces the Release 1 cards-and-taps design. Remembering, Release 2, still comes before voice, Release 3.)
+- 2026-10-09: A supervised student talks with Lerni by text in Release 1, through the admin's Claude account, with an educator beside them in every session. No API key is planned. (Replaces the earlier decision to wait for Release 3 and an API key.)
+- 2026-10-09: After two outside reviews of the map design: interests are sized by the days they come up and goals by the days the student explained them back (Lerni's guess at competence), replacing time spent. Every student's conversation is kept for 7 days in logs the admin reads, so the map can be checked against what was said (replaces "conversation text is never saved"). Release 1 has no automatic reply check and no app-enforced co-presence: the household keeps an adult nearby, the iPad is signed in only as the student, and the adults never save their passwords on it.
 
 ## Open questions
 
