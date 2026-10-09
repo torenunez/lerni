@@ -1,6 +1,7 @@
 """Claude through the Claude Code CLI on the home server (prototype only).
 
-Two uses: drafting a plan from rough notes, and Ask Lerni's conversation.
+Three uses: drafting a plan from rough notes, Ask Lerni's conversation, and
+tagging each exchange for the interest map.
 
 Uses the Claude account the CLI is logged into, so there's no API key to
 store. Before anyone outside the household uses the app, replace this with an
@@ -35,10 +36,13 @@ from lerni.student.plan_import import (
     DraftResult,
     ImportSource,
 )
+from lerni.student.tagging import TAG_SCHEMA
 
 DEFAULT_MODEL = "claude-sonnet-5-5"
 TIMEOUT_SECONDS = 120
 CHAT_TIMEOUT_SECONDS = 60
+DEFAULT_TAGGER_MODEL = "claude-haiku-5-5"  # small and fast: it runs after every answer
+TAG_TIMEOUT_SECONDS = 30
 
 
 def _isolated() -> dict[str, Any]:
@@ -174,6 +178,43 @@ class ClaudeCodeChat:
                 event, delta = message.event, message.event.get("delta", {})
                 if event.get("type") == "content_block_delta" and delta.get("type") == "text_delta":
                     pieces.put(delta.get("text", ""))
+
+
+class ClaudeCodeTagger:
+    """Say what one exchange was about, as structured JSON, with one isolated call."""
+
+    def __init__(self, model: str = DEFAULT_TAGGER_MODEL) -> None:
+        self.model = model
+
+    def options(self, system: str, workdir: str) -> Any:
+        """The call's options: no tools, one turn, JSON only, nothing kept."""
+        return ClaudeAgentOptions(
+            system_prompt=system,
+            model=self.model,
+            tools=[],
+            cwd=workdir,
+            max_turns=1,
+            output_format={"type": "json_schema", "schema": TAG_SCHEMA},
+            **_isolated(),
+        )
+
+    def tag(self, system: str, prompt: str) -> dict[str, Any]:
+        """Return the tagger's JSON.
+
+        Raises:
+            RuntimeError: No answer in time, or not JSON (the caller skips this update).
+        """
+        return asyncio.run(asyncio.wait_for(self._tag(system, prompt), TAG_TIMEOUT_SECONDS))
+
+    async def _tag(self, system: str, prompt: str) -> dict[str, Any]:
+        with tempfile.TemporaryDirectory(prefix="lerni-tag-") as workdir:
+            result: ResultMessage | None = None
+            async for message in query(prompt=prompt, options=self.options(system, workdir)):
+                if isinstance(message, ResultMessage):
+                    result = message
+        if result is None or result.is_error or not isinstance(result.structured_output, dict):
+            raise RuntimeError("no tags")  # never the text
+        return result.structured_output
 
 
 def _transcript(turns: Sequence[Turn]) -> str:

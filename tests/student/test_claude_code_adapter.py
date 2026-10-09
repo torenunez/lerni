@@ -4,12 +4,17 @@ import pytest
 
 pytest.importorskip("claude_agent_sdk")
 
-from lerni.student.adapters.claude_code import ClaudeCodeChat, ClaudeCodeDrafter  # noqa: E402
+from lerni.student.adapters.claude_code import (  # noqa: E402
+    ClaudeCodeChat,
+    ClaudeCodeDrafter,
+    ClaudeCodeTagger,
+)
 
 
 @pytest.mark.parametrize("options", [
     ClaudeCodeDrafter().options("/tmp/x"),
     ClaudeCodeChat().options("Be brief.", "/tmp/x"),
+    ClaudeCodeTagger().options("Tag it.", "/tmp/x"),
 ])
 def test_claude_calls_keep_nothing_and_reach_nothing(options):
     assert options.tools == []

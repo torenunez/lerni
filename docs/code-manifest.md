@@ -47,7 +47,7 @@ What every code file does, in the order a request flows through it. When you add
 
 | File | What it does |
 |---|---|
-| `src/lerni/student/adapters/claude_code.py` | Claude through the Claude Code CLI and the logged-in account (prototype; no API key): drafts a plan from notes, and streams Ask Lerni's answers. No tools (except reading an uploaded PDF), no settings, and no saved transcripts. |
+| `src/lerni/student/adapters/claude_code.py` | Claude through the Claude Code CLI and the logged-in account (prototype; no API key): drafts a plan from notes, streams Ask Lerni's answers, and tags each exchange for the map (a small model, JSON only). No tools (except reading an uploaded PDF), no settings, and no saved transcripts. |
 | `src/lerni/student/adapters/__init__.py` | Marks the adapters package. |
 
 **Content shipped with the app**
@@ -105,7 +105,7 @@ Minimal on purpose: one happy path per module, plus a test for each safety guara
 | `tests/student/test_tagging.py` | An exchange grows the map and is logged (a stopped one isn't tagged); a late result never undoes a person or a new conversation; logs older than 7 days are deleted. |
 | `tests/student/test_signin.py` | A cookie stops working after a reset; wrong passwords wait without signing anyone out. |
 | `tests/student/test_conversation.py` | Answers stream in and history stays short; the map comes before the rules and never says who is asking; each exchange is reported, stopped or not; New conversation during a reply isn't undone. |
-| `tests/student/test_claude_code_adapter.py` | Both Claude adapters run with no tools, no settings, and no saved transcripts. |
+| `tests/student/test_claude_code_adapter.py` | Every Claude call (drafter, chat, tagger) runs with no tools, no settings, and no saved transcripts. |
 | `tests/student/test_plan_import.py` | Rough notes become an unsaved plan; nothing is sent to Claude without consent. |
 | `tests/student/test_web_signin.py` | Signed-out visits go to the sign-in form; a right password opens the app; Sign out ends it; a first start says how to add the first account. |
 | `tests/student/test_cli_student.py` | The admin adds the first educator account from the terminal. |
