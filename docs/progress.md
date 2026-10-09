@@ -17,6 +17,7 @@ When something changes, update this section and add a log entry below.
 
 ### 2026-10-09 (Release 1 step 5: accounts and one sign-in)
 
+- PR #7 (docs: two kinds of student, revised after review) merged into `main` with a merge commit.
 - Built from [the step 5 plan](../plans/release-1-step-5-accounts.md): `students.py` (accounts, scrypt password hashes, username rules, archive in place), `signin.py` (signed cookie re-checked on every request, wrong-password waits), `jsonfiles.py` (shared atomic writes), the sign-in page, and one Gradio app at `/app/` with tabs by role, the Students tab, My account, and "Signed in as" with Sign out. Every educator handler re-checks the role on the server; plan lists load per request.
 - Bug found in a local browser check and fixed with a regression test: the hidden Learn tab stayed selected, so the educator first saw an empty page.
 - Local browser check (throwaway server and test accounts): sign-in redirect, each role's tabs, the plan list and a plan handler for the educator, a refused password change with the wrong current password, Sign out, and staying signed in across a server restart all worked.
