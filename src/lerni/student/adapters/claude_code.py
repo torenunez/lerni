@@ -1,7 +1,8 @@
 """Claude through the Claude Code CLI on the home server (prototype only).
 
-Three uses: drafting a plan from rough notes, Ask Lerni's conversation, and
-tagging each exchange for the interest map.
+Four uses: drafting a plan from rough notes (old; removed in step 10), Ask
+Lerni's conversation, tagging each exchange for the interest map, and
+proposing map entries from uploaded notes.
 
 Uses the Claude account the CLI is logged into, so there's no API key to
 store. Before anyone outside the household uses the app, replace this with an
@@ -37,6 +38,7 @@ from lerni.student.plan_import import (
     ImportSource,
 )
 from lerni.student.tagging import TAG_SCHEMA
+from lerni.student.upload import UPLOAD_SCHEMA, UploaderUnavailable, UploadSource
 
 DEFAULT_MODEL = "claude-sonnet-5-5"
 TIMEOUT_SECONDS = 120
@@ -214,6 +216,65 @@ class ClaudeCodeTagger:
                     result = message
         if result is None or result.is_error or not isinstance(result.structured_output, dict):
             raise RuntimeError("no tags")  # never the text
+        return result.structured_output
+
+
+class ClaudeCodeUploader:
+    """Propose map entries from notes with one tightly limited call (may read one PDF)."""
+
+    def __init__(self, model: str = DEFAULT_MODEL) -> None:
+        self.model = model
+
+    def options(
+        self, system: str, workdir: str, pdf_path: Path | None = None, can_use_tool: Any = None
+    ) -> Any:
+        """No tools (except reading this one PDF), a turn for the JSON answer, nothing kept."""
+        return ClaudeAgentOptions(
+            system_prompt=system,
+            model=self.model,
+            tools=["Read"] if pdf_path else [],  # only to read this one PDF
+            cwd=workdir,
+            max_turns=4 if pdf_path else 2,  # reading the PDF, then the JSON answer
+            output_format={"type": "json_schema", "schema": UPLOAD_SCHEMA},
+            can_use_tool=can_use_tool,
+            **_isolated(),
+        )
+
+    def propose(self, system: str, source: UploadSource) -> dict[str, Any]:
+        """Send the notes and return Claude's structured proposals.
+
+        Raises:
+            UploaderUnavailable: Claude didn't run or returned nothing usable.
+        """
+        try:
+            return asyncio.run(asyncio.wait_for(self._propose(system, source), TIMEOUT_SECONDS))
+        except UploaderUnavailable:
+            raise
+        except Exception as exc:  # never echo the notes in errors
+            raise UploaderUnavailable("Claude didn't respond. Try again in a moment.") from exc
+
+    async def _propose(self, system: str, source: UploadSource) -> dict[str, Any]:
+        # empty working folder: no project files or settings in reach
+        with tempfile.TemporaryDirectory(prefix="lerni-upload-") as workdir:
+            prompt = "Sort these notes into interests and goals.\n\n" + source.text
+            pdf_path: Path | None = None
+            if source.pdf is not None:
+                pdf_path = Path(workdir) / "notes.pdf"
+                pdf_path.write_bytes(source.pdf)
+                prompt += f"\n\nThe notes are also in the PDF at {pdf_path}."
+
+            async def only_this_pdf(name: str, args: dict[str, Any], _ctx: Any) -> Any:
+                if pdf_path and name == "Read" and Path(args.get("file_path", "")) == pdf_path:
+                    return PermissionResultAllow()
+                return PermissionResultDeny(message="Not allowed.")
+
+            options = self.options(system, workdir, pdf_path, only_this_pdf if pdf_path else None)
+            result: ResultMessage | None = None
+            async for message in query(prompt=_prompt_stream(prompt), options=options):
+                if isinstance(message, ResultMessage):
+                    result = message
+        if result is None or result.is_error or not isinstance(result.structured_output, dict):
+            raise UploaderUnavailable("Claude didn't return any ideas. Try shorter notes.")
         return result.structured_output
 
 
