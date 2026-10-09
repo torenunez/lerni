@@ -32,10 +32,9 @@ How PRs are split:
 
 | # | PR | Branch | Ships | Done when | Status |
 |---|---|---|---|---|---|
-| 1 | Step 6: Ask Lerni | `feat/ask-lerni` | The Ask tab for independent students: a text conversation with Claude, streamed, kept only in memory | The admin asks a question on their own device and the answer streams in | In progress |
-| 2 | Step 7: plan my own | `feat/plan-my-own` | Guide, Learning plans, and Explore freely for independent students; plan schema v2, set only by the server; self-approval; no Claude Code transcripts; the first real Claude import; the import evals | The admin turns on Explore freely, imports their own interests, gets full cards, and the evals pass | Not started |
-| 3 | Step 8: play a card | `feat/card-activities` | Card activities (complete, and may play for this viewer); one session per student; Learn and the activity screens | The admin does their own activity end to end on their own device | Not started |
-| 4 | Step 9: the supervised path | `feat/supervised-sessions` | The educator's Start, Stop, Reset, and recap; the four checks on library cards in the app | The educator runs a supervised student's session on the iPad from their own device | Not started |
+| 1 | Step 7: plan my own | `feat/plan-my-own` | Guide, Learning plans, and Explore freely for independent students; plan schema v2, set only by the server; self-approval; the first real Claude import; the import evals | The admin turns on Explore freely, imports their own interests, gets full cards, and the evals pass | Not started |
+| 2 | Step 8: play a card | `feat/card-activities` | Card activities (complete, and may play for this viewer); one session per student; Learn and the activity screens | The admin does their own activity end to end on their own device | Not started |
+| 3 | Step 9: the supervised path | `feat/supervised-sessions` | The educator's Start, Stop, Reset, and recap; the four checks on library cards in the app | The educator runs a supervised student's session on the iPad from their own device | Not started |
 
 After these, Release 1 needs content and sessions, not code: the educator approves an activity, rehearses, and a supervised student tries it (Educator and Student tasks above and below).
 
@@ -45,6 +44,7 @@ After these, Release 1 needs content and sessions, not code: the educator approv
 - [ ] Before the supervised conversation: send real alternating turns instead of one "Them/You" transcript, so earlier answers can't be faked.
 - [ ] Try Ask on the iPad and a phone with the keyboard open; then a VoiceOver and keyboard-only pass.
 - [ ] Maybe: starter questions for the chosen topic; a daily cap per student once others use it.
+- [ ] Before anyone outside the family uses Ask: a short notice of where messages go and that answers can be wrong.
 
 ### Later: Release 2 Remembering
 

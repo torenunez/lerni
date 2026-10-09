@@ -44,7 +44,7 @@ These hold for every release.
 
 - An activity plays only with the educator's four checks (for a supervised student), the independent student's own "This is ready" (for their own plans), or that student's own **Explore freely** (for their own plans, labeled "Not checked"). Never anyone else's approval or plan, and never an incomplete card.
 - Session state and progress are never saved to disk or browser storage in Release 1; logs hold no learner content.
-- Nothing is sent to an outside service without consent at the moment of sending. For Ask Lerni, the always-visible notice plus pressing Send is that consent.
+- Nothing is sent to an outside service without consent at the moment of sending. For Ask Lerni in the family prototype, pressing Send is that consent: everyone in the household knows where messages go, so the screen carries no notice. A short notice comes back before anyone outside the family uses it.
 - A student never sees another student's plans or sessions.
 - It stops the moment a session is stopped.
 - It's designed for touch first. That's a goal, not an absolute; voice comes in Release 3.

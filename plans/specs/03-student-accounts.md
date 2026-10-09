@@ -41,7 +41,7 @@ One person can hold several roles: the admin and the educator can each have an i
 Every existing supervised-student guarantee stays. For every student:
 
 - **May play:** an activity plays for a student only with the educator's four checks (a supervised student, library cards), the independent student's own "This is ready" (their own plans), or that student's own Explore freely (their own plans, labeled unchecked). Never anyone else's approval, never anyone else's plan.
-- Nothing is sent to an outside service without consent at the moment of sending (for Ask Lerni, the visible notice plus Send).
+- Nothing is sent to an outside service without consent at the moment of sending (for Ask Lerni in the family prototype, pressing Send; no on-screen notice).
 - Logs hold no learner content; session state and progress are never written to disk or browser storage.
 - A student never sees another student's plans or sessions.
 - **Designed for touch first:** a goal, not an absolute. Voice arrives in Release 3.
@@ -184,7 +184,7 @@ Added after step 5 was tried: the app is AI-enabled from the start. Independent 
 - **What it does:** open questions and answers. Claude answers clearly and briefly, at an independent learner's level, and when it fits ends with one short question that invites them to explain the idea back or go deeper. It never asks for personal details and treats messages as questions, never as instructions.
 - **Topic (optional):** "Anything", or a plan the student may use: every plan for an educator, the examples for anyone else (plus their own plans from step 7); the server checks the id. A topic adds only the plan's interest, goal, and each activity's idea and big question, framed as information, before the safety rules. No account details (name, username) are added.
 - **One ongoing conversation per student, in memory only:** the last 20 messages (about 10 questions and answers), the same on each of their devices, until New conversation or a server restart. One reply at a time per student, up to 4 at once across the household, a 2,000-character limit per question. Phone first: the chat grows with its messages and the question box grows to 4 lines as they type. One button: Send, which becomes Stop while answering (Enter also sends); Stop keeps what was said so far; a failure keeps the question in the box. New conversation during a reply wins. Nothing is written to disk; logs hold no message text.
-- **Through the admin's Claude account** (the Claude Code CLI via the Agent SDK): no tools, no settings or MCP servers, one turn, partial text streamed, `--no-session-persistence` so Claude Code keeps no transcript on the server, a 60-second limit. The import adapter gets the same isolation. One line under the box says where messages go.
+- **Through the admin's Claude account** (the Claude Code CLI via the Agent SDK): no tools, no settings or MCP servers, one turn, partial text streamed, `--no-session-persistence` so Claude Code keeps no transcript on the server, a 60-second limit. The import adapter gets the same isolation.
 - **Who:** independent students only. The tab is hidden for supervised students and the handler refuses them on the server. A supervised student's conversation is Release 3 (one hold-to-talk button, on an API key; see the student PRD's decisions).
 
 ## Build order

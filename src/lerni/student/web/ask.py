@@ -23,14 +23,7 @@ from lerni.student.web.accounts import PRIVATE, require
 from lerni.student.web.educator import plan_choices
 
 ANYTHING = "Anything"
-NOTICE = (
-    "Your messages go to Claude (Anthropic) through the admin's Claude account. "
-    "Don't share personal details."
-)
-EMPTY = (
-    "Ask Lerni anything, or pick a topic. Answers can be wrong. "
-    "This chat stays until you start a new one."
-)
+EMPTY = "Ask Lerni anything, or pick a topic."  # no fine print in the family prototype
 MAX_AT_ONCE = 4  # answers streaming at the same time, across the household
 
 
@@ -120,9 +113,7 @@ def ask_tab(
             # one button: Send, which becomes Stop while Lerni answers
             send = gr.Button("Send", variant="primary", scale=1, min_width=70, interactive=ready)
             stop = gr.Button("Stop", variant="stop", scale=1, min_width=70, visible=False)
-        with gr.Row():
-            gr.Markdown(NOTICE)
-            new = gr.Button("New conversation", size="sm", scale=0)
+        new = gr.Button("New conversation", size="sm")
         asked = gr.State("")  # the question being answered, so the box can be freed at once
         controls = [question, send, stop]  # order matches start and unlock
 
