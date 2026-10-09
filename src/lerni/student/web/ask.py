@@ -89,13 +89,20 @@ def ask_tab(
     with gr.Tab("Ask", id="ask", visible=False) as tab:
         if not ready:
             gr.Markdown("Claude isn't set up on this server yet.")
-        # everything fits on one screen, so typing never makes the page scroll
+        # phone first: the chat grows with its messages, so the question box stays near the top
         with gr.Row():
             topic = gr.Dropdown(label="Topic", choices=[], value=None, scale=3)  # filled on load
             voice = gr.Checkbox(label="Try the supervised-student voice", visible=False, scale=1)
         # no toolbar or like buttons: one way to start over, below
         chat = gr.Chatbot(
-            label="Ask Lerni", height="45vh", placeholder=EMPTY, buttons=[], feedback_options=None,
+            label="Ask Lerni",
+            show_label=False,
+            height=None,  # grows with its messages...
+            min_height=120,
+            max_height="55dvh",  # ...up to about half the visible screen, then scrolls
+            placeholder=EMPTY,
+            buttons=[],
+            feedback_options=None,
             elem_id="lerni-ask-chat",
         )
         with gr.Row():
@@ -104,13 +111,15 @@ def ask_tab(
                 show_label=False,
                 placeholder="Ask anything…",
                 lines=1,
+                max_lines=4,  # grows as they type; Enter still sends
                 max_length=2000,
-                scale=5,
+                scale=4,
+                container=False,  # no frame around the box: more room to type on a phone
                 interactive=ready,
             )
             # one button: Send, which becomes Stop while Lerni answers
-            send = gr.Button("Send", variant="primary", scale=1, min_width=80, interactive=ready)
-            stop = gr.Button("Stop", variant="stop", scale=1, min_width=80, visible=False)
+            send = gr.Button("Send", variant="primary", scale=1, min_width=70, interactive=ready)
+            stop = gr.Button("Stop", variant="stop", scale=1, min_width=70, visible=False)
         with gr.Row():
             gr.Markdown(NOTICE)
             new = gr.Button("New conversation", size="sm", scale=0)

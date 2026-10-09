@@ -71,6 +71,8 @@ _CSS = """
   50% { transform: scale(1.06); } }
 /* Ask: hide the chat's own trash icon; "New conversation" is the one way to start over */
 #lerni-ask-chat button[aria-label="Clear"] { display: none; }
+/* 16px text in fields, so iPhone Safari doesn't zoom in and shift the page on tap */
+.gradio-container input, .gradio-container textarea { font-size: 16px !important; }
 @media (prefers-reduced-motion: reduce) {
   .lerni-welcome *, .lerni-welcome { animation: none !important; }
 }

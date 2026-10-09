@@ -197,7 +197,7 @@ Public access and a native iPad app.
 - 2026-10-09: Release 5 is renamed "free conversation", so it isn't confused with Explore freely.
 - 2026-10-09: Release 1 saves the account and an independent student's plans, but still no progress record. (Replaces "nothing about the student is saved".)
 - 2026-10-09: The app is AI-enabled from Release 1: independent students get Ask Lerni, a text conversation with Claude (open questions, kept only in memory). It comes before cards, and Release 3 adds voice on top of it.
-- 2026-10-09: Ask Lerni is one ongoing conversation per student, not one per visit: the start of a companion that, from Release 2, remembers what each student likes. For an independent student it helps them study directly.
+- 2026-10-09: Ask Lerni is one ongoing conversation per student, not one per visit: the start of a companion that, from Release 2, remembers what each student likes. For an independent student it helps them study directly. Confirmed by the admin's first real use: after answering "what's the fastest car?", it asked whether they were more interested in top speed or acceleration. Narrowing follow-ups like that are the direction to keep.
 - 2026-10-09: A supervised student's AI conversation is Release 3, not Release 1. Their whole screen is the conversation: one button they hold to talk and release when done. The agent is a companion that starts from the student's interests and gracefully steers back to the educator-approved learning plan, so learning feels like play; it isn't an open chat. It runs on an API key under Anthropic's commercial terms (never the admin's consumer account, which is for people 18 and over), with reply checks, and the educator can see the conversation.
 ## Open questions
 

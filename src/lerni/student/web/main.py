@@ -99,8 +99,9 @@ def build_main_view(
                 gr.update(choices=plan_choices(store) if is_edu else [], value=None),
                 sessions_text(catalog) if is_edu else "",
                 student_rows(students) if is_edu else [],
-                gr.update(choices=topic_choices(store, viewer) if "ask" in shown else [],
-                          value=ANYTHING),
+                # no Ask tab: no topics, and no value that isn't in the list
+                gr.update(choices=topic_choices(store, viewer), value=ANYTHING)
+                if "ask" in shown else gr.update(choices=[], value=None),
                 # one ongoing conversation per student: pick up where they left off
                 messages(conversations, viewer.username)
                 if conversations is not None and "ask" in shown else [],
