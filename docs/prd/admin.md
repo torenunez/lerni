@@ -1,6 +1,6 @@
 # PRD: Admin tool
 
-The admin's terminal tool, the `lerni` command. The admin is the engineer or developer who builds and runs Lerni. Educators never use it; they work in the [supervised student app](student.md).
+The admin's terminal tool, the `lerni` command. The admin is the engineer or developer who builds and runs Lerni. Educators never use it; they work in the [student app](student.md).
 
 ## Outcome
 
@@ -8,7 +8,7 @@ The admin can do anything Lerni does from the terminal: learn topics, try out wh
 
 ## Users
 
-- **Admin (engineer or developer):** has full access. Learns technical topics with it, tries activities and mechanics as the student would, finds what breaks, and tunes it. Also runs and maintains the system behind the student app.
+- **Admin (engineer or developer):** has full access. Learns technical topics with it, tries activities and mechanics as the student would, finds what breaks, and tunes it. Also runs and maintains the system behind the student app, and uses that app as an independent student, with their own account, to try it as a learner.
 
 ## Constraints
 
@@ -16,9 +16,9 @@ The admin can do anything Lerni does from the terminal: learn topics, try out wh
 - No credentials in files; tests use fakes and make no network calls.
 - Existing commands and data keep working.
 - The admin runs the student app: a Gradio web app on a home server (an always-on Mac), opened in Safari on an iPad on the home Wi-Fi. It uses the existing lesson format, catalog, and engine (the code calls an activity a lesson).
-- Student data may leave the device, but only to services the educator agreed to. No sharing, analytics, or advertising. In Release 1, session state stays in memory and logs contain no learner content.
-- These are prototype guardrails, not production moderation. One family; no public use.
-- Full access is for trying things out. Anything a student sees still goes through the student app's approval and supervision; the admin tool never puts unapproved content in front of a student.
+- Student data may leave the device, but only to services agreed to: by the educator for supervised students, by an independent student for themselves. No sharing, analytics, or advertising. In Release 1, session state stays in memory and logs contain no learner content.
+- These are prototype guardrails, not production moderation. One household; no public use.
+- Full access is for trying things out. Anything a student sees still goes through the student app's approval and supervision; the admin tool never puts unapproved content in front of a student. In the app, the admin is an independent student like any other: their own plans, their own approvals or Explore freely. They create that account by signing in as `educator`, and dogfood on their own device, never the supervised student's iPad.
 
 ## Release 1: test the mechanics (exists)
 
@@ -50,8 +50,11 @@ Use by educators or students.
 - 2026-10-07: The student app is a Gradio web app used on an iPad rather than as a native app.
 - 2026-10-08: For the prototype, the student app calls Claude through the Claude Code CLI on the home server and the Claude account it's logged into (no API key). Before anyone outside the household uses the app, or it's hosted outside the home, switch to an API-key adapter; Anthropic doesn't allow offering claude.ai login in products for others. Default model: Sonnet 5.5 (`LERNI_CLAUDE_MODEL` overrides it).
 - 2026-10-08: The command `study` was renamed `lerni`; `study` stays as a deprecated alias so existing scripts keep working.
-- 2026-10-08: The student app runs on a home server first: plain HTTP on the home Wi-Fi for Releases 1–2, then HTTPS on the same server for the microphone in Release 3. Hosting outside the home (such as Hugging Face Spaces) waits until it's needed.
 - 2026-10-07: For now, student data may leave the device, under educator supervision.
+- 2026-10-08: The student app runs on a home server first: plain HTTP on the home Wi-Fi for Releases 1–2, then HTTPS on the same server for the microphone in Release 3. Hosting outside the home (such as Hugging Face Spaces) waits until it's needed.
+- 2026-10-09: The admin tries the student app as an independent student with their own account, importing their own interests; that dogfooding comes before a supervised student's first session.
+- 2026-10-09: Claude's import gets an on-demand eval set (real calls, run by hand when its instructions, schema, or model change), never in `pytest` or the commit gate. An agent with tools waits for the Release 3 plan.
+- 2026-10-09: The educator's and independent students' imports keep running through the admin's Claude account (the Claude Code CLI, no API key) for the prototype, a choice the admin made knowing that Anthropic's consumer terms don't allow making an account available to anyone else, and that Claude Code's sign-in is meant for the account holder's own use. The consent box names the admin's account, the adapter turns off Claude Code's transcript saving, and the API-key adapter replaces it before anyone outside the household uses the app.
 
 ## Open questions
 

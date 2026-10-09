@@ -4,15 +4,39 @@ Where things really stand, then a dated log, newest first. Completed work is rec
 
 Record each kind of "done" only when it actually happens, with the date: code built, content approved, app ready, a student session held. Passing tests show code behaves as specified; they don't make anything ready for a student.
 
-## Current state (2026-10-08)
+## Current state (2026-10-09)
 
 - **Built:** the student app's core (activity format, catalog with approved listing and draft preview, engine); `lerni serve` with the student screen and the passcode-protected educator view (Guide, Sessions, and Learning plans with activity cards, primed with cars and sharks examples, and plan import with Claude); the admin tool (`lerni`, with `study` as a deprecated alias); a [code manifest](code-manifest.md) of every code and test file. Tests: 29 passed, 2 expected failures (trimmed to a minimal suite).
-- **Not yet:** a real Claude import (only tested with a fake); the session controller and activity screens; approvals in the app; any approved activity (the car activity is a draft with no approvals); any student session. The educator hasn't tried planning in the app yet.
+- **Designed and approved:** supervised and independent students, one sign-in with tabs by role, Explore freely, and on-demand evals for the Claude import ([specs/03-student-accounts.md](../plans/specs/03-student-accounts.md)). The docs are reframed for it.
+- **Not yet:** accounts and sign-in; a real Claude import (only tested with a fake); card activities, sessions, and activity screens; approvals in the app; any approved activity; any student session. The educator hasn't tried planning in the app yet.
 - **Open:** the sharks example plan has no activity cards or sources yet.
 
 When something changes, update this section and add a log entry below.
 
 ## Log
+
+### 2026-10-09 (Design revised after two reviews of PR #7)
+
+- Two outside reviews of PR #7, checked against the installed Gradio and Claude CLI. Confirmed: Gradio's login is checked only at sign-in (an archive or reset wouldn't reach a device already signed in), its Log out signs out every device, its login page isn't a form browsers save, and the Claude CLI keeps transcripts by default.
+- Decisions: our own sign-in page with a signed cookie, re-checked on every request through `auth_dependency`; privacy from the educator is by default, not a protection (the educator is trusted with account recovery); a supervised student's iPad is signed in only as that student; the supervised student's first activity is a library card (the cars example's car card), so packaged activities aren't played or approved in the app in Release 1; imports keep using the admin's Claude account, recorded as a known exception to Anthropic's consumer terms, with transcripts off.
+- Spec, ARCHITECTURE, the three PRDs, the Release 1 plan, and the to-do list updated: who-can-do-what, a playable-activity type with provenance and a viewer check, complete-card rules, server-set plan fields, username and password rules, wrong-password delays instead of a lockout, no per-user data in the page layout, and the limits of the import evals.
+
+### 2026-10-09 (Two kinds of student: spec approved)
+
+- The admin approved [specs/03-student-accounts.md](../plans/specs/03-student-accounts.md). Decisions:
+  - A student is supervised or independent, set by supervision, not age; one student PRD covers both.
+  - One app at `/` with Gradio's login and tabs by role; the educator signs in as `educator` with the passcode. Independent students get Guide, Learn, Learning plans (their own), and My account; the educator never sees their plans.
+  - Explore freely: an independent student's own switch; Claude writes full cards that play unchecked, labeled.
+  - No plan assignment yet: supervised students see every educator-approved library activity.
+  - "Nothing needs a keyboard" becomes a goal: designed for touch first.
+  - One PR per unit: docs, then steps 5–8.
+  - Step 6 adds an on-demand eval set for the Claude import (never in `pytest`). An agent with tools waits for the Release 3 plan.
+- Reframed the docs for two kinds of student: README, the three PRDs (with dated decisions), ARCHITECTURE (sign-in, scoping, when an activity may play, boundaries renumbered), CLAUDE.md rules 1 and 5, the roadmap, the Release 1 plan (steps 5–8), and the plans index.
+
+### 2026-10-08 (PR #6 merged; two kinds of student designed)
+
+- PR #6 (Release 1 steps 1–4: skeleton, listing, planning, Claude import) merged into `main` with a merge commit.
+- Designed supervised and independent students, one sign-in with tabs by role, and Explore freely: [specs/03-student-accounts.md](../plans/specs/03-student-accounts.md). Awaiting the admin's review before the docs reframe and steps 5–8.
 
 ### 2026-10-08 (Code manifest; minimal test suite)
 

@@ -1,6 +1,6 @@
 # PRD: Student app
 
-A student starts from something they already love (cars, sharks, soccer) and follows it to the ideas underneath. At first the app asks the questions and an educator sits alongside. Over time the app remembers what the student explored, talks and listens, and lets them roam more freely, always within what their educator allows. Educator tasks: [educator PRD](educator.md). How it's built and run: [admin tool PRD](admin.md).
+A student starts from something they already love (cars, sharks, soccer, or anything else) and follows it to the ideas underneath. At first the app asks the questions; a supervised student has an educator alongside, and an independent student plans and learns on their own. Over time the app remembers what the student explored, talks and listens, and lets them roam more freely: a supervised student always within what their educator allows. Educator tasks: [educator PRD](educator.md). How it's built and run: [admin tool PRD](admin.md).
 
 ## Outcome
 
@@ -8,7 +8,12 @@ A student keeps coming back to explore their interests, and can explain the idea
 
 ## Users
 
-- **Student:** anyone exploring their interests with an educator's guidance, on an iPad. We design for a student around 7–9: if it is intuitive at that age, it works for older students too. An educator is beside them in every Release 1 session; from Release 2, usually but not always.
+Every student signs in, and is one of two kinds, set by supervision, not age:
+
+- **Supervised student:** explores with an educator's guidance, usually on an iPad. The educator plans and approves what they see and runs their sessions. Often a child; we design for around 7–9, because if it is intuitive at that age, it works for older students too. An educator is beside them in every Release 1 session; from Release 2, usually but not always.
+- **Independent student:** their own educator. They plan any topic, import rough notes with Claude, approve their own activities, and start and stop their own sessions. Often an adult; the educator and admin each use the app this way too.
+
+The two kinds share the same activities, engine, and screens. One person can be a student and also the educator or admin.
 
 ## How the experience grows
 
@@ -35,15 +40,60 @@ Remembering comes before voice: it is what turns separate activities into a jour
 
 These hold for every release.
 
-- It works by touch on an iPad; nothing needs a keyboard.
+**For every student:**
+
+- An activity plays only with the educator's four checks (for a supervised student), the independent student's own "This is ready" (for their own plans), or that student's own **Explore freely** (for their own plans, labeled "Not checked"). Never anyone else's approval or plan, and never an incomplete card.
+- Session state and progress are never saved to disk or browser storage in Release 1; logs hold no learner content.
+- Nothing is sent to an outside service without consent at the moment of sending.
+- A student never sees another student's plans or sessions.
+- It stops the moment a session is stopped.
+- It's designed for touch first. That's a goal, not an absolute; voice comes in Release 3.
+
+**For a supervised student, also:**
+
 - It explores only what the educator allows: at first just the concepts on the educator's allowlist, later anything not on their exclusion list, once the educator turns that on.
 - It never shows an excluded concept or a path the educator blocked. Sensitive subjects (death, illness, the body, family matters, religion, politics) wait for the educator's consent.
-- It stops the moment a session is stopped.
 - It behaves the same whether or not an educator is watching.
+
+An independent student has no allowlist, exclusion list, or consent requests: they explore any topic. Where a later release gives the educator a setting (voice, remembering, exploration mode), an independent student sets it for themselves.
 
 ## Release 1: answer questions about something you love
 
-The app asks short questions about one of the one or two activities an educator wrote, and the student answers by tapping. Nothing about the student is saved. This is the MVP: the first thing the student tries ([build plan](../../plans/release-1-mvp.md)).
+The student signs in, picks an activity, and answers short questions by tapping. A supervised student does the activities their educator wrote and approved, with the educator starting each one; an independent student plans and approves their own. The app saves only the account (username, display name, kind, password hash, and the Explore freely date) and an independent student's own plans; there is no progress record until Release 2. This is the MVP: the first thing a student tries ([build plan](../../plans/release-1-mvp.md), [design](../../plans/specs/03-student-accounts.md)).
+
+### Story: Sign in as me
+
+As a student, I want to sign in as myself, so that I see my own activities and nobody else's.
+
+- WHEN someone opens the app without being signed in THE SYSTEM SHALL show a standard sign-in form (username and password) that the browser can offer to save.
+- WHEN a supervised student signs in THE SYSTEM SHALL show only Learn; WHEN an independent student signs in, Guide, Learn, Learning plans, and My account. Only their own plans and sessions appear.
+- WHILE someone is signed in THE SYSTEM SHALL show "Signed in as <display name> · <kind>" and a Sign out button that signs out this device only.
+- WHEN a username gets 3 or more wrong passwords in a row THE SYSTEM SHALL wait longer before checking each further attempt (up to 30 seconds), without affecting anyone already signed in.
+- WHEN an account is archived or its password reset THE SYSTEM SHALL sign it out on every device at once.
+- WHEN a supervised student opens Learn before the educator starts an activity THE SYSTEM SHALL show "Waiting for your educator".
+
+A supervised student's iPad is signed in only as that student; the educator and admin use their own devices (a household rule, not something the app can enforce).
+
+### Story: Plan and approve my own (independent student)
+
+As an independent student, I want to plan my own learning and approve my own activities, so that I can explore any topic without waiting for anyone.
+
+- WHEN an independent student signs in THE SYSTEM SHALL offer the educator's planning tools (the guide, learning plans, activity cards, and the Claude import), scoped to their own plans.
+- WHEN they start from an example THE SYSTEM SHALL copy it into their own plans, without its approvals.
+- WHEN they import notes THE SYSTEM SHALL ask Claude for a plan for an independent learner choosing their own topic.
+- WHEN they tap "This is ready" on a complete activity card THE SYSTEM SHALL record their self-approval of its exact content.
+- WHEN an approved card changes THE SYSTEM SHALL require approval again.
+- WHEN they change their password in My account THE SYSTEM SHALL require the current one.
+
+### Story: Explore freely (independent student)
+
+As an independent student, I want to let Claude write whole activities and try them right away, so that I can explore a new topic quickly, knowing the facts may be wrong.
+
+- WHEN they import notes with Explore freely on THE SYSTEM SHALL have Claude write a complete activity card for every activity, from its own knowledge.
+- WHILE Explore freely is on THE SYSTEM SHALL play complete, unapproved cards in their own plans, labeled "Not checked" (and "Claude's draft" for cards Claude wrote), and never for a supervised student or from the library.
+- WHEN they turn Explore freely off THE SYSTEM SHALL stop playing unapproved cards, including a session in progress.
+
+Explore freely changes how cards are written and approved; it is not Release 5's free conversation.
 
 ### Story: Work it out myself
 
@@ -102,7 +152,7 @@ As a student, I want to ask about whatever I'm curious about, so that the conver
 
 The app suggests the next activity from the student's map of ideas, linked to something they already know. An educator approves each one first. Stories to be written after Release 3.
 
-## Release 5: explore freely
+## Release 5: free conversation
 
 ### Story: Talk about my interests for as long as I like
 
@@ -129,6 +179,13 @@ Public access and a native iPad app.
 - 2026-10-08: Sensitive subjects are allowed but personal (death, illness, the body, family matters, religion, politics).
 - 2026-10-08: The student's progress record is kept until the educator deletes it; the educator can turn remembering off.
 - 2026-10-08: There is no hand-run trial first. Release 1 is the MVP the student tests, and watching those first sessions shapes what comes next. (Replaces the 2026-10-07 discovery-round decision.)
+- 2026-10-09: A student is supervised or independent, set by supervision, not age. One PRD covers both; they share the same activities, engine, and screens.
+- 2026-10-09: Every student signs in on a standard sign-in form the browser can save, and the account is re-checked on every request, so archive and reset take effect at once. One app, with tabs by role. (Gradio's built-in login was considered first; it checks only at sign-in and isn't a form browsers save.)
+- 2026-10-09: An independent student is their own educator: they plan, import with Claude, and approve their own activities. Explore freely, their own switch, lets Claude's full drafts play unchecked, labeled.
+- 2026-10-09: "Nothing needs a keyboard" becomes a goal: designed for touch first.
+- 2026-10-09: A supervised student's iPad is signed in only as that student; the educator and admin dogfood on their own devices.
+- 2026-10-09: Release 5 is renamed "free conversation", so it isn't confused with Explore freely.
+- 2026-10-09: Release 1 saves the account and an independent student's plans, but still no progress record. (Replaces "nothing about the student is saved".)
 
 ## Open questions
 

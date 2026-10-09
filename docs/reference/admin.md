@@ -60,13 +60,15 @@ Grades mean blackout (0), recognition after seeing the answer (1), apparent ease
 
 ## Running the student app
 
-`lerni serve` runs the student app on the home server (Release 1, step 1: it shows a waiting screen and an empty educator view, with no activities yet).
+`lerni serve` runs the student app on the home server (Release 1 steps 1–4: a waiting screen for the student, and the educator view with the Guide, plans, activity cards, and the Claude import).
 
 ```bash
 pip install -e ".[student]"                # once: installs Gradio
 export LERNI_EDUCATOR_PASSCODE='...'        # the educator's passcode; never put it in a file
 lerni serve                                 # binds 0.0.0.0:7860
 ```
+
+Until step 5 lands (then everyone signs in at `/`):
 
 - The iPad opens `http://<home-server>:7860/` (the student screen, no login).
 - The educator opens `http://<home-server>:7860/educator/` and signs in with the username `educator` and the passcode.
