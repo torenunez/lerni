@@ -6,7 +6,7 @@ Record each kind of "done" only when it actually happens, with the date: code bu
 
 ## Current state (2026-10-09, step 5)
 
-- **Built:** the student app's core (activity format, catalog with approved listing and draft preview, engine, student accounts, sign-in); `lerni serve` with a sign-in page and one app with tabs by role: the educator's Guide, Students, Sessions, and Learning plans (activity cards, cars and sharks examples, plan import with Claude), a supervised student's Learn (waiting screen), and an independent student's Guide, Learn, and My account; the admin tool (`lerni`, with `study` as a deprecated alias); a [code manifest](code-manifest.md) of every code and test file. Tests: 49 passed, 2 expected failures.
+- **Built:** the student app's core (activity format, catalog with approved listing and draft preview, engine, student accounts, sign-in); `lerni serve` with a sign-in page and one app with tabs by role: the educator's Guide, Students, Sessions, and Learning plans (activity cards, cars and sharks examples, plan import with Claude), a supervised student's Learn (waiting screen), and an independent student's Guide, Learn, and My account; the admin tool (`lerni`, with `study` as a deprecated alias); a [code manifest](code-manifest.md) of every code and test file. Tests: 51 passed, 2 expected failures.
 - **Designed and approved:** supervised and independent students, one sign-in with tabs by role, Explore freely, and on-demand evals for the Claude import ([specs/03-student-accounts.md](../plans/specs/03-student-accounts.md)). The docs are reframed for it.
 - **Not yet:** the step 5 check on real devices (Safari saving the password, staying signed in after a Safari restart); independent students' own plans (step 6); a real Claude import (only tested with a fake); card activities, sessions, and activity screens; approvals in the app; any approved activity; any student session. The educator hasn't tried planning in the app yet.
 - **Open:** the sharks example plan has no activity cards or sources yet.
@@ -22,7 +22,9 @@ When something changes, update this section and add a log entry below.
 - Bug found in a local browser check and fixed with a regression test: the hidden Learn tab stayed selected, so the educator first saw an empty page.
 - Local browser check (throwaway server and test accounts): sign-in redirect, each role's tabs, the plan list and a plan handler for the educator, a refused password change with the wrong current password, Sign out, and staying signed in across a server restart all worked.
 - A fresh review of the whole branch found no Critical issues and six Important ones, all fixed with regression tests: Sign out opened a new tab; wrong-password waits could be raced by parallel attempts; an empty `secret.key` would have made cookies forgeable; unknown usernames could be told apart from real ones; the educator cookie carried a passcode hash; and a leftover temp file could break the Students and plan lists.
-- Tests: 49 passed, 2 expected failures.
+- Tried on the home server, which changed two things: the in-app Guide and import tips were cut to a few lines (screens stay short, CLAUDE.md rule 9), and the educator became a permission on a person's independent account instead of a shared `educator` sign-in, so the educator passcode is gone. The admin adds the first educator with `lerni student add … --educator`; Ctrl-C now stops the server within 3 seconds.
+- The commit check now refuses private words listed in a gitignored `.private-words` file, and any `secret.key`.
+- Tests: 51 passed, 2 expected failures.
 
 ### 2026-10-09 (Design revised after two reviews of PR #7)
 
@@ -72,7 +74,7 @@ When something changes, update this section and add a log entry below.
 
 ### 2026-10-08 (PR #4 merged)
 
-- The docs reset, [PR #4](https://github.com/torenunez/lerni/pull/4), merged into `main` as `c930ed3` after two rounds of outside review.
+- The docs reset, PR #4, merged into `main` as `c930ed3` after two rounds of outside review.
 - Next: the educator's plan sheet and car-activity review, and the admin's walking skeleton, in parallel ([to-do list](todo.md)).
 
 ### 2026-10-08 (Architecture, home server, and PR #4 review)

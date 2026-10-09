@@ -44,8 +44,8 @@ Releases 1–2 use plain HTTP on the home network; there is no microphone, so HT
 
   | Who | Can |
   |---|---|
-  | Admin | Everything the educator can, plus run the server and read every file on it |
-  | `educator` sign-in | Manage every account, plan and approve the library, run supervised students' sessions |
+  | Admin | Everything an educator can, plus run the server, read every file on it, and add or recover accounts from the terminal |
+  | Educator (an independent account with educator access) | Everything an independent student can, plus manage every account, plan and approve the library, run supervised students' sessions |
   | Independent student | Plan, approve, and play their own plans; change their own account |
   | Supervised student | Play the library's approved cards when the educator starts them |
 

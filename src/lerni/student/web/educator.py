@@ -34,7 +34,7 @@ from lerni.student.plans import (
     drafting_notes,
     new_plan_id,
 )
-from lerni.student.signin import Role, SignIn
+from lerni.student.signin import SignIn
 
 COLUMNS = ["Start from", "Idea to learn", "Why it's a good next step", "Big question"]
 PRIVATE = {"api_visibility": "private"}
@@ -269,7 +269,7 @@ def sessions_text(catalog: PackageLessonCatalog) -> str:
 def _is_educator(signin: SignIn, request: gr.Request) -> bool:
     """True only for the educator, re-read from the server on every call."""
     viewer = signin.viewer(request.username)
-    return viewer is not None and viewer.role is Role.EDUCATOR
+    return viewer is not None and viewer.educator
 
 
 def _refuse(outputs: int) -> Any:

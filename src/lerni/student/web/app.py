@@ -25,8 +25,6 @@ from lerni.student.students import StudentStore  # noqa: E402
 from lerni.student.web.main import build_main_view  # noqa: E402
 from lerni.student.web.signin_page import APP_PATH, add_signin_routes  # noqa: E402
 
-MIN_PASSCODE = 8
-
 # System fonts only, so the iPad never loads fonts from the internet.
 _SYSTEM_FONTS = ("-apple-system", "system-ui", "Helvetica Neue", "Arial", "sans-serif")
 _MONO_FONTS = ("ui-monospace", "Menlo", "monospace")
@@ -120,11 +118,7 @@ def _theme() -> gr.themes.Base:
     return gr.themes.Base(font=_SYSTEM_FONTS, font_mono=_MONO_FONTS)
 
 
-MIN_PASSCODE_MESSAGE = f"The educator passcode needs at least {MIN_PASSCODE} characters."
-
-
 def build_app(
-    passcode: str,
     *,
     data_root: Path | None = None,
     store: PlanStore | None = None,
@@ -134,21 +128,15 @@ def build_app(
     """Build the server: the sign-in page and the app at ``/app/``.
 
     Args:
-        passcode: The educator passcode, already read from the environment.
         data_root: The home server's data folder; defaults to ``$LERNI_STUDENT_DATA``
             or ``~/.lerni/student``.
         store: Learning plans; defaults to the plan folder under ``data_root``.
         catalog: Packaged activities; defaults to the ones shipped with Lerni.
         drafter: Claude behind an adapter for imports; ``None`` turns imports off.
-
-    Raises:
-        ValueError: The passcode is shorter than 8 characters.
     """
-    if len(passcode) < MIN_PASSCODE:
-        raise ValueError(MIN_PASSCODE_MESSAGE)
     root = data_root or default_data_dir()
     students = StudentStore(root)
-    signin = SignIn(students, passcode, load_secret(root))
+    signin = SignIn(students, load_secret(root))
     # our own server; we turn off its docs pages too
     app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
     add_signin_routes(app, signin)

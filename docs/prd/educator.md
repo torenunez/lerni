@@ -45,13 +45,13 @@ Settings never change on their own, and each takes effect at once.
 
 ## Release 1: seed, approve, and supervise
 
-The educator signs in as `educator` with the educator passcode, adds the student accounts (on first start, only `educator` can sign in), makes learning plans, and fills in activity cards, starting from the example plans and the in-app guide. The educator's tabs (together, the **educator view**) are Guide, Students, Sessions, and Learning plans. The supervised student's first activity is a library card: the cars example's fourth activity already carries the car card. Design: [student accounts spec](../../plans/specs/03-student-accounts.md).
+The educator signs in with their own account, which has educator access (the admin creates the first one), adds the student accounts, makes learning plans, and fills in activity cards, starting from the example plans and the in-app guide. The educator tabs (together, the **educator view**) are Sessions, Learning plans, and Students, alongside their own Learn, Guide, and My account. The supervised student's first activity is a library card: the cars example's fourth activity already carries the car card. Design: [student accounts spec](../../plans/specs/03-student-accounts.md).
 
 ### Story: Manage student accounts
 
 As an educator, I want to add and manage the students who use the app, so that each one signs in as themselves.
 
-- WHEN someone signs in with the username `educator` THE SYSTEM SHALL accept only the educator passcode (at least 8 characters, set by the admin); `educator` and `admin` are never student usernames.
+- WHEN an educator signs in THE SYSTEM SHALL show their own learner tabs and the educator tabs together; educator access is a flag on an independent account, never on a supervised one, and `educator` and `admin` are never usernames.
 - WHEN the educator adds a student THE SYSTEM SHALL save a username (lowercase letters, digits, and hyphens, starting with a letter, never reused), a display name, the kind (supervised or independent), and a starting password (at least 8 characters for an independent student, 4 for a supervised one), storing only the password's hash.
 - WHEN the educator resets a password or archives a student THE SYSTEM SHALL sign that account out on every device at once; an archived student can't sign in, and their username stays taken.
 - WHEN the educator views the students THE SYSTEM SHALL show an independent student's name and kind only, never their plans or sessions.
@@ -175,6 +175,8 @@ Running the admin tool. Editing app code or lesson files directly.
 - 2026-10-09: The app has one sign-in; the educator signs in as `educator` with the passcode, and the separate educator view at `/educator/` goes away. (Replaces "only the educator logs in; the student screen has no login".)
 - 2026-10-09: No plan assignment yet: a supervised student sees every activity the educator approved. Assignment comes when an educator has more than one supervised student.
 - 2026-10-09: In Release 1 the educator approves library cards in the app; the supervised student's first activity is the cars example's car card. Packaged activity files aren't played or approved in the app.
+
+- 2026-10-09: Educator is a permission on a person's independent account, not a shared `educator` sign-in, so the educator signs in once for both learning and planning. The educator passcode is gone; the admin creates the first educator account from the terminal. (Replaces the earlier 2026-10-09 decision about signing in as `educator`.)
 
 ## Open questions
 

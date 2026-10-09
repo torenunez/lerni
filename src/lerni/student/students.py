@@ -62,6 +62,7 @@ class Student:
     password: PasswordHash
     session_version: int = 1
     explore_freely: date | None = None
+    educator: bool = False  # may manage students and the family's plans
     archived: bool = False
 
 
@@ -120,6 +121,7 @@ def _to_dict(student: Student) -> dict[str, Any]:
         "password": {"salt": p.salt, "hash": p.hash, "n": p.n, "r": p.r, "p": p.p},
         "session_version": student.session_version,
         "explore_freely": student.explore_freely.isoformat() if student.explore_freely else None,
+        "educator": student.educator,
         "archived": student.archived,
     }
 
@@ -134,6 +136,7 @@ def _from_dict(data: dict[str, Any]) -> Student:
             password=PasswordHash(**data["password"]),
             session_version=int(data["session_version"]),
             explore_freely=date.fromisoformat(explore) if explore else None,
+            educator=bool(data.get("educator", False)),
             archived=bool(data["archived"]),
         )
     except (KeyError, TypeError, ValueError) as exc:
@@ -190,15 +193,20 @@ class StudentStore:
             raise AccountError(f"{username}: unreadable account file") from exc
         return _from_dict(data)
 
-    def add(self, username: str, display_name: str, kind: Kind, password: str) -> Student:
-        """Create an account. Archived usernames stay taken."""
+    def add(
+        self, username: str, display_name: str, kind: Kind, password: str, educator: bool = False
+    ) -> Student:
+        """Create an account. Archived usernames stay taken; only independent accounts educate."""
         if self._path(username).exists():
             raise AccountError(f"{username!r} is taken.")
+        if educator and Kind(kind) is not Kind.INDEPENDENT:
+            raise AccountError("Only an independent account can be an educator.")
         student = Student(
             username=username,
             display_name=_display_name(display_name),
             kind=Kind(kind),
             password=hash_password(password, Kind(kind)),
+            educator=educator,
         )
         return self._save(student)
 
@@ -219,6 +227,13 @@ class StudentStore:
     def rename(self, username: str, display_name: str) -> Student:
         """Change the display name."""
         return self._save(replace(self.get(username), display_name=_display_name(display_name)))
+
+    def set_educator(self, username: str, educator: bool) -> Student:
+        """Give or take away educator access (independent accounts only)."""
+        s = self.get(username)
+        if educator and s.kind is not Kind.INDEPENDENT:
+            raise AccountError("Only an independent account can be an educator.")
+        return self._save(replace(s, educator=educator, session_version=s.session_version + 1))
 
     def archive(self, username: str) -> Student:
         """Archive in place: no more sign-ins, every device signs out, the username stays taken."""

@@ -14,7 +14,7 @@ from lerni.student.signin import Role, SignIn, Viewer
 from lerni.student.students import AccountError, Kind, StudentStore
 
 PRIVATE = {"api_visibility": "private"}
-STUDENT_COLUMNS = ["Username", "Display name", "Kind", "Status"]
+STUDENT_COLUMNS = ["Username", "Display name", "Kind", "Educator", "Status"]
 
 
 class NotAllowed(Exception):
@@ -28,33 +28,41 @@ def require(viewer: Viewer | None, *roles: Role) -> Viewer:
     return viewer
 
 
+def require_educator(viewer: Viewer | None) -> Viewer:
+    """Return ``viewer`` if it may manage students and plans; refuse anyone else."""
+    if viewer is None or not viewer.educator:
+        raise NotAllowed("Only an educator can do that.")
+    return viewer
+
+
 def student_rows(students: StudentStore) -> list[list[str]]:
     """The Students table: names and kinds only, never plans or sessions."""
     return [
-        [s.username, s.display_name, s.kind.value, "archived" if s.archived else "active"]
+        [s.username, s.display_name, s.kind.value, "yes" if s.educator else "",
+         "archived" if s.archived else "active"]
         for s in students.list_students()
-    ] or [["", "No students yet.", "", ""]]
+    ] or [["", "No students yet.", "", "", ""]]
 
 
 def add_student(
     students: StudentStore, viewer: Viewer | None, username: str, display_name: str,
-    kind: str, password: str,
+    kind: str, password: str, educator: bool,
 ) -> str:
-    require(viewer, Role.EDUCATOR)
-    s = students.add(username, display_name, Kind(kind), password)
-    return f"✅ Added {s.display_name} ({s.kind.value})."
+    require_educator(viewer)
+    s = students.add(username, display_name, Kind(kind), password, educator=educator)
+    return f"✅ Added {s.display_name} ({s.kind.value}{', educator' if s.educator else ''})."
 
 
 def reset_student(
     students: StudentStore, viewer: Viewer | None, username: str, password: str
 ) -> str:
-    require(viewer, Role.EDUCATOR)
+    require_educator(viewer)
     students.reset_password(username, password)
     return f"✅ New password set for {username}. Their devices are signed out."
 
 
 def archive_student(students: StudentStore, viewer: Viewer | None, username: str) -> str:
-    require(viewer, Role.EDUCATOR)
+    require_educator(viewer)
     students.archive(username)
     return f"✅ Archived {username}. They can't sign in, and the username stays taken."
 
@@ -89,6 +97,7 @@ def students_tab(signin: SignIn, students: StudentStore) -> tuple[gr.Tab, gr.Dat
         username = gr.Textbox(label="Username (lowercase, e.g. sam)")
         display = gr.Textbox(label="Display name (a nickname is fine)")
         kind = gr.Radio(["supervised", "independent"], value="supervised", label="Kind")
+        educator = gr.Checkbox(label="Educator: can add students and plan (independent only)")
         password = gr.Textbox(label="Starting password (4+ for supervised, 8+ for independent)",
                               type="password")
         add_btn = gr.Button("Add student", variant="primary")
@@ -103,8 +112,8 @@ def students_tab(signin: SignIn, students: StudentStore) -> tuple[gr.Tab, gr.Dat
         def viewer(request: gr.Request) -> Viewer | None:
             return signin.viewer(request.username)
 
-        def on_add(u: str, d: str, k: str, p: str, request: gr.Request) -> list[Any]:
-            message = _run(add_student, students, viewer(request), u.strip(), d, k, p)
+        def on_add(u: str, d: str, k: str, p: str, e: bool, request: gr.Request) -> list[Any]:
+            message = _run(add_student, students, viewer(request), u.strip(), d, k, p, e)
             return [message, student_rows(students)]
 
         def on_reset(u: str, p: str, request: gr.Request) -> list[Any]:
@@ -115,7 +124,9 @@ def students_tab(signin: SignIn, students: StudentStore) -> tuple[gr.Tab, gr.Dat
             message = _run(archive_student, students, viewer(request), u.strip())
             return [message, student_rows(students)]
 
-        add_btn.click(on_add, [username, display, kind, password], [status, table], **PRIVATE)
+        add_btn.click(
+            on_add, [username, display, kind, password, educator], [status, table], **PRIVATE
+        )
         reset_btn.click(on_reset, [who, new_password], [status, table], **PRIVATE)
         archive_btn.click(on_archive, who, [status, table], **PRIVATE)
     return tab, table  # main.py fills the table on page load

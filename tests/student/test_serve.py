@@ -14,6 +14,5 @@ def test_ctrl_c_stops_the_server_without_waiting_for_open_pages(monkeypatch, tmp
     seen = {}
     monkeypatch.setattr(uvicorn, "run", lambda app, **kwargs: seen.update(kwargs))
     monkeypatch.setattr(serve, "_claude_drafter", lambda: None)
-    monkeypatch.setenv("LERNI_EDUCATOR_PASSCODE", "test-passcode")
     serve.serve("127.0.0.1", 0)
     assert 0 < seen["timeout_graceful_shutdown"] <= 5

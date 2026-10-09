@@ -14,26 +14,37 @@ import gradio as gr
 from lerni.student.catalog import PackageLessonCatalog
 from lerni.student.plan_import import PlanDrafter
 from lerni.student.plans import PlanStore
-from lerni.student.signin import Role, SignIn
+from lerni.student.signin import Role, SignIn, Viewer
 from lerni.student.students import StudentStore
 from lerni.student.web.accounts import account_tab, student_rows, students_tab
 from lerni.student.web.educator import educator_tabs, plan_choices, sessions_text
 
-# Tab ids in page order, and which roles see each. Learning plans opens to
-# independent students in step 6.
-_TABS = (
-    ("learn", {Role.SUPERVISED, Role.INDEPENDENT}),
-    ("guide", {Role.EDUCATOR, Role.INDEPENDENT}),
-    ("sessions", {Role.EDUCATOR}),
-    ("plans", {Role.EDUCATOR}),
-    ("students", {Role.EDUCATOR}),
-    ("account", {Role.INDEPENDENT}),
-)
+# Tab ids in page order. Everyone gets Learn; independent students also get
+# Guide and My account; educators also get Sessions, Learning plans, and
+# Students. Independent students' own Learning plans arrive in step 6.
+_TAB_IDS = ("learn", "guide", "sessions", "plans", "students", "account")
+_EDUCATOR_TABS = {"sessions", "plans", "students"}
+_INDEPENDENT_TABS = {"learn", "guide", "account"}
 
 
-def visible_tabs(role: Role | None) -> tuple[str, ...]:
-    """The tab ids ``role`` sees, in page order; the first one opens on load."""
-    return tuple(tab for tab, roles in _TABS if role in roles)
+def visible_tabs(viewer: Viewer | None) -> tuple[str, ...]:
+    """The tab ids ``viewer`` sees, in page order."""
+    if viewer is None:
+        return ()
+    shown = {"learn"}
+    if viewer.role is Role.INDEPENDENT:
+        shown |= _INDEPENDENT_TABS
+    if viewer.educator:
+        shown |= _EDUCATOR_TABS
+    return tuple(tab for tab in _TAB_IDS if tab in shown)
+
+
+def opening_tab(viewer: Viewer | None) -> str | None:
+    """The tab selected on load: the Guide for educators, otherwise Learn."""
+    shown = visible_tabs(viewer)
+    if not shown:
+        return None
+    return "guide" if viewer is not None and viewer.educator else shown[0]
 
 
 def build_main_view(
@@ -64,16 +75,20 @@ def build_main_view(
 
         def on_load(request: gr.Request) -> list[Any]:
             viewer = signin.viewer(request.username)
-            role = viewer.role if viewer else None
-            is_edu, is_ind = role is Role.EDUCATOR, role is Role.INDEPENDENT
-            name = f"{viewer.display_name} · {viewer.role.value}" if viewer else "nobody"
-            shown = visible_tabs(role)
+            shown = visible_tabs(viewer)
+            is_edu = viewer is not None and viewer.educator
+            if viewer is None:
+                name = "nobody"
+            else:
+                name = f"{viewer.display_name} · {viewer.role.value}"
+                name += " · educator" if is_edu else ""
             return [
                 f"Signed in as **{name}**",
-                gr.update(selected=shown[0] if shown else None),  # open a tab they can see
-                *(gr.update(visible=tab in shown) for tab, _ in _TABS),
-                gr.update(visible=role is Role.SUPERVISED),  # waiting screen
-                gr.update(visible=is_ind),  # independent's empty Learn
+                gr.update(selected=opening_tab(viewer)),  # open a tab they can see
+                *(gr.update(visible=tab in shown) for tab in _TAB_IDS),
+                gr.update(visible=viewer is not None and viewer.role is Role.SUPERVISED),
+                # an independent student's empty Learn, until step 6
+                gr.update(visible=viewer is not None and viewer.role is Role.INDEPENDENT),
                 gr.update(choices=plan_choices(store) if is_edu else [], value=None),
                 sessions_text(catalog) if is_edu else "",
                 student_rows(students) if is_edu else [],
@@ -82,7 +97,7 @@ def build_main_view(
         blocks.load(
             on_load,
             None,
-            # order matches on_load: header, tabs, the _TABS tabs, then the rest
+            # order matches on_load: header, tabs, the _TAB_IDS tabs, then the rest
             [header, tabs, learn_tab, guide_tab, sessions_tab, plans_tab, students_tab_,
              account, waiting, independent, plan_dd, sessions, students_table],
             api_visibility="private",

@@ -16,7 +16,7 @@ def make(tmp_path):
     store = StudentStore(tmp_path)
     store.add("sam", "Sam", Kind.INDEPENDENT, "correct horse")
     clock = Clock()
-    return store, SignIn(store, "educator-pass", b"k" * 32, clock=clock), clock
+    return store, SignIn(store, b"k" * 32, clock=clock), clock
 
 
 def test_cookie_works_until_reset_or_archive(tmp_path):
@@ -26,8 +26,9 @@ def test_cookie_works_until_reset_or_archive(tmp_path):
     store.reset_password("sam", "new password")
     assert signin.viewer_from_cookie(cookie) is None  # every device signed out
     assert signin.viewer_from_cookie("sam.1.1.forged") is None
-    educator, _ = signin.attempt("educator", "educator-pass")
-    assert signin.viewer_from_cookie(educator).role is Role.EDUCATOR
+    store.add("alba", "Alba", Kind.INDEPENDENT, "long enough", educator=True)
+    educator, _ = signin.attempt("alba", "long enough")
+    assert signin.viewer_from_cookie(educator).educator
 
 
 def test_wrong_passwords_wait_without_touching_signed_in_sessions(tmp_path):
@@ -73,15 +74,6 @@ def test_unknown_usernames_look_like_known_ones(tmp_path):
     for _ in range(3):
         signin.attempt("nobody-here", "nope")
     assert "wait" in signin.attempt("nobody-here", "nope")[1].lower()
-
-
-def test_educator_cookie_does_not_carry_a_passcode_hash(tmp_path):
-    # regression: the cookie held sha256(passcode), guessable offline
-    import hashlib
-
-    _, signin, _ = make(tmp_path)
-    cookie, _ = signin.attempt("educator", "educator-pass")
-    assert hashlib.sha256(b"educator-pass").hexdigest()[:12] not in cookie
 
 
 def test_an_empty_secret_file_is_refused(tmp_path):

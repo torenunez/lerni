@@ -5,40 +5,7 @@ from __future__ import annotations
 import os
 from typing import Any
 
-DEFAULT_PASSCODE_ENV = "LERNI_EDUCATOR_PASSCODE"
 MODEL_ENV = "LERNI_CLAUDE_MODEL"
-
-
-class MissingPasscodeError(RuntimeError):
-    """The environment variable that should hold the passcode is unset or empty."""
-
-
-def resolve_passcode(env_var: str = DEFAULT_PASSCODE_ENV) -> str:
-    """Read the educator passcode from an environment variable.
-
-    The passcode is never read from a file or a command-line argument, so it
-    can't end up in the repository or in shell history.
-
-    Args:
-        env_var: Name of the environment variable holding the passcode.
-
-    Returns:
-        The passcode.
-
-    Raises:
-        MissingPasscodeError: If the variable is unset or empty.
-
-    Example:
-        >>> os.environ["DEMO_PASSCODE"] = "s3cret"
-        >>> resolve_passcode("DEMO_PASSCODE")
-        's3cret'
-    """
-    value = os.environ.get(env_var, "")
-    if not value:
-        raise MissingPasscodeError(
-            f"Set the educator passcode first: export {env_var}='...'"
-        )
-    return value
 
 
 def _claude_drafter() -> Any:
@@ -54,29 +21,25 @@ def _claude_drafter() -> Any:
     return ClaudeCodeDrafter(model=os.environ.get(MODEL_ENV, DEFAULT_MODEL))
 
 
-def serve(host: str, port: int, passcode_env: str = DEFAULT_PASSCODE_ENV) -> None:
+def serve(host: str, port: int) -> None:
     """Start the student app and block until it stops.
 
     Args:
-        host: Address to bind. ``0.0.0.0`` lets the iPad and the educator's
-            device reach it on the home network.
+        host: Address to bind. ``0.0.0.0`` lets the iPad and other devices on
+            the home network reach it.
         port: Port to listen on.
-        passcode_env: Name of the environment variable holding the passcode.
-
-    Raises:
-        MissingPasscodeError: If the passcode variable is unset or empty.
-        ValueError: If the passcode is shorter than 8 characters.
     """
-    passcode = resolve_passcode(passcode_env)
-
     import uvicorn
 
+    from lerni.student.students import StudentStore
     from lerni.student.web.app import build_app
 
     drafter = _claude_drafter()
-    app = build_app(passcode, drafter=drafter)
+    app = build_app(drafter=drafter)
     print(f"Sign in:  http://<this-computer>:{port}/", flush=True)
-    print("Educator: username 'educator' and the passcode. Students: their own.", flush=True)
+    if not any(s.educator for s in StudentStore().list_students()):
+        print("No educator yet: lerni student add USERNAME --name NAME "
+              "--kind independent --educator", flush=True)
     status = f"on ({drafter.model})" if drafter else "off (the claude CLI isn't installed)"
     print(f"Plan import with Claude: {status}", flush=True)
     print("Home network only. Press Ctrl-C to stop.", flush=True)

@@ -42,12 +42,21 @@ button {{ font-size: 1.3rem; padding: .7rem; border-radius: 999px; border: 0;
   <label for="password">Password</label>
   <input id="password" name="password" type="password" autocomplete="current-password" required>
   <button type="submit">Sign in</button>
-  <p>No account yet? Ask your educator.</p>
+  <p>{hint}</p>
 </form></body></html>"""
 
 
-def _page(message: str = "", status: int = 200) -> HTMLResponse:
-    return HTMLResponse(_PAGE.format(message=escape(message)), status_code=status)
+NO_ACCOUNTS_HINT = (
+    "No accounts yet. On the home server, run: lerni student add USERNAME "
+    "--name NAME --kind independent --educator"
+)
+
+
+def _page(message: str = "", status: int = 200, first_start: bool = False) -> HTMLResponse:
+    hint = NO_ACCOUNTS_HINT if first_start else "No account yet? Ask your educator."
+    return HTMLResponse(
+        _PAGE.format(message=escape(message), hint=escape(hint)), status_code=status
+    )
 
 
 def add_signin_routes(app: FastAPI, signin: SignIn) -> None:
@@ -68,7 +77,7 @@ def add_signin_routes(app: FastAPI, signin: SignIn) -> None:
 
     @app.get("/signin")
     def signin_form() -> HTMLResponse:
-        return _page()
+        return _page(first_start=not signin.students.list_students())
 
     @app.post("/signin")
     def signin_submit(username: str = Form(""), password: str = Form("")) -> Response:

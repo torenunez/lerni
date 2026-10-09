@@ -38,3 +38,10 @@ def test_a_stray_or_broken_file_does_not_hide_the_others(tmp_path):
     (store.root / ".tmp-abc.json").write_text("{")
     (store.root / "broken.json").write_text("not json")
     assert [s.username for s in store.list_students()] == ["sam"]
+
+
+def test_only_independent_accounts_can_be_educators(tmp_path):
+    store = StudentStore(tmp_path)
+    assert store.add("alba", "Alba", Kind.INDEPENDENT, "long enough", educator=True).educator
+    with pytest.raises(AccountError):
+        store.add("kid", "Kid", Kind.SUPERVISED, "1234", educator=True)

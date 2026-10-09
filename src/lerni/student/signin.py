@@ -30,7 +30,6 @@ from lerni.student.students import (
 
 COOKIE_NAME = "lerni_session"
 SESSION_SECONDS = 30 * 24 * 3600
-EDUCATOR = "educator"
 FREE_FAILURES = 3  # wrong passwords before delays start
 MAX_WAIT = 30.0
 MAX_TRACKED = 1000  # usernames with recent wrong passwords kept in memory
@@ -38,7 +37,6 @@ SECRET_BYTES = 32
 
 
 class Role(StrEnum):
-    EDUCATOR = "educator"
     SUPERVISED = "supervised"
     INDEPENDENT = "independent"
 
@@ -50,6 +48,7 @@ class Viewer:
     username: str
     display_name: str
     role: Role
+    educator: bool = False  # may manage students and the family's plans
 
 
 def load_secret(root: Path) -> bytes:
@@ -87,7 +86,6 @@ class SignIn:
 
     Args:
         students: The account store.
-        passcode: The educator passcode (already checked for length by the caller).
         secret: The cookie-signing secret.
         clock: Seconds since the epoch; injectable for tests.
     """
@@ -95,22 +93,15 @@ class SignIn:
     def __init__(
         self,
         students: StudentStore,
-        passcode: str,
         secret: bytes,
         clock: Callable[[], float] = time.time,
     ) -> None:
         self.students = students
-        self._passcode = passcode.encode("utf-8")
         self._secret = secret
         self._clock = clock
         self._failures: dict[str, _Failures] = {}
         self._lock = threading.Lock()  # one sign-in check at a time, so waits can't be raced
         self._dummy = hash_password("not-a-real-password", Kind.INDEPENDENT)
-        # changes with the passcode (signing the educator out everywhere), but keyed by
-        # the secret so the cookie reveals nothing about the passcode
-        self._educator_version = hmac.new(
-            secret, b"educator-version:" + self._passcode, hashlib.sha256
-        ).hexdigest()[:16]
 
     # --- cookies -------------------------------------------------------------
 
@@ -119,8 +110,6 @@ class SignIn:
 
     def _version(self, username: str) -> str | None:
         """The current session version, or None if the account can't sign in."""
-        if username == EDUCATOR:
-            return self._educator_version
         try:
             student = self.students.get(username)
         except AccountError:
@@ -133,8 +122,6 @@ class SignIn:
 
     def viewer(self, username: str | None) -> Viewer | None:
         """Re-read who ``username`` is right now; None if missing or archived."""
-        if username == EDUCATOR:
-            return Viewer(EDUCATOR, "Educator", Role.EDUCATOR)
         if not username or not USERNAME_RE.fullmatch(username):
             return None
         try:
@@ -144,7 +131,7 @@ class SignIn:
         if s.archived:
             return None
         role = Role.SUPERVISED if s.kind is Kind.SUPERVISED else Role.INDEPENDENT
-        return Viewer(s.username, s.display_name, role)
+        return Viewer(s.username, s.display_name, role, s.educator)
 
     def viewer_from_cookie(self, value: str | None) -> Viewer | None:
         """Resolve a cookie: valid signature, not expired, and the same session version."""
@@ -163,8 +150,6 @@ class SignIn:
     # --- passwords -------------------------------------------------------------
 
     def _check(self, username: str, password: str) -> bool:
-        if username == EDUCATOR:
-            return hmac.compare_digest(password.encode("utf-8"), self._passcode)
         try:
             student = self.students.get(username)
         except AccountError:
@@ -180,7 +165,7 @@ class SignIn:
             ``(cookie, "")`` on success, or ``(None, message)``.
         """
         # every well-formed name is tracked alike, known or not, so nothing reveals who exists
-        tracked = username == EDUCATOR or bool(USERNAME_RE.fullmatch(username))
+        tracked = bool(USERNAME_RE.fullmatch(username))
         with self._lock:
             f = self._failures.get(username) if tracked else None
             now = self._clock()
