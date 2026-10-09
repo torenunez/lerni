@@ -60,7 +60,7 @@ Grades mean blackout (0), recognition after seeing the answer (1), apparent ease
 
 ## Running the student app
 
-`lerni serve` runs the student app on the home server (Release 1, step 1: it shows a waiting screen and an empty educator view, with no activities yet).
+`lerni serve` runs the student app on the home server (Release 1 steps 1–4: a waiting screen for the student, and the educator view with the Guide, plans, activity cards, and the Claude import).
 
 ```bash
 pip install -e ".[student]"                # once: installs Gradio

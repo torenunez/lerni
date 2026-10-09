@@ -36,7 +36,7 @@ What every code file does, in the order a request flows through it. When you add
 
 | File | What it does |
 |---|---|
-| `src/lerni/student/adapters/claude_code.py` | Sends the educator's notes to Claude through the Claude Code CLI and the logged-in account (prototype; no API key), with no tools and no settings, and returns the structured plan. |
+| `src/lerni/student/adapters/claude_code.py` | Sends the educator's notes to Claude through the Claude Code CLI and the logged-in account (prototype; no API key), with no tools (except reading an uploaded PDF) and no settings, and returns the structured plan. |
 | `src/lerni/student/adapters/__init__.py` | Marks the adapters package. |
 
 **Content shipped with the app**

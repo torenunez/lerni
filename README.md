@@ -11,7 +11,7 @@ Lerni has two parts:
   We are building it in steps: first text, pictures, and choices; then remembering what the student explored and building on it; then speaking and listening. The planning screens, the Claude import, and the activity engine exist; sign-in and playing activities come next.
 - **Admin tool — in the terminal.** Full access: learn topics with it, try out activities, and tune the learning mechanics before the student app relies on them. Available now. Educators never need it. To use the app as a learner, the admin has their own independent student account.
 
-The student app treats knowledge as a map: **nodes** are ideas, and **edges** link them, either by how they relate or by which makes a good next step. A path starts at a student's core interest (cars, sharks, soccer) and follows edges toward an underlying idea. The map grows by branching to nearby ideas. It strengthens when the same idea is reached again from a different interest, so speed met through cars and again through sharks becomes one connected idea. Educators plan it in plain language today, and the admin turns their plans into the map; suggesting where to go next comes later.
+The student app treats knowledge as a map: **nodes** are ideas, and **edges** link them, either by how they relate or by which makes a good next step. A path starts at a student's core interest (cars, sharks, soccer) and follows edges toward an underlying idea. The map grows by branching to nearby ideas. It strengthens when the same idea is reached again from a different interest, so speed met through cars and again through sharks becomes one connected idea. Today the educator and independent students plan in plain language, as learning plans and activity cards in the app; building the map from them and suggesting where to go next come later.
 
 ## Read in this order
 
@@ -33,7 +33,7 @@ For admins: run these commands from a repository checkout with Python 3.11 or ne
 
 ```bash
 python3 -m venv .venv && source .venv/bin/activate
-pip install -e ".[dev]"
+pip install -e ".[dev,student]"   # [student] adds Gradio; without it, the web tests are skipped
 pytest
 lerni --help
 ```
