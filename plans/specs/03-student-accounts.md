@@ -150,7 +150,7 @@ One PR per unit. PR #6 (steps 1–4) merges first; each PR below branches from `
 |---|---|---|
 | Docs | Reframe README, the three PRDs, ARCHITECTURE, CLAUDE.md, roadmap, MVP plan, todo, progress, and the in-app guide | A consistency scan finds no single-student framing left, outside history |
 | Step 5 | Accounts and one sign-in: `students.py`, the shared JSON-store helper, one app at `/` with tabs by role, the Students tab, lockout, Log out | You sign in as yourself on the iPad, Safari saves the password, a reload keeps you signed in, and the educator signs in to the same app and sees the educator tabs |
-| Step 6 | Plan my own: Guide and Learning plans for independent students, scoped to their own plans; My account; plan schema v2 (`owner`, `approval`, `drafted_by`), the import's audience and Explore freely instructions, start from an example, self-approval | You turn on Explore freely, import your own interests, and get full cards |
+| Step 6 | Plan my own: Guide and Learning plans for independent students, scoped to their own plans; My account; plan schema v2 (`owner`, `approval`, `drafted_by`), the import's audience and Explore freely instructions, start from an example, self-approval; the import evals | You turn on Explore freely, import your own interests, and get full cards; the evals pass |
 | Step 7 | Play it: `card_activity.py`, `controller.py`, the Learn tab and activity screens | **You do your own activity end to end on the iPad** |
 | Step 8 | Supervised path: the educator's Start, Stop, Reset, and recap, the four approvals in the app, packaged activities in Learn | The educator runs a supervised student's session on the iPad from their own device |
 
@@ -175,11 +175,25 @@ Minimal, per CLAUDE.md rule 4: one happy path per new module, plus one test per 
 - Plans: a version 1 file still loads (blank owner).
 - `controller.py`: one happy path; a stale tap is ignored; two students' sessions don't affect each other.
 
+## Evals for the Claude import
+
+Tests check our code with a fake Claude; evals check Claude's actual answers. Explore freely lets Claude-written cards play unchecked, so step 6 adds a small eval set before you rely on it.
+
+- **Where:** `evals/plan_import/cases/*.json` (inputs and expectations) and `scripts/run_plan_import_evals.py`, which sends each case through the real drafter and prints a pass/fail table. Nothing is saved.
+- **When:** by hand, whenever the import instructions, schema, or model change. Never in `pytest` (rule 4), never in the commit gate. Each run uses some of the Claude plan, so the script says how many calls it will make and asks first.
+- **Cases (about 10, all synthetic, nothing real; rule 8):** thin notes (one line), messy notes, a full plan with card details, notes with a made-up name and birthday, notes containing "ignore your instructions", the same notes for a supervised and an independent audience, an Explore freely topic, and a PDF.
+- **Checks in code:** the answer fits the schema and loads as a plan; no name from the input appears in the output; the injected instruction isn't followed; sources stay empty unless the notes name one (Explore freely: "Claude's general knowledge"); outside Explore freely, cards appear only where the notes had details; up to 3 "Question:" notes.
+- **Checks graded by Claude** against a short rubric, pass or fail with a reason: suits the audience, keeps the educator's wording, activities build in a sensible order, facts plausible (Explore freely).
+- **Pass bar:** every code check passes; rubric checks pass on at least 9 of 10 cases. A failure is fixed in the instructions, and the case stays as a regression.
+
+An agent with tools (reading the plan, checking the allowlist, giving hints) comes with the Release 3 conversation, and its evals grow from this set.
+
 ## Not in this design
 
 - Tap-a-name tiles, our own cookies, and password recovery beyond the educator's reset.
 - Asking Claude to draft one card at a time after import; import is the only way Claude writes cards for now.
 - Free conversation for independent students; it stays with Releases 3 and 5 for everyone.
+- An agent with tools, and Agent Skills inside the app. The app's Claude calls stay single structured calls with no tools or skills until the Release 3 plan.
 - Progress or memory (Release 2).
 - Assigning plans to particular students. Supervised students see every educator-approved library activity; independent students copy an example. Add an optional `assigned_plans` field (missing means all) once an educator has more than one supervised student.
 - Hosting outside the home. It's still one household on the home Wi-Fi; passwords keep students apart, they don't make the app safe to expose.
