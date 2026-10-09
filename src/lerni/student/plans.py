@@ -15,12 +15,13 @@ import json
 import os
 import re
 import secrets
-import tempfile
 from dataclasses import asdict, dataclass, field, replace
 from datetime import date
 from importlib import resources
 from pathlib import Path
 from typing import Any
+
+from lerni.student.jsonfiles import write_json_atomic
 
 SCHEMA_VERSION = 1
 MAX_TEXT = 500
@@ -312,18 +313,7 @@ class PlanStore:
         saved = replace(plan, updated_on=date.today())
         data = plan_to_dict(saved)
         plan_from_dict(data)  # same checks on the way out as on the way in
-        path = self._path(saved.plan_id)
-        self.root.mkdir(parents=True, exist_ok=True)
-        # write to a temp file, then swap it in, so a crash never leaves half a plan
-        fd, tmp = tempfile.mkstemp(dir=self.root, prefix=".tmp-", suffix=".json")
-        try:
-            with os.fdopen(fd, "w", encoding="utf-8") as handle:
-                json.dump(data, handle, ensure_ascii=False, indent=2)
-                handle.write("\n")
-            os.replace(tmp, path)
-        except BaseException:
-            Path(tmp).unlink(missing_ok=True)
-            raise
+        write_json_atomic(self._path(saved.plan_id), data)
         return saved
 
     def archive(self, plan_id: str) -> None:
