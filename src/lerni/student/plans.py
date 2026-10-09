@@ -283,7 +283,14 @@ class PlanStore:
         """Return all current plans, examples last, then by interest."""
         if not self.root.is_dir():
             return []
-        plans = [self.get(p.stem) for p in sorted(self.root.glob("*.json"))]
+        plans = []
+        for path in sorted(self.root.glob("*.json")):
+            if not PLAN_ID_RE.fullmatch(path.stem):
+                continue  # temp files (".tmp-*") from an interrupted save
+            try:
+                plans.append(self.get(path.stem))
+            except PlanError:
+                continue  # one damaged file mustn't hide the rest
         return sorted(plans, key=lambda p: (p.is_example, p.interest.lower(), p.plan_id))
 
     def get(self, plan_id: str) -> LearningPlan:

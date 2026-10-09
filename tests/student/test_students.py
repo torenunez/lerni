@@ -29,3 +29,12 @@ def test_archived_username_is_never_reused(tmp_path):
     assert store.get("sam").archived
     with pytest.raises(AccountError):
         store.add("sam", "Sam again", Kind.SUPERVISED, "1234")
+
+
+def test_a_stray_or_broken_file_does_not_hide_the_others(tmp_path):
+    # regression: a leftover temp file or a corrupt account broke the whole Students list
+    store = StudentStore(tmp_path)
+    store.add("sam", "Sam", Kind.SUPERVISED, "1234")
+    (store.root / ".tmp-abc.json").write_text("{")
+    (store.root / "broken.json").write_text("not json")
+    assert [s.username for s in store.list_students()] == ["sam"]

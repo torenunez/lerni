@@ -48,7 +48,10 @@ def build_main_view(
     """Build the page; the tabs each viewer sees are set on load."""
     store.seed_if_empty()  # first run: copy in the example plans
     with gr.Blocks(title="Lerni", analytics_enabled=False) as blocks:
-        header = gr.Markdown()
+        with gr.Row():
+            header = gr.Markdown()
+            # a same-tab button: a Markdown link would open Sign out in a new tab
+            gr.Button("Sign out", link="/signout", link_target="_self", size="sm", scale=0)
         with gr.Tabs() as tabs:
             with gr.Tab("Learn", id="learn", visible=False) as learn_tab:
                 waiting = gr.HTML(welcome_html, visible=False)
@@ -66,7 +69,7 @@ def build_main_view(
             name = f"{viewer.display_name} · {viewer.role.value}" if viewer else "nobody"
             shown = visible_tabs(role)
             return [
-                f"Signed in as **{name}** · [Sign out](/signout)",
+                f"Signed in as **{name}**",
                 gr.update(selected=shown[0] if shown else None),  # open a tab they can see
                 *(gr.update(visible=tab in shown) for tab, _ in _TABS),
                 gr.update(visible=role is Role.SUPERVISED),  # waiting screen

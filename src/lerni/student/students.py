@@ -165,7 +165,14 @@ class StudentStore:
         """All accounts, archived last, then by display name."""
         if not self.root.is_dir():
             return []
-        students = [self.get(p.stem) for p in sorted(self.root.glob("*.json"))]
+        students = []
+        for path in sorted(self.root.glob("*.json")):
+            if not USERNAME_RE.fullmatch(path.stem):
+                continue  # temp files (".tmp-*") and anything else that isn't an account
+            try:
+                students.append(self.get(path.stem))
+            except AccountError:
+                continue  # one damaged file mustn't hide everyone else
         return sorted(students, key=lambda s: (s.archived, s.display_name.lower()))
 
     def get(self, username: str) -> Student:

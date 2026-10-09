@@ -43,3 +43,13 @@ def test_each_role_opens_on_a_tab_it_can_see():
     assert visible_tabs(Role.EDUCATOR) == ("guide", "sessions", "plans", "students")
     assert visible_tabs(Role.SUPERVISED) == ("learn",)
     assert visible_tabs(Role.INDEPENDENT) == ("learn", "guide", "account")
+
+
+def test_sign_out_is_a_same_tab_button(tmp_path):
+    # regression: a Markdown link opened Sign out in a new tab, leaving the old account on screen
+    StudentStore(tmp_path).add("sam", "Sam", Kind.SUPERVISED, "1234")
+    client = TestClient(build_app("test-passcode", data_root=tmp_path))
+    client.post("/signin", data={"username": "sam", "password": "1234"})
+    config = client.get("/app/config").json()
+    buttons = [c["props"] for c in config["components"] if c.get("type") == "button"]
+    assert any(b.get("link") == "/signout" and b.get("link_target") == "_self" for b in buttons)
