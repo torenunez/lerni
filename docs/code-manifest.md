@@ -31,9 +31,10 @@ What every code file does, in the order a request flows through it. When you add
 | File | What it does |
 |---|---|
 | `src/lerni/student/plans.py` | Learning plans: the data types (plan, activity, activity card), validation, and `PlanStore`, which saves one JSON file per plan on the home server. |
-| `src/lerni/student/interests.py` | Interest maps: entries (interests and goals), links, the rules for people's edits (names, the 60-entry cap, remove for good) and for the tagger's observations, the map block for the prompt, and `MapStore` (one JSON file per student, one change at a time). |
+| `src/lerni/student/interests.py` | Interest maps: entries (interests and goals), links, the rules for people's edits (add a goal or an interest, names, the 60-entry cap, remove for good) and for the tagger's observations, the map block for the prompt, and `MapStore` (one JSON file per student, one change at a time). |
 | `src/lerni/student/tagging.py` | The tagger's instructions and schema, and `MapKeeper`: tags each exchange in the background, applies it under the map's lock unless a person changed the map or the conversation was cleared, and logs it. |
 | `src/lerni/student/logs.py` | Conversation logs: each exchange and what the tagger did, one file per student per day, deleted after 7 days; the only place message text is saved. |
+| `src/lerni/student/upload.py` | Upload: reads pasted notes and .txt/.md/.docx/.pdf files, the instructions and schema for Claude's proposals, and checks and adds the ticked interests and goals. |
 | `src/lerni/student/students.py` | Student accounts: usernames, kinds, scrypt password hashes, the data folder (`default_data_dir`), and `StudentStore` (one JSON file per student; archived in place, never reused). |
 | `src/lerni/student/signin.py` | Signing in: checks passwords (with growing waits after wrong ones), issues a signed cookie, and re-reads the account on every request, so archive and reset sign out every device. |
 | `src/lerni/student/jsonfiles.py` | Writes a JSON file atomically; shared by the plan and student stores. |
@@ -108,6 +109,7 @@ Minimal on purpose: one happy path per module, plus a test for each safety guara
 | `tests/student/test_interests.py` | People's goal edits are saved; a goal takes over an interest of the same name; a full map says so; the tagger only adds what the student said and never touches goals; the prompt block stays short. |
 | `tests/student/test_tagging.py` | An exchange grows the map and is logged (a stopped one isn't tagged); a late result never undoes a person or a new conversation; logs older than 7 days are deleted. |
 | `tests/student/test_mapdraw.py` | The map picture escapes names and draws at most 15 entries; the list says the same in words. |
+| `tests/student/test_upload.py` | Proposals are checked and only ticked ones are added (a clash is skipped and named); uploads are read or refused politely. |
 | `tests/student/test_signin.py` | A cookie stops working after a reset; wrong passwords wait without signing anyone out. |
 | `tests/student/test_conversation.py` | Answers stream in and history stays short; the map comes before the rules and never says who is asking; each exchange is reported, stopped or not; New conversation during a reply isn't undone. |
 | `tests/student/test_claude_code_adapter.py` | Every Claude call (drafter, chat, tagger) runs with no tools, no settings, and no saved transcripts; the tagger has a turn for its JSON. |
