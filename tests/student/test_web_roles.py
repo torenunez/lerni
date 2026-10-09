@@ -58,3 +58,15 @@ def test_sign_out_is_a_same_tab_button(tmp_path):
     config = client.get("/app/config").json()
     buttons = [c["props"] for c in config["components"] if c.get("type") == "button"]
     assert any(b.get("link") == "/signout" and b.get("link_target") == "_self" for b in buttons)
+
+
+def test_add_form_clears_after_a_save_and_educator_needs_independent():
+    # regression: the form kept the last student, password and Educator tick included
+    from lerni.student.web.accounts import add_form_after, educator_box_for
+
+    cleared = add_form_after("✅ Added Sam (supervised).")
+    assert [u.get("value") for u in cleared] == ["", "", "supervised", False, ""]
+    assert all("value" not in u for u in add_form_after("⚠️ 'sam' is taken."))
+    assert educator_box_for("supervised") == {"__type__": "update", "value": False,
+                                              "interactive": False}
+    assert educator_box_for("independent")["interactive"] is True

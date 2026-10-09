@@ -81,6 +81,22 @@ def rename_self(students: StudentStore, viewer: Viewer | None, display_name: str
     return "✅ Name changed."
 
 
+def add_form_after(message: str) -> list[Any]:
+    """Updates for the add form: cleared after a save, kept after an error to fix."""
+    if not message.startswith("✅"):
+        return [gr.update()] * 5
+    # username, display name, kind, educator, password
+    return [gr.update(value=""), gr.update(value=""), gr.update(value="supervised"),
+            gr.update(value=False), gr.update(value="")]
+
+
+def educator_box_for(kind: str) -> Any:
+    """Only an independent account can be an educator, so the box follows the kind."""
+    if kind == "independent":
+        return gr.update(interactive=True)
+    return gr.update(value=False, interactive=False)
+
+
 def _run(fn: Any, *args: Any) -> str:
     """Call a handler and turn refusals into a message for the screen."""
     try:
@@ -97,7 +113,9 @@ def students_tab(signin: SignIn, students: StudentStore) -> tuple[gr.Tab, gr.Dat
         username = gr.Textbox(label="Username (lowercase, e.g. sam)")
         display = gr.Textbox(label="Display name (a nickname is fine)")
         kind = gr.Radio(["supervised", "independent"], value="supervised", label="Kind")
-        educator = gr.Checkbox(label="Educator: can add students and plan (independent only)")
+        educator = gr.Checkbox(
+            label="Educator: can add students and plan (independent only)", interactive=False
+        )
         password = gr.Textbox(label="Starting password (4+ for supervised, 8+ for independent)",
                               type="password")
         add_btn = gr.Button("Add student", variant="primary")
@@ -114,20 +132,27 @@ def students_tab(signin: SignIn, students: StudentStore) -> tuple[gr.Tab, gr.Dat
 
         def on_add(u: str, d: str, k: str, p: str, e: bool, request: gr.Request) -> list[Any]:
             message = _run(add_student, students, viewer(request), u.strip(), d, k, p, e)
-            return [message, student_rows(students)]
+            return [message, student_rows(students), *add_form_after(message)]
 
         def on_reset(u: str, p: str, request: gr.Request) -> list[Any]:
             message = _run(reset_student, students, viewer(request), u.strip(), p)
-            return [message, student_rows(students)]
+            done = message.startswith("✅")
+            cleared = [gr.update(value="")] * 2 if done else [gr.update()] * 2
+            return [message, student_rows(students), *cleared]
 
         def on_archive(u: str, request: gr.Request) -> list[Any]:
             message = _run(archive_student, students, viewer(request), u.strip())
             return [message, student_rows(students)]
 
+        form = [username, display, kind, educator, password]  # order matches add_form_after
         add_btn.click(
-            on_add, [username, display, kind, password, educator], [status, table], **PRIVATE
+            on_add, [username, display, kind, password, educator], [status, table, *form],
+            **PRIVATE,
         )
-        reset_btn.click(on_reset, [who, new_password], [status, table], **PRIVATE)
+        kind.change(educator_box_for, kind, educator, **PRIVATE)
+        reset_btn.click(
+            on_reset, [who, new_password], [status, table, who, new_password], **PRIVATE
+        )
         archive_btn.click(on_archive, who, [status, table], **PRIVATE)
     return tab, table  # main.py fills the table on page load
 
