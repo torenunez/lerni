@@ -20,9 +20,11 @@ from typing import Any, NoReturn, Protocol
 
 from lerni.student.canonical import canonical_json_bytes
 from lerni.student.domain import (
+    ActivitySummary,
     ApprovalStatus,
     AssetRef,
     CheckChoice,
+    DraftPreview,
     GroundedFact,
     GroundingBundle,
     Lesson,
@@ -732,6 +734,8 @@ def lesson_payload_sha256(lesson: Lesson) -> str:
 class LessonCatalog(Protocol):
     """Source of lessons a session may use."""
 
+    def list_approved(self) -> tuple[ActivitySummary, ...]: ...
+
     def load(self, lesson_id: str) -> Lesson: ...
 
     def read_asset(self, asset: AssetRef) -> bytes: ...
@@ -842,13 +846,15 @@ class PackageLessonCatalog:
         self._index, self._assets = lessons, assets
         return lessons, assets
 
-    def load(self, lesson_id: str) -> Lesson:
-        """Return the approved, hash-verified lesson for ``lesson_id``.
+    def _read_verified(self, lesson_id: str) -> Lesson:
+        """Read a lesson whose bytes and payload match the index, any status.
+
+        This checks integrity only. Callers decide what the status allows:
+        :meth:`load` requires approval; :meth:`load_preview` does not.
 
         Raises:
             LessonNotFoundError: No such lesson in the package index.
-            LessonNotApprovedError: The lesson exists but is still draft.
-            LessonContentError: Byte, index, or payload hash mismatch.
+            LessonContentError: Byte, id, or payload hash mismatch.
         """
         lessons, _ = self._load_index()
         entry = lessons.get(lesson_id)
@@ -866,11 +872,6 @@ class PackageLessonCatalog:
 
         lesson = parse_lesson_toml(data.decode("utf-8"), origin=entry.resource_name)
 
-        if lesson.review.status is not ApprovalStatus.APPROVED:
-            raise LessonNotApprovedError(
-                f"{lesson_id}: status is {lesson.review.status.value}; "
-                "a student catalog serves approved content only"
-            )
         if lesson.id != lesson_id:
             raise LessonContentError(
                 f"{entry.resource_name}: declares id {lesson.id!r}, indexed as {lesson_id!r}"
@@ -883,6 +884,121 @@ class PackageLessonCatalog:
                 f"index expects {entry.lesson_payload_sha256}"
             )
         return lesson
+
+    def load(self, lesson_id: str) -> Lesson:
+        """Return the approved, hash-verified lesson for ``lesson_id``.
+
+        Raises:
+            LessonNotFoundError: No such lesson in the package index.
+            LessonNotApprovedError: The lesson exists but is still draft.
+            LessonContentError: Byte, index, or payload hash mismatch.
+        """
+        lesson = self._read_verified(lesson_id)
+        if lesson.review.status is not ApprovalStatus.APPROVED:
+            raise LessonNotApprovedError(
+                f"{lesson_id}: status is {lesson.review.status.value}; "
+                "a student catalog serves approved content only"
+            )
+        return lesson
+
+    def _summaries(self, *, approved: bool) -> tuple[ActivitySummary, ...]:
+        lessons, _ = self._load_index()
+        found: list[ActivitySummary] = []
+        for lesson_id in sorted(lessons):
+            try:
+                lesson = self._read_verified(lesson_id)
+            except (LessonContentError, LessonNotFoundError):
+                continue  # altered or missing: never listed
+            is_approved = lesson.review.status is ApprovalStatus.APPROVED
+            if is_approved is approved:
+                found.append(
+                    ActivitySummary(
+                        lesson_id=lesson.id,
+                        title=lesson.title,
+                        content_version=lesson.content_version,
+                        status=lesson.review.status,
+                    )
+                )
+        return tuple(found)
+
+    def list_approved(self) -> tuple[ActivitySummary, ...]:
+        """List the activities a student session may use.
+
+        Only activities that :meth:`load` would return appear: approved, with
+        bytes and payload matching the index. An index entry alone is never
+        enough. Altered or missing activities are left out, not reported.
+
+        Returns:
+            Summaries sorted by lesson ID; empty when nothing is approved.
+
+        Example:
+            >>> PackageLessonCatalog().list_approved()  # doctest: +SKIP
+            ()
+        """
+        return self._summaries(approved=True)
+
+    def list_drafts(self) -> tuple[ActivitySummary, ...]:
+        """List unapproved activities whose files match the index.
+
+        These are for the educator's preview only (see :meth:`load_preview`).
+
+        Returns:
+            Summaries sorted by lesson ID.
+        """
+        return self._summaries(approved=False)
+
+    def load_preview(self, lesson_id: str) -> DraftPreview:
+        """Load an activity for the educator's preview, approved or not.
+
+        The files must still match the index; only the approval check is
+        skipped. The result is a :class:`DraftPreview`, which a live student
+        session refuses.
+
+        Raises:
+            LessonNotFoundError: No such lesson in the package index.
+            LessonContentError: Byte, id, or payload hash mismatch.
+        """
+        return DraftPreview(lesson=self._read_verified(lesson_id))
+
+    def read_preview_asset(self, preview: DraftPreview, asset: AssetRef) -> bytes:
+        """Return a picture for a preview, verified against the package index.
+
+        Draft lessons may leave ``visual_sha256`` blank, so the reference hash
+        is checked only when present. The asset must belong to this preview's
+        lesson, be indexed with the same media type, and its bytes must hash to
+        the indexed value. :meth:`read_asset` stays strict for student sessions.
+
+        Raises:
+            LessonNotFoundError: The asset is not indexed.
+            LessonContentError: The asset isn't part of this lesson, or any
+                media type or hash mismatch.
+        """
+        used = {step.visual.resource_name for step in preview.lesson.steps if step.visual}
+        if asset.resource_name not in used:
+            raise LessonContentError(
+                f"{asset.resource_name}: not a picture in {preview.lesson.id}"
+            )
+        _, assets = self._load_index()
+        entry = assets.get(asset.resource_name)
+        if entry is None:
+            raise LessonNotFoundError(f"{asset.resource_name}: not present in the asset index")
+        if asset.media_type != entry.media_type:
+            raise LessonContentError(
+                f"{asset.resource_name}: media type {asset.media_type!r} "
+                f"does not match indexed {entry.media_type!r}"
+            )
+        if asset.sha256 and asset.sha256 != entry.sha256:
+            raise LessonContentError(
+                f"{asset.resource_name}: reference hash {asset.sha256} "
+                f"does not match indexed {entry.sha256}"
+            )
+        data = _read_bounded(self._package, asset.resource_name, ASSET_BYTE_LIMIT, what="asset")
+        actual = hashlib.sha256(data).hexdigest()
+        if actual != entry.sha256:
+            raise LessonContentError(
+                f"{asset.resource_name}: bytes hash {actual}, index expects {entry.sha256}"
+            )
+        return data
 
     def read_asset(self, asset: AssetRef) -> bytes:
         """Return asset bytes, verified four ways before the renderer sees them.

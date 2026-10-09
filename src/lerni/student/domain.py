@@ -162,6 +162,29 @@ class LessonPackageIdentity:
 
 
 @dataclass(frozen=True, slots=True)
+class ActivitySummary:
+    """What the educator view lists for one activity: no content, no answers."""
+
+    lesson_id: str
+    title: str
+    content_version: int
+    status: ApprovalStatus
+
+
+@dataclass(frozen=True, slots=True)
+class DraftPreview:
+    """A lesson loaded for the educator's preview only.
+
+    Its files match the package index, but its approvals were not checked. It
+    is a separate type from :class:`Lesson` on purpose: a live student session
+    accepts only a ``Lesson`` from :meth:`PackageLessonCatalog.load`, so a
+    preview can never become one.
+    """
+
+    lesson: Lesson
+
+
+@dataclass(frozen=True, slots=True)
 class LessonState:
     lesson_id: str
     lesson_content_version: int
