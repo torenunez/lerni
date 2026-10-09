@@ -1,5 +1,7 @@
 # Release 1, step 5: accounts and one sign-in — implementation plan
 
+> **Superseded in part (history).** Built and merged in PR #8, with one change: there is no `educator` login or passcode. Educator access is a permission on an independent account, set with `lerni student educator`. The [spec](specs/03-student-accounts.md) and the code are current.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Everyone signs in to one Lerni app on the home server, with a sign-in form Safari can save, re-checked on every request, and tabs that depend on who signed in.

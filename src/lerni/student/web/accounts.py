@@ -44,6 +44,11 @@ def student_rows(students: StudentStore) -> list[list[str]]:
     ] or [["", "No students yet.", "", "", ""]]
 
 
+def rows_for(students: StudentStore, viewer: Viewer | None) -> list[list[str]]:
+    """The Students table for an educator; nothing for anyone else, even after a refusal."""
+    return student_rows(students) if viewer is not None and viewer.educator else []
+
+
 def add_student(
     students: StudentStore, viewer: Viewer | None, username: str, display_name: str,
     kind: str, password: str, educator: bool,
@@ -62,7 +67,9 @@ def reset_student(
 
 
 def archive_student(students: StudentStore, viewer: Viewer | None, username: str) -> str:
-    require_educator(viewer)
+    v = require_educator(viewer)
+    if username == v.username:
+        raise NotAllowed("You can't archive your own account.")  # keeps an educator signed in
     students.archive(username)
     return f"✅ Archived {username}. They can't sign in, and the username stays taken."
 
@@ -131,18 +138,21 @@ def students_tab(signin: SignIn, students: StudentStore) -> tuple[gr.Tab, gr.Dat
             return signin.viewer(request.username)
 
         def on_add(u: str, d: str, k: str, p: str, e: bool, request: gr.Request) -> list[Any]:
-            message = _run(add_student, students, viewer(request), u.strip(), d, k, p, e)
-            return [message, student_rows(students), *add_form_after(message)]
+            v = viewer(request)
+            message = _run(add_student, students, v, u.strip(), d, k, p, e)
+            return [message, rows_for(students, v), *add_form_after(message)]
 
         def on_reset(u: str, p: str, request: gr.Request) -> list[Any]:
-            message = _run(reset_student, students, viewer(request), u.strip(), p)
+            v = viewer(request)
+            message = _run(reset_student, students, v, u.strip(), p)
             done = message.startswith("✅")
             cleared = [gr.update(value="")] * 2 if done else [gr.update()] * 2
-            return [message, student_rows(students), *cleared]
+            return [message, rows_for(students, v), *cleared]
 
         def on_archive(u: str, request: gr.Request) -> list[Any]:
-            message = _run(archive_student, students, viewer(request), u.strip())
-            return [message, student_rows(students)]
+            v = viewer(request)
+            message = _run(archive_student, students, v, u.strip())
+            return [message, rows_for(students, v)]
 
         form = [username, display, kind, educator, password]  # order matches add_form_after
         add_btn.click(

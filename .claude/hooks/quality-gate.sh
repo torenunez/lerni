@@ -30,7 +30,9 @@ PRIVATE="$CWD/.private-words"
 if [ -f "$PRIVATE" ]; then
     ADDED=$(cd "$CWD" && { git diff --cached -U0; git diff -U0; } 2>/dev/null | grep -E '^\+' | grep -vE '^\+\+\+ ')
     while IFS= read -r word; do
-        word="${word%%#*}"; word="${word//[[:space:]]/}"
+        word="${word%%#*}"
+        # trim the ends only, so two-word entries like a full name still match
+        word="${word#"${word%%[![:space:]]*}"}"; word="${word%"${word##*[![:space:]]}"}"
         [ -z "$word" ] && continue
         if grep -qiF -- "$word" <<<"$ADDED"; then
             ERRORS="${ERRORS}a change adds a private word from .private-words (not shown here). "
@@ -38,7 +40,7 @@ if [ -f "$PRIVATE" ]; then
         fi
     done < "$PRIVATE"
 fi
-if (cd "$CWD" && { git diff --cached --name-only; git diff --name-only; } 2>/dev/null | grep -qE '(^|/)secret\.key$'); then
+if (cd "$CWD" && { git diff --cached --name-only; git diff --name-only; } 2>/dev/null | grep -qiE '(^|/)secret\.key$'); then
     ERRORS="${ERRORS}secret.key must never be committed. "
 fi
 

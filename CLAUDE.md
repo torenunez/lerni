@@ -4,7 +4,7 @@ Guidance for AI coding agents in this repository. Product context: [README](READ
 
 ## What's here
 
-- `src/lerni/student/`: the student app's core: activity format, catalog, engine, learning plans, and the Claude import. Accounts, card activities, and sessions are planned ([design](plans/specs/03-student-accounts.md)).
+- `src/lerni/student/`: the student app's core: activity format, catalog, engine, learning plans, and the Claude import. Accounts and sign-in exist; card activities and sessions are planned ([design](plans/specs/03-student-accounts.md)).
 - `src/lerni/` (the rest): the admin tool, the `lerni` command.
 - `src/lerni/student/web/`: the Gradio screens (`lerni serve`), including the educator's in-app `guide.md`. From step 5, one app with sign-in and tabs by role. `scripts/`: the lesson index generator. The educator never uses the repo; everything for them lives in the app.
 - `docs/prd/`: the source of truth for requirements, one PRD per role. `plans/`: one build plan per release ([release-1-mvp.md](plans/release-1-mvp.md) is current); `plans/later/` holds older designs for reference. A PRD wins where they disagree.

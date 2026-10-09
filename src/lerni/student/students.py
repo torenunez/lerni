@@ -13,6 +13,8 @@ import hmac
 import json
 import os
 import re
+import threading
+from collections.abc import Callable
 from dataclasses import dataclass, replace
 from datetime import date
 from enum import StrEnum
@@ -21,6 +23,8 @@ from typing import Any
 
 from lerni.student.jsonfiles import write_json_atomic
 from lerni.student.plans import default_data_dir
+
+_WRITE_LOCK = threading.Lock()  # account changes in this process, one at a time
 
 USERNAME_RE = re.compile(r"^[a-z][a-z0-9-]{1,30}$")
 RESERVED = frozenset({"educator", "admin"})
@@ -197,6 +201,12 @@ class StudentStore:
         self, username: str, display_name: str, kind: Kind, password: str, educator: bool = False
     ) -> Student:
         """Create an account. Archived usernames stay taken; only independent accounts educate."""
+        with _WRITE_LOCK:  # two adds of one name can't both succeed
+            return self._add(username, display_name, kind, password, educator)
+
+    def _add(
+        self, username: str, display_name: str, kind: Kind, password: str, educator: bool
+    ) -> Student:
         if self._path(username).exists():
             raise AccountError(f"{username!r} is taken.")
         if educator and Kind(kind) is not Kind.INDEPENDENT:
@@ -210,32 +220,44 @@ class StudentStore:
         )
         return self._save(student)
 
+    def _update(self, username: str, change: Callable[[Student], Student]) -> Student:
+        """Read, change, and write one account with no other write in between."""
+        with _WRITE_LOCK:  # so a rename can't undo an archive made meanwhile
+            return self._save(change(self.get(username)))
+
     def reset_password(self, username: str, new: str) -> Student:
         """The educator's reset: new password, and every device signs out."""
-        s = self.get(username)
-        return self._save(
-            replace(s, password=hash_password(new, s.kind), session_version=s.session_version + 1)
-        )
+        return self._update(username, lambda s: replace(
+            s, password=hash_password(new, s.kind), session_version=s.session_version + 1
+        ))
 
     def change_password(self, username: str, current: str, new: str) -> Student:
         """A student's own change: needs the current password; other devices stay signed in."""
-        s = self.get(username)
-        if not verify_password(current, s.password):
-            raise AccountError("Your current password doesn't match.")
-        return self._save(replace(s, password=hash_password(new, s.kind)))
+        def change(s: Student) -> Student:
+            if not verify_password(current, s.password):
+                raise AccountError("Your current password doesn't match.")
+            return replace(s, password=hash_password(new, s.kind))
+
+        return self._update(username, change)
 
     def rename(self, username: str, display_name: str) -> Student:
         """Change the display name."""
-        return self._save(replace(self.get(username), display_name=_display_name(display_name)))
+        name = _display_name(display_name)
+        return self._update(username, lambda s: replace(s, display_name=name))
 
     def set_educator(self, username: str, educator: bool) -> Student:
         """Give or take away educator access (independent accounts only)."""
-        s = self.get(username)
-        if educator and s.kind is not Kind.INDEPENDENT:
-            raise AccountError("Only an independent account can be an educator.")
-        return self._save(replace(s, educator=educator, session_version=s.session_version + 1))
+        def change(s: Student) -> Student:
+            if educator and s.kind is not Kind.INDEPENDENT:
+                raise AccountError("Only an independent account can be an educator.")
+            if educator and s.archived:
+                raise AccountError(f"{username} is archived.")
+            return replace(s, educator=educator, session_version=s.session_version + 1)
+
+        return self._update(username, change)
 
     def archive(self, username: str) -> Student:
         """Archive in place: no more sign-ins, every device signs out, the username stays taken."""
-        s = self.get(username)
-        return self._save(replace(s, archived=True, session_version=s.session_version + 1))
+        return self._update(
+            username, lambda s: replace(s, archived=True, session_version=s.session_version + 1)
+        )

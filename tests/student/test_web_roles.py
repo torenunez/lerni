@@ -8,7 +8,12 @@ from fastapi.testclient import TestClient  # noqa: E402
 
 from lerni.student.signin import Role, Viewer  # noqa: E402
 from lerni.student.students import Kind, StudentStore  # noqa: E402
-from lerni.student.web.accounts import NotAllowed, add_student, archive_student  # noqa: E402
+from lerni.student.web.accounts import (  # noqa: E402
+    NotAllowed,
+    add_student,
+    archive_student,
+    rows_for,
+)
 from lerni.student.web.app import build_app  # noqa: E402
 
 EDUCATOR = Viewer("alba", "Alba", Role.INDEPENDENT, educator=True)
@@ -26,6 +31,15 @@ def test_students_can_not_manage_accounts(tmp_path):
     assert students.list_students()[0].username == "sam"
 
 
+def test_a_refused_action_shows_no_roster_and_educators_keep_their_own_account(tmp_path):
+    students = StudentStore(tmp_path)
+    add_student(students, EDUCATOR, "alba", "Alba", "independent", "long enough", True)
+    assert rows_for(students, SAM) == []  # was the whole roster, even after "Only an educator"
+    assert rows_for(students, EDUCATOR)[0][0] == "alba"
+    with pytest.raises(NotAllowed):
+        archive_student(students, EDUCATOR, "alba")
+
+
 def test_page_config_carries_no_plans_or_usernames(tmp_path):
     students = StudentStore(tmp_path)
     students.add("sam", "Sam", Kind.SUPERVISED, "1234")
@@ -41,7 +55,7 @@ def test_each_role_opens_on_a_tab_it_can_see():
     # regression: the hidden Learn tab stayed selected, so the educator saw an empty page
     from lerni.student.web.main import opening_tab, visible_tabs
 
-    kid = Viewer("kid", "Kid", Role.SUPERVISED)
+    kid = Viewer("lee", "Lee", Role.SUPERVISED)
     everything = ("learn", "guide", "sessions", "plans", "students", "account")
     assert visible_tabs(EDUCATOR) == everything
     assert visible_tabs(kid) == ("learn",)
