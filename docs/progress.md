@@ -6,13 +6,24 @@ Record each kind of "done" only when it actually happens, with the date: code bu
 
 ## Current state (2026-10-08)
 
-- **Built:** the student app's core (activity format, catalog with approved listing and draft preview, engine); `lerni serve` with the student screen and the passcode-protected educator view (Guide, Sessions, and Learning plans with activity cards, primed with cars and sharks examples); the admin tool (`lerni`, with `study` as a deprecated alias). Tests: 189 passed, 2 expected failures.
-- **Not yet:** the session controller and activity screens; approvals in the app; any approved activity (the car activity is a draft with no approvals); any student session. The educator hasn't tried planning in the app yet.
+- **Built:** the student app's core (activity format, catalog with approved listing and draft preview, engine); `lerni serve` with the student screen and the passcode-protected educator view (Guide, Sessions, and Learning plans with activity cards, primed with cars and sharks examples, and plan import with Claude); the admin tool (`lerni`, with `study` as a deprecated alias); a [code manifest](code-manifest.md) of every code and test file. Tests: 29 passed, 2 expected failures (trimmed to a minimal suite).
+- **Not yet:** a real Claude import (only tested with a fake); the session controller and activity screens; approvals in the app; any approved activity (the car activity is a draft with no approvals); any student session. The educator hasn't tried planning in the app yet.
 - **Open:** the sharks example plan has no activity cards or sources yet.
 
 When something changes, update this section and add a log entry below.
 
 ## Log
+
+### 2026-10-08 (Code manifest; minimal test suite)
+
+- `docs/code-manifest.md` describes every code and test file; a test fails if one is missing. Short inline comments added across the student-app code.
+- The test suite was cut from 194 to 29 tests (plus 2 expected failures): one happy path per module and a test for each safety guarantee. New tests come with bug fixes. The unused admin fixtures in `tests/conftest.py` were removed.
+
+### 2026-10-08 (Release 1 step 4: import a rough plan with Claude)
+
+- The educator pastes or uploads rough notes (.txt, .md, .docx, .pdf); Claude proposes a structured plan; the educator saves or discards it. A consent box is required for every import; uploads are deleted after reading.
+- Prototype call path: the Claude Agent SDK through the Claude Code CLI on the home server (the logged-in Claude account, no API key), with no tools, no settings or CLAUDE.md, an empty working folder, and read access to an uploaded PDF only.
+- Tests (fakes, no network): an import becomes an unsaved plan, and nothing is sent without consent. 191 passed, 2 expected failures. A real call has not been made yet.
 
 ### 2026-10-08 (Planning moves into the educator view; CSV authoring retired)
 

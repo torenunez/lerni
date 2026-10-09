@@ -19,6 +19,7 @@ import gradio as gr  # noqa: E402
 from fastapi import FastAPI  # noqa: E402
 
 from lerni.student.catalog import PackageLessonCatalog  # noqa: E402
+from lerni.student.plan_import import PlanDrafter  # noqa: E402
 from lerni.student.plans import PlanStore  # noqa: E402
 from lerni.student.web.educator import build_educator_view  # noqa: E402
 
@@ -154,6 +155,7 @@ def build_app(
     passcode: str,
     store: PlanStore | None = None,
     catalog: PackageLessonCatalog | None = None,
+    drafter: PlanDrafter | None = None,
 ) -> FastAPI:
     """Build the server with the student screen and the educator view.
 
@@ -163,6 +165,8 @@ def build_app(
         store: Where learning plans are saved; defaults to the home
             server's plan folder (``$LERNI_STUDENT_DATA`` or ``~/.lerni/student``).
         catalog: The activity catalog; defaults to the packaged activities.
+        drafter: Claude behind an adapter for importing rough plans; ``None``
+            turns the import off.
 
     Returns:
         A FastAPI app with the educator view at ``/educator`` (passcode
@@ -172,11 +176,12 @@ def build_app(
         ValueError: If ``passcode`` is empty.
     """
     check = passcode_checker(passcode)
+    # our own server; we turn off its docs pages too
     app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
     # Mount the educator view first so "/" doesn't swallow its path.
     app = gr.mount_gradio_app(
         app,
-        build_educator_view(store or PlanStore(), catalog or PackageLessonCatalog()),
+        build_educator_view(store or PlanStore(), catalog or PackageLessonCatalog(), drafter),
         path=EDUCATOR_PATH,
         auth=check,
         auth_message="Enter the username <b>educator</b> and your passcode.",

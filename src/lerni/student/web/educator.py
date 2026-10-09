@@ -8,13 +8,22 @@ educator passcode (see ``app.py``).
 
 from __future__ import annotations
 
+import os
 from dataclasses import replace
 from importlib import resources
+from pathlib import Path
 from typing import Any
 
 import gradio as gr
 
 from lerni.student.catalog import PackageLessonCatalog
+from lerni.student.plan_import import (
+    DrafterUnavailable,
+    PlanDrafter,
+    extract_source,
+    proposal_notes,
+    proposal_to_plan,
+)
 from lerni.student.plans import (
     MAX_ACTIVITIES,
     ActivityCard,
@@ -180,6 +189,59 @@ def notes_text(notes: list[str]) -> str:
     return "**Still missing:**\n" + "\n".join(f"- {n}" for n in notes)
 
 
+CONSENT = (
+    "Send this to Claude (Anthropic) to structure it. "
+    "I haven't included the student's name or personal details."
+)
+
+
+def import_preview(
+    drafter: PlanDrafter | None, text: str, upload_path: str | None, agreed: bool
+) -> tuple[LearningPlan, list[str]]:
+    """Ask the drafter for a plan from rough notes; nothing is saved.
+
+    Args:
+        drafter: Claude behind an adapter, or ``None`` if not set up.
+        text: Pasted notes.
+        upload_path: Gradio's temp path for an uploaded file, deleted after reading.
+        agreed: Whether the educator ticked the consent box.
+
+    Returns:
+        The proposed (unsaved) plan and Claude's notes.
+
+    Raises:
+        PlanError: Not agreed, nothing to import, a bad file, or a bad proposal.
+        DrafterUnavailable: Claude isn't set up or didn't answer.
+    """
+    data = name = None
+    if upload_path:
+        path = Path(upload_path)
+        name, data = path.name, path.read_bytes()
+        os.remove(path)  # don't keep uploads
+    if drafter is None:
+        raise DrafterUnavailable("Claude isn't set up on this server yet.")
+    if not agreed:
+        raise PlanError("Tick the box to send your notes to Claude.")
+    result = drafter.draft(extract_source(text, name, data))
+    return proposal_to_plan(result.proposal), proposal_notes(result)
+
+
+def preview_text(plan: LearningPlan, notes: list[str]) -> str:
+    """Show a proposed plan for the educator to check before saving."""
+    lines = [f"### {plan.interest or 'Untitled plan'}", f"**Goal:** {plan.goal or '—'}", ""]
+    lines += [
+        "| # | Start from | Idea to learn | Why | Big question | Card |",
+        "|---|---|---|---|---|---|",
+    ]
+    for i, a in enumerate(plan.activities, 1):
+        card = "drafted" if a.card else "—"
+        lines.append(f"| {i} | {a.start_from} | {a.idea} | {a.why} | {a.big_question} | {card} |")
+    if notes:
+        lines += ["", "**Claude's notes:**"] + [f"- {n}" for n in notes]
+    lines += ["", "Nothing is saved yet. Save it to edit it below, or discard it."]
+    return "\n".join(lines)
+
+
 def sessions_text(catalog: PackageLessonCatalog) -> str:
     """What the Sessions tab lists: approved activities, then drafts to preview."""
     approved = catalog.list_approved()
@@ -194,10 +256,13 @@ def sessions_text(catalog: PackageLessonCatalog) -> str:
 # --- Gradio wiring -----------------------------------------------------------
 
 
-def build_educator_view(store: PlanStore, catalog: PackageLessonCatalog) -> gr.Blocks:
+def build_educator_view(
+    store: PlanStore, catalog: PackageLessonCatalog, drafter: PlanDrafter | None = None
+) -> gr.Blocks:
     """Build the educator view's three tabs."""
-    store.seed_if_empty()
+    store.seed_if_empty()  # first run: copy in the example plans
 
+    # Layout first; event wiring below.
     with gr.Blocks(title="Lerni: educator view", analytics_enabled=False) as blocks:
         gr.Markdown("## Educator view")
         with gr.Tabs():
@@ -209,6 +274,25 @@ def build_educator_view(store: PlanStore, catalog: PackageLessonCatalog) -> gr.B
 
             with gr.Tab("Learning plans"):
                 gr.Markdown(NEVER_WRITE)
+                with gr.Accordion("Import a rough plan with Claude", open=False):
+                    if drafter is None:
+                        gr.Markdown("Claude isn't set up on this server yet.")
+                    gr.Markdown(
+                        "Paste your notes in any shape, or upload a file. Claude organizes "
+                        "them into a plan; you check it before anything is saved."
+                    )
+                    rough = gr.Textbox(label="Your notes", lines=10)
+                    upload = gr.File(
+                        label="Or upload a file", file_types=[".txt", ".md", ".docx", ".pdf"],
+                        type="filepath",
+                    )
+                    agree = gr.Checkbox(label=CONSENT)
+                    import_btn = gr.Button("Structure with Claude", variant="primary")
+                    preview = gr.Markdown()
+                    with gr.Row():
+                        keep_btn = gr.Button("Save as a new plan", visible=False)
+                        drop_btn = gr.Button("Discard", visible=False)
+                    proposal = gr.State(None)  # unsaved plan, held on the server per page
                 with gr.Row():
                     plan_dd = gr.Dropdown(label="Plan", choices=plan_choices(store), scale=3)
                     new_btn = gr.Button("New plan", scale=1)
@@ -220,7 +304,7 @@ def build_educator_view(store: PlanStore, catalog: PackageLessonCatalog) -> gr.B
                     headers=COLUMNS,
                     column_count=len(COLUMNS),
                     row_count=1,
-                    type="array",
+                    type="array",  # rows arrive as lists, not a pandas table
                     interactive=True,
                     wrap=True,
                     label="Activities, in teaching order (add or remove rows as needed)",
@@ -233,6 +317,7 @@ def build_educator_view(store: PlanStore, catalog: PackageLessonCatalog) -> gr.B
                 expl = [gr.Textbox(label=f"Explanation screen {i + 1}", lines=2) for i in range(3)]
                 question = gr.Textbox(label="Question", lines=2)
                 choices = [gr.Textbox(label=f"Choice {i + 1}") for i in range(3)]
+                # options follow whatever is typed in the choice boxes
                 answer = gr.Dropdown(label="Right answer", choices=[], allow_custom_value=True)
                 hints = [gr.Textbox(label=f"Hint {i + 1}") for i in range(2)]
                 right_text = gr.Textbox(label="If they get it right, say")
@@ -245,6 +330,37 @@ def build_educator_view(store: PlanStore, catalog: PackageLessonCatalog) -> gr.B
                 card_btn = gr.Button("Save card", variant="primary")
                 card_notes = gr.Markdown()
 
+        def on_import(text: str, path: str | None, agreed: bool) -> list[Any]:
+            try:
+                plan, notes = import_preview(drafter, text, path, agreed)
+            except (PlanError, DrafterUnavailable) as exc:
+                hide = gr.update(visible=False)
+                return [None, f"⚠️ {exc}", hide, hide, None]
+            show = gr.update(visible=True)
+            return [plan, preview_text(plan, notes), show, show, None]  # None clears the upload box
+
+        import_btn.click(
+            on_import, [rough, upload, agree], [proposal, preview, keep_btn, drop_btn, upload],
+            **PRIVATE,
+        )
+
+        def on_keep(plan: LearningPlan | None) -> list[Any]:
+            hide = gr.update(visible=False)
+            if plan is None:
+                return [None, "", hide, hide, gr.update()]
+            saved = store.save(plan)
+            return [None, "✅ Saved. It's selected below for editing.", hide, hide,
+                    gr.update(choices=plan_choices(store), value=saved.plan_id)]
+
+        def on_drop() -> list[Any]:
+            hide = gr.update(visible=False)
+            return [None, "Discarded.", hide, hide]
+
+        keep_btn.click(on_keep, proposal, [proposal, preview, keep_btn, drop_btn, plan_dd],
+                       **PRIVATE)
+        drop_btn.click(on_drop, None, [proposal, preview, keep_btn, drop_btn], **PRIVATE)
+
+        # Order must match what show_card returns.
         card_outputs = [
             *expl,
             question,
@@ -274,7 +390,7 @@ def build_educator_view(store: PlanStore, catalog: PackageLessonCatalog) -> gr.B
             ]
 
         plan_outputs = [interest, goal, table, act_dd, plan_status]
-        plan_dd.change(show_plan, plan_dd, plan_outputs, **PRIVATE)
+        plan_dd.change(show_plan, plan_dd, plan_outputs, **PRIVATE)  # picking a plan fills the form
 
         def on_new() -> Any:
             plan = new_plan(store)
@@ -340,12 +456,14 @@ def build_educator_view(store: PlanStore, catalog: PackageLessonCatalog) -> gr.B
             options = [c for c in (c1, c2, c3) if c and c.strip()]
             return gr.update(choices=options, value=current if current in options else None)
 
+        # refresh the answer options when a choice box loses focus
         for box in choices:
             box.blur(refresh_answer, [*choices, answer], answer, **PRIVATE)
 
         def on_save_card(plan_id: str | None, index: int | None, *vals: str) -> list[Any]:
             if not plan_id or index is None:
                 return [gr.update(), "Pick an activity first."]
+            # positions match card_inputs below
             values = {
                 "explanation": vals[0:3],
                 "question": vals[3],

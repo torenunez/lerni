@@ -156,13 +156,14 @@ def _texts(value: Any, where: str, limit: int) -> tuple[str, ...]:
     if not isinstance(value, list | tuple):
         raise PlanError(f"{where}: expected a list")
     items = tuple(_text(v, f"{where}[{i}]") for i, v in enumerate(value))
-    items = tuple(v for v in items if v)
+    items = tuple(v for v in items if v)  # drop blank entries
     if len(items) > limit:
         raise PlanError(f"{where}: at most {limit}")
     return items
 
 
 def _keys(data: Any, where: str, allowed: set[str]) -> dict[str, Any]:
+    # reject unexpected keys so nothing extra sneaks into a plan file
     if not isinstance(data, dict):
         raise PlanError(f"{where}: expected an object")
     unknown = set(data) - allowed
@@ -272,6 +273,7 @@ class PlanStore:
         self.archive_dir = self.root / "archived"
 
     def _path(self, plan_id: str) -> Path:
+        # slugs only, so an id can never point outside the plans folder
         if not PLAN_ID_RE.fullmatch(plan_id):
             raise PlanError(f"{plan_id!r}: not a valid plan id")
         return self.root / f"{plan_id}.json"
@@ -312,6 +314,7 @@ class PlanStore:
         plan_from_dict(data)  # same checks on the way out as on the way in
         path = self._path(saved.plan_id)
         self.root.mkdir(parents=True, exist_ok=True)
+        # write to a temp file, then swap it in, so a crash never leaves half a plan
         fd, tmp = tempfile.mkstemp(dir=self.root, prefix=".tmp-", suffix=".json")
         try:
             with os.fdopen(fd, "w", encoding="utf-8") as handle:
@@ -329,6 +332,7 @@ class PlanStore:
         if not path.is_file():
             raise PlanError(f"{plan_id}: no such plan")
         self.archive_dir.mkdir(parents=True, exist_ok=True)
+        # random suffix so archiving the same id twice never overwrites
         os.replace(path, self.archive_dir / f"{plan_id}-{secrets.token_hex(2)}.json")
 
     def seed_if_empty(self) -> int:

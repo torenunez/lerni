@@ -22,7 +22,7 @@ flowchart LR
         admin([Admin]) -- runs lerni serve, packages activities --> server
     end
 
-    server -. Release 3, via adapters .-> ai[Speech and model services]
+    server -. adapters: plan import now, more from Release 3 .-> ai[Claude, speech services]
 ```
 
 Releases 1–2 use plain HTTP on the home network; there is no microphone, so HTTPS isn't required yet, and the app is never exposed to the internet. Release 3 adds HTTPS on the same server, because browsers allow the microphone only over HTTPS or on the device's own localhost ([MDN](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia)). Hosting outside the home waits until it's needed.
@@ -33,7 +33,7 @@ Releases 1–2 use plain HTTP on the home network; there is no microphone, so HT
 - **The student screen is open by design:** no login, so any device on the network can view and tap the live session. Accepted for one family.
 - **The educator view is a separate app behind the passcode,** on its own route. Every educator action checks the passcode on the server; hiding a button is not protection. Until HTTPS (Release 3) the passcode travels unencrypted on the home network, which is accepted.
 - **Session data stays in memory on the server** and is never saved in either browser.
-- **Outbound:** none in Releases 1–2; from Release 3, only through adapters to services the educator agreed to.
+- **Outbound:** the student screen never calls out. In Release 1 the only outbound call is the educator's plan import, to Claude (Anthropic), after the educator ticks the consent box; from Release 3, more calls, always through adapters to services the educator agreed to.
 
 ## How an activity runs
 
@@ -87,15 +87,17 @@ If a change would break one of these, stop and ask.
 2. **The answer key stays on the server.** The snapshot type has no field for it.
 3. **The engine decides progression, never a model.**
 4. **Session updates are atomic and ignore stale input.** The controller, not the engine, numbers sessions and screens, and a tap applies only if it matches the current ones. Once Stop commits, the server accepts no more input.
-5. **Home network only, no outbound calls in Releases 1–2.** See [trust boundaries](#trust-boundaries). Nothing about the student is written to disk or browser storage in Release 1.
+5. **Home network only; the student screen never calls out.** See [trust boundaries](#trust-boundaries). Nothing about the student is written to disk or browser storage in Release 1.
 6. **Outside services go behind an adapter**, with credentials as `env:VAR` references, and only to services the educator agreed to. Tests use fakes.
-7. **The core never imports Gradio.** The core (`domain`, `catalog`, `engine`, `canonical`, and the planned controller) uses only the standard library. The screens (planned, `src/lerni/student/web/`) may import Gradio, an optional install. The student package never opens the admin tool's database.
+7. **The core never imports Gradio.** The core (`domain`, `catalog`, `engine`, `canonical`, `plans`, `plan_import`, and the planned controller) uses only the standard library. Provider SDKs live only in `adapters/`. The screens (planned, `src/lerni/student/web/`) may import Gradio, an optional install. The student package never opens the admin tool's database.
 
 ## Codemap
 
+Every code file, one line each: [code manifest](code-manifest.md).
+
 - `src/lerni/student/`: the core: `domain.py` (data types), `catalog.py` (the only place approvals are checked), `engine.py` (steps and snapshots), `canonical.py` (stable bytes for hashing), `lessons/` (activity files, pictures, generated index). Planned: `controller.py` and `web/` (the Gradio screens).
 - `src/lerni/cli.py`, `commands/`, `db.py`, `sm2.py`: the admin tool.
-- `src/lerni/student/plans.py` (learning plans and their store), `seed/` (the example plans), `web/` (the Gradio screens, including the educator's `guide.md`).
+- `src/lerni/student/plans.py` (learning plans and their store), `plan_import.py` (rough notes to a proposed plan), `adapters/claude_code.py` (Claude through the Claude Code CLI; prototype), `seed/` (the example plans), `web/` (the Gradio screens, including the educator's `guide.md`).
 - `scripts/`: the lesson index generator.
 - `tests/`: pytest, fakes only. `plans/`: build plans by release.
 

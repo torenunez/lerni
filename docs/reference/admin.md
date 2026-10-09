@@ -73,6 +73,7 @@ lerni serve                                 # binds 0.0.0.0:7860
 - `lerni serve` refuses to start if the passcode variable is unset or empty. `--port` and `--passcode-env` change the defaults; `--host 127.0.0.1` keeps it on this computer only.
 - If you start it over SSH, allow the virtual environment's Python through the macOS firewall first (nobody sees the prompt), and run it inside `tmux` so it keeps running after you disconnect.
 - It never touches the admin tool's database.
+- **Plan import with Claude** turns on when the `claude` CLI is installed and logged in on this computer; it uses that Claude account, so there's no API key. `LERNI_CLAUDE_MODEL` picks the model (default `claude-sonnet-5-5`). Startup prints whether it's on.
 
 ## Maintenance
 

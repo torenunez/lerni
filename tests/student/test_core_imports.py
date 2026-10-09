@@ -5,7 +5,10 @@ import sys
 from pathlib import Path
 
 CORE = Path(__file__).resolve().parents[2] / "src" / "lerni" / "student"
-CORE_MODULES = ["__init__.py", "canonical.py", "catalog.py", "domain.py", "engine.py"]
+CORE_MODULES = [
+    "__init__.py", "canonical.py", "catalog.py", "domain.py", "engine.py",
+    "plans.py", "plan_import.py",
+]
 
 
 def imported_roots(path: Path) -> set[str]:

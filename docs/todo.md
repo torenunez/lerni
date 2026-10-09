@@ -6,7 +6,7 @@ Open tasks by who does the work. The educator and admin tracks run in parallel: 
 
 ### Now: Release 1 MVP
 
-- [ ] Open the educator view, read the Guide tab, and make a learning plan: start from the cars or sharks example, then fill in one activity card.
+- [ ] Open the educator view, read the Guide tab, and make a learning plan: import your rough notes with Claude, or start from the cars or sharks example, then fill in one activity card.
 - [ ] Review the car activity's science with the admin (who has the review sheet). It's the activity for the MVP, because it already exists as a draft; your own activity card comes next.
 
 ### Later: Release 1 MVP
@@ -22,12 +22,12 @@ Open tasks by who does the work. The educator and admin tracks run in parallel: 
 
 Build from the [Release 1 plan](../plans/release-1-mvp.md), in this order:
 
-- [ ] The session controller: one shared session in memory, the tap contract, and Stop and Reset winning over taps in flight.
-- [ ] The activity on both screens: the student screen (iPad) and the educator view with Start, Stop, Reset, the recap, and draft preview.
+- [ ] Step 5: the session controller: one shared session in memory, the tap contract, and Stop and Reset winning over taps in flight.
+- [ ] Step 6: the activity on both screens: the student screen (iPad) and the educator view with Start, Stop, Reset, the recap, and draft preview.
 
 ### Later: Release 1 MVP
 
-- [ ] Step 6: approvals in the app, with the science review sheet; admin packaging of a saved activity card, then automatic.
+- [ ] Step 7: approvals in the app, with the science review sheet; admin packaging of a saved activity card, then automatic.
 - [ ] Record the educator's four approvals in the chosen activity's file.
 
 ### Later: Release 2 Remembering
@@ -36,11 +36,12 @@ Build from the [Release 1 plan](../plans/release-1-mvp.md), in this order:
 
 ### Later: Release 3 Voice
 
+- [ ] Before anyone outside the household uses the app: replace the Claude Code adapter with an API-key adapter (`env:ANTHROPIC_API_KEY`).
+
 - [ ] Before choosing speech or model services, check each one's data retention for a student's audio and text, and get the educator's agreement.
 
 ### Admin tool maintenance
 
-- [ ] Fix outdated test fixtures in `tests/conftest.py`.
 - [ ] Add database, CLI, and full-workflow tests.
 - [ ] Clear ruff lint debt in `src/` (99 findings on 2026-08-23, mostly style).
 - [ ] Run mypy and fix type errors.

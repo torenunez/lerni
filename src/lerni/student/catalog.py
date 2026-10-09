@@ -973,6 +973,7 @@ class PackageLessonCatalog:
             LessonContentError: The asset isn't part of this lesson, or any
                 media type or hash mismatch.
         """
+        # only pictures this draft actually uses can be read through it
         used = {step.visual.resource_name for step in preview.lesson.steps if step.visual}
         if asset.resource_name not in used:
             raise LessonContentError(
@@ -987,7 +988,7 @@ class PackageLessonCatalog:
                 f"{asset.resource_name}: media type {asset.media_type!r} "
                 f"does not match indexed {entry.media_type!r}"
             )
-        if asset.sha256 and asset.sha256 != entry.sha256:
+        if asset.sha256 and asset.sha256 != entry.sha256:  # drafts may leave it blank
             raise LessonContentError(
                 f"{asset.resource_name}: reference hash {asset.sha256} "
                 f"does not match indexed {entry.sha256}"

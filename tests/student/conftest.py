@@ -248,15 +248,6 @@ label = "Choice B"
 """
 
 
-@pytest.fixture
-def valid_lesson_toml() -> str:
-    """Approved TOML with a placeholder payload hash.
-
-    The placeholder is replaced with the real recomputed hash by
-    :func:`approved_lesson_toml`. A fixed test-only review date is acceptable
-    here because this is a fixture, never production content.
-    """
-    return VALID_LESSON_TOML
 
 
 @pytest.fixture

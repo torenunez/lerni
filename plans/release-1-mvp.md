@@ -10,7 +10,7 @@ The smallest app a student can try: one approved activity on an iPad, answered b
 
 ## To build
 
-Build in this order, in parallel with the educator's content work. Steps 1–5 need no approved content: step 1 runs empty, step 3 starts from the example plans, and steps 2, 4, and 5 are tested with synthetic activities and previewed with the draft car activity. Only the student's first session waits for an approved activity.
+Build in this order, in parallel with the educator's content work. Steps 1–6 need no approved content: step 1 runs empty, steps 3–4 start from the example plans or the educator's notes, and steps 2, 5, and 6 are tested with synthetic activities and previewed with the draft car activity. Only the student's first session waits for an approved activity.
 
 1. **Walking skeleton: the app runs, and you can log in.** `lerni serve` starts the app on the home server (an always-on Mac), bound to all network addresses rather than only `localhost`, so other devices can reach it. Done when the educator logs in from their own phone or laptop and sees "No approved activities yet", and the iPad shows the student's waiting screen.
    - **Two apps, one server.** The student screen and the educator view are two Gradio apps mounted on separate routes of one server, sharing the controller. Gradio's login protects a whole app, not one tab, so only the educator app gets it. The passcode is set by the admin as an `env:VAR` reference, never in a file. Every educator handler (Start, Stop, Reset, recap, preview, draft pictures) checks it on the server; no handler is exposed as a public API endpoint (`api_name=False` on everything). The student screen has no login.
@@ -22,21 +22,22 @@ Build in this order, in parallel with the educator's content work. Steps 1–5 n
      - Gradio's usage analytics off (`GRADIO_ANALYTICS_ENABLED=False`, set before Gradio is imported) and browser run history off on both apps (`run_history=False` where supported).
      - Serve only the pictures the current screen needs, never a whole folder; Gradio's allowed-path lists expose everything in them.
      - Use a theme with local fonts, so the iPad loads nothing from outside.
-     - Before the first session, check that the app makes no outbound requests and writes nothing to disk, logs, or browser storage.
+     - Before the first session, check that the student screen makes no outbound requests (the educator's Claude import is the only one), and that nothing about the student is written to disk, logs, or browser storage.
 2. **Activity listing and draft preview.** The catalog can load an activity by ID but can't list them yet. Add a method that returns only activities that load successfully as approved; a raw index entry is never treated as approved. Add a separate preview load that checks the file's fingerprints but not the approvals, for the educator view only, and returns a distinct draft type that the live session refuses. The draft car activity has blank picture hashes, so the preview load checks its pictures against the generated index instead; the approved loader stays as strict as it is.
 3. **Learning plans in the educator view.** The educator plans only in the app, never in files. A **Learning plans** tab holds an interest, a goal, and 3–12 activities in teaching order (start from, idea to learn, why it's a good next step, big question), and an **activity card** form for each activity, with "Still missing" notes. Plans are saved on the home server in `~/.lerni/student/plans/` (or `$LERNI_STUDENT_DATA`), one JSON file each, written atomically and archived rather than deleted. They are curriculum, not student data. Two examples (cars and sharks) are copied in when the store is empty, for the educator to edit or copy. A **Guide** tab holds the educator's instructions, so the educator never needs the repository. Core: `src/lerni/student/plans.py`; screens: `src/lerni/student/web/educator.py` and `guide.md`.
-4. **Session controller.** Owns the one live session, in memory, shared by two pages. The contract:
+4. **Import a rough plan with Claude.** In the Learning plans tab the educator pastes notes in any shape or uploads a .txt, .md, .docx, or .pdf; Claude proposes a structured plan (filling activity cards only where the notes already have details); the educator saves or discards it, and nothing is saved before that. A required checkbox confirms the notes go to Claude (Anthropic) and contain no names or personal details. For the prototype the call goes through the Claude Code CLI on the home server and the Claude account it's logged into (no API key): no tools, no settings or CLAUDE.md files, an empty working folder, and for a PDF, permission to read only that file. An API-key adapter replaces it before anyone outside the household uses the app. Core: `src/lerni/student/plan_import.py`; adapter: `src/lerni/student/adapters/claude_code.py`.
+5. **Session controller.** Owns the one live session, in memory, shared by two pages. The contract:
    - Each session has an ID and a generation number that Start and Reset increase. Every tap carries the session ID, the generation, the state revision it was drawn from, and a request ID.
    - A tap is applied only if all four match the current session and the request ID is new. Anything else (late, repeated, from an earlier session, or from a screen drawn before Stop) is ignored.
    - Each update is atomic: one lock around read, transition, and write, because Gradio can run separate event handlers at the same time.
    - Stop: once it commits, the server accepts no more input, and the student screen shows Stop within 2 seconds (the refresh interval sets this; test it on the real iPad). A response drawn from an older state never redraws the screen after Stop or Reset. The recap stays in memory until the educator dismisses it. Reset discards the session and the recap, and so does a server restart. Because the session lives on the server, reloading either page shows the live session again; a page that disconnects stops receiving updates and shows the live session (or the waiting screen) when it reconnects.
    - Nothing is written to disk or browser storage, and logs hold no student content.
    - Preview sessions are separate from the live session. Preview while an activity is live either runs in isolation or is refused; the live session never changes.
-5. **Two pages, two devices.** The student screen on the iPad and the educator view on the educator's own phone or laptop, both served by the same app. Session state lives in the controller on the server, not in per-page Gradio state, so both pages see the same session. The student screen refreshes on a short timer so that Stop takes effect without the student tapping.
+6. **Two pages, two devices.** The student screen on the iPad and the educator view on the educator's own phone or laptop, both served by the same app. Session state lives in the controller on the server, not in per-page Gradio state, so both pages see the same session. The student screen refreshes on a short timer so that Stop takes effect without the student tapping.
    - **Student screen:** a waiting screen until Start; then the current step's question, the picture with its text alternative, and large tappable choices; then hints, the answer reveal, completion, and a "tell your educator why" prompt. Touch only.
    - **Educator view:** approved activities, with Start, Stop, and Reset, and the recap (choices picked, hints used, time taken), discarded after viewing. Drafts appear in a separate list marked DRAFT; the educator can run one as a preview on their own device so they can try it before approving. A draft is never sent to the student screen.
 
-6. **Approvals in the app.** The educator previews an activity and records the four approvals in the educator view, each tied to the activity's content hash, so nobody types approvals into a file. The science review sheet moves into the app here. At first the admin turns a saved activity card into an activity file and runs the checks; automatic packaging follows once the card form is stable.
+7. **Approvals in the app.** The educator previews an activity and records the four approvals in the educator view, each tied to the activity's content hash, so nobody types approvals into a file. The science review sheet moves into the app here. At first the admin turns a saved activity card into an activity file and runs the checks; automatic packaging follows once the card form is stable.
 
 Gradio is an optional extra (`pip install -e ".[student]"`), never a core dependency. The controller goes in `src/lerni/student/controller.py` (standard library only); the screens go in `src/lerni/student/web/`, the only place that imports Gradio.
 
@@ -51,13 +52,13 @@ Use fakes and synthetic activities; no network. Cover:
 - a draft preview never reaching the student screen, even while an activity is live; draft pictures refused without the passcode, even by exact filename;
 - Stop shown on the iPad within the bound, including Stop between refreshes, delayed or reordered responses, and disconnect then reconnect;
 - the core modules importing nothing outside the standard library and `lerni.student`;
-- nothing saved to disk, logs, or browser storage, and no outbound requests.
+- nothing about the student saved to disk, logs, or browser storage, and no outbound requests from the student screen.
 
 ## Before a student uses it
 
-- The educator approves one activity (the car activity is the quickest: the admin walks the educator through the [review sheet](runbooks/chain-1-source-review.md) until step 6 moves it into the app), and the approvals are recorded.
+- The educator approves one activity (the car activity is the quickest: the admin walks the educator through the [review sheet](runbooks/chain-1-source-review.md) until step 7 moves it into the app), and the approvals are recorded.
 - The educator rehearses the whole activity on the iPad and their own device, including Stop and Reset, then authorizes student use.
 
 ## Not in this release
 
-Voice, AI replies, remembering, accounts, HTTPS, hosting outside the home, spreadsheet import, and suggestions.
+Voice, AI replies to the student, remembering, accounts, HTTPS, hosting outside the home, spreadsheet import, and suggestions.
