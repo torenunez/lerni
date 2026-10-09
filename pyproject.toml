@@ -51,6 +51,8 @@ where = ["src"]
   "*.toml",
   "assets/*.svg",
 ]
+"lerni.student.seed" = ["*.json"]
+"lerni.student.web" = ["*.md"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

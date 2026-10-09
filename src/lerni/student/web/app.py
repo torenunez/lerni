@@ -18,6 +18,10 @@ os.environ["GRADIO_ANALYTICS_ENABLED"] = "False"
 import gradio as gr  # noqa: E402
 from fastapi import FastAPI  # noqa: E402
 
+from lerni.student.catalog import PackageLessonCatalog  # noqa: E402
+from lerni.student.plans import PlanStore  # noqa: E402
+from lerni.student.web.educator import build_educator_view  # noqa: E402
+
 if TYPE_CHECKING:
     from collections.abc import Callable
 
@@ -146,20 +150,19 @@ def _student_screen() -> gr.Blocks:
     return blocks
 
 
-def _educator_view() -> gr.Blocks:
-    """The educator's screen. The activity list arrives in Release 1 step 2."""
-    with gr.Blocks(title="Lerni: educator view", analytics_enabled=False) as blocks:
-        gr.Markdown("## Educator view")
-        gr.Markdown("No approved activities yet.")
-    return blocks
-
-
-def build_app(passcode: str) -> FastAPI:
+def build_app(
+    passcode: str,
+    store: PlanStore | None = None,
+    catalog: PackageLessonCatalog | None = None,
+) -> FastAPI:
     """Build the server with the student screen and the educator view.
 
     Args:
         passcode: The educator's passcode, already resolved from the
             environment by the caller. Must not be empty.
+        store: Where learning plans are saved; defaults to the home
+            server's plan folder (``$LERNI_STUDENT_DATA`` or ``~/.lerni/student``).
+        catalog: The activity catalog; defaults to the packaged activities.
 
     Returns:
         A FastAPI app with the educator view at ``/educator`` (passcode
@@ -173,7 +176,7 @@ def build_app(passcode: str) -> FastAPI:
     # Mount the educator view first so "/" doesn't swallow its path.
     app = gr.mount_gradio_app(
         app,
-        _educator_view(),
+        build_educator_view(store or PlanStore(), catalog or PackageLessonCatalog()),
         path=EDUCATOR_PATH,
         auth=check,
         auth_message="Enter the username <b>educator</b> and your passcode.",

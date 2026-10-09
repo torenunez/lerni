@@ -44,7 +44,7 @@ fi
 # Check 2: pytest — full suite, skipped only when every changed path is Markdown.
 # Staged and unstaged changes both count (so `git commit -a` can't sneak Python
 # past the skip), renames count by both names, and CSV/JSON always run tests
-# because tests read curation data.
+# because tests may read them.
 DOCS_ONLY=1
 CHANGED=$(cd "$CWD" && { git diff --cached --name-only --no-renames; git diff --name-only --no-renames; } 2>/dev/null)
 if [ -z "$CHANGED" ] || grep -qvE '\.(md|mdc)$' <<<"$CHANGED"; then

@@ -13,7 +13,6 @@ Build plans, one per release, named `release-<n>-<name>.md` and written when tha
 ## Still current
 
 - [specs/02-lesson-core.md](specs/02-lesson-core.md): how the activity format, catalog, and engine work (built). It's the record of that build and still uses some older terms (Explore, parent, child).
-- [specs/08c-educator-path-authoring.md](specs/08c-educator-path-authoring.md): the authoring tables' fields and checker (the admin's format).
 - [runbooks/chain-1-source-review.md](runbooks/chain-1-source-review.md): how the educator reviews the car activity's science.
 
 ## Older designs

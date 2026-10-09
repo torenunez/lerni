@@ -32,7 +32,6 @@ Commands and behavior: [admin tool reference](../reference/admin.md). Open maint
 ## Later
 
 - Try out a student activity in the terminal exactly as the student app would run it, including draft activities.
-- Run the curation checker and other admin tasks from the same tool.
 - Package a reviewed activity for the student app, recording the approvals real people gave.
 - Tune the mechanics the student app shares, once the shared core is designed.
 - Host the student app outside the home (such as Hugging Face Spaces), if the student needs it away from home.

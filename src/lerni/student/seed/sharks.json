@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "plan_id": "example-sharks",
+  "interest": "Sharks",
+  "goal": "Reuse distance, time, and speed to compare how fast animals move.",
+  "is_example": true,
+  "updated_on": "2026-10-08",
+  "activities": [
+    {
+      "start_from": "Sharks",
+      "idea": "Distance traveled",
+      "why": "A shark cruising along a reef covers a distance that can be compared.",
+      "big_question": "Which shark swam farther?",
+      "card": null
+    },
+    {
+      "start_from": "Distance traveled",
+      "idea": "Elapsed time",
+      "why": "A journey also has a beginning and an end in time.",
+      "big_question": "Could two sharks swim the same distance in different times?",
+      "card": null
+    },
+    {
+      "start_from": "Elapsed time",
+      "idea": "Average speed",
+      "why": "Combining distance with time makes a journey comparison useful.",
+      "big_question": "What does a shorter time over the same route tell us?",
+      "card": null
+    },
+    {
+      "start_from": "Average speed",
+      "idea": "Comparison",
+      "why": "Speeds become interesting when compared side by side.",
+      "big_question": "Is a shark faster than a car in a parking lot?",
+      "card": null
+    }
+  ]
+}

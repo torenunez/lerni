@@ -6,13 +6,19 @@ Record each kind of "done" only when it actually happens, with the date: code bu
 
 ## Current state (2026-10-08)
 
-- **Built:** the student app's core (activity format, catalog, engine), the admin tool (`lerni`, with `study` as a deprecated alias), the educator's plan sheet and activity card (with a cars example), the admin's authoring tables, six draft example paths, and the checker. Tests: 197 passed, 2 expected failures.
-- **Not yet:** the student app's activity screens (the walking skeleton runs on the home server and the iPad); any approved activity (the car activity is a draft with no approvals); any student session. The educator hasn't tried the plan sheet or card yet.
-- **Open:** the example paths have no sources for many records yet; the checker reports 51 warnings and 0 errors.
+- **Built:** the student app's core (activity format, catalog with approved listing and draft preview, engine); `lerni serve` with the student screen and the passcode-protected educator view (Guide, Sessions, and Learning plans with activity cards, primed with cars and sharks examples); the admin tool (`lerni`, with `study` as a deprecated alias). Tests: 189 passed, 2 expected failures.
+- **Not yet:** the session controller and activity screens; approvals in the app; any approved activity (the car activity is a draft with no approvals); any student session. The educator hasn't tried planning in the app yet.
+- **Open:** the sharks example plan has no activity cards or sources yet.
 
 When something changes, update this section and add a log entry below.
 
 ## Log
+
+### 2026-10-08 (Planning moves into the educator view; CSV authoring retired)
+
+- Release 1 step 2: the catalog lists approved activities and drafts, with an educator-only `DraftPreview` type and a preview picture check.
+- Release 1 step 3: learning plans and activity cards in the educator view, saved as JSON on the home server, with cars and sharks examples to edit, and a Guide tab with the educator's instructions. The educator never uses the repo.
+- Retired: the CSV plan sheet and card, the six authoring tables, their schema, examples, checker, and tests (git history keeps them; the spec moved to `plans/later/`).
 
 ### 2026-10-08 (Walking skeleton built)
 

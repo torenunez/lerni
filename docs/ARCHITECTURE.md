@@ -4,7 +4,7 @@ How Lerni works: what runs where, how an activity reaches the student, who owns 
 
 ## Bird's-eye view
 
-The educator writes a learning plan in plain language: a plan sheet with one row per activity, and an activity card for the next one. The admin turns them into the authoring tables and an **activity**: a few teaching screens followed by one multiple-choice question, with hints and a picture. The activity file reaches the student only after the educator approves its exact content. The student app runs on a home server; the student uses it on an iPad, and the educator controls it from their own phone or laptop.
+The educator plans in the educator view: a learning plan with activities in teaching order, and an activity card for the next one. The admin turns a card into an **activity**: a few teaching screens followed by one multiple-choice question, with hints and a picture. The activity file reaches the student only after the educator approves its exact content. The student app runs on a home server; the student uses it on an iPad, and the educator controls it from their own phone or laptop.
 
 It assumes one family, one student, and one live session at a time.
 
@@ -66,13 +66,13 @@ flowchart LR
 
 **Draft preview** runs in its own session on the educator's device, never the live one, with its pictures behind the passcode.
 
-**How an activity gets approved:** the educator's plan and activity card → authoring tables and activity file, made by the admin → four recorded approvals (science, student wording, pictures and accessibility, OK to use) → catalog. Each approval records the hash of the activity's reviewable content, which includes each picture's recorded hash; the picture bytes are checked against it when drawn. Review records themselves are left out of that hash, so adding an approval doesn't invalidate it, but any change to the content does. Hashes tie an approval to exact content but don't prove who gave it; that rests on [CLAUDE.md rule 5](../CLAUDE.md#rules): the admin records only real approvals, and no agent writes one. A clean checker report, or a spreadsheet row marked `reviewed`, is not an approval.
+**How an activity gets approved:** the educator's activity card in the app → activity file, made by the admin (automated later) → four recorded approvals (science, student wording, pictures and accessibility, OK to use) → catalog. Each approval records the hash of the activity's reviewable content, which includes each picture's recorded hash; the picture bytes are checked against it when drawn. Review records themselves are left out of that hash, so adding an approval doesn't invalidate it, but any change to the content does. Hashes tie an approval to exact content but don't prove who gave it; that rests on [CLAUDE.md rule 5](../CLAUDE.md#rules): the admin records only real approvals, and no agent writes one. A saved activity card is not an approval.
 
 ## Who owns each kind of data
 
 | Data | What it is | Owner | Where |
 |---|---|---|---|
-| Curriculum | Reusable concepts, how they relate, possible next steps, and authored paths. Path sequence numbers set order; relationships never do. | Educator writes; admin converts | Plan sheet and activity cards, then six authoring tables (built); moving into the educator view (Release 1 step 5) |
+| Learning plans | An interest, a goal, and activities in teaching order, each with an optional activity card. The order of activities is the teaching order; how ideas relate never sets it. | Educator | JSON files in `~/.lerni/student/plans/` on the home server (built) |
 | Activities | Reviewed teaching content for one path step, with its approvals | Educator approves; admin packages | `src/lerni/student/lessons/` (built) |
 | Session | The live state of one activity run, and its recap | The app | Memory only; discarded on Reset or server restart (planned) |
 | Learner record | Activities finished (by activity ID, version, and content hash), concepts met, recall results. Meeting a concept is not the same as understanding it. Kept until the educator deletes it. | Educator | Server storage (Release 2) |
@@ -95,7 +95,8 @@ If a change would break one of these, stop and ask.
 
 - `src/lerni/student/`: the core: `domain.py` (data types), `catalog.py` (the only place approvals are checked), `engine.py` (steps and snapshots), `canonical.py` (stable bytes for hashing), `lessons/` (activity files, pictures, generated index). Planned: `controller.py` and `web/` (the Gradio screens).
 - `src/lerni/cli.py`, `commands/`, `db.py`, `sm2.py`: the admin tool.
-- `scripts/`: the index generator and the curation checker. `curation/`: the educator's plan sheet and activity card, the admin's authoring tables, [schema](../curation/schemas/educator-paths-v1.json), examples.
+- `src/lerni/student/plans.py` (learning plans and their store), `seed/` (the example plans), `web/` (the Gradio screens, including the educator's `guide.md`).
+- `scripts/`: the lesson index generator.
 - `tests/`: pytest, fakes only. `plans/`: build plans by release.
 
 ## Target architecture (not built)

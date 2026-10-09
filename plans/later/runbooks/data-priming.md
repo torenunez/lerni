@@ -2,8 +2,8 @@
 
 > **Status (2026-09-25).** This runbook covers the **legacy delivery-format**
 > bundle, which has no importer yet. Educators outlining paths today should use
-> [`curation/templates/educator-paths-v1/`](../../../curation/templates/educator-paths-v1/README.md)
-> ([spec 08c](../../specs/08c-educator-path-authoring.md)) instead. Real learner
+> `curation/templates/educator-paths-v1/` (retired)
+> ([spec 08c](../specs/08c-educator-path-authoring.md)) instead. Real learner
 > observations — including the INTERESTS observation fields below — belong in a
 > separate private learner log, not in a curriculum bundle; that conflict is
 > resolved by a later adapter/spec revision, not by filling these fields.

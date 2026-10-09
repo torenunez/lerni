@@ -6,8 +6,8 @@ Open tasks by who does the work. The educator and admin tracks run in parallel: 
 
 ### Now: Release 1 MVP
 
-- [ ] Choose an interest and a goal, and sketch 3–5 activities in any form you like. The [plan sheet and card](../curation/README.md) are a stopgap; planning moves into the educator view in step 5.
-- [ ] Review the car activity's science with the [review sheet](../plans/runbooks/chain-1-source-review.md). It's the activity for the MVP, because it already exists as a draft; your own activity card comes next.
+- [ ] Open the educator view, read the Guide tab, and make a learning plan: start from the cars or sharks example, then fill in one activity card.
+- [ ] Review the car activity's science with the admin (who has the review sheet). It's the activity for the MVP, because it already exists as a draft; your own activity card comes next.
 
 ### Later: Release 1 MVP
 
@@ -22,17 +22,12 @@ Open tasks by who does the work. The educator and admin tracks run in parallel: 
 
 Build from the [Release 1 plan](../plans/release-1-mvp.md), in this order:
 
-- [ ] The catalog lists approved activities, plus drafts for educator-only preview.
 - [ ] The session controller: one shared session in memory, the tap contract, and Stop and Reset winning over taps in flight.
 - [ ] The activity on both screens: the student screen (iPad) and the educator view with Start, Stop, Reset, the recap, and draft preview.
 
-### Now: tooling
-
-- [ ] Cut `tests/test_curation_templates.py` from 48 tests to about 15 covering the checker's key behavior.
-
 ### Later: Release 1 MVP
 
-- [ ] Step 5: planning in the educator view: plan and activity-card forms saved on the server, admin packaging of a saved card, and approvals recorded in the app.
+- [ ] Step 6: approvals in the app, with the science review sheet; admin packaging of a saved activity card, then automatic.
 - [ ] Record the educator's four approvals in the chosen activity's file.
 
 ### Later: Release 2 Remembering
