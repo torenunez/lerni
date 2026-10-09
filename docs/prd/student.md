@@ -85,6 +85,15 @@ As an independent student, I want to plan my own learning and approve my own act
 - WHEN an approved card changes THE SYSTEM SHALL require approval again.
 - WHEN they change their password in My account THE SYSTEM SHALL require the current one.
 
+### Story: Ask Lerni anything (independent student)
+
+As an independent student, I want to ask questions by text and get clear, short answers, so that I can explore a topic right away, AI-enabled from the start.
+
+- WHEN an independent student sends a question in the Ask tab THE SYSTEM SHALL stream Claude's answer, briefly and at their level, sometimes ending with one question that invites them to go deeper.
+- WHEN they pick a plan as the topic THE SYSTEM SHALL give Claude only that plan's interest, goal, and ideas, never who is asking.
+- WHILE they're in a conversation THE SYSTEM SHALL keep it only in memory, and drop it on Clear, reload, sign-out, or a server restart.
+- WHEN a supervised student, or anyone not signed in as an independent student, sends a question THE SYSTEM SHALL refuse it.
+
 ### Story: Explore freely (independent student)
 
 As an independent student, I want to let Claude write whole activities and try them right away, so that I can explore a new topic quickly, knowing the facts may be wrong.
@@ -186,7 +195,7 @@ Public access and a native iPad app.
 - 2026-10-09: A supervised student's iPad is signed in only as that student; the educator and admin dogfood on their own devices.
 - 2026-10-09: Release 5 is renamed "free conversation", so it isn't confused with Explore freely.
 - 2026-10-09: Release 1 saves the account and an independent student's plans, but still no progress record. (Replaces "nothing about the student is saved".)
-
+- 2026-10-09: The app is AI-enabled from Release 1: independent students get Ask Lerni, a text conversation with Claude (open questions, kept only in memory). It comes before cards; supervised students get it later with reply checks and the educator's control, and Release 3 adds voice on top of it.
 ## Open questions
 
 - [NEEDS CLARIFICATION] (Release 2) Should the student see their own map of ideas, as a way to feel progress?

@@ -91,7 +91,7 @@ _WELCOME_HTML = """
 </div>
 """
 
-# An independent student's Learn tab until step 6 brings their own plans.
+# An independent student's Learn tab until step 7 brings their own plans.
 _INDEPENDENT_HTML = """
 <div class="lerni-welcome" role="main">
   <span class="lerni-wave" aria-hidden="true">👋</span>

@@ -57,7 +57,7 @@ Use by educators or students.
 - 2026-10-09: The educator's and independent students' imports keep running through the admin's Claude account (the Claude Code CLI, no API key) for the prototype, a choice the admin made knowing that Anthropic's consumer terms don't allow making an account available to anyone else, and that Claude Code's sign-in is meant for the account holder's own use. The consent box names the admin's account, the adapter turns off Claude Code's transcript saving, and the API-key adapter replaces it before anyone outside the household uses the app.
 
 - 2026-10-09: The admin adds the first educator account and recovers accounts with `lerni student` (add, reset-password, educator, list) on the home server; passwords are typed at a hidden prompt. The educator passcode is gone.
-
+- 2026-10-09: Ask Lerni's conversations also run through the admin's Claude account (the same known exception to Anthropic's consumer terms), for independent students only, with no tools and no saved transcripts.
 ## Open questions
 
 - [NEEDS CLARIFICATION] (Release 3) How to add HTTPS on the home server for the microphone: a private network with its own certificates, or a locally trusted certificate. The admin decides while building.

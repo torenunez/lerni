@@ -11,7 +11,7 @@ Open tasks by who does the work. The educator and admin tracks run in parallel: 
 
 ### Later: Release 1 MVP
 
-- [ ] Once step 8 lands: approve the car card's four checks in the app: science, wording, pictures and accessibility, and OK to use.
+- [ ] Once step 9 lands: approve the car card's four checks in the app: science, wording, pictures and accessibility, and OK to use.
 - [ ] Once step 5 lands: sign in with your own educator account (the admin creates it), add the student accounts in the Students tab, and say what's confusing. Save only the supervised student's own password on their iPad.
 - [ ] Rehearse the MVP on the iPad and your own device, including Stop and Reset, then authorize student use.
 - [ ] Watch the student try it, keep notes private, and revise one thing.
@@ -32,10 +32,10 @@ How PRs are split:
 
 | # | PR | Branch | Ships | Done when | Status |
 |---|---|---|---|---|---|
-| 1 | Step 5: accounts and one sign-in | `feat/student-accounts` | Student accounts; our own sign-in page, re-checked on every request; one app with tabs by role; the Students tab; wrong-password delays; Signed in as and Sign out; the in-app guide | On the admin's own device, Safari saves the password and a reload and Safari restart keep them signed in; an archive or reset signs out a second device at once; the educator sees the educator tabs | Open: PR #8 |
-| 2 | Step 6: plan my own | `feat/plan-my-own` | Guide, Learning plans, and Explore freely for independent students; plan schema v2, set only by the server; self-approval; no Claude Code transcripts; the first real Claude import; the import evals | The admin turns on Explore freely, imports their own interests, gets full cards, and the evals pass | Not started |
-| 3 | Step 7: play a card | `feat/card-activities` | Card activities (complete, and may play for this viewer); one session per student; Learn and the activity screens | The admin does their own activity end to end on their own device | Not started |
-| 4 | Step 8: the supervised path | `feat/supervised-sessions` | The educator's Start, Stop, Reset, and recap; the four checks on library cards in the app | The educator runs a supervised student's session on the iPad from their own device | Not started |
+| 1 | Step 6: Ask Lerni | `feat/ask-lerni` | The Ask tab for independent students: a text conversation with Claude, streamed, kept only in memory | The admin asks a question on their own device and the answer streams in | In progress |
+| 2 | Step 7: plan my own | `feat/plan-my-own` | Guide, Learning plans, and Explore freely for independent students; plan schema v2, set only by the server; self-approval; no Claude Code transcripts; the first real Claude import; the import evals | The admin turns on Explore freely, imports their own interests, gets full cards, and the evals pass | Not started |
+| 3 | Step 8: play a card | `feat/card-activities` | Card activities (complete, and may play for this viewer); one session per student; Learn and the activity screens | The admin does their own activity end to end on their own device | Not started |
+| 4 | Step 9: the supervised path | `feat/supervised-sessions` | The educator's Start, Stop, Reset, and recap; the four checks on library cards in the app; Ask for supervised students, with reply checks | The educator runs a supervised student's session on the iPad from their own device | Not started |
 
 After these, Release 1 needs content and sessions, not code: the educator approves an activity, rehearses, and a supervised student tries it (Educator and Student tasks above and below).
 
@@ -62,5 +62,5 @@ After these, Release 1 needs content and sessions, not code: the educator approv
 
 ### Later: Release 1 MVP
 
-- [ ] Independent student (the admin first): once step 7 lands, do your own activity end to end on your own device; note what's confusing.
+- [ ] Independent student (the admin first): once step 8 lands, do your own activity end to end on your own device; note what's confusing.
 - [ ] Supervised student: try the MVP with the educator beside them. They can say no or stop at any time.

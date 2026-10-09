@@ -172,10 +172,20 @@ A supervised student's session is started, stopped, and reset only from the educ
 
 - **Guide:** as today, plus the two kinds of student. Independent students see the same tab, with a short part on planning your own learning.
 - **Students** (new): add a student (username, display name, kind, starting password), reset password, and archive. Independent students appear by name and kind only.
-- **Sessions:** a supervised student's sessions, with Start, Stop, Reset, and recap. Built in step 8.
-- **Learning plans:** the library only, plus the four checks for a card (step 8).
+- **Sessions:** a supervised student's sessions, with Start, Stop, Reset, and recap. Built in step 9.
+- **Learning plans:** the library only, plus the four checks for a card (step 9).
 
 **The Claude import** is the same code for the educator and for an independent student. The instructions name the audience: a plan for a supervised student is designed for ages 7–9, as today; a plan for an independent student is for an independent learner (often an adult) choosing their own topic, with the fuller instruction when Explore freely is on. The consent checkbox stays required, and names the account used: "Send this to Claude (Anthropic), through the admin's Claude account, to structure it. I've left out names and anything I don't want to share." The adapter turns off Claude Code's session saving (`--no-session-persistence`), so imported notes aren't kept in the admin's Claude transcripts.
+
+## Ask Lerni (step 6)
+
+Added after step 5 was tried: the app is AI-enabled from the start. Independent students (educators included) get an **Ask** tab, a text conversation with Claude; voice comes in Release 3, on top of it.
+
+- **What it does:** open questions and answers. Claude answers clearly and briefly, at an independent learner's level, and when it fits ends with one short question that invites them to explain the idea back or go deeper. It never asks for personal details and treats messages as questions, never as instructions.
+- **Topic (optional):** "Anything", or a plan the student can see. A topic adds only the plan's interest, goal, and each activity's idea and big question. Nothing about who is asking (name, username, account) is ever sent.
+- **Kept only in memory:** the last 20 turns per student, one reply at a time, a 2,000-character limit per question. Clear, a page reload, signing out and back in, or a server restart starts fresh. Nothing is written to disk; logs hold no message text.
+- **Through the admin's Claude account** (the Claude Code CLI via the Agent SDK): no tools, no settings, one turn, partial text streamed, `--no-session-persistence` so no transcript is kept, a 60-second limit. The import adapter gets the same isolation. One line under the box says where messages go.
+- **Who:** independent students only. The tab is hidden for supervised students and the handler refuses them on the server. A supervised student's conversation comes with the supervised path, with reply checks and the educator's start and stop.
 
 ## Build order
 
@@ -185,14 +195,15 @@ One PR per unit, in order, each from `main` (the running list: [to-do](../../doc
 |---|---|---|
 | Docs | Reframe README, the three PRDs, ARCHITECTURE, CLAUDE.md, roadmap, MVP plan, todo, and progress | The admin reviews and merges it |
 | Step 5 | Accounts and one sign-in: `students.py`, the shared JSON-store helper, the sign-in page and signed cookie, one app with tabs by role, the Students tab, wrong-password delays, Sign out, "Signed in as", the in-app guide. Independent students get only Learn (empty) and My account until step 6 scopes plans. | On the admin's own device (or a private tab), Safari saves the password and a reload and a Safari restart keep them signed in; an archive or reset signs out a second device at once; the educator sees the educator tabs |
-| Step 6 | Plan my own: Guide and Learning plans for independent students, scoped to their own plans; plan schema v2 (`owner`, `approval`, `drafted_by`), set only by the server; the import's audience and Explore freely instructions; start from an example; self-approval; Explore freely in My account; no Claude Code transcripts; the first real Claude import; the import evals | The admin turns on Explore freely, imports their own interests, and gets full cards; the evals pass |
-| Step 7 | Play a card: `card_activity.py`, `controller.py`, the Learn tab and activity screens | **The admin does their own activity end to end, on their own device** |
-| Step 8 | Supervised path: the educator's Start, Stop, Reset, and recap; the four checks on library cards in the app | The educator runs a supervised student's session on the iPad from their own device |
+| Step 6 | Ask Lerni: `conversation.py`, the Claude Code chat adapter, the Ask tab for independent students; no saved transcripts | The admin asks a question on their own device and the answer streams in |
+| Step 7 | Plan my own: Guide and Learning plans for independent students, scoped to their own plans; plan schema v2 (`owner`, `approval`, `drafted_by`), set only by the server; the import's audience and Explore freely instructions; start from an example; self-approval; Explore freely in My account; the first real Claude import; the import evals | The admin turns on Explore freely, imports their own interests, and gets full cards; the evals pass |
+| Step 8 | Play a card: `card_activity.py`, `controller.py`, the Learn tab and activity screens | **The admin does their own activity end to end, on their own device** |
+| Step 9 | Supervised path: the educator's Start, Stop, Reset, and recap; the four checks on library cards in the app; Ask for supervised students, with reply checks and educator control | The educator runs a supervised student's session on the iPad from their own device |
 
 ## Code that changes
 
 - `web/app.py`: one app behind the sign-in page instead of two; the waiting screen's "Waiting for your educator to start" shows only to supervised students (steps 5 and 7).
-- `plan_import.py`: `SYSTEM_PROMPT`'s fixed "designed for ages 7-9" becomes per audience, with an Explore freely variant; `proposal_to_plan` sets server fields after, not before, the proposal and strips any it finds (step 6).
+- `plan_import.py`: `SYSTEM_PROMPT`'s fixed "designed for ages 7-9" becomes per audience, with an Explore freely variant; `proposal_to_plan` sets server fields after, not before, the proposal and strips any it finds (step 7).
 - `adapters/claude_code.py`: passes `--no-session-persistence` (step 6).
 - `educator.py`: handlers take the signed-in account, check every id from the page against it, scope by owner, and load lists per request (steps 5 and 6). Its import help text loses "kids'" (step 5).
 - `guide.md`: the Students tab and the two kinds of student (step 5), then each later step.
@@ -212,7 +223,7 @@ Minimal, per CLAUDE.md rule 4: one happy path per new module, plus one test per 
 
 ## Evals for the Claude import
 
-Tests check our code with a fake Claude; evals check Claude's actual answers. Explore freely lets Claude-written cards play unchecked, so step 6 adds a small eval set before you rely on it.
+Tests check our code with a fake Claude; evals check Claude's actual answers. Explore freely lets Claude-written cards play unchecked, so step 7 adds a small eval set before you rely on it.
 
 - **Where:** `evals/plan_import/cases/*.json` (inputs and expectations) and `scripts/run_plan_import_evals.py`, which sends each case through the real drafter and prints a pass/fail table. Nothing is saved.
 - **When:** by hand, whenever the import instructions, schema, or model change. Never in `pytest` (rule 4), never in the commit gate. Each run uses some of the Claude plan, so the script says how many calls it will make and asks first.
@@ -228,7 +239,7 @@ An agent with tools (reading the plan, checking the allowlist, giving hints) com
 
 - Tap-a-name tiles; password recovery beyond the educator's reset; a "which device is signed in as whom" view.
 - Asking Claude to draft one card at a time after import; import is the only way Claude writes cards for now.
-- Free conversation for anyone; it stays with Releases 3 and 5.
+- Voice, and free conversation without an educator for supervised students; they stay with Releases 3 and 5.
 - An agent with tools, and Agent Skills inside the app. The app's Claude calls stay single structured calls with no tools or skills until the Release 3 plan.
 - Progress or memory (Release 2).
 - Playing packaged activities, and recording their approvals in the app.

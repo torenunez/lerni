@@ -23,7 +23,7 @@ from lerni.student.web.educator import educator_tabs, plan_choices, sessions_tex
 
 # Tab ids in page order. Everyone gets Learn; independent students also get
 # Ask, Guide, and My account; educators also get Sessions, Learning plans, and
-# Students. Independent students' own Learning plans arrive in step 6.
+# Students. Independent students' own Learning plans arrive in step 7.
 _TAB_IDS = ("learn", "ask", "guide", "sessions", "plans", "students", "account")
 _EDUCATOR_TABS = {"sessions", "plans", "students"}
 _INDEPENDENT_TABS = {"learn", "ask", "guide", "account"}
@@ -93,7 +93,7 @@ def build_main_view(
                 gr.update(selected=opening_tab(viewer)),  # open a tab they can see
                 *(gr.update(visible=tab in shown) for tab in _TAB_IDS),
                 gr.update(visible=viewer is not None and viewer.role is Role.SUPERVISED),
-                # an independent student's empty Learn, until step 6
+                # an independent student's empty Learn, until step 7
                 gr.update(visible=viewer is not None and viewer.role is Role.INDEPENDENT),
                 gr.update(choices=plan_choices(store) if is_edu else [], value=None),
                 sessions_text(catalog) if is_edu else "",

@@ -64,7 +64,7 @@ As an educator, I want to approve an activity's exact wording and pictures, so t
 - WHEN its wording or pictures change THE SYSTEM SHALL require approval again.
 - WHEN the educator tries a card before approving it THE SYSTEM SHALL run it only in the educator view, marked as a draft, and never on a student's screen.
 
-Approval covers four checks: the science is right (`science`), the wording suits the student (`student_content`), the pictures work and are described in words (`visual_accessibility`), and it's OK to use (`educator_approval`). The names in brackets are how they're recorded. In Release 1 the approvals are recorded in the app on library cards (step 8), tied to the exact content a supervised student will see; packaged activity files keep their own approvals. Approve only after you have tried the activity yourself. Saving an activity card is not approval.
+Approval covers four checks: the science is right (`science`), the wording suits the student (`student_content`), the pictures work and are described in words (`visual_accessibility`), and it's OK to use (`educator_approval`). The names in brackets are how they're recorded. In Release 1 the approvals are recorded in the app on library cards (step 9), tied to the exact content a supervised student will see; packaged activity files keep their own approvals. Approve only after you have tried the activity yourself. Saving an activity card is not approval.
 
 ### Story: Run a session
 
