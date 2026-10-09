@@ -1,4 +1,4 @@
-"""The student core imports only the standard library and itself (ARCHITECTURE boundary 8)."""
+"""The student core imports only the standard library and itself (ARCHITECTURE boundary 7)."""
 
 import ast
 import sys

@@ -4,16 +4,22 @@ Where things really stand, then a dated log, newest first. Completed work is rec
 
 Record each kind of "done" only when it actually happens, with the date: code built, content approved, app ready, a student session held. Passing tests show code behaves as specified; they don't make anything ready for a student.
 
-## Current state (2026-10-09, steps 5 and 6 merged)
+## Current state (2026-10-09, steps 1–6 merged; interest map designed)
 
 - **Built:** the student app's core (activity format, catalog, engine, learning plans, the Claude import, student accounts, sign-in, Ask Lerni's conversations); `lerni serve` with a sign-in page and one app with tabs by role: everyone's Learn; an independent student's Ask (one ongoing text conversation with Claude, phone first), Guide, and My account; and an educator's Sessions, Learning plans, and Students on top. The admin tool (`lerni`, with `lerni student` for the first educator and recovery). A [code manifest](code-manifest.md) of every file. Tests: 60 passed, 2 expected failures.
-- **Designed and approved:** supervised and independent students, one sign-in with tabs by role, Explore freely, and on-demand evals for the Claude import ([specs/03-student-accounts.md](../plans/specs/03-student-accounts.md)). The docs are reframed for it.
-- **Not yet:** independent students' own plans and Explore freely (step 7); a real Claude import; card activities and sessions (step 8); the supervised path and approvals in the app (step 9); any approved activity; any supervised student session. The educator hasn't planned in the app yet.
-- **Open:** the sharks example plan has no activity cards or sources yet.
+- **Designed:** the interest map, goals, the tagger, upload, feedback, and the supervised conversation ([specs/04-interest-map.md](../plans/specs/04-interest-map.md)); upload and the build order are proposals awaiting the admin's review.
+- **Not yet:** the interest map and tagger (step 7); upload and feedback (step 8); the supervised conversation (step 9); removing the old activity path (step 10); any supervised student session.
 
 When something changes, update this section and add a log entry below.
 
 ## Log
+
+### 2026-10-09 (direction change: the interest map; PR #11 merged)
+
+- PR #11 (no fine print in Ask; progress for #9 and #10) merged.
+- The admin replaced activity cards, learning plans, approvals, Explore freely, and the plan import with an **interest map**: one conversation per student grows **interests** (green, sized by time) and an educator (or the independent student) sets **goals** (coral); the agent bridges from interests to goals. Upload proposes both. Only educators see a supervised student's map. Educators leave free-text feedback that the agent summarizes for the admin and never acts on. Learning concepts add five small cues: explain it back, fade and revisit, a second bridge, the student's own words, and backing off.
+- A supervised student talks with Lerni by text in Release 1, through the admin's Claude account, with an educator beside them in every session; no API key is planned. The admin chose this knowing the consumer terms are for people 18 and over.
+- Docs reframed to match: [interest map spec](../plans/specs/04-interest-map.md), CLAUDE.md rules 5 and 6, README, ARCHITECTURE, roadmap, the three PRDs, learning concepts, the Release 1 plan, and the to-do list. Steps 7–10 are now the interest map, upload and feedback, the supervised conversation, and removing the old activity path.
 
 ### 2026-10-09 (PRs #10 and #9 merged: accounts hardening, Ask Lerni)
 

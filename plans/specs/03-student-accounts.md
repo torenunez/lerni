@@ -1,5 +1,7 @@
 # Supervised and independent students, with sign-in
 
+> **Partly superseded (2026-10-09).** Accounts, sign-in, and Ask Lerni are built and still hold. The tab table below is superseded: the tabs each person sees are in the interest map spec's "What each person sees". Learning plans, activity cards, approvals, Explore freely, sessions, the import evals, and steps 7–9 here are replaced by the [interest map spec](04-interest-map.md).
+
 Design for the rest of Release 1. Approved 2026-10-09, then revised the same day after two outside reviews of PR #7, and again when step 5 was tried: the educator became a permission on a person's account, and the passcode went away. The PRDs carry these decisions (a PRD wins where they disagree); the [MVP plan](../release-1-mvp.md) carries the steps.
 
 ## Why
@@ -185,7 +187,7 @@ Added after step 5 was tried: the app is AI-enabled from the start. Independent 
 - **Topic (optional):** "Anything", or a plan the student may use: every plan for an educator, the examples for anyone else (plus their own plans from step 7); the server checks the id. A topic adds only the plan's interest, goal, and each activity's idea and big question, framed as information, before the safety rules. No account details (name, username) are added.
 - **One ongoing conversation per student, in memory only:** the last 20 messages (about 10 questions and answers), the same on each of their devices, until New conversation or a server restart. One reply at a time per student, up to 4 at once across the household, a 2,000-character limit per question. Phone first: the chat grows with its messages and the question box grows to 4 lines as they type. One button: Send, which becomes Stop while answering (Enter also sends); Stop keeps what was said so far; a failure keeps the question in the box. New conversation during a reply wins. Nothing is written to disk; logs hold no message text.
 - **Through the admin's Claude account** (the Claude Code CLI via the Agent SDK): no tools, no settings or MCP servers, one turn, partial text streamed, `--no-session-persistence` so Claude Code keeps no transcript on the server, a 60-second limit. The import adapter gets the same isolation.
-- **Who:** independent students only. The tab is hidden for supervised students and the handler refuses them on the server. A supervised student's conversation is Release 3 (one hold-to-talk button, on an API key; see the student PRD's decisions).
+- **Who:** independent students only. The tab is hidden for supervised students and the handler refuses them on the server. ~~A supervised student's conversation is Release 3, on an API key.~~ Superseded: it's step 9 of the [interest map spec](04-interest-map.md#supervised-students).
 
 ## Build order
 
