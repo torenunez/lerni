@@ -12,19 +12,21 @@ from typing import Any
 import gradio as gr
 
 from lerni.student.catalog import PackageLessonCatalog
+from lerni.student.conversation import Conversations
 from lerni.student.plan_import import PlanDrafter
 from lerni.student.plans import PlanStore
 from lerni.student.signin import Role, SignIn, Viewer
 from lerni.student.students import StudentStore
 from lerni.student.web.accounts import account_tab, student_rows, students_tab
+from lerni.student.web.ask import ANYTHING, ask_tab, topic_choices
 from lerni.student.web.educator import educator_tabs, plan_choices, sessions_text
 
 # Tab ids in page order. Everyone gets Learn; independent students also get
-# Guide and My account; educators also get Sessions, Learning plans, and
+# Ask, Guide, and My account; educators also get Sessions, Learning plans, and
 # Students. Independent students' own Learning plans arrive in step 6.
-_TAB_IDS = ("learn", "guide", "sessions", "plans", "students", "account")
+_TAB_IDS = ("learn", "ask", "guide", "sessions", "plans", "students", "account")
 _EDUCATOR_TABS = {"sessions", "plans", "students"}
-_INDEPENDENT_TABS = {"learn", "guide", "account"}
+_INDEPENDENT_TABS = {"learn", "ask", "guide", "account"}
 
 
 def visible_tabs(viewer: Viewer | None) -> tuple[str, ...]:
@@ -53,6 +55,7 @@ def build_main_view(
     catalog: PackageLessonCatalog,
     students: StudentStore,
     drafter: PlanDrafter | None,
+    conversations: Conversations | None = None,
     welcome_html: str = "",
     independent_html: str = "",
 ) -> gr.Blocks:
@@ -67,6 +70,7 @@ def build_main_view(
             with gr.Tab("Learn", id="learn", visible=False) as learn_tab:
                 waiting = gr.HTML(welcome_html, visible=False)
                 independent = gr.HTML(independent_html, visible=False)
+            ask, topic, chat = ask_tab(signin, store, conversations)
             (guide_tab, sessions_tab, plans_tab), plan_dd, sessions = educator_tabs(
                 signin, store, catalog, drafter
             )
@@ -77,6 +81,8 @@ def build_main_view(
             viewer = signin.viewer(request.username)
             shown = visible_tabs(viewer)
             is_edu = viewer is not None and viewer.educator
+            if conversations is not None and viewer is not None:
+                conversations.clear(viewer.username)  # each visit starts a fresh conversation
             if viewer is None:
                 name = "nobody"
             else:
@@ -92,14 +98,17 @@ def build_main_view(
                 gr.update(choices=plan_choices(store) if is_edu else [], value=None),
                 sessions_text(catalog) if is_edu else "",
                 student_rows(students) if is_edu else [],
+                gr.update(choices=topic_choices(store) if "ask" in shown else [],
+                          value=ANYTHING),
+                [],  # an empty conversation
             ]
 
         blocks.load(
             on_load,
             None,
             # order matches on_load: header, tabs, the _TAB_IDS tabs, then the rest
-            [header, tabs, learn_tab, guide_tab, sessions_tab, plans_tab, students_tab_,
-             account, waiting, independent, plan_dd, sessions, students_table],
+            [header, tabs, learn_tab, ask, guide_tab, sessions_tab, plans_tab, students_tab_,
+             account, waiting, independent, plan_dd, sessions, students_table, topic, chat],
             api_visibility="private",
         )
     return blocks

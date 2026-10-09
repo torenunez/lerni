@@ -7,7 +7,7 @@ from pathlib import Path
 CORE = Path(__file__).resolve().parents[2] / "src" / "lerni" / "student"
 CORE_MODULES = [
     "__init__.py", "canonical.py", "catalog.py", "domain.py", "engine.py",
-    "plans.py", "plan_import.py", "jsonfiles.py", "students.py", "signin.py",
+    "plans.py", "plan_import.py", "jsonfiles.py", "students.py", "signin.py", "conversation.py",
 ]
 
 

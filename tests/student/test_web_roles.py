@@ -42,10 +42,10 @@ def test_each_role_opens_on_a_tab_it_can_see():
     from lerni.student.web.main import opening_tab, visible_tabs
 
     kid = Viewer("kid", "Kid", Role.SUPERVISED)
-    everything = ("learn", "guide", "sessions", "plans", "students", "account")
+    everything = ("learn", "ask", "guide", "sessions", "plans", "students", "account")
     assert visible_tabs(EDUCATOR) == everything
     assert visible_tabs(kid) == ("learn",)
-    assert visible_tabs(SAM) == ("learn", "guide", "account")
+    assert visible_tabs(SAM) == ("learn", "ask", "guide", "account")
     openings = (opening_tab(EDUCATOR), opening_tab(kid), opening_tab(SAM))
     assert openings == ("guide", "learn", "learn")
 
@@ -70,3 +70,18 @@ def test_add_form_clears_after_a_save_and_educator_needs_independent():
     assert educator_box_for("supervised") == {"__type__": "update", "value": False,
                                               "interactive": False}
     assert educator_box_for("independent")["interactive"] is True
+
+
+def test_only_independent_students_can_ask_lerni(tmp_path):
+    from lerni.student.conversation import Conversations
+    from lerni.student.plans import PlanStore
+    from lerni.student.web.ask import ask_reply
+
+    class Model:
+        def stream(self, system, turns):
+            yield "Hi."
+
+    convos, store = Conversations(Model()), PlanStore(tmp_path)
+    assert "".join(ask_reply(convos, store, SAM, "What is speed?", None)) == "Hi."
+    with pytest.raises(NotAllowed):
+        list(ask_reply(convos, store, Viewer("kid", "Kid", Role.SUPERVISED), "hi", None))

@@ -18,6 +18,7 @@ import gradio as gr  # noqa: E402
 from fastapi import FastAPI, Request  # noqa: E402
 
 from lerni.student.catalog import PackageLessonCatalog  # noqa: E402
+from lerni.student.conversation import ChatModel, Conversations  # noqa: E402
 from lerni.student.plan_import import PlanDrafter  # noqa: E402
 from lerni.student.plans import PlanStore, default_data_dir  # noqa: E402
 from lerni.student.signin import COOKIE_NAME, SignIn, load_secret  # noqa: E402
@@ -124,6 +125,7 @@ def build_app(
     store: PlanStore | None = None,
     catalog: PackageLessonCatalog | None = None,
     drafter: PlanDrafter | None = None,
+    chat_model: ChatModel | None = None,
 ) -> FastAPI:
     """Build the server: the sign-in page and the app at ``/app/``.
 
@@ -133,6 +135,7 @@ def build_app(
         store: Learning plans; defaults to the plan folder under ``data_root``.
         catalog: Packaged activities; defaults to the ones shipped with Lerni.
         drafter: Claude behind an adapter for imports; ``None`` turns imports off.
+        chat_model: Claude behind an adapter for Ask Lerni; ``None`` turns it off.
     """
     root = data_root or default_data_dir()
     students = StudentStore(root)
@@ -152,6 +155,7 @@ def build_app(
         catalog or PackageLessonCatalog(),
         students,
         drafter,
+        Conversations(chat_model) if chat_model else None,
         welcome_html=_WELCOME_HTML,
         independent_html=_INDEPENDENT_HTML,
     )
