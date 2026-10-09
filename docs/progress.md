@@ -4,16 +4,23 @@ Where things really stand, then a dated log, newest first. Completed work is rec
 
 Record each kind of "done" only when it actually happens, with the date: code built, content approved, app ready, a student session held. Passing tests show code behaves as specified; they don't make anything ready for a student.
 
-## Current state (2026-10-09)
+## Current state (2026-10-09, step 5)
 
-- **Built:** the student app's core (activity format, catalog with approved listing and draft preview, engine); `lerni serve` with the student screen and the passcode-protected educator view (Guide, Sessions, and Learning plans with activity cards, primed with cars and sharks examples, and plan import with Claude); the admin tool (`lerni`, with `study` as a deprecated alias); a [code manifest](code-manifest.md) of every code and test file. Tests: 29 passed, 2 expected failures (trimmed to a minimal suite).
+- **Built:** the student app's core (activity format, catalog with approved listing and draft preview, engine, student accounts, sign-in); `lerni serve` with a sign-in page and one app with tabs by role: the educator's Guide, Students, Sessions, and Learning plans (activity cards, cars and sharks examples, plan import with Claude), a supervised student's Learn (waiting screen), and an independent student's Guide, Learn, and My account; the admin tool (`lerni`, with `study` as a deprecated alias); a [code manifest](code-manifest.md) of every code and test file. Tests: 42 passed, 2 expected failures.
 - **Designed and approved:** supervised and independent students, one sign-in with tabs by role, Explore freely, and on-demand evals for the Claude import ([specs/03-student-accounts.md](../plans/specs/03-student-accounts.md)). The docs are reframed for it.
-- **Not yet:** accounts and sign-in; a real Claude import (only tested with a fake); card activities, sessions, and activity screens; approvals in the app; any approved activity; any student session. The educator hasn't tried planning in the app yet.
+- **Not yet:** the step 5 check on real devices (Safari saving the password, staying signed in after a Safari restart); independent students' own plans (step 6); a real Claude import (only tested with a fake); card activities, sessions, and activity screens; approvals in the app; any approved activity; any student session. The educator hasn't tried planning in the app yet.
 - **Open:** the sharks example plan has no activity cards or sources yet.
 
 When something changes, update this section and add a log entry below.
 
 ## Log
+
+### 2026-10-09 (Release 1 step 5: accounts and one sign-in)
+
+- Built from [the step 5 plan](../plans/release-1-step-5-accounts.md): `students.py` (accounts, scrypt password hashes, username rules, archive in place), `signin.py` (signed cookie re-checked on every request, wrong-password waits), `jsonfiles.py` (shared atomic writes), the sign-in page, and one Gradio app at `/app/` with tabs by role, the Students tab, My account, and "Signed in as" with Sign out. Every educator handler re-checks the role on the server; plan lists load per request.
+- Bug found in a local browser check and fixed with a regression test: the hidden Learn tab stayed selected, so the educator first saw an empty page.
+- Local browser check (throwaway server and test accounts): sign-in redirect, each role's tabs, the plan list and a plan handler for the educator, a refused password change with the wrong current password, Sign out, and staying signed in across a server restart all worked.
+- Tests: 42 passed, 2 expected failures.
 
 ### 2026-10-09 (Design revised after two reviews of PR #7)
 

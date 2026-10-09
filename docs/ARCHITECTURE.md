@@ -4,9 +4,9 @@ How Lerni works: what runs where, how an activity reaches the student, who owns 
 
 ## Bird's-eye view
 
-**Today (built):** a student screen with no login at `/`, and an educator app at `/educator/` behind a passcode, where the educator plans learning plans and activity cards and can import rough notes with Claude.
+**Today (built, steps 1–5):** everyone signs in at `/signin` to one app at `/app/`. The educator gets Guide, Students, Sessions, and Learning plans (plans, activity cards, and the Claude import); a supervised student gets Learn (a waiting screen); an independent student gets Guide, Learn, and My account.
 
-**Planned (steps 5–8, [design](../plans/specs/03-student-accounts.md)):** everyone signs in to one app on the home server, and the tabs depend on who signed in:
+**Planned (steps 6–8, [design](../plans/specs/03-student-accounts.md)):** the tabs depend on who signed in:
 
 - The **educator** manages student accounts and plans the **library** for supervised students: learning plans with activities in teaching order, and an activity card for each. A complete, approved card becomes an **activity**: an intro and teaching screens, then one multiple-choice question with hints. The educator runs a supervised student's sessions from their own phone or laptop.
 - A **supervised student** sees only Learn: the library cards the educator approved, started by the educator.
@@ -24,9 +24,9 @@ flowchart LR
     indep([Independent student]) -- "plans, taps" --> idev["Own device<br/>Guide, Learn, Learning plans, My account"]
     educator([Educator]) -- "accounts, plans, Start / Stop" --> edev["Phone or laptop<br/>educator tabs"]
     subgraph home[Home network only]
-        ipad -- "HTTP, sign-in (planned)" --> server["Home server<br/>always-on Mac"]
-        idev -- "HTTP, sign-in (planned)" --> server
-        edev -- "HTTP, passcode today" --> server
+        ipad -- "HTTP, sign-in" --> server["Home server<br/>always-on Mac"]
+        idev -- "HTTP, sign-in" --> server
+        edev -- "HTTP, sign-in" --> server
         admin([Admin]) -- "runs lerni serve" --> server
     end
 
@@ -38,9 +38,9 @@ Releases 1–2 use plain HTTP on the home network; there is no microphone, so HT
 ## Trust boundaries
 
 - **The home network is the outer boundary:** no port forwarding, never Gradio's public share links.
-- **Everyone signs in** (planned, step 5) on our own sign-in page, and Gradio's `auth_dependency` re-checks the account on every request, so an archive or password reset signs out every device at once. Built today: the student screen has no login, and the educator app checks the passcode with Gradio's login.
+- **Everyone signs in** on our own sign-in page, and Gradio's `auth_dependency` re-checks the account on every request, so an archive or password reset signs out every device at once.
 - **Every handler resolves the signed-in account on the server** and checks every id the page sends against it. Hiding a tab, a component, or an event (`api_visibility="private"`) is not protection. Nothing per-user is built into the page layout, because Gradio sends every signed-in browser the same config. Until HTTPS (Release 3) passwords travel unencrypted on the home network, which is accepted; passwords keep students apart, they don't make the app safe to expose.
-- **Who can do what** (planned; details in the [design](../plans/specs/03-student-accounts.md#who-can-do-what)):
+- **Who can do what** (accounts built; independent students' planning comes in step 6; details in the [design](../plans/specs/03-student-accounts.md#who-can-do-what)):
 
   | Who | Can |
   |---|---|
@@ -103,11 +103,11 @@ Each approval records the SHA-256 of everything Learn shows for that activity, s
 
 | Data | What it is | Owner | Where |
 |---|---|---|---|
-| Student accounts | Username, display name (a nickname is fine), kind, password hash, session version, Explore freely date (set only by that student), archived flag | Educator manages; an independent student changes their own name, password, and Explore freely | JSON files in `~/.lerni/student/students/` (planned, step 5) |
+| Student accounts | Username, display name (a nickname is fine), kind, password hash, session version, Explore freely date (set only by that student), archived flag | Educator manages; an independent student changes their own name, password, and Explore freely | JSON files in `~/.lerni/student/students/` (built) |
 | Learning plans | An interest, a goal, and activities in teaching order, each with an optional activity card and its approval. The order of activities is the teaching order; how ideas relate never sets it. | The library is the educator's; an independent student owns their own (`owner`, set by the server) | JSON files in `~/.lerni/student/plans/` on the home server (built; owner and approvals planned, step 6) |
 | Packaged activities | Curated teaching content with sources and pictures, with its approvals | Educator approves; admin packages | `src/lerni/student/lessons/` (built) |
 | Session | The live state of one activity run, and its recap; one per student account | The app | Memory only; discarded on Reset or server restart (planned) |
-| Sign-in | The signing secret; wrong-password delays | The app | `~/.lerni/student/secret.key`; delays in memory (planned) |
+| Sign-in | The signing secret; wrong-password delays | The app | `~/.lerni/student/secret.key`; delays in memory (built) |
 | Learner record | Activities finished (by activity ID, version, and content hash), concepts met, recall results. Meeting a concept is not the same as understanding it. | The educator for a supervised student; an independent student for their own | Server storage (Release 2) |
 | Lists, settings, consent | Allowlist and exclusion list; exploration mode, voice, and remembering; which outside services may receive data; sensitive-subject consents | The educator for supervised students; an independent student sets their own settings and consent, and has no lists | Server storage (settings from Release 2) |
 | Admin data | The admin's own questions, concepts, and reviews | Admin | SQLite at `~/.lerni/lerni.db` (built) |
@@ -121,17 +121,17 @@ If a change would break one of these, stop and ask.
 3. **The engine decides progression, never a model.**
 4. **Session updates are atomic and ignore stale input.** The controller, not the engine, numbers sessions and screens, and a tap applies only if it matches the current ones. Once Stop commits, the server accepts no more input.
 5. **Home network only; the activity screens never call out.** See [trust boundaries](#trust-boundaries). The only things saved about a student are their account and an independent student's own plans; session state and progress never go to disk or browser storage in Release 1.
-6. **Every request resolves the signed-in account on the server** by re-reading its record (planned): a missing or archived account, or an old session version, gets nothing, and the kind comes from the record. Every id from the page is checked against that account. A student never reaches another student's plans or sessions, or an educator action.
+6. **Every request resolves the signed-in account on the server** by re-reading its record: a missing or archived account, or an old session version, gets nothing, and the kind comes from the record. Every id from the page is checked against that account. A student never reaches another student's plans or sessions, or an educator action.
 7. **Outside services go behind an adapter**, with credentials as `env:VAR` references, and only to services agreed to: by the educator for supervised students and the library, by an independent student for their own. Tests use fakes.
-8. **The core never imports Gradio.** The core (`domain`, `catalog`, `engine`, `canonical`, `plans`, `plan_import`, and the planned `students`, `card_activity`, and `controller`) uses only the standard library. Provider SDKs live only in `adapters/`. The screens (`src/lerni/student/web/`) may import Gradio, an optional install. The student package never opens the admin tool's database.
+8. **The core never imports Gradio.** The core (`domain`, `catalog`, `engine`, `canonical`, `plans`, `plan_import`, `students`, `signin`, `jsonfiles`, and the planned `card_activity` and `controller`) uses only the standard library. Provider SDKs live only in `adapters/`. The screens (`src/lerni/student/web/`) may import Gradio, an optional install. The student package never opens the admin tool's database.
 
 ## Codemap
 
 Every code file, one line each: [code manifest](code-manifest.md).
 
-- `src/lerni/student/`: the core: `domain.py` (data types), `catalog.py` (checks packaged activities' approvals), `engine.py` (steps and snapshots), `canonical.py` (stable bytes for hashing), `lessons/` (activity files, pictures, generated index). Planned: `students.py` (accounts and passwords), `card_activity.py` (checks cards and builds playable activities), and `controller.py` (one session per student account).
+- `src/lerni/student/`: the core: `domain.py` (data types), `catalog.py` (checks packaged activities' approvals), `engine.py` (steps and snapshots), `canonical.py` (stable bytes for hashing), `lessons/` (activity files, pictures, generated index). `students.py` (accounts and passwords), `signin.py` (passwords, the signed cookie, who's signed in), `jsonfiles.py` (atomic JSON writes). Planned: `card_activity.py` (checks cards and builds playable activities), and `controller.py` (one session per student account).
 - `src/lerni/cli.py`, `commands/`, `db.py`, `sm2.py`: the admin tool.
-- `src/lerni/student/plans.py` (learning plans and their store), `plan_import.py` (rough notes to a proposed plan), `adapters/claude_code.py` (Claude through the Claude Code CLI; prototype), `seed/` (the example plans), `web/` (the Gradio screens, including the educator's `guide.md`).
+- `src/lerni/student/plans.py` (learning plans and their store), `plan_import.py` (rough notes to a proposed plan), `adapters/claude_code.py` (Claude through the Claude Code CLI; prototype), `seed/` (the example plans), `web/` (the Gradio screens: `signin_page.py`, `main.py` with the tabs by role, `educator.py`, `accounts.py`, and the educator's `guide.md`).
 - `scripts/`: the lesson index generator.
 - `tests/`: pytest, fakes only. `plans/`: build plans by release.
 
