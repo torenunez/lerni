@@ -12,13 +12,14 @@ What every code file does, in the order a request flows through it. When you add
 | `src/lerni/student/web/serve.py` | Reads the educator passcode from its environment variable, picks the Claude drafter if the `claude` CLI is installed, builds the app, and runs the web server. |
 | `src/lerni/student/web/app.py` | Builds the server: the sign-in page, and one Gradio app at `/app/` that Gradio's `auth_dependency` re-checks on every request. Turns off Gradio's analytics, run history, API pages, and other extras, and sets the look (system fonts, the playful waiting screen). Refuses an educator passcode under 8 characters. |
 | `src/lerni/student/web/signin_page.py` | The sign-in page: a plain HTML form Safari can save, the signed cookie, Sign out (this device only), and sending signed-out visits to it. |
-| `src/lerni/student/web/main.py` | The one app's page: the header and the tabs by role. |
+| `src/lerni/student/web/main.py` | The one app's page: "Signed in as" with Sign out, then tabs shown by role on load. Nothing per-user or from the data is built into the layout. |
 
 **The screens** (the only code that imports Gradio)
 
 | File | What it does |
 |---|---|
-| `src/lerni/student/web/educator.py` | The educator view's tabs: Guide, Sessions, and Learning plans (plan table, activity-card form, and the Claude import). Its handlers are plain functions so they can be tested without a browser. |
+| `src/lerni/student/web/educator.py` | The educator's Guide, Sessions, and Learning plans tabs (plan table, activity-card form, Claude import). Handlers are plain functions; each Gradio handler re-checks on the server that the viewer is the educator. |
+| `src/lerni/student/web/accounts.py` | The Students tab (add, reset password, archive) and an independent student's My account (name, and password with the current one); handlers take the server-resolved viewer and refuse other roles. |
 | `src/lerni/student/web/guide.md` | The educator's instructions, shown in the Guide tab. Not code, but shipped with it. |
 | `src/lerni/student/web/__init__.py` | Marks the screens package; says it's the only place Gradio is imported. |
 
@@ -95,6 +96,7 @@ Minimal on purpose: one happy path per module, plus a test for each safety guara
 | `tests/student/test_signin.py` | A cookie stops working after a reset; wrong passwords wait without signing anyone out. |
 | `tests/student/test_plan_import.py` | Rough notes become an unsaved plan; nothing is sent to Claude without consent. |
 | `tests/student/test_web_signin.py` | Signed-out visits go to the sign-in form; a right password opens the app; Sign out ends it; a short passcode is refused. |
+| `tests/student/test_web_roles.py` | Students can't manage accounts; the page config carries no plans or other students' names. |
 | `tests/student/test_core_imports.py` | The core imports only the standard library (never Gradio or a provider SDK). |
 | `tests/student/test_distribution.py` | The built package ships the activity files byte for byte (slow; needs `build`). |
 | `tests/student/conftest.py` | Shared test data: a synthetic activity, and a temporary data folder for every test. |

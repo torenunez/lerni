@@ -92,7 +92,16 @@ _WELCOME_HTML = """
 </div>
 """
 
-# Settings shared by both mounted apps: no footer links (that hides the API
+# An independent student's Learn tab until step 6 brings their own plans.
+_INDEPENDENT_HTML = """
+<div class="lerni-welcome" role="main">
+  <span class="lerni-wave" aria-hidden="true">👋</span>
+  <h1>Your activities will appear here</h1>
+  <p>Planning your own learning arrives in the next update.</p>
+</div>
+"""
+
+# Settings for the mounted app: no footer links (that hides the API
 # page link), no saved runs in the browser, no MCP server, no monitoring,
 # client-side rendering (no Node server), and no extra file paths served.
 _MOUNT_OPTIONS = {
@@ -150,7 +159,13 @@ def build_app(
         return viewer.username if viewer else None
 
     view = build_main_view(
-        signin, store or PlanStore(root), catalog or PackageLessonCatalog(), students, drafter
+        signin,
+        store or PlanStore(root),
+        catalog or PackageLessonCatalog(),
+        students,
+        drafter,
+        welcome_html=_WELCOME_HTML,
+        independent_html=_INDEPENDENT_HTML,
     )
     return gr.mount_gradio_app(
         app,

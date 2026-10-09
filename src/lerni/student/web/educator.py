@@ -1,9 +1,9 @@
-"""The educator view: Guide, Sessions, and Learning plans.
+"""The educator's tabs: Guide, Sessions, and Learning plans.
 
 The handlers below are plain functions over a :class:`PlanStore` so they can
-be tested without a browser; :func:`build_educator_view` wires them to Gradio.
-Every event is ``api_visibility="private"``, and the whole app sits behind the
-educator passcode (see ``app.py``).
+be tested without a browser; :func:`educator_tabs` wires them to Gradio. Every
+event is ``api_visibility="private"``, and every Gradio handler re-checks on
+the server that the viewer is the educator (see ``main.py`` for the tabs by role).
 """
 
 from __future__ import annotations
@@ -34,6 +34,7 @@ from lerni.student.plans import (
     drafting_notes,
     new_plan_id,
 )
+from lerni.student.signin import Role, SignIn
 
 COLUMNS = ["Start from", "Idea to learn", "Why it's a good next step", "Big question"]
 PRIVATE = {"api_visibility": "private"}
@@ -205,7 +206,7 @@ Claude suggests a starting plan and asks you a few questions. **Don't include th
 student's name or anything personal.**
 
 *Example:* "loves sharks. want: fast vs slow, then speed = distance and time. knows \
-counting to 100. maybe compare shark vs car? kids' ocean encyclopedia."
+counting to 100. maybe compare shark vs car? an ocean encyclopedia."
 """
 
 CONSENT = (
@@ -279,247 +280,287 @@ def sessions_text(catalog: PackageLessonCatalog) -> str:
 # --- Gradio wiring -----------------------------------------------------------
 
 
-def build_educator_view(
-    store: PlanStore, catalog: PackageLessonCatalog, drafter: PlanDrafter | None = None
-) -> gr.Blocks:
-    """Build the educator view's three tabs."""
-    store.seed_if_empty()  # first run: copy in the example plans
+def _is_educator(signin: SignIn, request: gr.Request) -> bool:
+    """True only for the educator, re-read from the server on every call."""
+    viewer = signin.viewer(request.username)
+    return viewer is not None and viewer.role is Role.EDUCATOR
 
-    # Layout first; event wiring below.
-    with gr.Blocks(title="Lerni: educator view", analytics_enabled=False) as blocks:
-        gr.Markdown("## Educator view")
-        with gr.Tabs():
-            with gr.Tab("Guide"):
-                gr.Markdown(guide_text())
 
-            with gr.Tab("Sessions"):
-                gr.Markdown(sessions_text(catalog))
+def _refuse(outputs: int) -> Any:
+    """Leave every output unchanged when a non-educator calls an educator handler."""
+    return gr.update() if outputs == 1 else [gr.update()] * outputs
 
-            with gr.Tab("Learning plans"):
-                gr.Markdown(NEVER_WRITE)
-                with gr.Accordion("Import a rough plan with Claude", open=False):
-                    if drafter is None:
-                        gr.Markdown("Claude isn't set up on this server yet.")
-                    gr.Markdown(IMPORT_TIPS)
-                    rough = gr.Textbox(label="Your notes", lines=10)
-                    upload = gr.File(
-                        label="Or upload a file", file_types=[".txt", ".md", ".docx", ".pdf"],
-                        type="filepath",
-                    )
-                    agree = gr.Checkbox(label=CONSENT)
-                    import_btn = gr.Button("Structure with Claude", variant="primary")
-                    preview = gr.Markdown()
-                    with gr.Row():
-                        keep_btn = gr.Button("Save as a new plan", visible=False)
-                        drop_btn = gr.Button("Discard", visible=False)
-                    proposal = gr.State(None)  # unsaved plan, held on the server per page
-                with gr.Row():
-                    plan_dd = gr.Dropdown(label="Plan", choices=plan_choices(store), scale=3)
-                    new_btn = gr.Button("New plan", scale=1)
-                    copy_btn = gr.Button("Copy", scale=1)
-                    archive_btn = gr.Button("Archive", scale=1, variant="stop")
-                interest = gr.Textbox(label="Interest", placeholder="e.g. Cars")
-                goal = gr.Textbox(label="Goal", placeholder="What should they understand?")
-                table = gr.Dataframe(
-                    headers=COLUMNS,
-                    column_count=len(COLUMNS),
-                    row_count=1,
-                    type="array",  # rows arrive as lists, not a pandas table
-                    interactive=True,
-                    wrap=True,
-                    label="Activities, in teaching order (add or remove rows as needed)",
-                )
-                save_btn = gr.Button("Save plan", variant="primary")
-                plan_status = gr.Markdown()
 
-                gr.Markdown("### Activity card")
-                act_dd = gr.Dropdown(label="Activity", choices=[], type="value")
-                expl = [gr.Textbox(label=f"Explanation screen {i + 1}", lines=2) for i in range(3)]
-                question = gr.Textbox(label="Question", lines=2)
-                choices = [gr.Textbox(label=f"Choice {i + 1}") for i in range(3)]
-                # options follow whatever is typed in the choice boxes
-                answer = gr.Dropdown(label="Right answer", choices=[], allow_custom_value=True)
-                hints = [gr.Textbox(label=f"Hint {i + 1}") for i in range(2)]
-                right_text = gr.Textbox(label="If they get it right, say")
-                out_text = gr.Textbox(label="If the hints run out, say")
-                pic_idea = gr.Textbox(label="Picture idea")
-                pic_desc = gr.Textbox(label="What the picture shows, in words")
-                know = gr.Textbox(label="How you'll know they really get it")
-                sources = gr.Textbox(label="Where the facts come from")
-                avoid = gr.Textbox(label="Anything to avoid or be careful about")
-                card_btn = gr.Button("Save card", variant="primary")
-                card_notes = gr.Markdown()
+def educator_tabs(
+    signin: SignIn,
+    store: PlanStore,
+    catalog: PackageLessonCatalog,
+    drafter: PlanDrafter | None = None,
+) -> tuple[list[gr.Tab], gr.Dropdown, gr.Markdown]:
+    """Build Guide, Sessions, and Learning plans inside the caller's ``gr.Tabs()``.
 
-        def on_import(text: str, path: str | None, agreed: bool) -> list[Any]:
-            try:
-                plan, notes = import_preview(drafter, text, path, agreed)
-            except (PlanError, DrafterUnavailable) as exc:
-                hide = gr.update(visible=False)
-                return [None, f"⚠️ {exc}", hide, hide, None]
-            show = gr.update(visible=True)
-            return [plan, preview_text(plan, notes), show, show, None]  # None clears the upload box
+    Returns:
+        The three tabs (hidden until ``main.py`` shows them for the viewer), the
+        plan dropdown, and the Sessions text, which ``main.py`` fills on load.
+    """
+    with gr.Tab("Guide", visible=False) as guide_tab:
+        gr.Markdown(guide_text())
 
-        import_btn.click(
-            on_import, [rough, upload, agree], [proposal, preview, keep_btn, drop_btn, upload],
-            **PRIVATE,
+    with gr.Tab("Sessions", visible=False) as sessions_tab:
+        sessions = gr.Markdown()  # filled on load, never built into the layout
+
+    with gr.Tab("Learning plans", visible=False) as plans_tab:
+        gr.Markdown(NEVER_WRITE)
+        with gr.Accordion("Import a rough plan with Claude", open=False):
+            if drafter is None:
+                gr.Markdown("Claude isn't set up on this server yet.")
+            gr.Markdown(IMPORT_TIPS)
+            rough = gr.Textbox(label="Your notes", lines=10)
+            upload = gr.File(
+                label="Or upload a file", file_types=[".txt", ".md", ".docx", ".pdf"],
+                type="filepath",
+            )
+            agree = gr.Checkbox(label=CONSENT)
+            import_btn = gr.Button("Structure with Claude", variant="primary")
+            preview = gr.Markdown()
+            with gr.Row():
+                keep_btn = gr.Button("Save as a new plan", visible=False)
+                drop_btn = gr.Button("Discard", visible=False)
+            proposal = gr.State(None)  # unsaved plan, held on the server per page
+        with gr.Row():
+            plan_dd = gr.Dropdown(label="Plan", choices=[], scale=3)  # filled on load
+            new_btn = gr.Button("New plan", scale=1)
+            copy_btn = gr.Button("Copy", scale=1)
+            archive_btn = gr.Button("Archive", scale=1, variant="stop")
+        interest = gr.Textbox(label="Interest", placeholder="e.g. Cars")
+        goal = gr.Textbox(label="Goal", placeholder="What should they understand?")
+        table = gr.Dataframe(
+            headers=COLUMNS,
+            column_count=len(COLUMNS),
+            row_count=1,
+            type="array",  # rows arrive as lists, not a pandas table
+            interactive=True,
+            wrap=True,
+            label="Activities, in teaching order (add or remove rows as needed)",
         )
+        save_btn = gr.Button("Save plan", variant="primary")
+        plan_status = gr.Markdown()
 
-        def on_keep(plan: LearningPlan | None) -> list[Any]:
+        gr.Markdown("### Activity card")
+        act_dd = gr.Dropdown(label="Activity", choices=[], type="value")
+        expl = [gr.Textbox(label=f"Explanation screen {i + 1}", lines=2) for i in range(3)]
+        question = gr.Textbox(label="Question", lines=2)
+        choices = [gr.Textbox(label=f"Choice {i + 1}") for i in range(3)]
+        # options follow whatever is typed in the choice boxes
+        answer = gr.Dropdown(label="Right answer", choices=[], allow_custom_value=True)
+        hints = [gr.Textbox(label=f"Hint {i + 1}") for i in range(2)]
+        right_text = gr.Textbox(label="If they get it right, say")
+        out_text = gr.Textbox(label="If the hints run out, say")
+        pic_idea = gr.Textbox(label="Picture idea")
+        pic_desc = gr.Textbox(label="What the picture shows, in words")
+        know = gr.Textbox(label="How you'll know they really get it")
+        sources = gr.Textbox(label="Where the facts come from")
+        avoid = gr.Textbox(label="Anything to avoid or be careful about")
+        card_btn = gr.Button("Save card", variant="primary")
+        card_notes = gr.Markdown()
+
+    def on_import(text: str, path: str | None, agreed: bool, request: gr.Request) -> list[Any]:
+        if not _is_educator(signin, request):
+            return _refuse(5)
+        try:
+            plan, notes = import_preview(drafter, text, path, agreed)
+        except (PlanError, DrafterUnavailable) as exc:
             hide = gr.update(visible=False)
-            if plan is None:
-                return [None, "", hide, hide, gr.update()]
-            saved = store.save(plan)
-            return [None, "✅ Saved. It's selected below for editing.", hide, hide,
-                    gr.update(choices=plan_choices(store), value=saved.plan_id)]
+            return [None, f"⚠️ {exc}", hide, hide, None]
+        show = gr.update(visible=True)
+        return [plan, preview_text(plan, notes), show, show, None]  # None clears the upload box
 
-        def on_drop() -> list[Any]:
-            hide = gr.update(visible=False)
-            return [None, "Discarded.", hide, hide]
+    import_btn.click(
+        on_import, [rough, upload, agree], [proposal, preview, keep_btn, drop_btn, upload],
+        **PRIVATE,
+    )
 
-        keep_btn.click(on_keep, proposal, [proposal, preview, keep_btn, drop_btn, plan_dd],
-                       **PRIVATE)
-        drop_btn.click(on_drop, None, [proposal, preview, keep_btn, drop_btn], **PRIVATE)
+    def on_keep(plan: LearningPlan | None, request: gr.Request) -> list[Any]:
+        if not _is_educator(signin, request):
+            return _refuse(5)
+        hide = gr.update(visible=False)
+        if plan is None:
+            return [None, "", hide, hide, gr.update()]
+        saved = store.save(plan)
+        return [None, "✅ Saved. It's selected below for editing.", hide, hide,
+                gr.update(choices=plan_choices(store), value=saved.plan_id)]
 
-        # Order must match what show_card returns.
-        card_outputs = [
-            *expl,
-            question,
-            *choices,
-            answer,
-            *hints,
-            right_text,
-            out_text,
-            pic_idea,
-            pic_desc,
-            know,
-            sources,
-            avoid,
-            card_notes,
+    def on_drop(request: gr.Request) -> list[Any]:
+        if not _is_educator(signin, request):
+            return _refuse(4)
+        hide = gr.update(visible=False)
+        return [None, "Discarded.", hide, hide]
+
+    keep_btn.click(on_keep, proposal, [proposal, preview, keep_btn, drop_btn, plan_dd],
+                   **PRIVATE)
+    drop_btn.click(on_drop, None, [proposal, preview, keep_btn, drop_btn], **PRIVATE)
+
+    # Order must match what show_card returns.
+    card_outputs = [
+        *expl,
+        question,
+        *choices,
+        answer,
+        *hints,
+        right_text,
+        out_text,
+        pic_idea,
+        pic_desc,
+        know,
+        sources,
+        avoid,
+        card_notes,
+    ]
+
+    def show_plan(plan_id: str | None, request: gr.Request) -> list[Any]:
+        if not _is_educator(signin, request):
+            return _refuse(5)
+        if not plan_id:
+            return ["", "", [["", "", "", ""]], gr.update(choices=[], value=None), ""]
+        plan = store.get(plan_id)
+        return [
+            plan.interest,
+            plan.goal,
+            plan_rows(plan) or [["", "", "", ""]],
+            gr.update(choices=activity_choices(plan), value=None),
+            "",
         ]
 
-        def show_plan(plan_id: str | None) -> list[Any]:
-            if not plan_id:
-                return ["", "", [["", "", "", ""]], gr.update(choices=[], value=None), ""]
-            plan = store.get(plan_id)
-            return [
-                plan.interest,
-                plan.goal,
-                plan_rows(plan) or [["", "", "", ""]],
-                gr.update(choices=activity_choices(plan), value=None),
-                "",
-            ]
+    plan_outputs = [interest, goal, table, act_dd, plan_status]
+    plan_dd.change(show_plan, plan_dd, plan_outputs, **PRIVATE)  # picking a plan fills the form
 
-        plan_outputs = [interest, goal, table, act_dd, plan_status]
-        plan_dd.change(show_plan, plan_dd, plan_outputs, **PRIVATE)  # picking a plan fills the form
+    def on_new(request: gr.Request) -> Any:
+        if not _is_educator(signin, request):
+            return _refuse(1)
+        plan = new_plan(store)
+        return gr.update(choices=plan_choices(store), value=plan.plan_id)
 
-        def on_new() -> Any:
-            plan = new_plan(store)
-            return gr.update(choices=plan_choices(store), value=plan.plan_id)
+    def on_copy(plan_id: str | None, request: gr.Request) -> Any:
+        if not _is_educator(signin, request):
+            return _refuse(1)
+        if not plan_id:
+            return gr.update()
+        plan = copy_plan(store, plan_id)
+        return gr.update(choices=plan_choices(store), value=plan.plan_id)
 
-        def on_copy(plan_id: str | None) -> Any:
-            if not plan_id:
-                return gr.update()
-            plan = copy_plan(store, plan_id)
-            return gr.update(choices=plan_choices(store), value=plan.plan_id)
+    def on_archive(plan_id: str | None, request: gr.Request) -> Any:
+        if not _is_educator(signin, request):
+            return _refuse(1)
+        if plan_id:
+            store.archive(plan_id)
+        return gr.update(choices=plan_choices(store), value=None)
 
-        def on_archive(plan_id: str | None) -> Any:
-            if plan_id:
-                store.archive(plan_id)
-            return gr.update(choices=plan_choices(store), value=None)
+    new_btn.click(on_new, None, plan_dd, **PRIVATE)
+    copy_btn.click(on_copy, plan_dd, plan_dd, **PRIVATE)
+    archive_btn.click(on_archive, plan_dd, plan_dd, **PRIVATE)
 
-        new_btn.click(on_new, None, plan_dd, **PRIVATE)
-        copy_btn.click(on_copy, plan_dd, plan_dd, **PRIVATE)
-        archive_btn.click(on_archive, plan_dd, plan_dd, **PRIVATE)
-
-        def on_save(plan_id: str | None, i: str, g: str, rows: Any) -> list[Any]:
-            if not plan_id:
-                return [gr.update(), gr.update(), "Pick or create a plan first."]
-            try:
-                plan, message = save_plan(store, plan_id, i, g, rows)
-            except PlanError as exc:
-                return [gr.update(), gr.update(), f"⚠️ {exc}"]
-            return [
-                gr.update(choices=plan_choices(store), value=plan.plan_id),
-                gr.update(choices=activity_choices(plan), value=None),
-                f"✅ {message}",
-            ]
-
-        save_btn.click(
-            on_save, [plan_dd, interest, goal, table], [plan_dd, act_dd, plan_status], **PRIVATE
-        )
-
-        def show_card(plan_id: str | None, index: int | None) -> list[Any]:
-            if not plan_id or index is None:
-                return [gr.update()] * len(card_outputs)
-            plan = store.get(plan_id)
-            f = card_fields(plan, int(index))
-            card_choices = [c for c in f["choices"] if c]
-            return [
-                *f["explanation"],
-                f["question"],
-                *f["choices"],
-                gr.update(choices=card_choices, value=f["answer"] or None),
-                *f["hints"],
-                f["right_text"],
-                f["hints_run_out_text"],
-                f["picture_idea"],
-                f["picture_description"],
-                f["how_youll_know"],
-                f["sources"],
-                f["avoid"],
-                notes_text(drafting_notes(plan.activities[int(index)].card)),
-            ]
-
-        act_dd.change(show_card, [plan_dd, act_dd], card_outputs, **PRIVATE)
-
-        def refresh_answer(c1: str, c2: str, c3: str, current: str | None) -> Any:
-            options = [c for c in (c1, c2, c3) if c and c.strip()]
-            return gr.update(choices=options, value=current if current in options else None)
-
-        # refresh the answer options when a choice box loses focus
-        for box in choices:
-            box.blur(refresh_answer, [*choices, answer], answer, **PRIVATE)
-
-        def on_save_card(plan_id: str | None, index: int | None, *vals: str) -> list[Any]:
-            if not plan_id or index is None:
-                return [gr.update(), "Pick an activity first."]
-            # positions match card_inputs below
-            values = {
-                "explanation": vals[0:3],
-                "question": vals[3],
-                "choices": vals[4:7],
-                "answer": vals[7],
-                "hints": vals[8:10],
-                "right_text": vals[10],
-                "hints_run_out_text": vals[11],
-                "picture_idea": vals[12],
-                "picture_description": vals[13],
-                "how_youll_know": vals[14],
-                "sources": vals[15],
-                "avoid": vals[16],
-            }
-            try:
-                plan, notes = save_card(store, plan_id, int(index), values)
-            except PlanError as exc:
-                return [gr.update(), f"⚠️ {exc}"]
-            return [gr.update(choices=activity_choices(plan), value=int(index)), notes_text(notes)]
-
-        card_inputs = [
-            plan_dd,
-            act_dd,
-            *expl,
-            question,
-            *choices,
-            answer,
-            *hints,
-            right_text,
-            out_text,
-            pic_idea,
-            pic_desc,
-            know,
-            sources,
-            avoid,
+    def on_save(plan_id: str | None, i: str, g: str, rows: Any, request: gr.Request) -> list[Any]:
+        if not _is_educator(signin, request):
+            return _refuse(3)
+        if not plan_id:
+            return [gr.update(), gr.update(), "Pick or create a plan first."]
+        try:
+            plan, message = save_plan(store, plan_id, i, g, rows)
+        except PlanError as exc:
+            return [gr.update(), gr.update(), f"⚠️ {exc}"]
+        return [
+            gr.update(choices=plan_choices(store), value=plan.plan_id),
+            gr.update(choices=activity_choices(plan), value=None),
+            f"✅ {message}",
         ]
-        card_btn.click(on_save_card, card_inputs, [act_dd, card_notes], **PRIVATE)
 
-    return blocks
+    save_btn.click(
+        on_save, [plan_dd, interest, goal, table], [plan_dd, act_dd, plan_status], **PRIVATE
+    )
+
+    def show_card(plan_id: str | None, index: int | None, request: gr.Request) -> list[Any]:
+        if not _is_educator(signin, request):
+            return _refuse(len(card_outputs))
+        if not plan_id or index is None:
+            return [gr.update()] * len(card_outputs)
+        plan = store.get(plan_id)
+        f = card_fields(plan, int(index))
+        card_choices = [c for c in f["choices"] if c]
+        return [
+            *f["explanation"],
+            f["question"],
+            *f["choices"],
+            gr.update(choices=card_choices, value=f["answer"] or None),
+            *f["hints"],
+            f["right_text"],
+            f["hints_run_out_text"],
+            f["picture_idea"],
+            f["picture_description"],
+            f["how_youll_know"],
+            f["sources"],
+            f["avoid"],
+            notes_text(drafting_notes(plan.activities[int(index)].card)),
+        ]
+
+    act_dd.change(show_card, [plan_dd, act_dd], card_outputs, **PRIVATE)
+
+    def refresh_answer(
+        c1: str, c2: str, c3: str, current: str | None, request: gr.Request
+    ) -> Any:
+        if not _is_educator(signin, request):
+            return _refuse(1)
+        options = [c for c in (c1, c2, c3) if c and c.strip()]
+        return gr.update(choices=options, value=current if current in options else None)
+
+    # refresh the answer options when a choice box loses focus
+    for box in choices:
+        box.blur(refresh_answer, [*choices, answer], answer, **PRIVATE)
+
+    # request comes first: Gradio injects it only into positional parameters
+    def on_save_card(
+        request: gr.Request, plan_id: str | None, index: int | None, *vals: str
+    ) -> list[Any]:
+        if not _is_educator(signin, request):
+            return _refuse(2)
+        if not plan_id or index is None:
+            return [gr.update(), "Pick an activity first."]
+        # positions match card_inputs below
+        values = {
+            "explanation": vals[0:3],
+            "question": vals[3],
+            "choices": vals[4:7],
+            "answer": vals[7],
+            "hints": vals[8:10],
+            "right_text": vals[10],
+            "hints_run_out_text": vals[11],
+            "picture_idea": vals[12],
+            "picture_description": vals[13],
+            "how_youll_know": vals[14],
+            "sources": vals[15],
+            "avoid": vals[16],
+        }
+        try:
+            plan, notes = save_card(store, plan_id, int(index), values)
+        except PlanError as exc:
+            return [gr.update(), f"⚠️ {exc}"]
+        return [gr.update(choices=activity_choices(plan), value=int(index)), notes_text(notes)]
+
+    card_inputs = [
+        plan_dd,
+        act_dd,
+        *expl,
+        question,
+        *choices,
+        answer,
+        *hints,
+        right_text,
+        out_text,
+        pic_idea,
+        pic_desc,
+        know,
+        sources,
+        avoid,
+    ]
+    card_btn.click(on_save_card, card_inputs, [act_dd, card_notes], **PRIVATE)
+
+    return [guide_tab, sessions_tab, plans_tab], plan_dd, sessions
