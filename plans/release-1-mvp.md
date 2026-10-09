@@ -35,6 +35,8 @@ Build in this order, in parallel with the educator's content work. Steps 1–4 n
    - **Student screen:** a waiting screen until Start; then the current step's question, the picture with its text alternative, and large tappable choices; then hints, the answer reveal, completion, and a "tell your educator why" prompt. Touch only.
    - **Educator view:** approved activities, with Start, Stop, and Reset, and the recap (choices picked, hints used, time taken), discarded after viewing. Drafts appear in a separate list marked DRAFT; the educator can run one as a preview on their own device so they can try it before approving. A draft is never sent to the student screen.
 
+5. **Planning in the educator view.** Forms in the educator view replace the CSV plan sheet and the Markdown activity card: the educator sets up a learning plan (an interest, a goal, and 3–5 activities in order) and fills in an activity card for the next activity. Both are saved on the home server; they are curriculum, not student data. At first the admin turns a saved card into an activity file and runs the checks; automatic packaging comes once the form is stable. The educator then previews the activity and records the four approvals in the educator view, each tied to the activity's content hash, so nobody types approvals into a file.
+
 Gradio is an optional extra (`pip install -e ".[student]"`), never a core dependency. The controller goes in `src/lerni/student/controller.py` (standard library only); the screens go in `src/lerni/student/web/`, the only place that imports Gradio.
 
 ## Tests

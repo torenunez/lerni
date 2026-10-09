@@ -44,7 +44,7 @@ Settings never change on their own, and each takes effect at once.
 
 ## Release 1: seed, approve, and supervise
 
-Before the app, the educator fills in a plan sheet (one plain row per activity) and an activity card for the first activity ([curation guide](../../curation/README.md)); the admin turns them into the authoring tables and the app's format.
+Before the app, the educator fills in a plan sheet (one plain row per activity) and an activity card for the first activity; from Release 1 step 5, both move into forms in the educator view ([curation guide](../../curation/README.md)); the admin turns them into the authoring tables and the app's format.
 
 ### Story: Approve an activity
 
@@ -136,6 +136,7 @@ Running the admin tool. Editing app code or lesson files directly.
 - 2026-10-08: The educator reviews drafts in the educator view.
 - 2026-10-08: The starting exclusion list covers violence, weapons, sexual content, self-harm, and drugs.
 - 2026-10-08: The educator writes plans in plain language (a plan sheet and activity cards); the admin converts them into the six authoring tables. The tables were too technical for an educator.
+- 2026-10-08: Learning plans and activity cards move into the educator view (Release 1, step 5), replacing the CSV and Markdown files. The admin packages a saved card at first, then it's automated; the educator records approvals in the app.
 - 2026-10-08: The educator view runs on the educator's own device (a phone or laptop), separate from the student's iPad, and controls the same session.
 - 2026-10-08: Only the educator logs in, with one passcode the admin sets; the student screen has no login. The educator can preview a draft on their own device before approving it.
 

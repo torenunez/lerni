@@ -6,8 +6,7 @@ Open tasks by who does the work. The educator and admin tracks run in parallel: 
 
 ### Now: Release 1 MVP
 
-- [ ] Choose an interest and a goal, fill in the plan sheet (3–5 rows) and one activity card, and send them to the admin. How: [curation guide](../curation/README.md).
-- [ ] Tell the admin what was confusing about the plan sheet or the card.
+- [ ] Choose an interest and a goal, and sketch 3–5 activities in any form you like. The [plan sheet and card](../curation/README.md) are a stopgap; planning moves into the educator view in step 5.
 - [ ] Review the car activity's science with the [review sheet](../plans/runbooks/chain-1-source-review.md). It's the activity for the MVP, because it already exists as a draft; your own activity card comes next.
 
 ### Later: Release 1 MVP
@@ -33,7 +32,7 @@ Build from the [Release 1 plan](../plans/release-1-mvp.md), in this order:
 
 ### Later: Release 1 MVP
 
-- [ ] Turn the educator's plan sheet and activity card into the authoring tables and an activity file; run the checker.
+- [ ] Step 5: planning in the educator view: plan and activity-card forms saved on the server, admin packaging of a saved card, and approvals recorded in the app.
 - [ ] Record the educator's four approvals in the chosen activity's file.
 
 ### Later: Release 2 Remembering

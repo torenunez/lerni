@@ -1,6 +1,6 @@
 # Curation: start here
 
-This is where the educator plans what the student will learn. You need a spreadsheet app and a text editor, nothing else: no code, no IDs, no special formats.
+This is where the educator plans what the student will learn. **Stopgap:** in Release 1 step 5, planning moves into forms in the educator view, and these files retire. You need a spreadsheet app and a text editor, nothing else: no code, no IDs, no special formats.
 
 ## What you do
 

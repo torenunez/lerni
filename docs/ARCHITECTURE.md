@@ -72,7 +72,7 @@ flowchart LR
 
 | Data | What it is | Owner | Where |
 |---|---|---|---|
-| Curriculum | Reusable concepts, how they relate, possible next steps, and authored paths. Path sequence numbers set order; relationships never do. | Educator writes; admin converts | Plan sheet and activity cards, then six authoring tables (built) |
+| Curriculum | Reusable concepts, how they relate, possible next steps, and authored paths. Path sequence numbers set order; relationships never do. | Educator writes; admin converts | Plan sheet and activity cards, then six authoring tables (built); moving into the educator view (Release 1 step 5) |
 | Activities | Reviewed teaching content for one path step, with its approvals | Educator approves; admin packages | `src/lerni/student/lessons/` (built) |
 | Session | The live state of one activity run, and its recap | The app | Memory only; discarded on Reset or server restart (planned) |
 | Learner record | Activities finished (by activity ID, version, and content hash), concepts met, recall results. Meeting a concept is not the same as understanding it. Kept until the educator deletes it. | Educator | Server storage (Release 2) |
