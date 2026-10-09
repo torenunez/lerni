@@ -1,5 +1,7 @@
 # Supervised and independent students, with sign-in
 
+> **Partly superseded (2026-10-09).** Accounts, sign-in, tabs by role, and Ask Lerni are built and still hold. Learning plans, activity cards, approvals, Explore freely, sessions, the import evals, and steps 7–9 here are replaced by the [interest map spec](04-interest-map.md).
+
 Design for the rest of Release 1. Approved 2026-10-09, then revised the same day after two outside reviews of PR #7, and again when step 5 was tried: the educator became a permission on a person's account, and the passcode went away. The PRDs carry these decisions (a PRD wins where they disagree); the [MVP plan](../release-1-mvp.md) carries the steps.
 
 ## Why

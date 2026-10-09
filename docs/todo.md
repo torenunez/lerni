@@ -6,21 +6,18 @@ Open tasks by who does the work. The educator and admin tracks run in parallel: 
 
 ### Now: Release 1 MVP
 
-- [ ] Open the educator view, read the Guide tab, and make a learning plan: import your rough notes with Claude, or start from the cars or sharks example, then fill in one activity card.
-- [ ] Review the car card's science with the admin (who has the review sheet). It's the fourth activity in the cars example, and the supervised student's first activity; your own cards come next.
+- [ ] Think of 2–3 things you'd like the supervised student to explore (with a note each on what you have in mind). You'll add them on the Maps tab once step 7 lands, or upload your notes once step 8 does.
 
 ### Later: Release 1 MVP
 
-- [ ] Once step 9 lands: approve the car card's four checks in the app: science, wording, pictures and accessibility, and OK to use.
-- [ ] Once step 5 lands: sign in with your own educator account (the admin creates it), add the student accounts in the Students tab, and say what's confusing. Save only the supervised student's own password on their iPad.
-- [ ] Rehearse the MVP on the iPad and your own device, including Stop and Reset, then authorize student use.
-- [ ] Watch the student try it, keep notes private, and revise one thing.
+- [ ] Once step 7 lands: talk with Lerni yourself for a few days and watch your own map; say what's confusing in Feedback (step 8) or to the admin.
+- [ ] Once step 9 lands: try the conversation with the supervised-student voice, then sit beside the supervised student for a short first conversation. Keep notes private, or put them in Feedback.
 
 ## Admin
 
 ### Upcoming PRs
 
-The running list of what ships next, in order. Design: [specs/03-student-accounts.md](../plans/specs/03-student-accounts.md); step details: [Release 1 plan](../plans/release-1-mvp.md#to-build).
+The running list of what ships next, in order. Design: [specs/04-interest-map.md](../plans/specs/04-interest-map.md); step details: [Release 1 plan](../plans/release-1-mvp.md#to-build).
 
 How PRs are split:
 
@@ -32,18 +29,19 @@ How PRs are split:
 
 | # | PR | Branch | Ships | Done when | Status |
 |---|---|---|---|---|---|
-| 1 | Step 7: plan my own | `feat/plan-my-own` | Guide, Learning plans, and Explore freely for independent students; plan schema v2, set only by the server; self-approval; the first real Claude import; the import evals | The admin turns on Explore freely, imports their own interests, gets full cards, and the evals pass | Not started |
-| 2 | Step 8: play a card | `feat/card-activities` | Card activities (complete, and may play for this viewer); one session per student; Learn and the activity screens | The admin does their own activity end to end on their own device | Not started |
-| 3 | Step 9: the supervised path | `feat/supervised-sessions` | The educator's Start, Stop, Reset, and recap; the four checks on library cards in the app | The educator runs a supervised student's session on the iPad from their own device | Not started |
+| 1 | Step 7: the interest map | `feat/interest-map` | `interests.py` and its store; the tagger; the steering prompt; My map and Maps (SVG picture, goals list); old tabs and the Topic picker removed | The admin sees their interests on their map sized by time, adds a nudge, and sees a bridge | Not started |
+| 2 | Step 8: upload and feedback | `feat/upload-and-feedback` | Upload proposes interests and goals, for educators and independent students; the Feedback box; `lerni feedback`; upload evals | The educator uploads notes and adds goals; the admin sees feedback summarized | Not started |
+| 3 | Step 9: the supervised conversation | `feat/supervised-conversation` | The supervised student's full-screen conversation; the supervised persona and rules; their map grows | The supervised student talks with Lerni, the educator beside them, and the map grows | Not started |
+| 4 | Step 10: remove the old activity path | `chore/remove-activities` | Plans, the old import, catalog, engine, lessons, seed, the index script, and their tests and docs | Tests pass; the code manifest matches | Not started |
 
-After these, Release 1 needs content and sessions, not code: the educator approves an activity, rehearses, and a supervised student tries it (Educator and Student tasks above and below).
+After these, Release 1 needs sessions, not code: the educator goals, rehearses, and sits beside the supervised student (Educator and Student tasks above and below).
 
 ### Ask Lerni: deferred review findings
 
 - [ ] Stop and New conversation end the answer on screen, but the Claude call can run on for up to 60 seconds; pass the cancel through to the adapter.
 - [ ] Before the supervised conversation: send real alternating turns instead of one "Them/You" transcript, so earlier answers can't be faked.
 - [ ] Try Ask on the iPad and a phone with the keyboard open; then a VoiceOver and keyboard-only pass.
-- [ ] Maybe: starter questions for the chosen topic; a daily cap per student once others use it.
+- [ ] Maybe: a daily cap per student once others use it.
 - [ ] Before anyone outside the family uses Ask: a short notice of where messages go and that answers can be wrong.
 
 ### Later: Release 2 Remembering

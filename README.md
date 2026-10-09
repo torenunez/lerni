@@ -5,13 +5,13 @@ Lerni is a learning app that facilitates interest exploration, provides users a 
 Lerni has two parts:
 
 - **Student app — the main product.** Everyone signs in, and there are two kinds of student, set by supervision rather than age:
-  - A **supervised student** (often a child) explores ideas on an iPad while an educator supervises. The educator plans and approves what the student sees, runs their sessions, and can stop any session. Educator involvement steps down over time: at first the app explores only concepts on the educator's allowlist; eventually the student converses freely about anything not on the educator's exclusion list, and the educator reviews a map of the concepts explored, blocks paths, and answers the rare consent request for a sensitive subject.
-  - An **independent student** (often an adult) is their own educator: they plan any topic, import rough notes with Claude, approve their own activities (or let Claude's drafts play with **Explore freely**), and learn at their own pace. The educator and admin use the app this way too, which tests the shared core before a supervised student relies on it.
+  - A **supervised student** (often a child) talks with Lerni on an iPad, with an educator beside them. The educator chooses a few **goals**, and Lerni bridges toward them from what the student already loves. Educator involvement steps down over time, until the student talks with Lerni on their own and the educator only glances at their map.
+  - An **independent student** (often an adult) is their own educator: they talk with Lerni and set their own goals: things to practice. The educator and admin use the app this way too, which tests it before a supervised student relies on it.
 
-  We are building it in steps: first text, pictures, and choices; then remembering what the student explored and building on it; then speaking and listening. The planning screens, the Claude import, and the activity engine exist; sign-in exists, and playing activities comes next.
+  We are building it in steps: first a text conversation and the interest map; then a companion that remembers what each student likes; then speaking and listening. Sign-in and the text conversation exist; the interest map comes next.
 - **Admin tool — in the terminal.** Full access: learn topics with it, try out activities, and tune the learning mechanics before the student app relies on them. Available now. Educators never need it. To use the app as a learner, the admin has their own independent student account.
 
-The student app treats knowledge as a map: **nodes** are ideas, and **edges** link them, either by how they relate or by which makes a good next step. A path starts at a student's core interest (cars, sharks, soccer) and follows edges toward an underlying idea. The map grows by branching to nearby ideas. It strengthens when the same idea is reached again from a different interest, so speed met through cars and again through sharks becomes one connected idea. Today the educator and independent students plan in plain language, as learning plans and activity cards in the app; building the map from them and suggesting where to go next come later.
+Each student has an **interest map**. **Interests** grow out of the conversation (cars, sharks, soccer), sized by the time spent on them. **Goals** are what the educator would like them to explore (fractions, reading clocks), in coral, while interests are green. **Bridges** show where Lerni led from one to the other, so fractions met through cars becomes part of what the student loves. Design: [interest map spec](plans/specs/04-interest-map.md).
 
 ## Read in this order
 
@@ -23,9 +23,9 @@ The student app treats knowledge as a map: **nodes** are ideas, and **edges** li
 6. [Roadmap](docs/roadmap.md): what comes next and who owns it.
 7. [Progress](docs/progress.md): where things stand, and a dated log of what was done.
 
-Educators don't need this repository: everything for them, including a guide and example plans, is in the educator view of the app. Admins can use the [implementation index](plans/README.md) to find detailed specifications and tasks. The [admin tool reference](docs/reference/admin.md) covers its commands and behavior.
+Educators don't need this repository: everything for them is in the app. Admins can use the [implementation index](plans/README.md) to find detailed specifications and tasks. The [admin tool reference](docs/reference/admin.md) covers its commands and behavior.
 
-The educator and admin can start now, in parallel. The first thing anyone tries is the MVP app (Release 1): the admin first, as an independent student, then a supervised student once the educator has approved an activity ([educator PRD](docs/prd/educator.md#release-1-seed-approve-and-supervise)). The design: [student accounts spec](plans/specs/03-student-accounts.md).
+The first thing anyone tries is the MVP app (Release 1): the admin and educator first, as independent students, then a supervised student with the educator beside them ([educator PRD](docs/prd/educator.md#release-1-set-goals-watch-and-give-feedback)). The design: [interest map spec](plans/specs/04-interest-map.md); accounts and sign-in: [student accounts spec](plans/specs/03-student-accounts.md).
 
 ## Setup
 

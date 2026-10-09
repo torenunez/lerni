@@ -15,10 +15,10 @@ The admin can do anything Lerni does from the terminal: learn topics, try out wh
 - Terminal only. Data stays on this computer in `~/.lerni/`.
 - No credentials in files; tests use fakes and make no network calls.
 - Existing commands and data keep working.
-- The admin runs the student app: a Gradio web app on a home server (an always-on Mac), opened in Safari on an iPad on the home Wi-Fi. It uses the existing lesson format, catalog, and engine (the code calls an activity a lesson).
-- Student data may leave the device, but only to services agreed to: by the educator for supervised students, by an independent student for themselves. No sharing, analytics, or advertising. In Release 1, session state stays in memory and logs contain no learner content.
+- The admin runs the student app: a Gradio web app on a home server (an always-on Mac), opened in Safari on an iPad on the home Wi-Fi.
+- Student data may leave the device, but only to services agreed to: by the educator for supervised students, by an independent student for themselves. No sharing, analytics, or advertising. Conversation text stays in memory and never reaches disk or logs; only accounts, interest maps, and feedback are saved.
 - These are prototype guardrails, not production moderation. One household; no public use.
-- Full access is for trying things out. Anything a student sees still goes through the student app's approval and supervision; the admin tool never puts unapproved content in front of a student. In the app, the admin is an independent student like any other: their own plans, their own approvals or Explore freely. They create the first educator account (and can recover any account) with `lerni student` on the home server, and dogfood on their own device, never the supervised student's iPad.
+- Full access is for trying things out. In the app, the admin is an independent student like any other, with their own conversation and map. They create the first educator account (and can recover any account) with `lerni student` on the home server, and dogfood on their own device, never the supervised student's iPad.
 
 ## Release 1: test the mechanics (exists)
 
@@ -31,11 +31,9 @@ Commands and behavior: [admin tool reference](../reference/admin.md). Open maint
 
 ## Later
 
-- Try out a student activity in the terminal exactly as the student app would run it, including draft activities.
-- Package a reviewed activity for the student app, recording the approvals real people gave.
-- Tune the mechanics the student app shares, once the shared core is designed.
+- Read and process educators' feedback with `lerni feedback` (Release 1, step 8).
+- Run the eval sets for the tagger and the upload by hand when their instructions or models change.
 - Host the student app outside the home (such as Hugging Face Spaces), if the student needs it away from home.
-- Connect cloud services and the admin's Claude account for drafting and conversation, behind a replaceable adapter.
 
 ## Out of scope
 
@@ -58,7 +56,9 @@ Use by educators or students.
 
 - 2026-10-09: The admin adds the first educator account and recovers accounts with `lerni student` (add, reset-password, educator, list) on the home server; passwords are typed at a hidden prompt. The educator passcode is gone.
 - 2026-10-09: Ask Lerni's conversations also run through the admin's Claude account (the same known exception to Anthropic's consumer terms), for independent students only, with no tools and no saved transcripts.
+- 2026-10-09: The supervised student's conversation, the tagger, the upload, and the feedback summary also run through the admin's Claude account, with an educator beside the supervised student in every session. No API key is planned. The tagger uses a fast, cheap model (`LERNI_TAGGER_MODEL`). Educators' feedback is saved for the admin and never acted on automatically; the admin makes changes by hand.
+
 ## Open questions
 
 - [NEEDS CLARIFICATION] (Release 3) How to add HTTPS on the home server for the microphone: a private network with its own certificates, or a locally trusted certificate. The admin decides while building.
-- [NEEDS CLARIFICATION] (Release 2) Which parts of the core (concept map, scheduler, explanation checks) does the student app reuse, given that the admin tool's database was not built for students' data?
+- [NEEDS CLARIFICATION] (Release 2) Does the companion's recall reuse the admin tool's scheduler (SM-2), given that the admin tool's database was not built for students' data?
