@@ -58,6 +58,12 @@ After these, Release 1 needs content and sessions, not code: the educator approv
 
 - [ ] Before choosing speech or model services, check each one's data retention for a student's audio and text, and get the educator's agreement.
 
+### Accounts: deferred review findings (family scale; harden before anyone else uses it)
+
+- [ ] Before the educator's Stop (supervised path): a flood of sign-ins mustn't stall signed-in pages. Run the password check off the request threads with a small limit.
+- [ ] Small: a non-ASCII cookie gives a 500; an archived account is detectable by timing; `/signin` has no Origin check and `/signout` is a GET; no upload size limit; the data folder is created 0755; a password change doesn't sign out other devices.
+- [ ] Tests: the role check on each educator handler, cookie expiry, and a supervised cookie calling an educator event over HTTP.
+
 ### Admin tool maintenance
 
 - [ ] Add database, CLI, and full-workflow tests.

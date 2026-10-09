@@ -1,5 +1,8 @@
 """Student accounts: saved, checked, and refused when the username isn't canonical."""
 
+import threading
+import time
+
 import pytest
 
 from lerni.student.students import AccountError, Kind, StudentStore, verify_password
@@ -44,4 +47,25 @@ def test_only_independent_accounts_can_be_educators(tmp_path):
     store = StudentStore(tmp_path)
     assert store.add("alba", "Alba", Kind.INDEPENDENT, "long enough", educator=True).educator
     with pytest.raises(AccountError):
-        store.add("kid", "Kid", Kind.SUPERVISED, "1234", educator=True)
+        store.add("lee", "Lee", Kind.SUPERVISED, "1234", educator=True)
+
+
+def test_a_rename_can_not_undo_an_archive_made_meanwhile(tmp_path, monkeypatch):
+    store = StudentStore(tmp_path)
+    store.add("sam", "Sam", Kind.INDEPENDENT, "long enough")
+    read, real_get = threading.Event(), store.get
+
+    def slow_get(username):
+        s = real_get(username)
+        if threading.current_thread().name == "rename" and not read.is_set():
+            read.set()
+            time.sleep(0.2)  # the archive tries to land here, between read and write
+        return s
+
+    monkeypatch.setattr(store, "get", slow_get)
+    rename = threading.Thread(target=store.rename, args=("sam", "Samuel"), name="rename")
+    rename.start()
+    read.wait()
+    store.archive("sam")
+    rename.join()
+    assert real_get("sam").archived

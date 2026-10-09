@@ -50,7 +50,7 @@ Every existing supervised-student guarantee stays. For every student:
 
 Boundaries apply to accounts; which person holds a device is a household rule:
 
-- A supervised student's iPad is signed in only as that student. Never save an independent or `educator` password in its browser.
+- A supervised student's iPad is signed in only as that student. Never save anyone else's password in its browser.
 - The admin and educator dogfood on their own devices, or in a private tab, and sign out after.
 - Every screen shows "Signed in as <display name> · <kind>" next to **Sign out**, so the wrong account is obvious.
 
@@ -84,8 +84,8 @@ Gradio's built-in login is checked only once, at sign-in; afterward Gradio trust
 - **Usernames** match `^[a-z][a-z0-9-]{1,30}$`. Sign-in and creation refuse anything not already in that form (never lowercase-and-accept). Reserved: `educator`, `admin`. Usernames are never reused: an archived account keeps its file with `archived: true`.
 - **Passwords:** at least 8 characters for independent accounts (educators included), 4 for supervised ones. Stored as `hashlib.scrypt` (n=2^15, r=8, p=3, a 16-byte salt from `os.urandom`, `maxmem` raised to fit), checked with `hmac.compare_digest`.
 - **Changing a password** in My account needs the current password. The educator's reset doesn't.
-- **Wrong passwords:** after 3 wrong passwords for a username, each further attempt waits longer before it's checked (1, 2, 4, … up to 30 seconds), and the right password resets it. Attempts during a wait don't extend it. It's held in memory, for known usernames and `educator` only (unknown names just get a fixed delay), and never touches sessions already signed in, so the educator's Stop keeps working.
-- **Educator access** is a flag on an independent account (`educator: true`), set by an educator in Students or by the admin with `lerni student educator`. Supervised accounts can't have it. Changing it bumps `session_version`.
+- **Wrong passwords:** after 3 wrong passwords for a username, each further attempt waits longer before it's checked (1, 2, 4, … up to 30 seconds), and a successful sign-in resets it. Attempts during a wait are refused unchecked and don't extend it. It's held in memory and tracks unknown usernames the same way (with a dummy check), so nothing reveals who exists. It never touches sessions already signed in, so the educator's Stop keeps working.
+- **Educator access** is a flag on an independent account (`educator: true`), set when an educator adds the account in Students, or by the admin with `lerni student educator`. Supervised and archived accounts can't get it, and an educator can't archive their own account. Changing it bumps `session_version`.
 - **First start:** there are no accounts, so nobody can sign in; the sign-in page says so. The admin runs `lerni student add USERNAME --name NAME --kind independent --educator` on the home server (password at a hidden prompt), and that educator adds everyone else in the app. `lerni student reset-password` is the recovery path.
 
 The `/educator/` route and the educator passcode (`LERNI_EDUCATOR_PASSCODE`) go away; `lerni serve` needs no secret typed at start.
@@ -102,7 +102,7 @@ Everything lives on the home server under `~/.lerni/student/` (or `$LERNI_STUDEN
 | `display_name` | What the screens show; a nickname is fine |
 | `kind` | `supervised` or `independent` |
 | `password` | `{salt, hash, n, r, p}` for scrypt; never the password |
-| `session_version` | A number bumped by reset and archive; signs out every device |
+| `session_version` | A number bumped by reset, archive, and an educator-access change; signs out every device |
 | `educator` | Independent only: may manage accounts and the library |
 | `explore_freely` | Independent only: `null`, or the date the student turned it on; set only by that student |
 | `archived` | Archived accounts can't sign in, and their username stays taken |
@@ -110,7 +110,7 @@ Everything lives on the home server under `~/.lerni/student/` (or `$LERNI_STUDEN
 **`plans/<id>.json`** (schema version 2):
 
 - `owner`: blank for the library; a username for an independent student's own plan. Version 1 files load with a blank owner.
-- Each activity gets an optional `approval`: `{by, role, on, checks, sha256}`. `role` is `educator` or `independent_student`. `checks` lists the four review scopes for an educator approval, or `["self"]` for a self-approval. `by` is the signed-in username (for `educator`, it records the role, not which person).
+- Each activity gets an optional `approval`: `{by, role, on, checks, sha256}`. `role` is `educator` or `independent_student`. `checks` lists the four review scopes for an educator approval, or `["self"]` for a self-approval. `by` is the signed-in username.
 - Each card gets `drafted_by`: blank, or `claude` when Claude wrote it from its own knowledge (Explore freely).
 
 **Only the server sets these.** `owner` comes from the signed-in user on every save. `approval` is written only by the "This is ready" and four-checks handlers, with `by` and `role` from the server. `drafted_by` is set by the import code from the mode, never from Claude's answer. The proposal schema has none of these fields, `proposal_to_plan` strips them if they appear anyway, and copying a plan drops its approvals. No agent, script, or automated browser writes an approval or the Explore freely setting (rule 5).
