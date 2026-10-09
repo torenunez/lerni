@@ -81,6 +81,28 @@ As an educator, I want a short summary when an activity ends, so that I can note
 
 - WHEN the activity ends or is stopped THE SYSTEM SHALL show which choices were picked, which hints were used, and how long it took, then discard it. Notes stay private, outside the app.
 
+### What to watch for in the first sessions
+
+- The student uses the iPad with you beside them. You start, stop, and reset from the **Sessions** tab.
+- Offer it in one sentence. The student may say no or stop at any time.
+- Plan on 5–10 minutes. Finishing is not the goal.
+- Afterward, keep brief private notes: what caught their interest, what confused them, what to change. Keep what happened separate from what you think it means.
+
+| Watch for | It shapes |
+|---|---|
+| Whether the student would rather talk, point, or tap | How soon voice matters |
+| Where they get stuck, and which hints help | Hint design |
+| When attention drops | Activity length and step size |
+| Whether the pictures help | Which pictures the app needs |
+| What you had to do: re-read, rephrase, encourage | What the app must do itself |
+| Whether they can explain, not just pick | How understanding is checked |
+| What confused the student about the screen itself | The app's design |
+| How long planning took, and what confused you | This planning screen |
+
+A correct choice alone isn't mastery.
+
+These notes are for the admin and educator, not the app; the in-app guide stays short (CLAUDE.md rule 9).
+
 ## Release 2: remembering
 
 ### Story: Write reminders and recall questions

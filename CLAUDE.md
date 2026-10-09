@@ -31,7 +31,7 @@ The commit gate (`.claude/hooks/quality-gate.sh`) lints staged Python and runs t
 6. **Teaching order is not a graph edge.** Concept relationships say how ideas relate; activity order comes only from the order of activities in a learning plan.
 7. **Check the tree before saying code exists.** Many planned modules are designed only.
 8. **This repo is public.** Never write real names, family details, a real student's learning plan or observations, hostnames, IP addresses, network names, or personal paths. Say "the home server" or "the student". Private, machine-specific details live in the gitignored `CLAUDE.local.md`; use them, but never copy them into tracked files.
-9. **Keep code reviewable.** When you add, remove, or rename a code file, update [docs/code-manifest.md](docs/code-manifest.md) (a test checks it). Comment non-obvious logic with short inline comments, one line at most.
+9. **Keep code reviewable, and screens short.** In-app text is for one family: just enough to get going, friendly, no fine print. Details belong in the PRDs, not the screens. When you add, remove, or rename a code file, update [docs/code-manifest.md](docs/code-manifest.md) (a test checks it). Comment non-obvious logic with short inline comments, one line at most.
 
 ## Docs
 

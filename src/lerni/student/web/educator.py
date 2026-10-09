@@ -186,27 +186,13 @@ def save_card(
 def notes_text(notes: list[str]) -> str:
     """Render drafting notes for the card form."""
     if not notes:
-        return "✅ This card has everything it needs. The admin can package it."
+        return "✅ This card has everything it needs."
     return "**Still missing:**\n" + "\n".join(f"- {n}" for n in notes)
 
 
 IMPORT_TIPS = """\
-Paste your notes in any shape, or upload a file (.txt, .md, .docx, .pdf). Claude \
-organizes them into a plan, and you check it before anything is saved.
-
-**What helps most** (any of these; none is required):
-- the interest you're starting from, like *cars* or *sharks*;
-- what you'd like them to understand by the end;
-- what they already know;
-- ideas you already have: activities, questions, examples, things to compare;
-- a book or website you trust for the facts.
-
-Messy is fine: bullet points, half sentences, a list of ideas. Even one line works; \
-Claude suggests a starting plan and asks you a few questions. **Don't include the \
-student's name or anything personal.**
-
-*Example:* "loves sharks. want: fast vs slow, then speed = distance and time. knows \
-counting to 100. maybe compare shark vs car? an ocean encyclopedia."
+Paste notes in any shape, or upload a file (.txt, .md, .docx, .pdf). Even one line \
+works: Claude fills the gaps, asks you a few questions, and saves nothing until you do.
 """
 
 CONSENT = (
