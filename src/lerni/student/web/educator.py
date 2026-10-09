@@ -189,6 +189,25 @@ def notes_text(notes: list[str]) -> str:
     return "**Still missing:**\n" + "\n".join(f"- {n}" for n in notes)
 
 
+IMPORT_TIPS = """\
+Paste your notes in any shape, or upload a file (.txt, .md, .docx, .pdf). Claude \
+organizes them into a plan, and you check it before anything is saved.
+
+**What helps most** (any of these; none is required):
+- the interest you're starting from, like *cars* or *sharks*;
+- what you'd like them to understand by the end;
+- what they already know;
+- ideas you already have: activities, questions, examples, things to compare;
+- a book or website you trust for the facts.
+
+Messy is fine: bullet points, half sentences, a list of ideas. Even one line works; \
+Claude suggests a starting plan and asks you a few questions. **Don't include the \
+student's name or anything personal.**
+
+*Example:* "loves sharks. want: fast vs slow, then speed = distance and time. knows \
+counting to 100. maybe compare shark vs car? kids' ocean encyclopedia."
+"""
+
 CONSENT = (
     "Send this to Claude (Anthropic) to structure it. "
     "I haven't included the student's name or personal details."
@@ -236,8 +255,12 @@ def preview_text(plan: LearningPlan, notes: list[str]) -> str:
     for i, a in enumerate(plan.activities, 1):
         card = "drafted" if a.card else "—"
         lines.append(f"| {i} | {a.start_from} | {a.idea} | {a.why} | {a.big_question} | {card} |")
-    if notes:
-        lines += ["", "**Claude's notes:**"] + [f"- {n}" for n in notes]
+    questions = [n.removeprefix("Question:").strip() for n in notes if n.startswith("Question:")]
+    others = [n for n in notes if not n.startswith("Question:")]
+    if others:
+        lines += ["", "**Claude's notes:**"] + [f"- {n}" for n in others]
+    if questions:  # gaps Claude couldn't fill; answering them makes the next import better
+        lines += ["", "**Claude's questions for you:**"] + [f"- {q}" for q in questions]
     lines += ["", "Nothing is saved yet. Save it to edit it below, or discard it."]
     return "\n".join(lines)
 
@@ -277,10 +300,7 @@ def build_educator_view(
                 with gr.Accordion("Import a rough plan with Claude", open=False):
                     if drafter is None:
                         gr.Markdown("Claude isn't set up on this server yet.")
-                    gr.Markdown(
-                        "Paste your notes in any shape, or upload a file. Claude organizes "
-                        "them into a plan; you check it before anything is saved."
-                    )
+                    gr.Markdown(IMPORT_TIPS)
                     rough = gr.Textbox(label="Your notes", lines=10)
                     upload = gr.File(
                         label="Or upload a file", file_types=[".txt", ".md", ".docx", ".pdf"],

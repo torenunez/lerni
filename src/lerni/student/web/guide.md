@@ -7,7 +7,10 @@ This is where you plan what the student will learn, and where you run their sess
 1. **Pick an interest and a goal.** Choose something the student cares about right now, and what you'd like them to understand through it.
 2. **Make a learning plan** in the **Learning plans** tab. Add 3–5 activities in the order you'd teach them. For each one, say where it starts from, the idea to learn, why it's a good next step, and the big question.
    - **Start from an example.** Two examples are ready, cars and sharks. Edit one, or copy it and make it yours.
-   - **Or import your rough notes.** Open "Import a rough plan with Claude", paste your notes in any shape (or upload a document), and tick the box. Claude organizes them into a plan. Check it, then save it or discard it; nothing is saved until you do.
+   - **Or import your rough notes.** Open "Import a rough plan with Claude", paste your notes (or upload a document), and tick the box. Claude organizes them into a plan. Check it, then save it or discard it; nothing is saved until you do.
+     - **What helps most:** the interest, what you'd like them to understand, what they already know, any ideas for activities or questions, and a source you trust. None of it is required.
+     - **Messy is fine.** Even one line works: Claude suggests a starting plan, marks which parts are its suggestions, and asks you a few questions.
+     - **Don't include** the student's name or anything personal.
 3. **Fill in the activity card** for the next activity only. Write it the way you'd say it to the student: a short explanation, the question, two or three choices, the right answer, and one or two hints. "Still missing" tells you what's left.
 4. **The admin turns your card into an activity** for the app.
 5. **Approve it.** Preview it here on your own phone or laptop; a draft never appears on the student's iPad. Then check four things:
