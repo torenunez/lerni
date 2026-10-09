@@ -29,7 +29,8 @@ What every code file does, in the order a request flows through it. When you add
 | File | What it does |
 |---|---|
 | `src/lerni/student/plans.py` | Learning plans: the data types (plan, activity, activity card), validation, and `PlanStore`, which saves one JSON file per plan on the home server. |
-| `src/lerni/student/students.py` | Student accounts: usernames, kinds, scrypt password hashes, and `StudentStore` (one JSON file per student; archived in place, never reused). |
+| `src/lerni/student/interests.py` | Interest maps: entries (interests and goals), links, the rules for people's edits (names, the 60-entry cap, remove for good), and `MapStore` (one JSON file per student, one change at a time). |
+| `src/lerni/student/students.py` | Student accounts: usernames, kinds, scrypt password hashes, the data folder (`default_data_dir`), and `StudentStore` (one JSON file per student; archived in place, never reused). |
 | `src/lerni/student/signin.py` | Signing in: checks passwords (with growing waits after wrong ones), issues a signed cookie, and re-reads the account on every request, so archive and reset sign out every device. |
 | `src/lerni/student/jsonfiles.py` | Writes a JSON file atomically; shared by the plan and student stores. |
 | `src/lerni/student/conversation.py` | Ask Lerni: each student's conversation in memory only (last 20 turns, one reply at a time), and Claude's instructions: the starting persona for that kind of student plus fixed safety rules; a topic adds only the plan's ideas, never who is asking. |
@@ -98,6 +99,7 @@ Minimal on purpose: one happy path per module, plus a test for each safety guara
 | `tests/student/test_canonical.py` | The same content always gives the same bytes. |
 | `tests/student/test_plans.py` | Plans save and load; examples seed once; plan ids can't escape the plans folder. |
 | `tests/student/test_students.py` | An account saves and checks its password; bad, reserved, and archived usernames are refused. |
+| `tests/student/test_interests.py` | People's goal edits are saved, a goal takes over an interest of the same name, and a map full of goals says so. |
 | `tests/student/test_signin.py` | A cookie stops working after a reset; wrong passwords wait without signing anyone out. |
 | `tests/student/test_conversation.py` | Answers stream in and history stays short; a topic shares the plan's ideas but never who is asking. |
 | `tests/student/test_claude_code_adapter.py` | Both Claude adapters run with no tools, no settings, and no saved transcripts. |

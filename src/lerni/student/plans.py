@@ -22,6 +22,10 @@ from pathlib import Path
 from typing import Any
 
 from lerni.student.jsonfiles import write_json_atomic
+from lerni.student.students import (  # noqa: F401 - until step 10
+    DATA_ENV,
+    default_data_dir,
+)
 
 SCHEMA_VERSION = 1
 MAX_TEXT = 500
@@ -30,7 +34,6 @@ MAX_EXPLANATION_SCREENS = 3
 MAX_CHOICES = 3
 MAX_HINTS = 2
 PLAN_ID_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
-DATA_ENV = "LERNI_STUDENT_DATA"
 SEED_PACKAGE = "lerni.student.seed"
 
 
@@ -254,12 +257,6 @@ def plan_to_dict(plan: LearningPlan) -> dict[str, Any]:
 
 
 # --- storage ---------------------------------------------------------------
-
-
-def default_data_dir() -> Path:
-    """Where plans live: ``$LERNI_STUDENT_DATA`` or ``~/.lerni/student``."""
-    override = os.environ.get(DATA_ENV)
-    return Path(override) if override else Path.home() / ".lerni" / "student"
 
 
 class PlanStore:

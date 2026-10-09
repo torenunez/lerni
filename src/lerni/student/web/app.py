@@ -20,9 +20,9 @@ from fastapi import FastAPI, Request  # noqa: E402
 from lerni.student.catalog import PackageLessonCatalog  # noqa: E402
 from lerni.student.conversation import ChatModel, Conversations  # noqa: E402
 from lerni.student.plan_import import PlanDrafter  # noqa: E402
-from lerni.student.plans import PlanStore, default_data_dir  # noqa: E402
+from lerni.student.plans import PlanStore  # noqa: E402
 from lerni.student.signin import COOKIE_NAME, SignIn, load_secret  # noqa: E402
-from lerni.student.students import StudentStore  # noqa: E402
+from lerni.student.students import StudentStore, default_data_dir  # noqa: E402
 from lerni.student.web.main import build_main_view  # noqa: E402
 from lerni.student.web.signin_page import APP_PATH, add_signin_routes  # noqa: E402
 
