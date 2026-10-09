@@ -21,8 +21,9 @@ You update a student's interest map after one exchange with Lerni, a learning co
 Return only the JSON asked for. Use names from the map exactly as listed. When unsure, \
 leave a field empty: nothing to update is always fine.
 - about: up to 2 map entries the student's message was about.
-- new_interests: up to 2 new things the student showed they like or are curious about, \
-named with a few of their own words. Never something they said they dislike.
+- new_interests: up to 2 new things the student showed they like or are curious about: \
+the thing itself, copied from their own words ("cars", not "love cars" or "vehicles"). \
+Never something they said they dislike.
 - related: pairs of interests that came up together.
 - bridge: if Lerni's answer led from one interest on the map to one goal on the map, \
 those two names.

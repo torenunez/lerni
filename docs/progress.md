@@ -6,7 +6,7 @@ Record each kind of "done" only when it actually happens, with the date: code bu
 
 ## Current state (2026-10-09, steps 1–6 merged; step 7, the interest map, built on its branch)
 
-- **Built:** the student app's core (student accounts, sign-in, Ask Lerni's conversations, and the interest map with its tagger and 7-day logs; the older activity path, off the screens until step 10 removes it); `lerni serve` with a sign-in page and one app with tabs by role: an independent student's Ask (one ongoing text conversation with Claude, phone first), My map, and My account; an educator's Maps and Students on top; a supervised student's waiting screen. The admin tool (`lerni`, with `lerni student` and `lerni logs`). A [code manifest](code-manifest.md) of every file. Tests: 75 passed, 2 expected failures.
+- **Built:** the student app's core (student accounts, sign-in, Ask Lerni's conversations, and the interest map with its tagger and 7-day logs; the older activity path, off the screens until step 10 removes it); `lerni serve` with a sign-in page and one app with tabs by role: an independent student's Ask (one ongoing text conversation with Claude, phone first), My map, and My account; an educator's Maps and Students on top; a supervised student's waiting screen. The admin tool (`lerni`, with `lerni student` and `lerni logs`). A [code manifest](code-manifest.md) of every file. Tests: 76 passed, 2 expected failures.
 - **Designed:** the interest map, goals, the tagger, upload, feedback, and the supervised conversation ([specs/04-interest-map.md](../plans/specs/04-interest-map.md)); approved with PR #12.
 - **Not yet:** upload and feedback (step 8); the supervised conversation (step 9); removing the old activity path (step 10); any supervised student session.
 
@@ -18,7 +18,8 @@ When something changes, update this section and add a log entry below.
 
 - Built on `feat/interest-map`: `interests.py` (the map, people's edits, the tagger's observations checked on the server, the map block for the prompt), `tagging.py` (the tagger runs in the background after each answer; a result is thrown away if a person edited the map or New conversation came meanwhile), `logs.py` and `lerni logs` (7-day conversation logs), `ClaudeCodeTagger` (a small model, JSON only), My map and Maps (inline SVG picture and the same in words; Add goal, Rename, Remove), Ask without topics, and personas with bridging habits and no ages. Learn, Guide, Learning plans, Sessions, and the plan import left the screens; a supervised student sees a waiting screen until step 9.
 - Found in the phone-size check and fixed: maps now redraw when their tab opens; cleared form fields each get their own update (a shared one left a reset password in the Students tab's box).
-- Tests: 75 passed, 2 expected failures. Tagger evals: `scripts/eval_tagger.py`.
+- The tagger evals' first run found that a structured answer needs a second turn (every tag had failed silently) and that the tagger named "love cars" instead of "cars"; both fixed, and all three evals pass.
+- Tests: 76 passed, 2 expected failures. Tagger evals: `scripts/eval_tagger.py`.
 
 ### 2026-10-09 (PR #12 merged: the interest map design; review follow-ups)
 

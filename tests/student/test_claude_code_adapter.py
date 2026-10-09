@@ -21,3 +21,8 @@ def test_claude_calls_keep_nothing_and_reach_nothing(options):
     assert options.setting_sources == []
     assert "no-session-persistence" in options.extra_args  # no transcripts on the server
     assert options.strict_mcp_config  # no MCP servers from the admin's setup
+
+
+def test_the_tagger_has_a_turn_for_its_json():
+    # regression: with one turn, every structured answer ended in "maximum number of turns"
+    assert ClaudeCodeTagger().options("Tag it.", "/tmp/x").max_turns >= 2

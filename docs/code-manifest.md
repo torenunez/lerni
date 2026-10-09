@@ -110,7 +110,7 @@ Minimal on purpose: one happy path per module, plus a test for each safety guara
 | `tests/student/test_mapdraw.py` | The map picture escapes names and draws at most 15 entries; the list says the same in words. |
 | `tests/student/test_signin.py` | A cookie stops working after a reset; wrong passwords wait without signing anyone out. |
 | `tests/student/test_conversation.py` | Answers stream in and history stays short; the map comes before the rules and never says who is asking; each exchange is reported, stopped or not; New conversation during a reply isn't undone. |
-| `tests/student/test_claude_code_adapter.py` | Every Claude call (drafter, chat, tagger) runs with no tools, no settings, and no saved transcripts. |
+| `tests/student/test_claude_code_adapter.py` | Every Claude call (drafter, chat, tagger) runs with no tools, no settings, and no saved transcripts; the tagger has a turn for its JSON. |
 | `tests/student/test_plan_import.py` | Rough notes become an unsaved plan; nothing is sent to Claude without consent. |
 | `tests/student/test_web_signin.py` | Signed-out visits go to the sign-in form; a right password opens the app; Sign out ends it; a first start says how to add the first account. |
 | `tests/student/test_cli_student.py` | The admin adds the first educator account from the terminal, and reads the conversation logs. |

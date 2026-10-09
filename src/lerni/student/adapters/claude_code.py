@@ -193,7 +193,7 @@ class ClaudeCodeTagger:
             model=self.model,
             tools=[],
             cwd=workdir,
-            max_turns=1,
+            max_turns=2,  # the JSON answer comes back as its own turn
             output_format={"type": "json_schema", "schema": TAG_SCHEMA},
             **_isolated(),
         )

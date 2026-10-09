@@ -47,6 +47,7 @@ After these, Release 1 needs sessions, not code: the educator sets goals, rehear
 
 ### Interest map: later
 
+- [ ] Step 8: Upload's Claude call needs a second turn for its JSON answer (`max_turns` ≥ 2), like the tagger; the old import's drafter had one turn.
 - [ ] When a map outgrows the picture (more than 15 entries drawn): show more, for example by grouping or a focus on one entry and its links; the list below already has them all.
 
 ### Later: Release 2 Remembering
