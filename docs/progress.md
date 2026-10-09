@@ -4,15 +4,27 @@ Where things really stand, then a dated log, newest first. Completed work is rec
 
 Record each kind of "done" only when it actually happens, with the date: code built, content approved, app ready, a student session held. Passing tests show code behaves as specified; they don't make anything ready for a student.
 
-## Current state (2026-10-08)
+## Current state (2026-10-09)
 
 - **Built:** the student app's core (activity format, catalog with approved listing and draft preview, engine); `lerni serve` with the student screen and the passcode-protected educator view (Guide, Sessions, and Learning plans with activity cards, primed with cars and sharks examples, and plan import with Claude); the admin tool (`lerni`, with `study` as a deprecated alias); a [code manifest](code-manifest.md) of every code and test file. Tests: 29 passed, 2 expected failures (trimmed to a minimal suite).
-- **Not yet:** a real Claude import (only tested with a fake); the session controller and activity screens; approvals in the app; any approved activity (the car activity is a draft with no approvals); any student session. The educator hasn't tried planning in the app yet.
+- **Designed and approved:** supervised and independent students, one sign-in with tabs by role, Explore freely, and on-demand evals for the Claude import ([specs/03-student-accounts.md](../plans/specs/03-student-accounts.md)). Next: the docs reframe, then steps 5–8, one PR each.
+- **Not yet:** accounts and sign-in; a real Claude import (only tested with a fake); the session controller and activity screens; approvals in the app; any approved activity (the car activity is a draft with no approvals); any student session. The educator hasn't tried planning in the app yet.
 - **Open:** the sharks example plan has no activity cards or sources yet.
 
 When something changes, update this section and add a log entry below.
 
 ## Log
+
+### 2026-10-09 (Two kinds of student: spec approved)
+
+- The admin approved [specs/03-student-accounts.md](../plans/specs/03-student-accounts.md). Decisions:
+  - A student is supervised or independent, set by supervision, not age; one student PRD covers both.
+  - One app at `/` with Gradio's login and tabs by role; the educator signs in as `educator` with the passcode. Independent students get Guide, Learn, Learning plans (their own), and My account; the educator never sees their plans.
+  - Explore freely: an independent student's own switch; Claude writes full cards that play unchecked, labeled.
+  - No plan assignment yet: supervised students see every educator-approved library activity.
+  - "Nothing needs a keyboard" becomes a goal: designed for touch first.
+  - One PR per unit: docs, then steps 5–8.
+  - Step 6 adds an on-demand eval set for the Claude import (never in `pytest`). An agent with tools waits for the Release 3 plan.
 
 ### 2026-10-08 (PR #6 merged; two kinds of student designed)
 

@@ -12,7 +12,7 @@ Open tasks by who does the work. The educator and admin tracks run in parallel: 
 ### Later: Release 1 MVP
 
 - [ ] Approve the activity's four checks: science, wording, pictures and accessibility, and OK to use.
-- [ ] Log in to the app from your own device as soon as the admin has it running, and say what's confusing, even before there's any content.
+- [ ] Once step 5 lands: sign in from your own device, add the student accounts in the Students tab, and say what's confusing.
 - [ ] Rehearse the MVP on the iPad and your own device, including Stop and Reset, then authorize student use.
 - [ ] Watch the student try it, keep notes private, and revise one thing.
 
@@ -20,17 +20,16 @@ Open tasks by who does the work. The educator and admin tracks run in parallel: 
 
 ### Now: Release 1 MVP
 
-Build from the [Release 1 plan](../plans/release-1-mvp.md), in this order:
+Build from [specs/03-student-accounts.md](../plans/specs/03-student-accounts.md), one PR each, in this order:
 
-- [ ] Review [specs/03-student-accounts.md](../plans/specs/03-student-accounts.md) (supervised and independent students); then reframe the docs and replace the steps below with its steps 5–8.
-- [ ] Make the first real Claude import on the home server (only tested with a fake so far); do it with step 6, which changes the import.
-- [ ] Step 5: the session controller: one shared session in memory, the tap contract, and Stop and Reset winning over taps in flight.
-- [ ] Step 6: the activity on both screens: the student screen (iPad) and the educator view with Start, Stop, Reset, the recap, and draft preview.
+- [ ] Docs PR: reframe README, the PRDs, ARCHITECTURE, CLAUDE.md, roadmap, the Release 1 plan, and the in-app guide for two kinds of student.
+- [ ] Step 5: accounts and one sign-in (one app at `/`, tabs by role, the Students tab, lockout). Check on the iPad that Safari saves the password.
 
 ### Later: Release 1 MVP
 
-- [ ] Step 7: approvals in the app, with the science review sheet; admin packaging of a saved activity card, then automatic.
-- [ ] Record the educator's four approvals in the chosen activity's file.
+- [ ] Step 6: plan my own (independent students' Learning plans and My account, plan schema v2, Explore freely, self-approval). Make the first real Claude import on the home server, and add the import evals.
+- [ ] Step 7: play a card (card activities, one session per student, Learn). Done when you do your own activity end to end on the iPad.
+- [ ] Step 8: the supervised path (the educator's Start, Stop, Reset, and recap; the four approvals in the app, including the car activity's).
 
 ### Later: Release 2 Remembering
 
@@ -38,6 +37,7 @@ Build from the [Release 1 plan](../plans/release-1-mvp.md), in this order:
 
 ### Later: Release 3 Voice
 
+- [ ] Plan the conversation agent with tools (reading the plan, checking the allowlist, giving hints), and grow its evals from the import evals.
 - [ ] Before anyone outside the household uses the app: replace the Claude Code adapter with an API-key adapter (`env:ANTHROPIC_API_KEY`).
 
 - [ ] Before choosing speech or model services, check each one's data retention for a student's audio and text, and get the educator's agreement.
@@ -54,4 +54,5 @@ Build from the [Release 1 plan](../plans/release-1-mvp.md), in this order:
 
 ### Later: Release 1 MVP
 
-- [ ] Try the MVP with the educator beside them. They can say no or stop at any time.
+- [ ] Independent student (the admin first): once step 7 lands, import your own interests and do an activity end to end; note what's confusing.
+- [ ] Supervised student: try the MVP with the educator beside them. They can say no or stop at any time.
