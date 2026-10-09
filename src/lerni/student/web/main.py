@@ -12,19 +12,21 @@ from typing import Any
 import gradio as gr
 
 from lerni.student.catalog import PackageLessonCatalog
+from lerni.student.conversation import Conversations
 from lerni.student.plan_import import PlanDrafter
 from lerni.student.plans import PlanStore
 from lerni.student.signin import Role, SignIn, Viewer
 from lerni.student.students import StudentStore
 from lerni.student.web.accounts import account_tab, student_rows, students_tab
+from lerni.student.web.ask import ANYTHING, ask_tab, messages, topic_choices
 from lerni.student.web.educator import educator_tabs, plan_choices, sessions_text
 
 # Tab ids in page order. Everyone gets Learn; independent students also get
-# Guide and My account; educators also get Sessions, Learning plans, and
-# Students. Independent students' own Learning plans arrive in step 6.
-_TAB_IDS = ("learn", "guide", "sessions", "plans", "students", "account")
+# Ask, Guide, and My account; educators also get Sessions, Learning plans, and
+# Students. Independent students' own Learning plans arrive in step 7.
+_TAB_IDS = ("learn", "ask", "guide", "sessions", "plans", "students", "account")
 _EDUCATOR_TABS = {"sessions", "plans", "students"}
-_INDEPENDENT_TABS = {"learn", "guide", "account"}
+_INDEPENDENT_TABS = {"learn", "ask", "guide", "account"}
 
 
 def visible_tabs(viewer: Viewer | None) -> tuple[str, ...]:
@@ -40,11 +42,14 @@ def visible_tabs(viewer: Viewer | None) -> tuple[str, ...]:
 
 
 def opening_tab(viewer: Viewer | None) -> str | None:
-    """The tab selected on load: the Guide for educators, otherwise Learn."""
+    """The tab selected on load: the Guide for educators, Ask for other independent students
+    (their Learn is empty until step 7), otherwise Learn."""
     shown = visible_tabs(viewer)
     if not shown:
         return None
-    return "guide" if viewer is not None and viewer.educator else shown[0]
+    if viewer is not None and viewer.educator:
+        return "guide"
+    return "ask" if "ask" in shown else shown[0]
 
 
 def build_main_view(
@@ -53,6 +58,7 @@ def build_main_view(
     catalog: PackageLessonCatalog,
     students: StudentStore,
     drafter: PlanDrafter | None,
+    conversations: Conversations | None = None,
     welcome_html: str = "",
     independent_html: str = "",
 ) -> gr.Blocks:
@@ -67,6 +73,7 @@ def build_main_view(
             with gr.Tab("Learn", id="learn", visible=False) as learn_tab:
                 waiting = gr.HTML(welcome_html, visible=False)
                 independent = gr.HTML(independent_html, visible=False)
+            ask, topic, chat, voice = ask_tab(signin, store, conversations)
             (guide_tab, sessions_tab, plans_tab), plan_dd, sessions = educator_tabs(
                 signin, store, catalog, drafter
             )
@@ -87,19 +94,26 @@ def build_main_view(
                 gr.update(selected=opening_tab(viewer)),  # open a tab they can see
                 *(gr.update(visible=tab in shown) for tab in _TAB_IDS),
                 gr.update(visible=viewer is not None and viewer.role is Role.SUPERVISED),
-                # an independent student's empty Learn, until step 6
+                # an independent student's empty Learn, until step 7
                 gr.update(visible=viewer is not None and viewer.role is Role.INDEPENDENT),
                 gr.update(choices=plan_choices(store) if is_edu else [], value=None),
                 sessions_text(catalog) if is_edu else "",
                 student_rows(students) if is_edu else [],
+                # no Ask tab: no topics, and no value that isn't in the list
+                gr.update(choices=topic_choices(store, viewer), value=ANYTHING)
+                if "ask" in shown else gr.update(choices=[], value=None),
+                # one ongoing conversation per student: pick up where they left off
+                messages(conversations, viewer.username)
+                if conversations is not None and "ask" in shown else [],
+                gr.update(visible=is_edu, value=False),  # educators can try the supervised voice
             ]
 
         blocks.load(
             on_load,
             None,
             # order matches on_load: header, tabs, the _TAB_IDS tabs, then the rest
-            [header, tabs, learn_tab, guide_tab, sessions_tab, plans_tab, students_tab_,
-             account, waiting, independent, plan_dd, sessions, students_table],
+            [header, tabs, learn_tab, ask, guide_tab, sessions_tab, plans_tab, students_tab_,
+             account, waiting, independent, plan_dd, sessions, students_table, topic, chat, voice],
             api_visibility="private",
         )
     return blocks

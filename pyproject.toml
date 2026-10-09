@@ -54,6 +54,7 @@ where = ["src"]
 ]
 "lerni.student.seed" = ["*.json"]
 "lerni.student.web" = ["*.md"]
+"lerni.student.personas" = ["*.md"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -106,7 +106,7 @@ def educator_box_for(kind: str) -> Any:
 
 def _run(fn: Any, *args: Any) -> str:
     """Call a handler and turn refusals into a message for the screen."""
-    try:
+    try:  # every refusal becomes a short warning; nothing else is shown
         return fn(*args)
     except (NotAllowed, AccountError) as exc:
         return f"⚠️ {exc}"
@@ -135,7 +135,7 @@ def students_tab(signin: SignIn, students: StudentStore) -> tuple[gr.Tab, gr.Dat
         status = gr.Markdown()
 
         def viewer(request: gr.Request) -> Viewer | None:
-            return signin.viewer(request.username)
+            return signin.viewer(request.username)  # re-read on every action
 
         def on_add(u: str, d: str, k: str, p: str, e: bool, request: gr.Request) -> list[Any]:
             v = viewer(request)
@@ -159,7 +159,7 @@ def students_tab(signin: SignIn, students: StudentStore) -> tuple[gr.Tab, gr.Dat
             on_add, [username, display, kind, password, educator], [status, table, *form],
             **PRIVATE,
         )
-        kind.change(educator_box_for, kind, educator, **PRIVATE)
+        kind.change(educator_box_for, kind, educator, **PRIVATE)  # Educator follows the kind
         reset_btn.click(
             on_reset, [who, new_password], [status, table, who, new_password], **PRIVATE
         )

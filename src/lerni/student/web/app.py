@@ -18,6 +18,7 @@ import gradio as gr  # noqa: E402
 from fastapi import FastAPI, Request  # noqa: E402
 
 from lerni.student.catalog import PackageLessonCatalog  # noqa: E402
+from lerni.student.conversation import ChatModel, Conversations  # noqa: E402
 from lerni.student.plan_import import PlanDrafter  # noqa: E402
 from lerni.student.plans import PlanStore, default_data_dir  # noqa: E402
 from lerni.student.signin import COOKIE_NAME, SignIn, load_secret  # noqa: E402
@@ -68,6 +69,10 @@ _CSS = """
   15%, 45% { transform: rotate(16deg); } 30% { transform: rotate(-10deg); } }
 @keyframes lerni-pulse { 0%, 100% { transform: scale(1); }
   50% { transform: scale(1.06); } }
+/* Ask: hide the chat's own trash icon; "New conversation" is the one way to start over */
+#lerni-ask-chat button[aria-label="Clear"] { display: none; }
+/* 16px text in fields, so iPhone Safari doesn't zoom in and shift the page on tap */
+.gradio-container input, .gradio-container textarea { font-size: 16px !important; }
 @media (prefers-reduced-motion: reduce) {
   .lerni-welcome *, .lerni-welcome { animation: none !important; }
 }
@@ -90,12 +95,12 @@ _WELCOME_HTML = """
 </div>
 """
 
-# An independent student's Learn tab until step 6 brings their own plans.
+# An independent student's Learn tab until step 7 brings their own plans.
 _INDEPENDENT_HTML = """
 <div class="lerni-welcome" role="main">
   <span class="lerni-wave" aria-hidden="true">👋</span>
   <h1>Your activities will appear here</h1>
-  <p>Planning your own learning arrives in the next update.</p>
+  <p>Planning your own learning is coming soon. Meanwhile, try Ask.</p>
 </div>
 """
 
@@ -124,6 +129,7 @@ def build_app(
     store: PlanStore | None = None,
     catalog: PackageLessonCatalog | None = None,
     drafter: PlanDrafter | None = None,
+    chat_model: ChatModel | None = None,
 ) -> FastAPI:
     """Build the server: the sign-in page and the app at ``/app/``.
 
@@ -133,6 +139,7 @@ def build_app(
         store: Learning plans; defaults to the plan folder under ``data_root``.
         catalog: Packaged activities; defaults to the ones shipped with Lerni.
         drafter: Claude behind an adapter for imports; ``None`` turns imports off.
+        chat_model: Claude behind an adapter for Ask Lerni; ``None`` turns it off.
     """
     root = data_root or default_data_dir()
     students = StudentStore(root)
@@ -152,6 +159,7 @@ def build_app(
         catalog or PackageLessonCatalog(),
         students,
         drafter,
+        Conversations(chat_model) if chat_model else None,
         welcome_html=_WELCOME_HTML,
         independent_html=_INDEPENDENT_HTML,
     )

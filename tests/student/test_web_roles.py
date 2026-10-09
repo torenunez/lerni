@@ -55,13 +55,13 @@ def test_each_role_opens_on_a_tab_it_can_see():
     # regression: the hidden Learn tab stayed selected, so the educator saw an empty page
     from lerni.student.web.main import opening_tab, visible_tabs
 
-    kid = Viewer("lee", "Lee", Role.SUPERVISED)
-    everything = ("learn", "guide", "sessions", "plans", "students", "account")
+    lee = Viewer("lee", "Lee", Role.SUPERVISED)
+    everything = ("learn", "ask", "guide", "sessions", "plans", "students", "account")
     assert visible_tabs(EDUCATOR) == everything
-    assert visible_tabs(kid) == ("learn",)
-    assert visible_tabs(SAM) == ("learn", "guide", "account")
-    openings = (opening_tab(EDUCATOR), opening_tab(kid), opening_tab(SAM))
-    assert openings == ("guide", "learn", "learn")
+    assert visible_tabs(lee) == ("learn",)
+    assert visible_tabs(SAM) == ("learn", "ask", "guide", "account")
+    openings = (opening_tab(EDUCATOR), opening_tab(lee), opening_tab(SAM))
+    assert openings == ("guide", "learn", "ask")  # Ask while their Learn is empty
 
 
 def test_sign_out_is_a_same_tab_button(tmp_path):
@@ -84,3 +84,26 @@ def test_add_form_clears_after_a_save_and_educator_needs_independent():
     assert educator_box_for("supervised") == {"__type__": "update", "value": False,
                                               "interactive": False}
     assert educator_box_for("independent")["interactive"] is True
+
+
+def test_only_independent_students_can_ask_lerni(tmp_path):
+    from lerni.student.conversation import Conversations
+    from lerni.student.plans import PlanStore
+    from lerni.student.web.ask import ask_reply
+
+    class Model:
+        def stream(self, system, turns):
+            yield "Hi."
+
+    convos, store = Conversations(Model()), PlanStore(tmp_path)
+    assert "".join(ask_reply(convos, store, SAM, "What is speed?", None)) == "Hi."
+    with pytest.raises(NotAllowed):
+        list(ask_reply(convos, store, Viewer("lee", "Lee", Role.SUPERVISED), "hi", None))
+    # the topic id comes from the page: a library plan is only for educators
+    from lerni.student.conversation import ConversationError
+    from lerni.student.web.educator import new_plan
+
+    library = new_plan(store).plan_id
+    with pytest.raises(ConversationError):
+        list(ask_reply(convos, store, SAM, "hi", library))
+    assert "".join(ask_reply(convos, store, EDUCATOR, "hi", library)) == "Hi."

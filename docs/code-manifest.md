@@ -19,6 +19,7 @@ What every code file does, in the order a request flows through it. When you add
 | File | What it does |
 |---|---|
 | `src/lerni/student/web/educator.py` | The educator's Guide, Sessions, and Learning plans tabs (plan table, activity-card form, Claude import). Handlers are plain functions; each Gradio handler re-checks on the server that the viewer is the educator. |
+| `src/lerni/student/web/ask.py` | The Ask tab for independent students: topic, chat, one-line question box (Enter sends), a Send button that becomes Stop while answering, New conversation; one ongoing conversation per student; phone first (the chat and the box grow with content); educators can try the supervised-student voice. Topics and the role are checked on the server. |
 | `src/lerni/student/web/accounts.py` | The Students tab (add, reset password, archive) and an independent student's My account (name, and password with the current one); handlers take the server-resolved viewer and refuse other roles. |
 | `src/lerni/student/web/guide.md` | The educator's instructions, shown in the Guide tab. Not code, but shipped with it. |
 | `src/lerni/student/web/__init__.py` | Marks the screens package; says it's the only place Gradio is imported. |
@@ -31,6 +32,7 @@ What every code file does, in the order a request flows through it. When you add
 | `src/lerni/student/students.py` | Student accounts: usernames, kinds, scrypt password hashes, and `StudentStore` (one JSON file per student; archived in place, never reused). |
 | `src/lerni/student/signin.py` | Signing in: checks passwords (with growing waits after wrong ones), issues a signed cookie, and re-reads the account on every request, so archive and reset sign out every device. |
 | `src/lerni/student/jsonfiles.py` | Writes a JSON file atomically; shared by the plan and student stores. |
+| `src/lerni/student/conversation.py` | Ask Lerni: each student's conversation in memory only (last 20 turns, one reply at a time), and Claude's instructions: the starting persona for that kind of student plus fixed safety rules; a topic adds only the plan's ideas, never who is asking. |
 | `src/lerni/student/plan_import.py` | Turns rough notes into a proposed plan: reads pasted text and uploads, defines what Claude must return (the schema and instructions), and validates Claude's answer. |
 | `src/lerni/student/catalog.py` | Loads activity files and refuses anything unapproved or altered (hash checks). Lists approved activities and drafts, and loads drafts for educator-only preview. |
 | `src/lerni/student/engine.py` | Runs one activity step by step: given the activity, its state, and a tap, returns the next state and what the screen may show (never the answer key). |
@@ -42,7 +44,7 @@ What every code file does, in the order a request flows through it. When you add
 
 | File | What it does |
 |---|---|
-| `src/lerni/student/adapters/claude_code.py` | Sends the educator's notes to Claude through the Claude Code CLI and the logged-in account (prototype; no API key), with no tools (except reading an uploaded PDF) and no settings, and returns the structured plan. |
+| `src/lerni/student/adapters/claude_code.py` | Claude through the Claude Code CLI and the logged-in account (prototype; no API key): drafts a plan from notes, and streams Ask Lerni's answers. No tools (except reading an uploaded PDF), no settings, and no saved transcripts. |
 | `src/lerni/student/adapters/__init__.py` | Marks the adapters package. |
 
 **Content shipped with the app**
@@ -52,6 +54,8 @@ What every code file does, in the order a request flows through it. When you add
 | `src/lerni/student/lessons/*.toml`, `assets/*.svg` | Activity files and their pictures. Today one draft: car acceleration. |
 | `src/lerni/student/lessons/lesson_index.toml` | Generated list of activity files and their hashes. Never edit by hand. |
 | `src/lerni/student/lessons/__init__.py` | Makes the lessons folder loadable as package data. |
+| `src/lerni/student/personas/*.md` | Lerni's starting personas for Ask Lerni: `independent.md` and `supervised.md` (character, tone, answer length). Safety rules stay in `conversation.py`. |
+| `src/lerni/student/personas/__init__.py` | Makes the personas folder loadable as package data. |
 | `src/lerni/student/seed/*.json` | The example plans (cars, sharks) copied into an empty plan store. |
 | `src/lerni/student/seed/__init__.py` | Makes the seed folder loadable as package data. |
 
@@ -95,6 +99,8 @@ Minimal on purpose: one happy path per module, plus a test for each safety guara
 | `tests/student/test_plans.py` | Plans save and load; examples seed once; plan ids can't escape the plans folder. |
 | `tests/student/test_students.py` | An account saves and checks its password; bad, reserved, and archived usernames are refused. |
 | `tests/student/test_signin.py` | A cookie stops working after a reset; wrong passwords wait without signing anyone out. |
+| `tests/student/test_conversation.py` | Answers stream in and history stays short; a topic shares the plan's ideas but never who is asking. |
+| `tests/student/test_claude_code_adapter.py` | Both Claude adapters run with no tools, no settings, and no saved transcripts. |
 | `tests/student/test_plan_import.py` | Rough notes become an unsaved plan; nothing is sent to Claude without consent. |
 | `tests/student/test_web_signin.py` | Signed-out visits go to the sign-in form; a right password opens the app; Sign out ends it; a first start says how to add the first account. |
 | `tests/student/test_cli_student.py` | The admin adds the first educator account from the terminal. |

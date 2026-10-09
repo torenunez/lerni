@@ -5,4 +5,6 @@
 3. **Fill in one activity card:** a short explanation, a question, 2–3 choices, the answer, and a hint.
 4. **Try it together**, then change one thing.
 
+Independent learners can also **Ask** Lerni anything, by text.
+
 Keep names and personal details out of plans.

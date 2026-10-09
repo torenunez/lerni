@@ -16,7 +16,7 @@ console = Console()
 
 
 def _fail(exc: Exception) -> None:
-    console.print(f"[red]{exc}[/red]")
+    console.print(f"[red]{exc}[/red]")  # the reason only, never a password
     raise typer.Exit(1)
 
 
@@ -28,6 +28,7 @@ def add_cmd(
     educator: bool = typer.Option(False, "--educator", help="May add students and plan."),
 ) -> None:
     """Add an account; the password is asked for at a hidden prompt."""
+    # hidden and typed twice, so it never shows on screen or in shell history
     password = typer.prompt("Password", hide_input=True, confirmation_prompt=True)
     try:
         s = StudentStore().add(username, name, Kind(kind), password, educator=educator)
@@ -39,7 +40,7 @@ def add_cmd(
 @student_app.command("reset-password")
 def reset_cmd(username: str = typer.Argument(...)) -> None:
     """Set a new password; every device signed in as this account is signed out."""
-    password = typer.prompt("New password", hide_input=True, confirmation_prompt=True)
+    password = typer.prompt("New password", hide_input=True, confirmation_prompt=True)  # hidden
     try:
         StudentStore().reset_password(username, password)
     except AccountError as exc:
@@ -63,7 +64,7 @@ def educator_cmd(
 @student_app.command("list")
 def list_cmd() -> None:
     """List accounts: usernames, kinds, and who is an educator."""
-    for s in StudentStore().list_students():
+    for s in StudentStore().list_students():  # names and flags only, never password hashes
         flags = ", educator" if s.educator else ""
         flags += ", archived" if s.archived else ""
         console.print(f"{s.username}  {s.display_name}  ({s.kind.value}{flags})")

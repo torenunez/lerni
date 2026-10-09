@@ -64,7 +64,7 @@ As an educator, I want to approve an activity's exact wording and pictures, so t
 - WHEN its wording or pictures change THE SYSTEM SHALL require approval again.
 - WHEN the educator tries a card before approving it THE SYSTEM SHALL run it only in the educator view, marked as a draft, and never on a student's screen.
 
-Approval covers four checks: the science is right (`science`), the wording suits the student (`student_content`), the pictures work and are described in words (`visual_accessibility`), and it's OK to use (`educator_approval`). The names in brackets are how they're recorded. In Release 1 the approvals are recorded in the app on library cards (step 8), tied to the exact content a supervised student will see; packaged activity files keep their own approvals. Approve only after you have tried the activity yourself. Saving an activity card is not approval.
+Approval covers four checks: the science is right (`science`), the wording suits the student (`student_content`), the pictures work and are described in words (`visual_accessibility`), and it's OK to use (`educator_approval`). The names in brackets are how they're recorded. In Release 1 the approvals are recorded in the app on library cards (step 9), tied to the exact content a supervised student will see; packaged activity files keep their own approvals. Approve only after you have tried the activity yourself. Saving an activity card is not approval.
 
 ### Story: Run a session
 
@@ -167,7 +167,7 @@ Running the admin tool. Editing app code or lesson files directly.
 - 2026-10-08: The educator reviews drafts in the educator view.
 - 2026-10-08: The starting exclusion list covers violence, weapons, sexual content, self-harm, and drugs.
 - 2026-10-08: The educator writes plans in plain language; the six authoring tables were too technical for an educator. (Superseded the same day: planning moved into the educator view.)
-- 2026-10-08: The educator plans only in the educator view, from the start (Release 1, step 3), primed with example plans to edit. CSV authoring, the plan sheet, and the six authoring tables are retired. The admin packages a saved card at first, then it's automated; the educator records approvals in the app (step 6, now step 8).
+- 2026-10-08: The educator plans only in the educator view, from the start (Release 1, step 3), primed with example plans to edit. CSV authoring, the plan sheet, and the six authoring tables are retired. The admin packages a saved card at first, then it's automated; the educator records approvals in the app (step 6, now step 9).
 - 2026-10-08: The educator can import a rough plan in any shape; Claude proposes a structured plan, and the educator saves or discards it. Each import asks the educator to confirm the notes go to Claude (Anthropic) and contain no names or personal details.
 - 2026-10-08: The educator view runs on the educator's own device (a phone or laptop), separate from the student's iPad, and controls the same session.
 - 2026-10-08: Only the educator logs in, with one passcode the admin sets; the student screen has no login. The educator can preview a draft on their own device before approving it. (Sign-in replaced 2026-10-09.)
