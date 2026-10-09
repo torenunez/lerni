@@ -43,6 +43,7 @@ def ask_reply(
     viewer: Viewer | None,
     text: str,
     plan_id: str | None,
+    young_voice: bool = False,
 ) -> Iterator[str]:
     """Answer an independent student's question, a piece at a time.
 
@@ -52,7 +53,9 @@ def ask_reply(
         ConversationUnavailable: Claude didn't answer.
     """
     v = require(viewer, Role.INDEPENDENT)
-    yield from conversations.ask(v.username, text, _topic(store, plan_id))
+    # educators can try the young-learner voice; everyone else gets their own kind's
+    voice = "supervised" if young_voice and v.educator else "independent"
+    yield from conversations.ask(v.username, text, _topic(store, plan_id), voice)
 
 
 def topic_choices(store: PlanStore) -> list[tuple[str, str]]:
@@ -66,20 +69,29 @@ def _messages(conversations: Conversations, username: str) -> list[dict[str, str
 
 def ask_tab(
     signin: SignIn, store: PlanStore, conversations: Conversations | None
-) -> tuple[gr.Tab, gr.Dropdown, gr.Chatbot]:
+) -> tuple[gr.Tab, gr.Dropdown, gr.Chatbot, gr.Checkbox]:
     """The Ask tab (hidden for everyone but independent students)."""
     with gr.Tab("Ask", id="ask", visible=False) as tab:
         if conversations is None:
             gr.Markdown("Claude isn't set up on this server yet.")
-        topic = gr.Dropdown(label="Topic", choices=[], value=None)  # filled on load
-        chat = gr.Chatbot(label="Ask Lerni", height=420)
-        question = gr.Textbox(label="Your question", lines=2, max_length=2000)
+        # everything fits on one screen, so typing never makes the page scroll
         with gr.Row():
-            send = gr.Button("Send", variant="primary")
-            clear = gr.Button("Clear")
-        gr.Markdown(NOTICE)
+            topic = gr.Dropdown(label="Topic", choices=[], value=None, scale=3)  # filled on load
+            young = gr.Checkbox(label="Try the young-learner voice", visible=False, scale=1)
+        chat = gr.Chatbot(label="Ask Lerni", height="45vh")
+        with gr.Row():
+            question = gr.Textbox(
+                show_label=False, placeholder="Ask anything…", lines=1, max_length=2000,
+                scale=5,
+            )
+            send = gr.Button("Send", variant="primary", scale=1, min_width=80)
+        with gr.Row():
+            gr.Markdown(NOTICE)
+            clear = gr.Button("Clear", size="sm", scale=0)
 
-        def on_send(text: str, plan_id: str | None, request: gr.Request) -> Iterator[list[Any]]:
+        def on_send(
+            text: str, plan_id: str | None, young_voice: bool, request: gr.Request
+        ) -> Iterator[list[Any]]:
             viewer = signin.viewer(request.username)  # re-read on every question
             if conversations is None or viewer is None or viewer.role is not Role.INDEPENDENT:
                 yield [gr.update(), gr.update()]
@@ -88,7 +100,7 @@ def ask_tab(
             shown = _messages(conversations, viewer.username)
             shown += [{"role": "user", "content": text}, {"role": "assistant", "content": ""}]
             try:
-                for piece in ask_reply(conversations, store, viewer, text, plan_id):
+                for piece in ask_reply(conversations, store, viewer, text, plan_id, young_voice):
                     shown[-1]["content"] += piece
                     yield [shown, ""]  # clear the box as soon as the answer starts
             except (ConversationError, ConversationUnavailable) as exc:
@@ -102,7 +114,7 @@ def ask_tab(
             return []
 
         # Send, or Enter in the box
-        send.click(on_send, [question, topic], [chat, question], **PRIVATE)
-        question.submit(on_send, [question, topic], [chat, question], **PRIVATE)
+        send.click(on_send, [question, topic, young], [chat, question], **PRIVATE)
+        question.submit(on_send, [question, topic, young], [chat, question], **PRIVATE)
         clear.click(on_clear, None, chat, **PRIVATE)
-    return tab, topic, chat
+    return tab, topic, chat, young

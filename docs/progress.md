@@ -19,6 +19,7 @@ When something changes, update this section and add a log entry below.
 
 - PR #8 (step 5: accounts and one sign-in) merged into `main` with a merge commit, after the admin created the household's accounts (one supervised, two independent educators) and checked them.
 - Step 6, Ask Lerni: independent students (educators included) get an Ask tab, a text conversation with Claude through the admin's account; answers stream in, an optional plan adds only its ideas, nothing about who is asking is sent, and conversations live only in memory. Both Claude adapters now run with no saved transcripts. Supervised students get it later with reply checks.
+- Tried on the home server: the first real Claude answer streamed in. Two fixes followed. The Ask tab now fits one screen with a one-line box (Enter sends), because the page kept scrolling to the box on a phone or iPad. Answers were too long, so Lerni now starts from a persona file for each kind of student (`personas/independent.md`, `personas/supervised.md`: 2–4 or 1–3 short sentences), with fixed safety rules kept in code; educators can try the young-learner voice. Lerni learning each student's preferences over time is a Release 2 task.
 - Rules sharpened in both CLAUDE.md files: tests and evals stay minimal even when a skill or plan says otherwise, and all code gets short inline comments.
 
 ### 2026-10-09 (Release 1 step 5: accounts and one sign-in)

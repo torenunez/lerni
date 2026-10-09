@@ -41,6 +41,7 @@ After these, Release 1 needs content and sessions, not code: the educator approv
 
 ### Later: Release 2 Remembering
 
+- [ ] Personal personas: Lerni learns what each student likes over time (topics, examples, answer length), starting from the persona for their kind; visible to the student, and to the educator for a supervised student.
 - [ ] Write `plans/release-2-remembering.md`, starting with mapping each activity revision to the concepts it teaches.
 
 ### Later: Release 3 Voice

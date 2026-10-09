@@ -70,7 +70,7 @@ def build_main_view(
             with gr.Tab("Learn", id="learn", visible=False) as learn_tab:
                 waiting = gr.HTML(welcome_html, visible=False)
                 independent = gr.HTML(independent_html, visible=False)
-            ask, topic, chat = ask_tab(signin, store, conversations)
+            ask, topic, chat, young = ask_tab(signin, store, conversations)
             (guide_tab, sessions_tab, plans_tab), plan_dd, sessions = educator_tabs(
                 signin, store, catalog, drafter
             )
@@ -101,6 +101,7 @@ def build_main_view(
                 gr.update(choices=topic_choices(store) if "ask" in shown else [],
                           value=ANYTHING),
                 [],  # an empty conversation
+                gr.update(visible=is_edu, value=False),  # educators can try the young voice
             ]
 
         blocks.load(
@@ -108,7 +109,7 @@ def build_main_view(
             None,
             # order matches on_load: header, tabs, the _TAB_IDS tabs, then the rest
             [header, tabs, learn_tab, ask, guide_tab, sessions_tab, plans_tab, students_tab_,
-             account, waiting, independent, plan_dd, sessions, students_table, topic, chat],
+             account, waiting, independent, plan_dd, sessions, students_table, topic, chat, young],
             api_visibility="private",
         )
     return blocks
