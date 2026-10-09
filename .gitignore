@@ -50,6 +50,8 @@ htmlcov/
 .claude/settings.local.json
 # Private, machine-specific notes for agents (home server, names). Never commit.
 CLAUDE.local.md
+.private-words
+secret.key
 
 # OS
 .DS_Store
