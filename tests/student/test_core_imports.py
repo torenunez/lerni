@@ -9,6 +9,7 @@ CORE_MODULES = [
     "__init__.py", "canonical.py", "catalog.py", "domain.py", "engine.py",
     "plans.py", "plan_import.py", "jsonfiles.py", "students.py", "signin.py", "conversation.py",
     "interests.py", "tagging.py", "logs.py", "upload.py",
+    "feedback.py",
 ]
 
 
