@@ -29,7 +29,7 @@ resolve_tool() {
 PRIVATE="$CWD/.private-words"
 if [ -f "$PRIVATE" ]; then
     ADDED=$(cd "$CWD" && { git diff --cached -U0; git diff -U0; } 2>/dev/null | grep -E '^\+' | grep -vE '^\+\+\+ ')
-    while IFS= read -r word; do
+    while IFS= read -r word || [ -n "$word" ]; do  # the last line may lack a newline
         word="${word%%#*}"
         # trim the ends only, so two-word entries like a full name still match
         word="${word#"${word%%[![:space:]]*}"}"; word="${word%"${word##*[![:space:]]}"}"

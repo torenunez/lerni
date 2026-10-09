@@ -112,6 +112,13 @@ def _run(fn: Any, *args: Any) -> str:
         return f"⚠️ {exc}"
 
 
+def students_action(
+    students: StudentStore, viewer: Viewer | None, fn: Any, *args: Any
+) -> tuple[str, list[list[str]]]:
+    """Run a Students action; return its message and the roster this viewer may see."""
+    return _run(fn, students, viewer, *args), rows_for(students, viewer)
+
+
 def students_tab(signin: SignIn, students: StudentStore) -> tuple[gr.Tab, gr.Dataframe]:
     """The educator's Students tab (hidden for everyone else)."""
     with gr.Tab("Students", id="students", visible=False) as tab:
@@ -138,21 +145,18 @@ def students_tab(signin: SignIn, students: StudentStore) -> tuple[gr.Tab, gr.Dat
             return signin.viewer(request.username)  # re-read on every action
 
         def on_add(u: str, d: str, k: str, p: str, e: bool, request: gr.Request) -> list[Any]:
-            v = viewer(request)
-            message = _run(add_student, students, v, u.strip(), d, k, p, e)
-            return [message, rows_for(students, v), *add_form_after(message)]
+            message, rows = students_action(students, viewer(request), add_student,
+                                            u.strip(), d, k, p, e)
+            return [message, rows, *add_form_after(message)]
 
         def on_reset(u: str, p: str, request: gr.Request) -> list[Any]:
-            v = viewer(request)
-            message = _run(reset_student, students, v, u.strip(), p)
+            message, rows = students_action(students, viewer(request), reset_student, u.strip(), p)
             done = message.startswith("✅")
             cleared = [gr.update(value="")] * 2 if done else [gr.update()] * 2
-            return [message, rows_for(students, v), *cleared]
+            return [message, rows, *cleared]
 
         def on_archive(u: str, request: gr.Request) -> list[Any]:
-            v = viewer(request)
-            message = _run(archive_student, students, v, u.strip())
-            return [message, rows_for(students, v)]
+            return list(students_action(students, viewer(request), archive_student, u.strip()))
 
         form = [username, display, kind, educator, password]  # order matches add_form_after
         add_btn.click(

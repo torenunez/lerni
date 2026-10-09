@@ -29,11 +29,10 @@ How PRs are split:
 
 | # | PR | Branch | Ships | Done when | Status |
 |---|---|---|---|---|---|
-| 1 | Review follow-ups | `fix/review-followups` | A lock file shared by the server and `lerni student`, so a terminal reset can't be undone by an edit in the app; sign-in makes its cookie from the same read that checked the password; the commit check reads a last line with no newline; tests that the Students handlers return no roster to a non-educator and that an archived account can't become an educator | Both interleavings fail without the fix; tests pass | Not started |
-| 2 | Step 7: the interest map | `feat/interest-map` | `interests.py` and its store; the tagger; the 7-day logs and `lerni logs`; the steering prompt; My map and Maps (inline SVG picture, the list); old tabs and the Topic picker removed | The admin sees their interests on their map, checks it against the logs, adds a goal, and sees a bridge | Not started |
-| 3 | Step 8: upload and feedback | `feat/upload-and-feedback` | Upload proposes interests and goals, for educators and independent students; the Feedback box; `lerni feedback`; upload evals | The educator uploads notes and adds goals; the admin sees feedback summarized | Not started |
-| 4 | Step 9: the supervised conversation | `feat/supervised-conversation` | First the "before step 9" items below; then the supervised student's full-screen conversation; the supervised persona and rules; their map grows | The supervised student talks with Lerni, the educator beside them, and the map grows | Not started |
-| 5 | Step 10: remove the old activity path | `chore/remove-activities` | Plans, the old import, catalog, engine, lessons, seed, the index script, and their tests and docs | Tests pass; the code manifest matches | Not started |
+| 1 | Step 7: the interest map | `feat/interest-map` | `interests.py` and its store; the tagger; the 7-day logs and `lerni logs`; the steering prompt; My map and Maps (inline SVG picture, the list); old tabs and the Topic picker removed | The admin sees their interests on their map, checks it against the logs, adds a goal, and sees a bridge | Not started |
+| 2 | Step 8: upload and feedback | `feat/upload-and-feedback` | Upload proposes interests and goals, for educators and independent students; the Feedback box; `lerni feedback`; upload evals | The educator uploads notes and adds goals; the admin sees feedback summarized | Not started |
+| 3 | Step 9: the supervised conversation | `feat/supervised-conversation` | First the "before step 9" items below; then the supervised student's full-screen conversation; the supervised persona and rules; their map grows | The supervised student talks with Lerni, the educator beside them, and the map grows | Not started |
+| 4 | Step 10: remove the old activity path | `chore/remove-activities` | Plans, the old import, catalog, engine, lessons, seed, the index script, and their tests and docs | Tests pass; the code manifest matches | Not started |
 
 After these, Release 1 needs sessions, not code: the educator sets goals, rehearses, and sits beside the supervised student (Educator and Student tasks above and below).
 

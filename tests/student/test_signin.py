@@ -85,3 +85,19 @@ def test_an_empty_secret_file_is_refused(tmp_path):
     (tmp_path / "secret.key").write_text("")
     with pytest.raises(RuntimeError):
         load_secret(tmp_path)
+
+
+def test_a_reset_during_sign_in_signs_that_sign_in_out(tmp_path, monkeypatch):
+    store, signin, _ = make(tmp_path)
+    import lerni.student.signin as module
+
+    real_verify = module.verify_password
+
+    def verify_then_reset(password, stored):
+        ok = real_verify(password, stored)
+        store.reset_password("sam", "new password")  # lands after the old password passed
+        return ok
+
+    monkeypatch.setattr(module, "verify_password", verify_then_reset)
+    cookie, _ = signin.attempt("sam", "correct horse")
+    assert signin.viewer_from_cookie(cookie) is None

@@ -12,7 +12,8 @@ from lerni.student.web.accounts import (  # noqa: E402
     NotAllowed,
     add_student,
     archive_student,
-    rows_for,
+    reset_student,
+    students_action,
 )
 from lerni.student.web.app import build_app  # noqa: E402
 
@@ -34,8 +35,11 @@ def test_students_can_not_manage_accounts(tmp_path):
 def test_a_refused_action_shows_no_roster_and_educators_keep_their_own_account(tmp_path):
     students = StudentStore(tmp_path)
     add_student(students, EDUCATOR, "alba", "Alba", "independent", "long enough", True)
-    assert rows_for(students, SAM) == []  # was the whole roster, even after "Only an educator"
-    assert rows_for(students, EDUCATOR)[0][0] == "alba"
+    # what the Students handlers return: a refusal and no roster (it was the whole roster)
+    message, rows = students_action(students, SAM, archive_student, "alba")
+    assert message.startswith("⚠️") and rows == []
+    _, rows = students_action(students, EDUCATOR, reset_student, "alba", "long enough")
+    assert rows[0][0] == "alba"
     with pytest.raises(NotAllowed):
         archive_student(students, EDUCATOR, "alba")
 
