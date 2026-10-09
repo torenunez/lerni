@@ -23,7 +23,6 @@ Open tasks by who does the work. The educator and admin tracks run in parallel: 
 
 Build from the [Release 1 plan](../plans/release-1-mvp.md), in this order:
 
-- [ ] Walking skeleton: `lerni serve` on the home server; the educator logs in with the passcode from their own device; the iPad shows a waiting screen. Check the network boundary: home network only, no share links, analytics off, no outbound requests, nothing written to disk.
 - [ ] The catalog lists approved activities, plus drafts for educator-only preview.
 - [ ] The session controller: one shared session in memory, the tap contract, and Stop and Reset winning over taps in flight.
 - [ ] The activity on both screens: the student screen (iPad) and the educator view with Start, Stop, Reset, the recap, and draft preview.

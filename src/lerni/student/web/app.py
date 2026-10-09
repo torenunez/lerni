@@ -28,9 +28,65 @@ EDUCATOR_USERNAME = "educator"
 _SYSTEM_FONTS = ("-apple-system", "system-ui", "Helvetica Neue", "Arial", "sans-serif")
 _MONO_FONTS = ("ui-monospace", "Menlo", "monospace")
 
-# Large, calm text that reads well on an iPad.
+# The student screen's look. Everything is local: emoji built into the
+# device and CSS animation, no images or web fonts. Motion stops when the
+# device asks for reduced motion.
 _CSS = """
-.lerni-big { font-size: 2.2rem; line-height: 1.3; text-align: center; padding: 3rem 1rem; }
+.lerni-welcome {
+  position: relative; overflow: hidden; border-radius: 28px;
+  min-height: 78vh; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; text-align: center;
+  padding: 2rem 1rem; color: #1b1340;
+  background: linear-gradient(135deg, #ffe17a 0%, #ff9fb2 45%, #8fd3ff 100%);
+}
+.lerni-welcome h1 {
+  font-size: clamp(2.6rem, 7vw, 4.5rem); margin: 0.2em 0; font-weight: 800;
+  letter-spacing: -0.02em; animation: lerni-bounce 2.4s ease-in-out infinite;
+}
+.lerni-welcome p { font-size: clamp(1.4rem, 3.4vw, 2rem); margin: 0.3em 0; }
+.lerni-welcome .lerni-wave { font-size: clamp(3rem, 9vw, 5.5rem); display: inline-block;
+  animation: lerni-wave 2s ease-in-out infinite; transform-origin: 70% 70%; }
+.lerni-welcome .lerni-ready {
+  margin-top: 1.4em; padding: 0.6em 1.2em; border-radius: 999px;
+  background: rgba(255, 255, 255, 0.75); font-size: clamp(1.2rem, 3vw, 1.6rem);
+  font-weight: 700; animation: lerni-pulse 1.8s ease-in-out infinite;
+}
+.lerni-float { position: absolute; font-size: clamp(2.2rem, 6vw, 3.6rem);
+  animation: lerni-float 7s ease-in-out infinite; opacity: 0.9; }
+.lerni-float:nth-of-type(1) { top: 8%;  left: 7%;  animation-delay: 0s; }
+.lerni-float:nth-of-type(2) { top: 14%; right: 9%; animation-delay: 1.2s; }
+.lerni-float:nth-of-type(3) { bottom: 14%; left: 10%; animation-delay: 2.4s; }
+.lerni-float:nth-of-type(4) { bottom: 9%; right: 8%; animation-delay: 0.6s; }
+.lerni-float:nth-of-type(5) { top: 45%; left: 3%; animation-delay: 3s; }
+.lerni-float:nth-of-type(6) { top: 42%; right: 3%; animation-delay: 1.8s; }
+@keyframes lerni-float { 0%, 100% { transform: translateY(0) rotate(-6deg); }
+  50% { transform: translateY(-18px) rotate(6deg); } }
+@keyframes lerni-bounce { 0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); } }
+@keyframes lerni-wave { 0%, 60%, 100% { transform: rotate(0deg); }
+  15%, 45% { transform: rotate(16deg); } 30% { transform: rotate(-10deg); } }
+@keyframes lerni-pulse { 0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.06); } }
+@media (prefers-reduced-motion: reduce) {
+  .lerni-welcome *, .lerni-welcome { animation: none !important; }
+}
+"""
+
+# The student's waiting screen. The icons hint at the kinds of things there
+# are to explore; they are decoration, so screen readers skip them.
+_WELCOME_HTML = """
+<div class="lerni-welcome" role="main">
+  <span class="lerni-float" aria-hidden="true">🚗</span>
+  <span class="lerni-float" aria-hidden="true">🦈</span>
+  <span class="lerni-float" aria-hidden="true">⚽</span>
+  <span class="lerni-float" aria-hidden="true">🚀</span>
+  <span class="lerni-float" aria-hidden="true">🦖</span>
+  <span class="lerni-float" aria-hidden="true">🔭</span>
+  <span class="lerni-wave" aria-hidden="true">👋</span>
+  <h1>Get ready to explore!</h1>
+  <p>Cool questions about the things you love are coming.</p>
+  <p class="lerni-ready">Waiting for your educator to start…</p>
+</div>
 """
 
 # Settings shared by both mounted apps: no footer links (that hides the API
@@ -84,9 +140,9 @@ def passcode_checker(passcode: str) -> Callable[[str, str], bool]:
 
 
 def _student_screen() -> gr.Blocks:
-    """The iPad screen. For now it only waits for the educator to start."""
+    """The iPad screen. For now it greets the student and waits for the educator."""
     with gr.Blocks(title="Lerni", analytics_enabled=False) as blocks:
-        gr.Markdown("Waiting for your educator to start.", elem_classes="lerni-big")
+        gr.HTML(_WELCOME_HTML)
     return blocks
 
 

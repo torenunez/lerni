@@ -7,7 +7,7 @@ Record each kind of "done" only when it actually happens, with the date: code bu
 ## Current state (2026-10-08)
 
 - **Built:** the student app's core (activity format, catalog, engine), the admin tool (`lerni`, with `study` as a deprecated alias), the educator's plan sheet and activity card (with a cars example), the admin's authoring tables, six draft example paths, and the checker. Tests: 197 passed, 2 expected failures.
-- **Not yet:** the student app's activity screens (the walking skeleton runs, but not yet checked on the iPad); any approved activity (the car activity is a draft with no approvals); any student session. The educator hasn't tried the plan sheet or card yet.
+- **Not yet:** the student app's activity screens (the walking skeleton runs on the home server and the iPad); any approved activity (the car activity is a draft with no approvals); any student session. The educator hasn't tried the plan sheet or card yet.
 - **Open:** the example paths have no sources for many records yet; the checker reports 51 warnings and 0 errors.
 
 When something changes, update this section and add a log entry below.
@@ -18,7 +18,7 @@ When something changes, update this section and add a log entry below.
 
 - `lerni serve` runs the student app: the student screen at `/` (no login) and the educator view at `/educator/` behind a passcode from `LERNI_EDUCATOR_PASSCODE`. Gradio 6.30 is an optional `[student]` extra; the screens live in `src/lerni/student/web/`.
 - Verified on this Mac: the student screen returns 200; educator routes return 401 without the passcode; a wrong passcode is refused; API schema pages return 404; no outbound connections while serving; the admin database untouched. Tests: 211 passed, 2 expected failures.
-- Not yet verified: the iPad and the educator's own device on the home network.
+- Verified on the real devices the same day: the iPad on the home Wi-Fi shows the waiting screen, and the educator view works with the passcode. The iPad must be on the same network as the home server.
 
 ### 2026-10-08 (PR #4 merged)
 
