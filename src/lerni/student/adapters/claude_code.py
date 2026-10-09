@@ -39,9 +39,15 @@ from lerni.student.plan_import import (
 DEFAULT_MODEL = "claude-sonnet-5-5"
 TIMEOUT_SECONDS = 120
 CHAT_TIMEOUT_SECONDS = 60
-# Every call: no user or project settings, CLAUDE.md, or memory, and no transcript
-# saved on the server.
-_ISOLATED = {"setting_sources": [], "extra_args": {"no-session-persistence": None}}
+
+
+def _isolated() -> dict[str, Any]:
+    """Every call: no settings, CLAUDE.md, memory, or MCP servers, and no transcript saved."""
+    return {
+        "setting_sources": [],
+        "strict_mcp_config": True,  # ignore MCP servers configured for the admin
+        "extra_args": {"no-session-persistence": None},  # a fresh dict per call
+    }
 
 
 def claude_cli_available() -> bool:
@@ -67,7 +73,7 @@ class ClaudeCodeDrafter:
             max_turns=3 if pdf_path else 1,
             output_format={"type": "json_schema", "schema": PLAN_SCHEMA},
             can_use_tool=can_use_tool,
-            **_ISOLATED,
+            **_isolated(),
         )
 
     def draft(self, source: ImportSource) -> DraftResult:
@@ -123,7 +129,7 @@ class ClaudeCodeChat:
             cwd=workdir,
             max_turns=1,
             include_partial_messages=True,
-            **_ISOLATED,
+            **_isolated(),
         )
 
     def stream(self, system: str, turns: Sequence[Turn]) -> Iterator[str]:
@@ -160,6 +166,8 @@ class ClaudeCodeChat:
         with tempfile.TemporaryDirectory(prefix="lerni-ask-") as workdir:
             options = self.options(system, workdir)
             async for message in query(prompt=_transcript(turns), options=options):
+                if isinstance(message, ResultMessage) and message.is_error:
+                    raise ConversationUnavailable("Claude didn't finish.")  # don't save it as done
                 if not isinstance(message, StreamEvent):
                     continue
                 # only the text as it's written; the final message repeats it

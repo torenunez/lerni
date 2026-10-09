@@ -33,7 +33,7 @@ Remembering comes before voice: it is what turns separate activities into a jour
 - **They do the thinking.** Wrong answers get a hint, not the answer.
 - **Every new idea links to one they know.**
 - **It's short.** A few minutes; they can stop any time, and finishing is not the goal.
-- **Their questions count.** From Release 3, they can start the conversation.
+- **Their questions count.** Independent students can ask anything from Release 1 (Ask Lerni). For a supervised student, the conversation arrives in Release 3, with voice.
 - **No scores, no failing.**
 
 ## Guarantees
@@ -44,7 +44,7 @@ These hold for every release.
 
 - An activity plays only with the educator's four checks (for a supervised student), the independent student's own "This is ready" (for their own plans), or that student's own **Explore freely** (for their own plans, labeled "Not checked"). Never anyone else's approval or plan, and never an incomplete card.
 - Session state and progress are never saved to disk or browser storage in Release 1; logs hold no learner content.
-- Nothing is sent to an outside service without consent at the moment of sending.
+- Nothing is sent to an outside service without consent at the moment of sending. For Ask Lerni, the always-visible notice plus pressing Send is that consent.
 - A student never sees another student's plans or sessions.
 - It stops the moment a session is stopped.
 - It's designed for touch first. That's a goal, not an absolute; voice comes in Release 3.
@@ -90,8 +90,9 @@ As an independent student, I want to plan my own learning and approve my own act
 As an independent student, I want to ask questions by text and get clear, short answers, so that I can explore a topic right away, AI-enabled from the start.
 
 - WHEN an independent student sends a question in the Ask tab THE SYSTEM SHALL stream Claude's answer, briefly and at their level, sometimes ending with one question that invites them to go deeper.
-- WHEN they pick a plan as the topic THE SYSTEM SHALL give Claude only that plan's interest, goal, and ideas, never who is asking.
-- WHILE they're in a conversation THE SYSTEM SHALL keep it only in memory, and drop it on Clear, reload, sign-out, or a server restart.
+- WHEN they pick a plan as the topic THE SYSTEM SHALL give Claude only that plan's interest, goal, and ideas, as information, and add no account details (their own messages can still contain anything). Only plans they may use can be a topic.
+- WHILE they're in a conversation THE SYSTEM SHALL keep one ongoing conversation per student, the last 20 messages, only in memory (never on disk), the same on each of their devices, until they start a new conversation or the server restarts. Lerni keeps no transcript; Anthropic's own retention applies to what is sent.
+- WHILE an answer is streaming THE SYSTEM SHALL turn Send into Stop, keeping what was said so far if they press it, and keep their question if the answer fails.
 - WHEN a supervised student, or anyone not signed in as an independent student, sends a question THE SYSTEM SHALL refuse it.
 
 ### Story: Explore freely (independent student)
@@ -195,7 +196,9 @@ Public access and a native iPad app.
 - 2026-10-09: A supervised student's iPad is signed in only as that student; the educator and admin dogfood on their own devices.
 - 2026-10-09: Release 5 is renamed "free conversation", so it isn't confused with Explore freely.
 - 2026-10-09: Release 1 saves the account and an independent student's plans, but still no progress record. (Replaces "nothing about the student is saved".)
-- 2026-10-09: The app is AI-enabled from Release 1: independent students get Ask Lerni, a text conversation with Claude (open questions, kept only in memory). It comes before cards; supervised students get it later with reply checks and the educator's control, and Release 3 adds voice on top of it.
+- 2026-10-09: The app is AI-enabled from Release 1: independent students get Ask Lerni, a text conversation with Claude (open questions, kept only in memory). It comes before cards, and Release 3 adds voice on top of it.
+- 2026-10-09: Ask Lerni is one ongoing conversation per student, not one per visit: the start of a companion that, from Release 2, remembers what each student likes. For an independent student it helps them study directly.
+- 2026-10-09: A supervised student's AI conversation is Release 3, not Release 1. Their whole screen is the conversation: one button they hold to talk and release when done. The agent is a companion that starts from the student's interests and gracefully steers back to the educator-approved learning plan, so learning feels like play; it isn't an open chat. It runs on an API key under Anthropic's commercial terms (never the admin's consumer account, which is for people 18 and over), with reply checks, and the educator can see the conversation.
 ## Open questions
 
 - [NEEDS CLARIFICATION] (Release 2) Should the student see their own map of ideas, as a way to feel progress?

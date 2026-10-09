@@ -2,6 +2,7 @@
 
 from lerni.student.conversation import (
     MAX_TURNS,
+    SAFETY_RULES,
     Conversations,
     system_prompt,
 )
@@ -37,7 +38,19 @@ def test_a_topic_shares_the_plan_ideas_but_never_who_is_asking():
         activities=(PlannedActivity(idea="Acceleration", big_question="What does 0-60 mean?"),),
     )
     assert "Acceleration" in system_prompt(plan) and "What does 0-60 mean?" in system_prompt(plan)
+    for voice in ("independent", "supervised"):  # plan text never comes after the rules
+        assert system_prompt(plan, voice).index("Acceleration") < system_prompt(
+            plan, voice).index(SAFETY_RULES)
     model = FakeModel()
     list(Conversations(model).ask("zephyrine", "hi", plan))
     system, turns = model.calls[0]
     assert "zephyrine" not in system and all("zephyrine" not in t.text for t in turns)
+
+
+def test_clear_during_a_reply_is_not_undone_when_it_finishes():
+    convos = Conversations(FakeModel())
+    reply = convos.ask("sam", "Why?", None)
+    next(reply)  # the answer has started
+    convos.clear("sam")
+    list(reply)  # ...and finishes after Clear
+    assert convos.history("sam") == []

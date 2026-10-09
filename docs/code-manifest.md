@@ -19,7 +19,7 @@ What every code file does, in the order a request flows through it. When you add
 | File | What it does |
 |---|---|
 | `src/lerni/student/web/educator.py` | The educator's Guide, Sessions, and Learning plans tabs (plan table, activity-card form, Claude import). Handlers are plain functions; each Gradio handler re-checks on the server that the viewer is the educator. |
-| `src/lerni/student/web/ask.py` | The Ask tab for independent students: topic, chat, one-line question box (Enter sends), Clear; fits one screen; educators can try the young-learner voice. The handler refuses anyone else. |
+| `src/lerni/student/web/ask.py` | The Ask tab for independent students: topic, chat, one-line question box (Enter sends), a Send button that becomes Stop while answering, New conversation; one ongoing conversation per student; fits one screen; educators can try the supervised-student voice. Topics and the role are checked on the server. |
 | `src/lerni/student/web/accounts.py` | The Students tab (add, reset password, archive) and an independent student's My account (name, and password with the current one); handlers take the server-resolved viewer and refuse other roles. |
 | `src/lerni/student/web/guide.md` | The educator's instructions, shown in the Guide tab. Not code, but shipped with it. |
 | `src/lerni/student/web/__init__.py` | Marks the screens package; says it's the only place Gradio is imported. |

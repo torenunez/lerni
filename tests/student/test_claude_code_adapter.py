@@ -15,3 +15,4 @@ def test_claude_calls_keep_nothing_and_reach_nothing(options):
     assert options.tools == []
     assert options.setting_sources == []
     assert "no-session-persistence" in options.extra_args  # no transcripts on the server
+    assert options.strict_mcp_config  # no MCP servers from the admin's setup

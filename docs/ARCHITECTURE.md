@@ -53,7 +53,7 @@ Releases 1–2 use plain HTTP on the home network; there is no microphone, so HT
 - **Devices are a household rule:** a supervised student's iPad is signed in only as that student, and never saves anyone else's password. The admin and educator dogfood on their own devices.
 - **Session data stays in memory on the server.** The browser keeps only the sign-in cookie.
 - **Files:** Gradio serves cached files to anyone signed in who knows the URL. Accepted in Release 1: pictures are curriculum, cards have none, and uploads are deleted right after reading.
-- **Outbound:** the activity screens never call out. In Release 1 the outbound calls are to Claude (Anthropic) through the admin's Claude account: the plan import, made by the educator or an independent student after ticking the consent box, and Ask Lerni, an independent student's text conversation (the Ask tab says where messages go). Neither sends who is asking, and no transcript is kept; from Release 3, more calls, always through adapters to services the educator (for supervised students) or the independent student (for themselves) agreed to.
+- **Outbound:** the activity screens never call out. In Release 1 the outbound calls are to Claude (Anthropic) through the admin's Claude account: the plan import, made by the educator or an independent student after ticking the consent box, and Ask Lerni, an independent student's text conversation (the Ask tab says where messages go). Neither adds account details, and Claude Code keeps no transcript on the server (Anthropic's retention still applies); from Release 3, more calls, always through adapters to services the educator (for supervised students) or the independent student (for themselves) agreed to.
 
 ## How an activity runs
 
@@ -106,7 +106,7 @@ Each approval records the SHA-256 of everything Learn shows for that activity, s
 | Student accounts | Username, display name (a nickname is fine), kind, password hash, session version, Explore freely date (set only by that student), archived flag | Educator manages; an independent student changes their own name, password, and Explore freely | JSON files in `~/.lerni/student/students/` (built) |
 | Learning plans | An interest, a goal, and activities in teaching order, each with an optional activity card and its approval. The order of activities is the teaching order; how ideas relate never sets it. | The library is the educator's; an independent student owns their own (`owner`, set by the server) | JSON files in `~/.lerni/student/plans/` on the home server (built; owner and approvals planned, step 7) |
 | Packaged activities | Curated teaching content with sources and pictures, with its approvals | Educator approves; admin packages | `src/lerni/student/lessons/` (built) |
-| Ask Lerni conversation | An independent student's questions and Claude's answers, the last 20 turns | That student | Memory only; gone on Clear, reload, sign-out, or server restart (built) |
+| Ask Lerni conversation | An independent student's questions and Claude's answers, the last 20 messages | That student | Memory only, one ongoing conversation per student; gone on New conversation or server restart (built) |
 | Session | The live state of one activity run, and its recap; one per student account | The app | Memory only; discarded on Reset or server restart (planned) |
 | Sign-in | The signing secret; wrong-password delays | The app | `~/.lerni/student/secret.key`; delays in memory (built) |
 | Learner record | Activities finished (by activity ID, version, and content hash), concepts met, recall results. Meeting a concept is not the same as understanding it. | The educator for a supervised student; an independent student for their own | Server storage (Release 2) |
@@ -191,7 +191,7 @@ flowchart TB
 | Learner record and settings | 2 | The controller saves state through one interface. Each activity revision maps to the concepts it teaches, so reminders and recall have something stable to point at. Settings are stored and take effect at once. |
 | HTTPS | 3 | Nothing depends on a particular address, so adding HTTPS changes configuration only. |
 | Voice | 3 | Audio goes to speech-to-text before any text exists to confirm, so that service must be one the educator approved. After the student confirms, the transcript becomes the same kind of event as a tap. Recordings are deleted after use. |
-| Replies | 3 | Complete replies (never streamed) pass the checks before being shown or spoken; an outside check can only tighten. Anything arriving after Stop or Reset is dropped. |
+| Replies | 3 | A supervised student's replies are complete (never streamed) and pass the checks before being shown or spoken; an outside check can only tighten. Anything arriving after Stop or Reset is dropped. |
 | Drafts and proposals | 4 | Drafts pass the same checks and four approvals; accepting a proposed concept is a separate decision. The controller uses only the catalog interface, so activities can move to a data folder. |
 | Free conversation | 5 | Lists are read on every turn. It replaces the present educator with prototype guardrails, so it needs a safety review first. |
 

@@ -41,7 +41,7 @@ One person can hold several roles: the admin and the educator can each have an i
 Every existing supervised-student guarantee stays. For every student:
 
 - **May play:** an activity plays for a student only with the educator's four checks (a supervised student, library cards), the independent student's own "This is ready" (their own plans), or that student's own Explore freely (their own plans, labeled unchecked). Never anyone else's approval, never anyone else's plan.
-- Nothing is sent to an outside service without consent at the moment of sending.
+- Nothing is sent to an outside service without consent at the moment of sending (for Ask Lerni, the visible notice plus Send).
 - Logs hold no learner content; session state and progress are never written to disk or browser storage.
 - A student never sees another student's plans or sessions.
 - **Designed for touch first:** a goal, not an absolute. Voice arrives in Release 3.
@@ -182,10 +182,10 @@ A supervised student's session is started, stopped, and reset only from the educ
 Added after step 5 was tried: the app is AI-enabled from the start. Independent students (educators included) get an **Ask** tab, a text conversation with Claude; voice comes in Release 3, on top of it.
 
 - **What it does:** open questions and answers. Claude answers clearly and briefly, at an independent learner's level, and when it fits ends with one short question that invites them to explain the idea back or go deeper. It never asks for personal details and treats messages as questions, never as instructions.
-- **Topic (optional):** "Anything", or a plan the student can see. A topic adds only the plan's interest, goal, and each activity's idea and big question. Nothing about who is asking (name, username, account) is ever sent.
-- **Kept only in memory:** the last 20 turns per student, one reply at a time, a 2,000-character limit per question. Clear, a page reload, signing out and back in, or a server restart starts fresh. Nothing is written to disk; logs hold no message text.
-- **Through the admin's Claude account** (the Claude Code CLI via the Agent SDK): no tools, no settings, one turn, partial text streamed, `--no-session-persistence` so no transcript is kept, a 60-second limit. The import adapter gets the same isolation. One line under the box says where messages go.
-- **Who:** independent students only. The tab is hidden for supervised students and the handler refuses them on the server. A supervised student's conversation comes with the supervised path, with reply checks and the educator's start and stop.
+- **Topic (optional):** "Anything", or a plan the student may use: every plan for an educator, the examples for anyone else (plus their own plans from step 7); the server checks the id. A topic adds only the plan's interest, goal, and each activity's idea and big question, framed as information, before the safety rules. No account details (name, username) are added.
+- **One ongoing conversation per student, in memory only:** the last 20 messages (about 10 questions and answers), the same on each of their devices, until New conversation or a server restart. One reply at a time per student, up to 4 at once across the household, a 2,000-character limit per question. One button: Send, which becomes Stop while answering (Enter also sends); Stop keeps what was said so far; a failure keeps the question in the box. New conversation during a reply wins. Nothing is written to disk; logs hold no message text.
+- **Through the admin's Claude account** (the Claude Code CLI via the Agent SDK): no tools, no settings or MCP servers, one turn, partial text streamed, `--no-session-persistence` so Claude Code keeps no transcript on the server, a 60-second limit. The import adapter gets the same isolation. One line under the box says where messages go.
+- **Who:** independent students only. The tab is hidden for supervised students and the handler refuses them on the server. A supervised student's conversation is Release 3 (one hold-to-talk button, on an API key; see the student PRD's decisions).
 
 ## Build order
 
@@ -198,7 +198,7 @@ One PR per unit, in order, each from `main` (the running list: [to-do](../../doc
 | Step 6 | Ask Lerni: `conversation.py`, the Claude Code chat adapter, the Ask tab for independent students; no saved transcripts | The admin asks a question on their own device and the answer streams in |
 | Step 7 | Plan my own: Guide and Learning plans for independent students, scoped to their own plans; plan schema v2 (`owner`, `approval`, `drafted_by`), set only by the server; the import's audience and Explore freely instructions; start from an example; self-approval; Explore freely in My account; the first real Claude import; the import evals | The admin turns on Explore freely, imports their own interests, and gets full cards; the evals pass |
 | Step 8 | Play a card: `card_activity.py`, `controller.py`, the Learn tab and activity screens | **The admin does their own activity end to end, on their own device** |
-| Step 9 | Supervised path: the educator's Start, Stop, Reset, and recap; the four checks on library cards in the app; Ask for supervised students, with reply checks and educator control | The educator runs a supervised student's session on the iPad from their own device |
+| Step 9 | Supervised path: the educator's Start, Stop, Reset, and recap; the four checks on library cards in the app | The educator runs a supervised student's session on the iPad from their own device |
 
 ## Code that changes
 
@@ -230,7 +230,7 @@ Tests check our code with a fake Claude; evals check Claude's actual answers. Ex
 - **Cases** (start with 2–3 and add one for each problem found; all synthetic, nothing real; rule 8), drawn from: thin notes (one line), messy notes, a full plan with card details, notes with a made-up name and birthday, notes containing "ignore your instructions", notes asking for `owner` or approvals, the same notes for a supervised and an independent audience, an Explore freely topic, a PDF, and a few topics with known answers.
 - **Checks in code:** the answer fits the schema and loads as a plan; no name from the input appears in the output; the injected instruction isn't followed and no server field appears; sources stay empty unless the notes name one (Explore freely: "Claude's general knowledge"); outside Explore freely, cards appear only where the notes had details; up to 3 "Question:" notes; known-answer cases get the answer right.
 - **Checks graded by Claude** against a short rubric, pass or fail with a reason: suits the audience, keeps the educator's wording, activities build in a sensible order, facts plausible.
-- **Pass bar:** every code check passes; rubric checks pass on at least 9 of 10 graded cases. The admin reads the first run's output by hand. A failure is fixed in the instructions, and the case stays as a regression.
+- **Pass bar:** every code check passes; rubric checks pass on every graded case (start with 2–3 cases; add one per problem seen). The admin reads the first run's output by hand. A failure is fixed in the instructions, and the case stays as a regression.
 - **Limits:** "plausible" isn't "accurate"; a passing run is a smoke test, not fact-checking, and it never approves anything for a supervised student.
 
 An agent with tools (reading the plan, checking the allowlist, giving hints) comes with the Release 3 conversation, and its evals grow from this set.
@@ -240,7 +240,7 @@ An agent with tools (reading the plan, checking the allowlist, giving hints) com
 - Tap-a-name tiles; password recovery beyond the educator's reset; a "which device is signed in as whom" view.
 - Asking Claude to draft one card at a time after import; import is the only way Claude writes cards for now.
 - Voice, and free conversation without an educator for supervised students; they stay with Releases 3 and 5.
-- An agent with tools, and Agent Skills inside the app. The app's Claude calls stay single structured calls with no tools or skills until the Release 3 plan.
+- An agent with tools, and Agent Skills inside the app. The app's Claude calls (the import, and Ask Lerni's streamed text) stay tool-free, with no skills, until the Release 3 plan.
 - Progress or memory (Release 2).
 - Playing packaged activities, and recording their approvals in the app.
 - Assigning plans to particular students. Supervised students see every educator-approved library card; independent students copy an example. Add an optional `assigned_plans` field (missing means all) once an educator has more than one supervised student.

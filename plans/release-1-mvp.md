@@ -10,7 +10,7 @@ The smallest app a student can try: sign in, pick an activity, and answer by tap
 
 ## To build
 
-Build in this order, one PR per step from step 5, in parallel with the educator's content work. Steps 1–4 are built and merged. Steps 5–8 need no educator-approved content: an independent student approves their own. Only a supervised student's first session waits for an approved activity.
+Build in this order, one PR per step from step 5, in parallel with the educator's content work. Steps 1–4 are built and merged. Steps 5 and 6 are built (5 merged). Steps 6–8 need no educator-approved content: an independent student approves their own. Only a supervised student's first session waits for an approved activity.
 
 1. **Walking skeleton: the app runs, and you can log in.** *(Built. Step 5 replaces the two apps with one app and sign-in for everyone.)* `lerni serve` starts the app on the home server (an always-on Mac), bound to all network addresses rather than only `localhost`, so other devices can reach it. Done when the educator logs in from their own phone or laptop and sees "No approved activities yet", and the iPad shows the student's waiting screen.
    - **Two apps, one server** (superseded by step 5). The student screen and the educator view are two Gradio apps mounted on separate routes of one server, sharing the controller. Gradio's login protects a whole app, not one tab, so only the educator app gets it. The passcode is set by the admin as an `env:VAR` reference, never in a file. Every educator handler (Start, Stop, Reset, recap, preview, draft pictures) checks it on the server; every event is hidden from the API page (`api_visibility="private"`; that hides, it doesn't protect). The student screen has no login.
@@ -37,7 +37,7 @@ Build in this order, one PR per step from step 5, in parallel with the educator'
    - No session state or progress is written to disk or browser storage, and logs hold no learner content.
    - Preview sessions are separate from the live session. Preview while an activity is live either runs in isolation or is refused; the live session never changes.
    - One session per student account, open device or not; any device signed in as that student shows and drives it, and two students never affect each other.
-9. **The supervised path.** The educator's Sessions tab with Start, Stop, Reset, and the recap for a supervised student; the four checks recorded in the app on library cards, tied to the content hash; trying a card before approving it, only on the educator's own sign-in; Ask for supervised students, with reply checks and the educator's start and stop. The supervised student's screen refreshes on a short timer so that Stop takes effect without a tap. Done when the educator runs a supervised student's session on the iPad from their own device.
+9. **The supervised path.** The educator's Sessions tab with Start, Stop, Reset, and the recap for a supervised student; the four checks recorded in the app on library cards, tied to the content hash; trying a card before approving it, only on the educator's own sign-in. The supervised student's screen refreshes on a short timer so that Stop takes effect without a tap. Done when the educator runs a supervised student's session on the iPad from their own device.
 
 Gradio is an optional extra (`pip install -e ".[student]"`), never a core dependency. `students.py`, `card_activity.py`, and `controller.py` go in `src/lerni/student/` (standard library only); the screens go in `src/lerni/student/web/`, the only place that imports Gradio.
 

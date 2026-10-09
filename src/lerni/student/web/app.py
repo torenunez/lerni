@@ -69,6 +69,8 @@ _CSS = """
   15%, 45% { transform: rotate(16deg); } 30% { transform: rotate(-10deg); } }
 @keyframes lerni-pulse { 0%, 100% { transform: scale(1); }
   50% { transform: scale(1.06); } }
+/* Ask: hide the chat's own trash icon; "New conversation" is the one way to start over */
+#lerni-ask-chat button[aria-label="Clear"] { display: none; }
 @media (prefers-reduced-motion: reduce) {
   .lerni-welcome *, .lerni-welcome { animation: none !important; }
 }
@@ -96,7 +98,7 @@ _INDEPENDENT_HTML = """
 <div class="lerni-welcome" role="main">
   <span class="lerni-wave" aria-hidden="true">👋</span>
   <h1>Your activities will appear here</h1>
-  <p>Planning your own learning arrives in the next update.</p>
+  <p>Planning your own learning is coming soon. Meanwhile, try Ask.</p>
 </div>
 """
 
