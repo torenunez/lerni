@@ -12,6 +12,7 @@ Build plans, one per release, named `release-<n>-<name>.md` and written when tha
 
 ## Still current
 
+- [specs/03-student-accounts.md](specs/03-student-accounts.md): supervised and independent students, sign-in, Explore freely, and the import evals; Release 1 steps 5–8.
 - [specs/02-lesson-core.md](specs/02-lesson-core.md): how the activity format, catalog, and engine work (built). It's the record of that build and still uses some older terms (Explore, parent, child).
 - [runbooks/chain-1-source-review.md](runbooks/chain-1-source-review.md): how the educator reviews the car activity's science.
 

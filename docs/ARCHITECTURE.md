@@ -4,9 +4,15 @@ How Lerni works: what runs where, how an activity reaches the student, who owns 
 
 ## Bird's-eye view
 
-The educator plans in the educator view: a learning plan with activities in teaching order, and an activity card for the next one. The admin turns a card into an **activity**: a few teaching screens followed by one multiple-choice question, with hints and a picture. The activity file reaches the student only after the educator approves its exact content. The student app runs on a home server; the student uses it on an iPad, and the educator controls it from their own phone or laptop.
+Everyone signs in to one app on a home server, and the tabs depend on who signed in ([design](../plans/specs/03-student-accounts.md)):
 
-It assumes one family, one student, and one live session at a time.
+- The **educator** plans for supervised students: a learning plan with activities in teaching order, and an activity card for each. An approved card becomes an **activity**: a few teaching screens followed by one multiple-choice question, with hints. The educator manages student accounts and runs a supervised student's sessions from their own phone or laptop.
+- A **supervised student** sees only Learn: the activities the educator approved, started by the educator.
+- An **independent student** gets the educator's planning tools scoped to their own plans, plus Learn. They approve their own cards, or turn on Explore freely to let Claude's drafts play unchecked, and start their own sessions.
+
+Curated activities with sources and pictures are also packaged as files in the repository (the car activity). Students use an iPad or any browser on the home network.
+
+It assumes one household, a few students, and one live session per student.
 
 The admin tool (`lerni` in a terminal) is separate: the admin's own learning and testing tool, with its own data. Code and filenames say "lesson"; the docs say "activity". They mean the same thing.
 
@@ -14,12 +20,14 @@ The admin tool (`lerni` in a terminal) is separate: the admin's own learning and
 
 ```mermaid
 flowchart LR
-    student([Student]) -- taps --> ipad[iPad<br/>student screen]
-    educator([Educator]) -- Start / Stop / Reset --> edev[Phone or laptop<br/>educator view]
+    student([Supervised student]) -- taps --> ipad[iPad<br/>Learn]
+    indep([Independent student]) -- plans, taps --> idev[iPad or laptop<br/>Learn, Learning plans]
+    educator([Educator]) -- accounts, plans, Start / Stop --> edev[Phone or laptop<br/>educator tabs]
     subgraph home[Home network only]
-        ipad -- HTTP --> server[Home server<br/>always-on Mac]
-        edev -- HTTP, passcode --> server
-        admin([Admin]) -- runs lerni serve, packages activities --> server
+        ipad -- HTTP, sign-in --> server[Home server<br/>always-on Mac]
+        idev -- HTTP, sign-in --> server
+        edev -- HTTP, sign-in --> server
+        admin([Admin]) -- runs lerni serve --> server
     end
 
     server -. adapters: plan import now, more from Release 3 .-> ai[Claude, speech services]
@@ -30,10 +38,10 @@ Releases 1–2 use plain HTTP on the home network; there is no microphone, so HT
 ## Trust boundaries
 
 - **The home network is the outer boundary:** no port forwarding, never Gradio's public share links.
-- **The student screen is open by design:** no login, so any device on the network can view and tap the live session. Accepted for one family.
-- **The educator view is a separate app behind the passcode,** on its own route. Every educator action checks the passcode on the server; hiding a button is not protection. Until HTTPS (Release 3) the passcode travels unencrypted on the home network, which is accepted.
-- **Session data stays in memory on the server** and is never saved in either browser.
-- **Outbound:** the student screen never calls out. In Release 1 the only outbound call is the educator's plan import, to Claude (Anthropic), after the educator ticks the consent box; from Release 3, more calls, always through adapters to services the educator agreed to.
+- **Everyone signs in** (planned, step 5) to one Gradio app at `/`, with Gradio's built-in login. The educator signs in as `educator` with the passcode from an environment variable; students sign in with a username and a password stored only as a salted scrypt hash. Five wrong passwords lock a username for 60 seconds. Built today: a student screen with no login, and a separate educator app at `/educator/` behind the passcode.
+- **Every handler checks who is signed in, on the server,** and scopes what it reads and writes to that role and that student. Hiding a tab or button is not protection. Until HTTPS (Release 3) passwords travel unencrypted on the home network, which is accepted; passwords keep students apart, they don't make the app safe to expose.
+- **Session data stays in memory on the server** and is never saved in the browser. Gradio's login cookie is the only thing the browser keeps.
+- **Outbound:** the activity screens never call out. In Release 1 the only outbound call is the plan import, to Claude (Anthropic), made by the educator or an independent student after ticking the consent box; from Release 3, more calls, always through adapters to services the educator (or an independent student, for themselves) agreed to.
 
 ## How an activity runs
 
@@ -57,24 +65,33 @@ flowchart LR
     ctrl -- "recap" --> edev
 ```
 
-1. The educator picks an approved activity and presses Start.
-2. The **catalog** loads it only if it is approved and unaltered (below).
+1. The educator presses Start for a supervised student, or an independent student taps an activity in Learn.
+2. The activity is loaded only if it may play (below): a packaged activity through the **catalog**, or a card through **card activities** (planned), which builds the same `Lesson` type in memory.
 3. The student taps a choice. The tap carries the session and the screen it was drawn from, so the controller can ignore late or repeated taps. Contract: [MVP plan](../plans/release-1-mvp.md#to-build).
 4. The **engine** takes the activity, the current state, and the event, and returns the next state. It is a pure function: the same inputs give the same result, and no model chooses content or moves the activity forward. Steps: [transition rules](../plans/specs/02-lesson-core.md#transition-rules).
 5. The engine's **snapshot** holds nothing the student may not see: the text, the choices (an ID and a label each), the hint, the picture, and which buttons are active. Which choice is correct, the sources, and the approval records never leave the server. The answer appears only in the completion text, once the activity ends.
 6. The student screen redraws on a short timer. The educator sees the recap when the activity ends or is stopped, until they dismiss it.
 
-**Draft preview** runs in its own session on the educator's device, never the live one, with its pictures behind the passcode.
+There is one live session per signed-in student (planned), so two students never affect each other. **Draft preview** runs in its own session on the educator's device, never a student's, with its pictures behind the educator's sign-in.
 
-**How an activity gets approved:** the educator's activity card in the app → activity file, made by the admin (automated later) → four recorded approvals (science, student wording, pictures and accessibility, OK to use) → catalog. Each approval records the hash of the activity's reviewable content, which includes each picture's recorded hash; the picture bytes are checked against it when drawn. Review records themselves are left out of that hash, so adding an approval doesn't invalidate it, but any change to the content does. Hashes tie an approval to exact content but don't prove who gave it; that rests on [CLAUDE.md rule 5](../CLAUDE.md#rules): the admin records only real approvals, and no agent writes one. A saved activity card is not an approval.
+**When an activity may play:**
+
+| Source | Who it's for | May play when |
+|---|---|---|
+| A card in the educator's library (planned) | Supervised students | The educator recorded all four checks (science, student wording, pictures and accessibility, OK to use) for the card's exact content |
+| A card in an independent student's plan (planned) | That student | They tapped "This is ready" for its exact content, or their Explore freely is on (labeled unchecked) |
+| A packaged activity file (built) | Anyone it's offered to | The catalog finds four recorded approvals for its exact content |
+
+Approvals of cards record the SHA-256 of the card's canonical JSON, so any edit un-approves the card. For packaged activities: Each approval records the hash of the activity's reviewable content, which includes each picture's recorded hash; the picture bytes are checked against it when drawn. Review records themselves are left out of that hash, so adding an approval doesn't invalidate it, but any change to the content does. Hashes tie an approval to exact content but don't prove who gave it; that rests on [CLAUDE.md rule 5](../CLAUDE.md#rules): only a signed-in person's tap records an approval, and no agent writes one. A saved activity card is not an approval.
 
 ## Who owns each kind of data
 
 | Data | What it is | Owner | Where |
 |---|---|---|---|
-| Learning plans | An interest, a goal, and activities in teaching order, each with an optional activity card. The order of activities is the teaching order; how ideas relate never sets it. | Educator | JSON files in `~/.lerni/student/plans/` on the home server (built) |
-| Activities | Reviewed teaching content for one path step, with its approvals | Educator approves; admin packages | `src/lerni/student/lessons/` (built) |
-| Session | The live state of one activity run, and its recap | The app | Memory only; discarded on Reset or server restart (planned) |
+| Student accounts | Username, display name (a nickname is fine), kind, password hash, Explore freely date, archived flag | Educator manages; an independent student changes their own name and password | JSON files in `~/.lerni/student/students/` (planned, step 5) |
+| Learning plans | An interest, a goal, and activities in teaching order, each with an optional activity card and its approval. The order of activities is the teaching order; how ideas relate never sets it. | The educator's library, or an independent student's own (`owner`) | JSON files in `~/.lerni/student/plans/` on the home server (built; owner and approvals planned, step 6) |
+| Packaged activities | Curated teaching content with sources and pictures, with its approvals | Educator approves; admin packages | `src/lerni/student/lessons/` (built) |
+| Session | The live state of one activity run, and its recap; one per signed-in student | The app | Memory only; discarded on Reset or server restart (planned) |
 | Learner record | Activities finished (by activity ID, version, and content hash), concepts met, recall results. Meeting a concept is not the same as understanding it. Kept until the educator deletes it. | Educator | Server storage (Release 2) |
 | Lists, settings, consent | Allowlist and exclusion list; exploration mode, voice, and remembering; which outside services may receive data; sensitive-subject consents | Educator | Server storage (settings from Release 2) |
 | Admin data | The admin's own questions, concepts, and reviews | Admin | SQLite at `~/.lerni/lerni.db` (built) |
@@ -83,19 +100,20 @@ flowchart LR
 
 If a change would break one of these, stop and ask.
 
-1. **Only approved, unaltered activities reach the student.** The catalog refuses anything else, and a raw index entry is never treated as approved. A draft can run only as a preview in the educator view, which needs the passcode.
+1. **Only approved, unaltered activities reach a student,** except an independent student's own cards while their Explore freely is on, which are labeled unchecked. The catalog and card activities refuse anything else, and a raw index entry is never treated as approved. A draft can run only as a preview in the educator's tabs.
 2. **The answer key stays on the server.** The snapshot type has no field for it.
 3. **The engine decides progression, never a model.**
 4. **Session updates are atomic and ignore stale input.** The controller, not the engine, numbers sessions and screens, and a tap applies only if it matches the current ones. Once Stop commits, the server accepts no more input.
-5. **Home network only; the student screen never calls out.** See [trust boundaries](#trust-boundaries). Nothing about the student is written to disk or browser storage in Release 1.
-6. **Outside services go behind an adapter**, with credentials as `env:VAR` references, and only to services the educator agreed to. Tests use fakes.
-7. **The core never imports Gradio.** The core (`domain`, `catalog`, `engine`, `canonical`, `plans`, `plan_import`, and the planned controller) uses only the standard library. Provider SDKs live only in `adapters/`. The screens (planned, `src/lerni/student/web/`) may import Gradio, an optional install. The student package never opens the admin tool's database.
+5. **Home network only; the activity screens never call out.** See [trust boundaries](#trust-boundaries). In Release 1 the only things saved about a student are their account and an independent student's own plans; nothing goes to browser storage.
+6. **Every handler resolves the signed-in user on the server** and scopes to them. A student never reaches another student's plans or sessions, or an educator action; the educator never reads an independent student's plans.
+7. **Outside services go behind an adapter**, with credentials as `env:VAR` references, and only to services the educator agreed to. Tests use fakes.
+8. **The core never imports Gradio.** The core (`domain`, `catalog`, `engine`, `canonical`, `plans`, `plan_import`, and the planned `students`, `card_activity`, and `controller`) uses only the standard library. Provider SDKs live only in `adapters/`. The screens (planned, `src/lerni/student/web/`) may import Gradio, an optional install. The student package never opens the admin tool's database.
 
 ## Codemap
 
 Every code file, one line each: [code manifest](code-manifest.md).
 
-- `src/lerni/student/`: the core: `domain.py` (data types), `catalog.py` (the only place approvals are checked), `engine.py` (steps and snapshots), `canonical.py` (stable bytes for hashing), `lessons/` (activity files, pictures, generated index). Planned: `controller.py` and `web/` (the Gradio screens).
+- `src/lerni/student/`: the core: `domain.py` (data types), `catalog.py` (the only place approvals are checked), `engine.py` (steps and snapshots), `canonical.py` (stable bytes for hashing), `lessons/` (activity files, pictures, generated index). Planned: `students.py` (accounts), `card_activity.py` (cards to activities), and `controller.py` (one session per student).
 - `src/lerni/cli.py`, `commands/`, `db.py`, `sm2.py`: the admin tool.
 - `src/lerni/student/plans.py` (learning plans and their store), `plan_import.py` (rough notes to a proposed plan), `adapters/claude_code.py` (Claude through the Claude Code CLI; prototype), `seed/` (the example plans), `web/` (the Gradio screens, including the educator's `guide.md`).
 - `scripts/`: the lesson index generator.

@@ -22,8 +22,7 @@ Open tasks by who does the work. The educator and admin tracks run in parallel: 
 
 Build from [specs/03-student-accounts.md](../plans/specs/03-student-accounts.md), one PR each, in this order:
 
-- [ ] Docs PR: reframe README, the PRDs, ARCHITECTURE, CLAUDE.md, roadmap, the Release 1 plan, and the in-app guide for two kinds of student.
-- [ ] Step 5: accounts and one sign-in (one app at `/`, tabs by role, the Students tab, lockout). Check on the iPad that Safari saves the password.
+- [ ] Step 5: accounts and one sign-in (one app at `/`, tabs by role, the Students tab, lockout). Update the in-app guide for the Students tab and the two kinds of student. Check on the iPad that Safari saves the password.
 
 ### Later: Release 1 MVP
 

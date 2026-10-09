@@ -68,6 +68,8 @@ export LERNI_EDUCATOR_PASSCODE='...'        # the educator's passcode; never put
 lerni serve                                 # binds 0.0.0.0:7860
 ```
 
+Until step 5 lands (then everyone signs in at `/`):
+
 - The iPad opens `http://<home-server>:7860/` (the student screen, no login).
 - The educator opens `http://<home-server>:7860/educator/` and signs in with the username `educator` and the passcode.
 - `lerni serve` refuses to start if the passcode variable is unset or empty. `--port` and `--passcode-env` change the defaults; `--host 127.0.0.1` keeps it on this computer only.

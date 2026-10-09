@@ -140,7 +140,7 @@ A supervised student's session is started, stopped, and reset only from the educ
 - **Sessions:** a supervised student's sessions, with Start, Stop, Reset, and recap. Built in step 8.
 - **Learning plans:** the educator's library only. Unchanged otherwise.
 
-**The Claude import** is the same code for the educator and for an independent student. The instructions name the audience: a plan for a supervised student is designed for ages 7–9, as today; a plan for an independent student is for an adult learner choosing their own topic, with the fuller instruction when Explore freely is on. The consent checkbox stays required. For an independent student it reads: "Send this to Claude (Anthropic) to structure it. I've left out anything I don't want to share."
+**The Claude import** is the same code for the educator and for an independent student. The instructions name the audience: a plan for a supervised student is designed for ages 7–9, as today; a plan for an independent student is for an independent learner (often an adult) choosing their own topic, with the fuller instruction when Explore freely is on. The consent checkbox stays required. For an independent student it reads: "Send this to Claude (Anthropic) to structure it. I've left out anything I don't want to share."
 
 ## Build order
 
