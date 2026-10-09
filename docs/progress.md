@@ -4,16 +4,22 @@ Where things really stand, then a dated log, newest first. Completed work is rec
 
 Record each kind of "done" only when it actually happens, with the date: code built, content approved, app ready, a student session held. Passing tests show code behaves as specified; they don't make anything ready for a student.
 
-## Current state (2026-10-09, step 5)
+## Current state (2026-10-09, step 6)
 
-- **Built:** the student app's core (activity format, catalog with approved listing and draft preview, engine, student accounts, sign-in); `lerni serve` with a sign-in page and one app with tabs by role: the educator's Guide, Students, Sessions, and Learning plans (activity cards, cars and sharks examples, plan import with Claude), a supervised student's Learn (waiting screen), and an independent student's Guide, Learn, and My account; the admin tool (`lerni`, with `study` as a deprecated alias); a [code manifest](code-manifest.md) of every code and test file. Tests: 51 passed, 2 expected failures.
+- **Built:** the student app's core (activity format, catalog, engine, learning plans, the Claude import, student accounts, sign-in, Ask Lerni's conversations); `lerni serve` with a sign-in page and one app with tabs by role: everyone's Learn; an independent student's Ask (a text conversation with Claude), Guide, and My account; and an educator's Sessions, Learning plans, and Students on top. The admin tool (`lerni`, with `lerni student` for the first educator and recovery). A [code manifest](code-manifest.md) of every file. Tests: 57 passed, 2 expected failures.
 - **Designed and approved:** supervised and independent students, one sign-in with tabs by role, Explore freely, and on-demand evals for the Claude import ([specs/03-student-accounts.md](../plans/specs/03-student-accounts.md)). The docs are reframed for it.
-- **Not yet:** the step 5 check on real devices (Safari saving the password, staying signed in after a Safari restart); independent students' own plans (step 6); a real Claude import (only tested with a fake); card activities, sessions, and activity screens; approvals in the app; any approved activity; any student session. The educator hasn't tried planning in the app yet.
+- **Not yet:** independent students' own plans and Explore freely (step 7); a real Claude import; card activities and sessions (step 8); the supervised path and approvals in the app (step 9); any approved activity; any supervised student session. The educator hasn't planned in the app yet.
 - **Open:** the sharks example plan has no activity cards or sources yet.
 
 When something changes, update this section and add a log entry below.
 
 ## Log
+
+### 2026-10-09 (PR #8 merged; Release 1 step 6: Ask Lerni)
+
+- PR #8 (step 5: accounts and one sign-in) merged into `main` with a merge commit, after the admin created the household's accounts (one supervised, two independent educators) and checked them.
+- Step 6, Ask Lerni: independent students (educators included) get an Ask tab, a text conversation with Claude through the admin's account; answers stream in, an optional plan adds only its ideas, nothing about who is asking is sent, and conversations live only in memory. Both Claude adapters now run with no saved transcripts. Supervised students get it later with reply checks.
+- Rules sharpened in both CLAUDE.md files: tests and evals stay minimal even when a skill or plan says otherwise, and all code gets short inline comments.
 
 ### 2026-10-09 (Release 1 step 5: accounts and one sign-in)
 
