@@ -4,9 +4,9 @@ Where things really stand, then a dated log, newest first. Completed work is rec
 
 Record each kind of "done" only when it actually happens, with the date: code built, content approved, app ready, a student session held. Passing tests show code behaves as specified; they don't make anything ready for a student.
 
-## Current state (2026-10-09, step 6)
+## Current state (2026-10-09, steps 5 and 6 merged)
 
-- **Built:** the student app's core (activity format, catalog, engine, learning plans, the Claude import, student accounts, sign-in, Ask Lerni's conversations); `lerni serve` with a sign-in page and one app with tabs by role: everyone's Learn; an independent student's Ask (a text conversation with Claude), Guide, and My account; and an educator's Sessions, Learning plans, and Students on top. The admin tool (`lerni`, with `lerni student` for the first educator and recovery). A [code manifest](code-manifest.md) of every file. Tests: 57 passed, 2 expected failures.
+- **Built:** the student app's core (activity format, catalog, engine, learning plans, the Claude import, student accounts, sign-in, Ask Lerni's conversations); `lerni serve` with a sign-in page and one app with tabs by role: everyone's Learn; an independent student's Ask (one ongoing text conversation with Claude, phone first), Guide, and My account; and an educator's Sessions, Learning plans, and Students on top. The admin tool (`lerni`, with `lerni student` for the first educator and recovery). A [code manifest](code-manifest.md) of every file. Tests: 60 passed, 2 expected failures.
 - **Designed and approved:** supervised and independent students, one sign-in with tabs by role, Explore freely, and on-demand evals for the Claude import ([specs/03-student-accounts.md](../plans/specs/03-student-accounts.md)). The docs are reframed for it.
 - **Not yet:** independent students' own plans and Explore freely (step 7); a real Claude import; card activities and sessions (step 8); the supervised path and approvals in the app (step 9); any approved activity; any supervised student session. The educator hasn't planned in the app yet.
 - **Open:** the sharks example plan has no activity cards or sources yet.
@@ -14,6 +14,13 @@ Record each kind of "done" only when it actually happens, with the date: code bu
 When something changes, update this section and add a log entry below.
 
 ## Log
+
+### 2026-10-09 (PRs #10 and #9 merged: accounts hardening, Ask Lerni)
+
+- Two outside reviews of PRs #8 and #9 were checked against the code; the verified findings were fixed, a few declined with reasons, and the rest deferred to the to-do list.
+- PR #10 (accounts hardening) merged first: a refused Students action no longer returns the account list; account edits are serialized so a rename can't undo an archive; an educator can't archive their own account; the private-words check matches two-word entries.
+- PR #9 (step 6, Ask Lerni) merged with a merge commit. After the reviews and the admin's tries on an iPhone: one Send button that becomes Stop, New conversation instead of Clear, one ongoing conversation per student (in memory), topics checked on the server, plan text framed as information before the safety rules, no lost drafts or partial answers, up to 4 answers at once, and a phone-first layout (the chat and the question box grow with content; 16px fields so Safari doesn't zoom).
+- Decisions: a supervised student's AI conversation is Release 3 (one hold-to-talk button, a companion steering back to the plan, on an API key, visible to the educator); for Ask, the notice plus Send is consent; narrowing follow-up questions are the direction to keep.
 
 ### 2026-10-09 (PR #8 merged; Release 1 step 6: Ask Lerni)
 

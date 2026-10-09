@@ -53,7 +53,7 @@ Releases 1–2 use plain HTTP on the home network; there is no microphone, so HT
 - **Devices are a household rule:** a supervised student's iPad is signed in only as that student, and never saves anyone else's password. The admin and educator dogfood on their own devices.
 - **Session data stays in memory on the server.** The browser keeps only the sign-in cookie.
 - **Files:** Gradio serves cached files to anyone signed in who knows the URL. Accepted in Release 1: pictures are curriculum, cards have none, and uploads are deleted right after reading.
-- **Outbound:** the activity screens never call out. In Release 1 the outbound calls are to Claude (Anthropic) through the admin's Claude account: the plan import, made by the educator or an independent student after ticking the consent box, and Ask Lerni, an independent student's text conversation (the Ask tab says where messages go). Neither adds account details, and Claude Code keeps no transcript on the server (Anthropic's retention still applies); from Release 3, more calls, always through adapters to services the educator (for supervised students) or the independent student (for themselves) agreed to.
+- **Outbound:** the activity screens never call out. In Release 1 the outbound calls are to Claude (Anthropic) through the admin's Claude account: the plan import, made by the educator or an independent student after ticking the consent box, and Ask Lerni, an independent student's text conversation. Neither adds account details, and Claude Code keeps no transcript on the server (Anthropic's retention still applies); from Release 3, more calls, always through adapters to services the educator (for supervised students) or the independent student (for themselves) agreed to.
 
 ## How an activity runs
 
