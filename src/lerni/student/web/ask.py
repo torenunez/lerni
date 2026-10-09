@@ -1,8 +1,8 @@
 """The Ask tab: an independent student's text conversation with Claude.
 
 :func:`ask_reply` is a plain function over the server-resolved viewer, so the
-role and topic checks can be tested without a browser; :func:`ask_tab` wires
-it to Gradio.
+role check can be tested without a browser; :func:`ask_tab` wires it to Gradio.
+Their map reaches Claude through :class:`Conversations`, never from the page.
 """
 
 from __future__ import annotations
@@ -17,56 +17,30 @@ from lerni.student.conversation import (
     Conversations,
     ConversationUnavailable,
 )
-from lerni.student.plans import LearningPlan, PlanError, PlanStore
 from lerni.student.signin import Role, SignIn, Viewer
 from lerni.student.web.accounts import PRIVATE, require
-from lerni.student.web.educator import plan_choices
 
-ANYTHING = "Anything"
-EMPTY = "Ask Lerni anything, or pick a topic."  # no fine print in the family prototype
+EMPTY = "Ask Lerni anything."  # no fine print in the family prototype
 MAX_AT_ONCE = 4  # answers streaming at the same time, across the household
-
-
-def topic_choices(store: PlanStore, viewer: Viewer | None) -> list[tuple[str, str]]:
-    """ "Anything", then the plans this viewer may use: all for educators, else examples."""
-    if viewer is not None and viewer.educator:
-        plans = plan_choices(store)
-    else:
-        plans = [(f"{p.interest} (example)", p.plan_id) for p in store.list_plans() if p.is_example]
-    return [(ANYTHING, ANYTHING), *plans]
-
-
-def _topic(store: PlanStore, viewer: Viewer, plan_id: str | None) -> LearningPlan | None:
-    if not plan_id or plan_id == ANYTHING:
-        return None
-    # the id comes from the page, so check it against what this viewer may use
-    if plan_id not in {pid for _, pid in topic_choices(store, viewer)}:
-        raise ConversationError("That topic isn't available. Pick another.")
-    try:
-        return store.get(plan_id)
-    except PlanError:
-        raise ConversationError("That topic isn't available. Pick another.") from None
 
 
 def ask_reply(
     conversations: Conversations,
-    store: PlanStore,
     viewer: Viewer | None,
     text: str,
-    plan_id: str | None,
     supervised_voice: bool = False,
 ) -> Iterator[str]:
     """Answer an independent student's question, a piece at a time.
 
     Raises:
         NotAllowed: The viewer isn't a signed-in independent student.
-        ConversationError: Empty, too long, a topic they can't use, or a reply is still coming.
+        ConversationError: Empty, too long, or a reply is still coming.
         ConversationUnavailable: Claude didn't answer.
     """
     v = require(viewer, Role.INDEPENDENT)
     # educators can try the supervised-student voice; everyone else gets their own kind's
     voice = "supervised" if supervised_voice and v.educator else "independent"
-    yield from conversations.ask(v.username, text, _topic(store, v, plan_id), voice)
+    yield from conversations.ask(v.username, text, voice)
 
 
 def messages(conversations: Conversations, username: str) -> list[dict[str, str]]:
@@ -75,17 +49,15 @@ def messages(conversations: Conversations, username: str) -> list[dict[str, str]
 
 
 def ask_tab(
-    signin: SignIn, store: PlanStore, conversations: Conversations | None
-) -> tuple[gr.Tab, gr.Dropdown, gr.Chatbot, gr.Checkbox]:
+    signin: SignIn, conversations: Conversations | None
+) -> tuple[gr.Tab, gr.Chatbot, gr.Checkbox]:
     """The Ask tab (hidden for everyone but independent students)."""
     ready = conversations is not None
     with gr.Tab("Ask", id="ask", visible=False) as tab:
         if not ready:
             gr.Markdown("Claude isn't set up on this server yet.")
         # phone first: the chat grows with its messages, so the question box stays near the top
-        with gr.Row():
-            topic = gr.Dropdown(label="Topic", choices=[], value=None, scale=3)  # filled on load
-            voice = gr.Checkbox(label="Try the supervised-student voice", visible=False, scale=1)
+        voice = gr.Checkbox(label="Try the supervised-student voice", visible=False)
         # no toolbar or like buttons: one way to start over, below
         chat = gr.Chatbot(
             label="Ask Lerni",
@@ -123,7 +95,7 @@ def ask_tab(
             return [locked, gr.update(visible=False), gr.update(visible=True), text]
 
         def on_send(
-            text: str, plan_id: str | None, supervised_voice: bool, request: gr.Request
+            text: str, supervised_voice: bool, request: gr.Request
         ) -> Iterator[list[Any]]:
             viewer = signin.viewer(request.username)  # re-read on every question
             if not ready or viewer is None or viewer.role is not Role.INDEPENDENT:
@@ -135,9 +107,7 @@ def ask_tab(
             yield [shown, gr.update()]
             answer = ""
             try:
-                for piece in ask_reply(
-                    conversations, store, viewer, text, plan_id, supervised_voice
-                ):
+                for piece in ask_reply(conversations, viewer, text, supervised_voice):
                     answer += piece
                     shown[-1]["content"] = answer
                     yield [shown, gr.update()]  # only the answer changes
@@ -161,7 +131,7 @@ def ask_tab(
             [send.click, question.submit], start, question, [*controls, asked], **PRIVATE
         ).then(
             on_send,
-            [asked, topic, voice],
+            [asked, voice],
             [chat, question],
             concurrency_limit=MAX_AT_ONCE,
             **PRIVATE,
@@ -170,4 +140,4 @@ def ask_tab(
         # Stop keeps what was said so far; New conversation forgets it, even mid-answer
         stop.click(unlock, None, controls, cancels=[answering], **PRIVATE)
         new.click(on_new, None, [chat, *controls], cancels=[answering], **PRIVATE)
-    return tab, topic, chat, voice
+    return tab, chat, voice

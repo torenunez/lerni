@@ -24,8 +24,8 @@ from pathlib import Path
 from typing import Any
 
 from lerni.student.jsonfiles import write_json_atomic
-from lerni.student.plans import default_data_dir
 
+DATA_ENV = "LERNI_STUDENT_DATA"
 _WRITE_LOCK = threading.Lock()  # account changes in this process, one at a time
 
 USERNAME_RE = re.compile(r"^[a-z][a-z0-9-]{1,30}$")
@@ -70,6 +70,12 @@ class Student:
     explore_freely: date | None = None
     educator: bool = False  # may manage students and the family's plans
     archived: bool = False
+
+
+def default_data_dir() -> Path:
+    """The student app's data folder: ``$LERNI_STUDENT_DATA`` or ``~/.lerni/student``."""
+    override = os.environ.get(DATA_ENV)
+    return Path(override) if override else Path.home() / ".lerni" / "student"
 
 
 def check_username(username: str) -> str:

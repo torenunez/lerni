@@ -6,19 +6,7 @@ import os
 from typing import Any
 
 MODEL_ENV = "LERNI_CLAUDE_MODEL"
-
-
-def _claude_drafter() -> Any:
-    """Return the Claude Code drafter if the CLI is installed, else ``None``."""
-    from lerni.student.adapters.claude_code import (
-        DEFAULT_MODEL,
-        ClaudeCodeDrafter,
-        claude_cli_available,
-    )
-
-    if not claude_cli_available():
-        return None
-    return ClaudeCodeDrafter(model=os.environ.get(MODEL_ENV, DEFAULT_MODEL))
+TAGGER_ENV = "LERNI_TAGGER_MODEL"
 
 
 def _claude_chat() -> Any:
@@ -34,6 +22,19 @@ def _claude_chat() -> Any:
     return ClaudeCodeChat(model=os.environ.get(MODEL_ENV, DEFAULT_MODEL))
 
 
+def _claude_tagger() -> Any:
+    """Return the Claude Code tagger if the CLI is installed, else ``None``."""
+    from lerni.student.adapters.claude_code import (
+        DEFAULT_TAGGER_MODEL,
+        ClaudeCodeTagger,
+        claude_cli_available,
+    )
+
+    if not claude_cli_available():
+        return None
+    return ClaudeCodeTagger(model=os.environ.get(TAGGER_ENV, DEFAULT_TAGGER_MODEL))
+
+
 def serve(host: str, port: int) -> None:
     """Start the student app and block until it stops.
 
@@ -47,14 +48,16 @@ def serve(host: str, port: int) -> None:
     from lerni.student.students import StudentStore
     from lerni.student.web.app import build_app
 
-    drafter = _claude_drafter()
-    app = build_app(drafter=drafter, chat_model=_claude_chat())
+    chat, tagger = _claude_chat(), _claude_tagger()
+    app = build_app(chat_model=chat, tagger=tagger)
     print(f"Sign in:  http://<this-computer>:{port}/", flush=True)
     if not any(s.educator for s in StudentStore().list_students()):
         print("No educator yet: lerni student add USERNAME --name NAME "
               "--kind independent --educator", flush=True)
-    status = f"on ({drafter.model})" if drafter else "off (the claude CLI isn't installed)"
-    print(f"Plan import and Ask Lerni with Claude: {status}", flush=True)
+    status = (f"on ({chat.model}; the map with {tagger.model})" if chat
+              else "off (the claude CLI isn't installed)")
+    print(f"Ask Lerni and the interest map with Claude: {status}", flush=True)
+    print("Conversation logs (7 days): lerni logs", flush=True)
     print("Home network only. Press Ctrl-C to stop.", flush=True)
     # Gradio keeps each open page connected; without a time limit, Ctrl-C waits forever
     uvicorn.run(
