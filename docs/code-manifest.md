@@ -96,6 +96,7 @@ Minimal on purpose: one happy path per module, plus a test for each safety guara
 | `tests/student/test_signin.py` | A cookie stops working after a reset; wrong passwords wait without signing anyone out. |
 | `tests/student/test_plan_import.py` | Rough notes become an unsaved plan; nothing is sent to Claude without consent. |
 | `tests/student/test_web_signin.py` | Signed-out visits go to the sign-in form; a right password opens the app; Sign out ends it; a short passcode is refused. |
+| `tests/student/test_serve.py` | Ctrl-C stops the server within a few seconds, even with pages open. |
 | `tests/student/test_web_roles.py` | Students can't manage accounts; the page config carries no plans or other students' names. |
 | `tests/student/test_core_imports.py` | The core imports only the standard library (never Gradio or a provider SDK). |
 | `tests/student/test_distribution.py` | The built package ships the activity files byte for byte (slow; needs `build`). |

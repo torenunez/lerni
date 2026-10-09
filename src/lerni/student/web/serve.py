@@ -80,4 +80,12 @@ def serve(host: str, port: int, passcode_env: str = DEFAULT_PASSCODE_ENV) -> Non
     status = f"on ({drafter.model})" if drafter else "off (the claude CLI isn't installed)"
     print(f"Plan import with Claude: {status}", flush=True)
     print("Home network only. Press Ctrl-C to stop.", flush=True)
-    uvicorn.run(app, host=host, port=port, log_level="warning", access_log=False)
+    # Gradio keeps each open page connected; without a time limit, Ctrl-C waits forever
+    uvicorn.run(
+        app,
+        host=host,
+        port=port,
+        log_level="warning",
+        access_log=False,
+        timeout_graceful_shutdown=3,
+    )
