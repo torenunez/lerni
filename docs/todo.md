@@ -1,6 +1,6 @@
 # To do
 
-Open tasks by who does the work. The educator and admin tracks run in parallel: building and troubleshooting the app never waits for content, and content never waits for the app. Within each role, **Now** comes first and later work is grouped by release. When a task is done, delete it; if it changed where things stand, add a dated entry to [progress](progress.md). What completes each release: [roadmap](roadmap.md).
+Open tasks by who does the work. The educator and admin tracks run in parallel: building and troubleshooting the app never waits for content, and content never waits for the app. Within each role, **Now** comes first and later work is grouped by release; the admin's build work is the running list of [upcoming PRs](#upcoming-prs-release-1-mvp). When a task is done, delete it; if it changed where things stand, add a dated entry to [progress](progress.md). What completes each release: [roadmap](roadmap.md).
 
 ## Educator
 
@@ -18,17 +18,27 @@ Open tasks by who does the work. The educator and admin tracks run in parallel: 
 
 ## Admin
 
-### Now: Release 1 MVP
+### Upcoming PRs: Release 1 MVP
 
-Build from [specs/03-student-accounts.md](../plans/specs/03-student-accounts.md), one PR each, in this order:
+The running list of what ships next, in order. Design: [specs/03-student-accounts.md](../plans/specs/03-student-accounts.md); step details: [Release 1 plan](../plans/release-1-mvp.md#to-build).
 
-- [ ] Step 5: accounts and one sign-in (one app at `/`, tabs by role, the Students tab, lockout). Update the in-app guide for the Students tab and the two kinds of student. Check on the iPad that Safari saves the password.
+How PRs are split:
 
-### Later: Release 1 MVP
+- **One unit per PR:** one build step (with the docs it changes), or one docs-only change, never two units in one PR.
+- **In order:** each branch starts from `main` after the PR before it merges.
+- **Each PR carries its own docs:** code manifest, in-app guide, todo, and progress for what it ships.
+- **Merged only by the admin,** after the "done when" is checked on the real devices.
+- **When a PR merges:** delete its row and add a dated entry to [progress](progress.md). Work found along the way gets a new row or a task below, not a bigger PR.
 
-- [ ] Step 6: plan my own (independent students' Learning plans and My account, plan schema v2, Explore freely, self-approval). Make the first real Claude import on the home server, and add the import evals.
-- [ ] Step 7: play a card (card activities, one session per student, Learn). Done when you do your own activity end to end on the iPad.
-- [ ] Step 8: the supervised path (the educator's Start, Stop, Reset, and recap; the four approvals in the app, including the car activity's).
+| # | PR | Branch | Ships | Done when | Status |
+|---|---|---|---|---|---|
+| 1 | Docs: two kinds of student | `docs/student-kinds` | The approved design and the docs reframed for it | The admin reviews and merges it | [Open: #7](https://github.com/torenunez/lerni/pull/7) |
+| 2 | Step 5: accounts and one sign-in | `feat/student-accounts` | Student accounts; one app at `/` with Gradio's login and tabs by role; the Students tab; lockout; Log out; the in-app guide for the Students tab and the two kinds of student | The admin signs in on the iPad, Safari saves the password, and a reload keeps them signed in; the educator sees the educator tabs | Next |
+| 3 | Step 6: plan my own | `feat/plan-my-own` | Guide, Learning plans, and My account for independent students; plan schema v2; Explore freely; self-approval; the first real Claude import; the import evals | The admin turns on Explore freely, imports their own interests, gets full cards, and the evals pass | Not started |
+| 4 | Step 7: play a card | `feat/card-activities` | Card activities; one session per student; Learn and the activity screens | The admin does their own activity end to end on the iPad | Not started |
+| 5 | Step 8: the supervised path | `feat/supervised-sessions` | The educator's Start, Stop, Reset, and recap; the four approvals in the app, including the car activity's; packaged activities in Learn | The educator runs a supervised student's session on the iPad from their own device | Not started |
+
+After these, Release 1 needs content and sessions, not code: the educator approves an activity, rehearses, and a supervised student tries it (Educator and Student tasks above and below).
 
 ### Later: Release 2 Remembering
 

@@ -24,7 +24,7 @@ The commit gate (`.claude/hooks/quality-gate.sh`) lints staged Python and runs t
 ## Rules
 
 1. **Vocabulary.** The people are the **student**, the **educator**, and the **admin**. A student is a **supervised student** or an **independent student**, set by supervision, not age. Don't write child, kid, parent, adult, or supervisor, except "often a child" or "often an adult" as an example, never a definition. Exceptions: tree terms for concepts (a concept's parent or children), and older text kept as history (the log in `docs/progress.md`, `plans/later/`, the retired CSV templates in git history).
-2. **No commit, push, branch, or pull request unless asked.**
+2. **No commit, push, branch, or pull request unless asked.** Pull requests follow the running list in [docs/todo.md](docs/todo.md#upcoming-prs-release-1-mvp): one unit each, in order, each from `main`.
 3. **No hardcoded providers.** Model and speech services go behind a replaceable adapter; credentials only as `env:VAR` references, never literal values.
 4. **Tests use fakes, and stay minimal.** No test calls a real model, service, or network. One happy path per module plus a test for each safety guarantee; add a regression test with each bug fix, not tests up front.
 5. **Never fabricate approvals.** Student-facing content needs a recorded human approval tied to its exact content fingerprint: the educator's four checks for a supervised student, or the independent student's own "This is ready". The one exception is an independent student's own Explore freely switch, which they turn on themselves; its content is labeled unchecked. No agent or script writes an approval, review date, fingerprint, or Explore freely setting to make a check pass.
