@@ -14,6 +14,11 @@ When something changes, update this section and add a log entry below.
 
 ## Log
 
+### 2026-10-08 (PR #6 merged; two kinds of student designed)
+
+- PR #6 (Release 1 steps 1–4: skeleton, listing, planning, Claude import) merged into `main` with a merge commit.
+- Designed supervised and independent students, one sign-in with tabs by role, and Explore freely: [specs/03-student-accounts.md](../plans/specs/03-student-accounts.md). Awaiting the admin's review before the docs reframe and steps 5–8.
+
 ### 2026-10-08 (Code manifest; minimal test suite)
 
 - `docs/code-manifest.md` describes every code and test file; a test fails if one is missing. Short inline comments added across the student-app code.

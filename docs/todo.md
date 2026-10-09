@@ -22,6 +22,8 @@ Open tasks by who does the work. The educator and admin tracks run in parallel: 
 
 Build from the [Release 1 plan](../plans/release-1-mvp.md), in this order:
 
+- [ ] Review [specs/03-student-accounts.md](../plans/specs/03-student-accounts.md) (supervised and independent students); then reframe the docs and replace the steps below with its steps 5–8.
+- [ ] Make the first real Claude import on the home server (only tested with a fake so far); do it with step 6, which changes the import.
 - [ ] Step 5: the session controller: one shared session in memory, the tap contract, and Stop and Reset winning over taps in flight.
 - [ ] Step 6: the activity on both screens: the student screen (iPad) and the educator view with Start, Stop, Reset, the recap, and draft preview.
 
