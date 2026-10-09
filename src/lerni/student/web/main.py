@@ -19,9 +19,21 @@ from lerni.student.students import StudentStore
 from lerni.student.web.accounts import account_tab, student_rows, students_tab
 from lerni.student.web.educator import educator_tabs, plan_choices, sessions_text
 
+# Tab ids in page order, and which roles see each. Learning plans opens to
+# independent students in step 6.
+_TABS = (
+    ("learn", {Role.SUPERVISED, Role.INDEPENDENT}),
+    ("guide", {Role.EDUCATOR, Role.INDEPENDENT}),
+    ("sessions", {Role.EDUCATOR}),
+    ("plans", {Role.EDUCATOR}),
+    ("students", {Role.EDUCATOR}),
+    ("account", {Role.INDEPENDENT}),
+)
 
-def _show(flag: bool) -> Any:
-    return gr.update(visible=flag)
+
+def visible_tabs(role: Role | None) -> tuple[str, ...]:
+    """The tab ids ``role`` sees, in page order; the first one opens on load."""
+    return tuple(tab for tab, roles in _TABS if role in roles)
 
 
 def build_main_view(
@@ -37,8 +49,8 @@ def build_main_view(
     store.seed_if_empty()  # first run: copy in the example plans
     with gr.Blocks(title="Lerni", analytics_enabled=False) as blocks:
         header = gr.Markdown()
-        with gr.Tabs():
-            with gr.Tab("Learn", visible=False) as learn_tab:
+        with gr.Tabs() as tabs:
+            with gr.Tab("Learn", id="learn", visible=False) as learn_tab:
                 waiting = gr.HTML(welcome_html, visible=False)
                 independent = gr.HTML(independent_html, visible=False)
             (guide_tab, sessions_tab, plans_tab), plan_dd, sessions = educator_tabs(
@@ -52,16 +64,13 @@ def build_main_view(
             role = viewer.role if viewer else None
             is_edu, is_ind = role is Role.EDUCATOR, role is Role.INDEPENDENT
             name = f"{viewer.display_name} · {viewer.role.value}" if viewer else "nobody"
+            shown = visible_tabs(role)
             return [
                 f"Signed in as **{name}** · [Sign out](/signout)",
-                _show(role in (Role.SUPERVISED, Role.INDEPENDENT)),  # Learn
-                _show(role is Role.SUPERVISED),  # waiting screen
-                _show(is_ind),  # independent's empty Learn
-                _show(is_edu or is_ind),  # Guide
-                _show(is_edu),  # Sessions
-                _show(is_edu),  # Learning plans (independent students get it in step 6)
-                _show(is_edu),  # Students
-                _show(is_ind),  # My account
+                gr.update(selected=shown[0] if shown else None),  # open a tab they can see
+                *(gr.update(visible=tab in shown) for tab, _ in _TABS),
+                gr.update(visible=role is Role.SUPERVISED),  # waiting screen
+                gr.update(visible=is_ind),  # independent's empty Learn
                 gr.update(choices=plan_choices(store) if is_edu else [], value=None),
                 sessions_text(catalog) if is_edu else "",
                 student_rows(students) if is_edu else [],
@@ -70,8 +79,9 @@ def build_main_view(
         blocks.load(
             on_load,
             None,
-            [header, learn_tab, waiting, independent, guide_tab, sessions_tab, plans_tab,
-             students_tab_, account, plan_dd, sessions, students_table],
+            # order matches on_load: header, tabs, the _TABS tabs, then the rest
+            [header, tabs, learn_tab, guide_tab, sessions_tab, plans_tab, students_tab_,
+             account, waiting, independent, plan_dd, sessions, students_table],
             api_visibility="private",
         )
     return blocks

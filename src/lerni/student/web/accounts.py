@@ -83,7 +83,7 @@ def _run(fn: Any, *args: Any) -> str:
 
 def students_tab(signin: SignIn, students: StudentStore) -> tuple[gr.Tab, gr.Dataframe]:
     """The educator's Students tab (hidden for everyone else)."""
-    with gr.Tab("Students", visible=False) as tab:
+    with gr.Tab("Students", id="students", visible=False) as tab:
         table = gr.Dataframe(headers=STUDENT_COLUMNS, interactive=False, type="array")
         gr.Markdown("### Add a student")
         username = gr.Textbox(label="Username (lowercase, e.g. sam)")
@@ -123,7 +123,7 @@ def students_tab(signin: SignIn, students: StudentStore) -> tuple[gr.Tab, gr.Dat
 
 def account_tab(signin: SignIn, students: StudentStore) -> gr.Tab:
     """An independent student's My account tab (hidden for everyone else)."""
-    with gr.Tab("My account", visible=False) as tab:
+    with gr.Tab("My account", id="account", visible=False) as tab:
         name = gr.Textbox(label="Display name")
         name_btn = gr.Button("Change name")
         current = gr.Textbox(label="Current password", type="password")

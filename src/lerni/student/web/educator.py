@@ -303,13 +303,13 @@ def educator_tabs(
         The three tabs (hidden until ``main.py`` shows them for the viewer), the
         plan dropdown, and the Sessions text, which ``main.py`` fills on load.
     """
-    with gr.Tab("Guide", visible=False) as guide_tab:
+    with gr.Tab("Guide", id="guide", visible=False) as guide_tab:
         gr.Markdown(guide_text())
 
-    with gr.Tab("Sessions", visible=False) as sessions_tab:
+    with gr.Tab("Sessions", id="sessions", visible=False) as sessions_tab:
         sessions = gr.Markdown()  # filled on load, never built into the layout
 
-    with gr.Tab("Learning plans", visible=False) as plans_tab:
+    with gr.Tab("Learning plans", id="plans", visible=False) as plans_tab:
         gr.Markdown(NEVER_WRITE)
         with gr.Accordion("Import a rough plan with Claude", open=False):
             if drafter is None:

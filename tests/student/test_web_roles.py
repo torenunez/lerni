@@ -34,3 +34,12 @@ def test_page_config_carries_no_plans_or_usernames(tmp_path):
     config = client.get("/app/config").text  # Gradio adds the viewer's own username; fine
     for leaked in ("cars-", "sharks-", "zephyrine", "Zephyrine"):
         assert leaked not in config
+
+
+def test_each_role_opens_on_a_tab_it_can_see():
+    # regression: the hidden Learn tab stayed selected, so the educator saw an empty page
+    from lerni.student.web.main import visible_tabs
+
+    assert visible_tabs(Role.EDUCATOR) == ("guide", "sessions", "plans", "students")
+    assert visible_tabs(Role.SUPERVISED) == ("learn",)
+    assert visible_tabs(Role.INDEPENDENT) == ("learn", "guide", "account")
