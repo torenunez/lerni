@@ -12,10 +12,12 @@ from typing import Any
 
 import gradio as gr
 
-from lerni.student.conversation import Conversations
+from lerni.student.conversation import ChatModel, Conversations
+from lerni.student.feedback import FeedbackStore
 from lerni.student.interests import MapStore
 from lerni.student.signin import Role, SignIn, Viewer
 from lerni.student.students import StudentStore
+from lerni.student.upload import Uploader
 from lerni.student.web.accounts import account_tab, student_rows, students_tab
 from lerni.student.web.ask import ask_tab, messages
 from lerni.student.web.mapdraw import map_svg, map_words
@@ -51,6 +53,9 @@ def build_main_view(
     maps: MapStore,
     conversations: Conversations | None = None,
     welcome_html: str = "",
+    uploader: Uploader | None = None,
+    feedback: FeedbackStore | None = None,
+    model: ChatModel | None = None,
 ) -> gr.Blocks:
     """Build the page; the tabs each viewer sees are set on load."""
     with gr.Blocks(title="Lerni", analytics_enabled=False) as blocks:
@@ -62,8 +67,10 @@ def build_main_view(
             with gr.Tab("Lerni", id="home", visible=False) as home:
                 gr.HTML(welcome_html)
             ask, chat, voice = ask_tab(signin, conversations)
-            mymap, _, picture, words, entry = map_tab(signin, students, maps, mine=True)
-            maps_tab, who, _, _, _ = map_tab(signin, students, maps, mine=False)
+            mymap, _, picture, words, entry = map_tab(signin, students, maps, mine=True,
+                                                      uploader=uploader)
+            maps_tab, who, _, _, _ = map_tab(signin, students, maps, mine=False,
+                                             uploader=uploader, feedback=feedback, model=model)
             students_tab_, students_table = students_tab(signin, students)
             account = account_tab(signin, students)
 

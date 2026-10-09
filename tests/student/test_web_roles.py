@@ -138,3 +138,32 @@ def test_a_redraw_keeps_the_entry_being_renamed():
     goal = add_goal(m, "Fractions")
     assert entry_update(m, goal.id)["value"] == goal.id
     assert entry_update(m, "gone")["value"] is None
+
+
+def test_upload_and_feedback_check_who_is_asking(tmp_path):
+    from lerni.student.feedback import FeedbackStore
+    from lerni.student.interests import MapStore
+    from lerni.student.web.maps import add_proposals, propose_for, save_feedback
+
+    class Uploader:
+        def propose(self, system, source):
+            return {"entries": [{"kind": "goal", "name": "Fractions"},
+                                {"kind": "interest", "name": "sharks"}]}
+
+    students, maps = StudentStore(tmp_path), MapStore(tmp_path)
+    students.add("lee", "Lee", Kind.SUPERVISED, "1234")
+    students.add("zoe", "Zoe", Kind.INDEPENDENT, "long enough")
+    upload = tmp_path / "notes.txt"
+    upload.write_text("Lee loves sharks; practice fractions")
+    proposals, _, message = propose_for(Uploader(), maps, students, SAM, "lee", "", str(upload))
+    assert message.startswith("⚠️") and proposals == []
+    assert not upload.exists()  # deleted even when refused
+    proposals, _, _ = propose_for(Uploader(), maps, students, EDUCATOR, "lee", "notes", None)
+    assert add_proposals(maps, students, EDUCATOR, "lee", proposals,
+                         [proposals[0].label]).startswith("✅")
+    assert [e.name for e in maps.get("lee").entries] == ["Fractions"]  # only what was ticked
+    store = FeedbackStore(tmp_path)
+    assert save_feedback(store, students, SAM, None, "hi", "").startswith("⚠️")
+    assert save_feedback(store, students, EDUCATOR, "zoe", "hi", "").startswith("⚠️")
+    assert save_feedback(store, students, EDUCATOR, "lee", "more soccer", "").startswith("✅")
+    assert [(f.who, f.map) for f in store.entries()] == [("alba", "lee")]

@@ -18,11 +18,13 @@ import gradio as gr  # noqa: E402
 from fastapi import FastAPI, Request  # noqa: E402
 
 from lerni.student.conversation import ChatModel, Conversations  # noqa: E402
+from lerni.student.feedback import FeedbackStore  # noqa: E402
 from lerni.student.interests import MapStore  # noqa: E402
 from lerni.student.logs import ConversationLog  # noqa: E402
 from lerni.student.signin import COOKIE_NAME, SignIn, load_secret  # noqa: E402
 from lerni.student.students import StudentStore, default_data_dir  # noqa: E402
 from lerni.student.tagging import MapKeeper, Tagger  # noqa: E402
+from lerni.student.upload import Uploader  # noqa: E402
 from lerni.student.web.main import build_main_view  # noqa: E402
 from lerni.student.web.signin_page import APP_PATH, add_signin_routes  # noqa: E402
 
@@ -119,6 +121,7 @@ def build_app(
     data_root: Path | None = None,
     chat_model: ChatModel | None = None,
     tagger: Tagger | None = None,
+    uploader: Uploader | None = None,
 ) -> FastAPI:
     """Build the server: the sign-in page and the app at ``/app/``.
 
@@ -128,6 +131,7 @@ def build_app(
         chat_model: Claude behind an adapter for Ask Lerni; ``None`` turns it off.
         tagger: Claude behind an adapter for the map; ``None`` leaves maps unchanged
             (exchanges are still logged).
+        uploader: Claude behind an adapter for Upload; ``None`` turns it off.
     """
     root = data_root or default_data_dir()
     students = StudentStore(root)
@@ -148,7 +152,10 @@ def build_app(
         Conversations(chat_model, context=keeper.context, on_exchange=keeper.after)
         if chat_model else None
     )
-    view = build_main_view(signin, students, maps, conversations, welcome_html=_WELCOME_HTML)
+    view = build_main_view(
+        signin, students, maps, conversations, welcome_html=_WELCOME_HTML,
+        uploader=uploader, feedback=FeedbackStore(root), model=chat_model,
+    )
     return gr.mount_gradio_app(
         app,
         view,
