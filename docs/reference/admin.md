@@ -60,19 +60,24 @@ Grades mean blackout (0), recognition after seeing the answer (1), apparent ease
 
 ## Running the student app
 
-`lerni serve` runs the student app on the home server (Release 1 steps 1–4: a waiting screen for the student, and the educator view with the Guide, plans, activity cards, and the Claude import).
+`lerni serve` runs the student app on the home server (Release 1 steps 1–5: sign-in, the educator's Guide, Students, Sessions, and Learning plans tabs with the Claude import, and the student's waiting screen).
 
 ```bash
 pip install -e ".[student]"                # once: installs Gradio
-export LERNI_EDUCATOR_PASSCODE='...'        # the educator's passcode; never put it in a file
 lerni serve                                 # binds 0.0.0.0:7860
 ```
 
-Until step 5 lands (then everyone signs in at `/`):
+- Every device opens `http://<home-server>:7860/` and signs in at `/signin`; the app itself is at `/app/`.
+- **First start:** add the first educator on the home server, then that educator adds everyone else in the **Students** tab:
 
-- The iPad opens `http://<home-server>:7860/` (the student screen, no login).
-- The educator opens `http://<home-server>:7860/educator/` and signs in with the username `educator` and the passcode.
-- `lerni serve` refuses to start if the passcode variable is unset or empty. `--port` and `--passcode-env` change the defaults; `--host 127.0.0.1` keeps it on this computer only.
+  ```bash
+  lerni student add USERNAME --name NAME --kind independent --educator   # asks for the password
+  ```
+
+  `lerni student list`, `lerni student reset-password USERNAME`, and `lerni student educator USERNAME [--off]` cover recovery.
+- A supervised student's iPad is signed in only as that student. Try the app as yourself on your own device or in a private tab.
+- Sign-in data lives in `~/.lerni/student/` (or `$LERNI_STUDENT_DATA`): `students/` (accounts, password hashes only) and `secret.key` (signs the sign-in cookie; keep it private). Deleting `secret.key` signs everyone out.
+- `--port` changes the default port; `--host 127.0.0.1` keeps it on this computer only.
 - If you start it over SSH, allow the virtual environment's Python through the macOS firewall first (nobody sees the prompt), and run it inside `tmux` so it keeps running after you disconnect.
 - It never touches the admin tool's database.
 - **Plan import with Claude** turns on when the `claude` CLI is installed and logged in on this computer; it uses that Claude account, so there's no API key. `LERNI_CLAUDE_MODEL` picks the model (default `claude-sonnet-5-5`). Startup prints whether it's on.

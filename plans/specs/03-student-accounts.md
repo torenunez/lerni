@@ -1,6 +1,6 @@
 # Supervised and independent students, with sign-in
 
-Design for the rest of Release 1. Approved 2026-10-09, then revised the same day after two outside reviews of PR #7. The PRDs carry these decisions (a PRD wins where they disagree); the [MVP plan](../release-1-mvp.md) carries the steps.
+Design for the rest of Release 1. Approved 2026-10-09, then revised the same day after two outside reviews of PR #7, and again when step 5 was tried: the educator became a permission on a person's account, and the passcode went away. The PRDs carry these decisions (a PRD wins where they disagree); the [MVP plan](../release-1-mvp.md) carries the steps.
 
 ## Why
 
@@ -29,8 +29,8 @@ One person can hold several roles: the admin and the educator can each have an i
 
 | Who | Can | Can't |
 |---|---|---|
-| Admin | Everything the educator can, plus run the server and read every file on it. Creates their own independent account by signing in as `educator`. | Write an approval for anyone else (rule 5) |
-| `educator` sign-in | Manage every account (add, reset password, archive); plan the library; approve library cards; run supervised students' sessions | See an independent student's plans or sessions in any screen |
+| Admin | Everything an educator can, plus run the server, read every file on it, and add or recover accounts from the terminal (`lerni student`), including the first educator | Write an approval for anyone else (rule 5) |
+| Educator (an independent account with educator access) | Everything an independent student can, plus manage every account (add, reset password, archive); plan the library; approve library cards; run supervised students' sessions | See another independent student's plans or sessions in any screen |
 | Independent student | Plan, import, approve, and play their own plans; change their own name, password, and Explore freely | See or touch anyone else's plans, sessions, or account; use Students or Sessions |
 | Supervised student | Play the library's educator-approved cards when the educator starts them | Plan, approve, change settings, or see anyone else's sessions |
 
@@ -62,9 +62,9 @@ Now that everyone signs in, the two-app split (a student screen with no login be
 |---|---|
 | Supervised student | Learn |
 | Independent student | Guide · Learn · Learning plans · My account |
-| Educator | Guide · Students · Sessions · Learning plans |
+| Educator (an independent student with educator access) | Learn · Guide · Sessions · Learning plans · Students · My account |
 
-An independent student gets the educator's planning tabs applied to themselves, plus Learn, and switches tabs to move between learning and planning. They don't get **Sessions** (it controls a supervised student's session from another device) or **Students** (a reset would let one independent student sign in as another). The educator, to learn for themselves, signs out and back in with their own independent account.
+An independent student gets the educator's planning tabs applied to themselves, plus Learn, and switches tabs to move between learning and planning. They don't get **Sessions** (it controls a supervised student's session from another device) or **Students** (a reset would let one independent student sign in as another). An educator is a person with an independent account plus educator access, so one sign-in gives them both their own learning and the family's planning; they open on the Guide.
 
 ### Sign-in: our own page, checked on every request
 
@@ -72,7 +72,7 @@ Gradio's built-in login is checked only once, at sign-in; afterward Gradio trust
 
 - **The page:** `/signin` serves a plain HTML form (`name="username" autocomplete="username"`, `name="password" autocomplete="current-password"`) that posts normally (not by script). That is what Safari and Keychain look for. Step 5 confirms saving and autofill on the real iPad.
 - **The cookie:** a correct sign-in sets `lerni_session` = username, issue date, and the account's `session_version`, signed with HMAC-SHA256 (`hmac`, standard library) using a server secret kept in `~/.lerni/student/secret.key` (created on first start, readable only by the server's user). `HttpOnly`, `SameSite=Lax`, a 30-day lifetime, so a reload or a Safari restart keeps you signed in. Not `Secure` until HTTPS (Release 3).
-- **Every request:** `auth_dependency(request)` verifies the signature, re-reads the account record, and returns the username only if the account exists, isn't archived, and its `session_version` still matches. Otherwise the request gets nothing and the browser goes back to `/signin`. So **archive and password reset apply at once on every device**: both bump `session_version`. The educator's version is derived from the passcode, so changing the passcode signs the educator out everywhere.
+- **Every request:** `auth_dependency(request)` verifies the signature, re-reads the account record, and returns the username only if the account exists, isn't archived, and its `session_version` still matches. Otherwise the request gets nothing and the browser goes back to `/signin`. So **archive and password reset apply at once on every device**: both bump `session_version`.
 - **Routes:** Gradio is mounted at `/app/`; `/` sends you to `/app/` if signed in, else to `/signin`. Step 5 confirms how Gradio answers an unauthenticated request under `auth_dependency`.
 - **Sign out** clears this device's cookie only. A server restart doesn't sign anyone out (the secret is on disk).
 - **Who's signed in:** every handler takes `request: gr.Request`, resolves `request.username` to the account record (never to anything the page sends), and scopes what it reads and writes. **Any plan, activity, or student id from the page is checked against the signed-in user before use.** Hiding a tab or component is only for looks. `api_visibility="private"` hides events from the API page but doesn't block a direct request; the handler check is the control.
@@ -82,12 +82,13 @@ Gradio's built-in login is checked only once, at sign-in; afterward Gradio trust
 ### Accounts and passwords
 
 - **Usernames** match `^[a-z][a-z0-9-]{1,30}$`. Sign-in and creation refuse anything not already in that form (never lowercase-and-accept). Reserved: `educator`, `admin`. Usernames are never reused: an archived account keeps its file with `archived: true`.
-- **Passwords:** at least 8 characters for independent accounts, 4 for supervised ones; the educator passcode must be at least 8, checked when the server starts. Stored as `hashlib.scrypt` (n=2^15, r=8, p=3, a 16-byte salt from `os.urandom`, `maxmem` raised to fit), checked with `hmac.compare_digest`.
+- **Passwords:** at least 8 characters for independent accounts (educators included), 4 for supervised ones. Stored as `hashlib.scrypt` (n=2^15, r=8, p=3, a 16-byte salt from `os.urandom`, `maxmem` raised to fit), checked with `hmac.compare_digest`.
 - **Changing a password** in My account needs the current password. The educator's reset doesn't.
 - **Wrong passwords:** after 3 wrong passwords for a username, each further attempt waits longer before it's checked (1, 2, 4, … up to 30 seconds), and the right password resets it. Attempts during a wait don't extend it. It's held in memory, for known usernames and `educator` only (unknown names just get a fixed delay), and never touches sessions already signed in, so the educator's Stop keeps working.
-- **First start:** only `educator` can sign in, and adds the first accounts, including the admin's own independent account.
+- **Educator access** is a flag on an independent account (`educator: true`), set by an educator in Students or by the admin with `lerni student educator`. Supervised accounts can't have it. Changing it bumps `session_version`.
+- **First start:** there are no accounts, so nobody can sign in; the sign-in page says so. The admin runs `lerni student add USERNAME --name NAME --kind independent --educator` on the home server (password at a hidden prompt), and that educator adds everyone else in the app. `lerni student reset-password` is the recovery path.
 
-The `/educator/` route goes away. The educator passcode and its environment variable stay.
+The `/educator/` route and the educator passcode (`LERNI_EDUCATOR_PASSCODE`) go away; `lerni serve` needs no secret typed at start.
 
 ## Data
 
@@ -102,6 +103,7 @@ Everything lives on the home server under `~/.lerni/student/` (or `$LERNI_STUDEN
 | `kind` | `supervised` or `independent` |
 | `password` | `{salt, hash, n, r, p}` for scrypt; never the password |
 | `session_version` | A number bumped by reset and archive; signs out every device |
+| `educator` | Independent only: may manage accounts and the library |
 | `explore_freely` | Independent only: `null`, or the date the student turned it on; set only by that student |
 | `archived` | Archived accounts can't sign in, and their username stays taken |
 

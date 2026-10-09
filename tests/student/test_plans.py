@@ -63,3 +63,11 @@ def test_examples_seed_once_and_only_into_an_empty_store(store):
 # --- educator view handlers (no browser needed) ---
 
 gradio = pytest.importorskip("gradio")
+
+
+def test_a_leftover_temp_file_does_not_break_the_plan_list(tmp_path):
+    # regression: glob("*.json") matched write_json_atomic's .tmp-*.json files
+    store = PlanStore(tmp_path)
+    store.seed_if_empty()
+    (store.root / ".tmp-abc.json").write_text("{")
+    assert len(store.list_plans()) == 2

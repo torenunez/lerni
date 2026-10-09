@@ -23,6 +23,25 @@ resolve_tool() {
     fi
 }
 
+# Check 0: private words — names, hostnames, and the like listed one per line in
+# the gitignored .private-words file. Any added line containing one blocks the
+# commit, staged or not (so `git commit -a` is covered too). Secret files never go in.
+PRIVATE="$CWD/.private-words"
+if [ -f "$PRIVATE" ]; then
+    ADDED=$(cd "$CWD" && { git diff --cached -U0; git diff -U0; } 2>/dev/null | grep -E '^\+' | grep -vE '^\+\+\+ ')
+    while IFS= read -r word; do
+        word="${word%%#*}"; word="${word//[[:space:]]/}"
+        [ -z "$word" ] && continue
+        if grep -qiF -- "$word" <<<"$ADDED"; then
+            ERRORS="${ERRORS}a change adds a private word from .private-words (not shown here). "
+            break
+        fi
+    done < "$PRIVATE"
+fi
+if (cd "$CWD" && { git diff --cached --name-only; git diff --name-only; } 2>/dev/null | grep -qE '(^|/)secret\.key$'); then
+    ERRORS="${ERRORS}secret.key must never be committed. "
+fi
+
 # Check 1: ruff — only when Python files are staged; fail closed if missing.
 HAS_STAGED_PY=0
 if (cd "$CWD" && git diff --cached --name-only --diff-filter=ACMR -- '*.py' 2>/dev/null | grep -q .); then

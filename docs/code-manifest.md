@@ -8,15 +8,18 @@ What every code file does, in the order a request flows through it. When you add
 
 | File | What it does |
 |---|---|
-| `src/lerni/commands/serve.py` | The `lerni serve` command: reads its options and starts the student app, with a friendly message if Gradio isn't installed. |
-| `src/lerni/student/web/serve.py` | Reads the educator passcode from its environment variable, picks the Claude drafter if the `claude` CLI is installed, builds the app, and runs the web server. |
-| `src/lerni/student/web/app.py` | Builds the server: the student screen at `/` (no login) and the educator view at `/educator/` behind the passcode. Turns off Gradio's analytics, run history, API pages, and other extras, and sets the look (system fonts, the playful waiting screen). |
+| `src/lerni/commands/serve.py` | The `lerni serve` command: starts the student app, with a friendly message if Gradio isn't installed. |
+| `src/lerni/student/web/serve.py` | Picks the Claude drafter if the `claude` CLI is installed, builds the app, says how to add the first educator if there's none, and runs the web server (Ctrl-C stops it within 3 seconds). |
+| `src/lerni/student/web/app.py` | Builds the server: the sign-in page, and one Gradio app at `/app/` that Gradio's `auth_dependency` re-checks on every request. Turns off Gradio's analytics, run history, API pages, and other extras, and sets the look (system fonts, the playful waiting screen). |
+| `src/lerni/student/web/signin_page.py` | The sign-in page: a plain HTML form Safari can save, the signed cookie, Sign out (this device only), and sending signed-out visits to it. |
+| `src/lerni/student/web/main.py` | The one app's page: "Signed in as" with Sign out, then tabs shown by role on load. Nothing per-user or from the data is built into the layout. |
 
 **The screens** (the only code that imports Gradio)
 
 | File | What it does |
 |---|---|
-| `src/lerni/student/web/educator.py` | The educator view's tabs: Guide, Sessions, and Learning plans (plan table, activity-card form, and the Claude import). Its handlers are plain functions so they can be tested without a browser. |
+| `src/lerni/student/web/educator.py` | The educator's Guide, Sessions, and Learning plans tabs (plan table, activity-card form, Claude import). Handlers are plain functions; each Gradio handler re-checks on the server that the viewer is the educator. |
+| `src/lerni/student/web/accounts.py` | The Students tab (add, reset password, archive) and an independent student's My account (name, and password with the current one); handlers take the server-resolved viewer and refuse other roles. |
 | `src/lerni/student/web/guide.md` | The educator's instructions, shown in the Guide tab. Not code, but shipped with it. |
 | `src/lerni/student/web/__init__.py` | Marks the screens package; says it's the only place Gradio is imported. |
 
@@ -25,6 +28,9 @@ What every code file does, in the order a request flows through it. When you add
 | File | What it does |
 |---|---|
 | `src/lerni/student/plans.py` | Learning plans: the data types (plan, activity, activity card), validation, and `PlanStore`, which saves one JSON file per plan on the home server. |
+| `src/lerni/student/students.py` | Student accounts: usernames, kinds, scrypt password hashes, and `StudentStore` (one JSON file per student; archived in place, never reused). |
+| `src/lerni/student/signin.py` | Signing in: checks passwords (with growing waits after wrong ones), issues a signed cookie, and re-reads the account on every request, so archive and reset sign out every device. |
+| `src/lerni/student/jsonfiles.py` | Writes a JSON file atomically; shared by the plan and student stores. |
 | `src/lerni/student/plan_import.py` | Turns rough notes into a proposed plan: reads pasted text and uploads, defines what Claude must return (the schema and instructions), and validates Claude's answer. |
 | `src/lerni/student/catalog.py` | Loads activity files and refuses anything unapproved or altered (hash checks). Lists approved activities and drafts, and loads drafts for educator-only preview. |
 | `src/lerni/student/engine.py` | Runs one activity step by step: given the activity, its state, and a tap, returns the next state and what the screen may show (never the answer key). |
@@ -59,6 +65,7 @@ What every code file does, in the order a request flows through it. When you add
 | `src/lerni/commands/question.py` | Create, edit, show, and delete study questions and their explanation history. |
 | `src/lerni/commands/review.py` | The daily review: explain from memory, grade yourself, schedule the next review. |
 | `src/lerni/commands/organize.py` | List, search, and tag questions; manage the admin's own concept tree. |
+| `src/lerni/commands/student.py` | `lerni student add`, `reset-password`, `educator`, and `list`: the admin's way to add the first educator account and to recover; passwords at a hidden prompt. |
 | `src/lerni/commands/notify.py` | macOS reminders for reviews that are due. |
 | `src/lerni/commands/__init__.py` | Marks the commands package. |
 | `src/lerni/db.py` | The admin tool's SQLite database in `~/.lerni/lerni.db`: tables and queries. |
@@ -86,8 +93,13 @@ Minimal on purpose: one happy path per module, plus a test for each safety guara
 | `tests/student/test_domain.py` | The snapshot type has no field for the answer key. |
 | `tests/student/test_canonical.py` | The same content always gives the same bytes. |
 | `tests/student/test_plans.py` | Plans save and load; examples seed once; plan ids can't escape the plans folder. |
+| `tests/student/test_students.py` | An account saves and checks its password; bad, reserved, and archived usernames are refused. |
+| `tests/student/test_signin.py` | A cookie stops working after a reset; wrong passwords wait without signing anyone out. |
 | `tests/student/test_plan_import.py` | Rough notes become an unsaved plan; nothing is sent to Claude without consent. |
-| `tests/student/test_web_skeleton.py` | The student screen is open; the educator view refuses requests without the passcode and opens with it. |
+| `tests/student/test_web_signin.py` | Signed-out visits go to the sign-in form; a right password opens the app; Sign out ends it; a first start says how to add the first account. |
+| `tests/student/test_cli_student.py` | The admin adds the first educator account from the terminal. |
+| `tests/student/test_serve.py` | Ctrl-C stops the server within a few seconds, even with pages open. |
+| `tests/student/test_web_roles.py` | Students can't manage accounts; the page config carries no plans or other students' names. |
 | `tests/student/test_core_imports.py` | The core imports only the standard library (never Gradio or a provider SDK). |
 | `tests/student/test_distribution.py` | The built package ships the activity files byte for byte (slow; needs `build`). |
 | `tests/student/conftest.py` | Shared test data: a synthetic activity, and a temporary data folder for every test. |
