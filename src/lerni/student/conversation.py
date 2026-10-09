@@ -137,8 +137,9 @@ class Conversations:
             # Lerni's last message, so the tagger can tell a reply from a change of subject
             previous = next((t.text for t in reversed(earlier) if t.role == "assistant"), "")
         answer: list[str] = []
-        system = system_prompt(self.context(username), voice)
         try:
+            # inside the try: a broken map must still free them below
+            system = system_prompt(self.context(username), voice)
             # pass each piece on as it arrives, and keep it for the history
             for piece in self.model.stream(system, turns):
                 answer.append(piece)

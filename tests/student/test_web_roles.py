@@ -127,3 +127,14 @@ def test_cleared_fields_get_their_own_update():
 
     first, second = cleared(2, done=True)
     assert first is not second and first["value"] == second["value"] == ""
+
+
+def test_a_redraw_keeps_the_entry_being_renamed():
+    # regression: Maps' 30-second redraw reset the Rename/Remove pick, so Rename failed
+    from lerni.student.interests import InterestMap, add_goal
+    from lerni.student.web.maps import entry_update
+
+    m = InterestMap()
+    goal = add_goal(m, "Fractions")
+    assert entry_update(m, goal.id)["value"] == goal.id
+    assert entry_update(m, "gone")["value"] is None

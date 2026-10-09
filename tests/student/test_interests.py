@@ -82,3 +82,18 @@ def test_the_prompt_block_is_information_and_short():
         add_goal(m, f"Goal number {i}", "x" * 190)
     assert len(map_block(m, TODAY)) <= 1500
     assert map_block(InterestMap(), TODAY) == ""
+
+def test_names_must_be_whole_words_the_student_said_and_bounces_hit_the_latest_bridge():
+    m = InterestMap()
+    # regression: "ant" matched inside "want", "car" inside "scary"
+    apply_tags(m, parse_tags({"new_interests": ["ant", "car"]}), "I want to go, it was scary",
+               TODAY)
+    assert m.entries == []
+    # regression: with two bridges on one day, the bounce landed on the first one's goal
+    for name in ("cars", "pizza"):
+        m.entries.append(m.new_entry(name, "interest"))
+    fractions, maps_goal = add_goal(m, "Fractions"), add_goal(m, "Maps")
+    apply_tags(m, parse_tags({"bridge": {"interest": "cars", "goal": "Fractions"}}), "x", TODAY)
+    apply_tags(m, parse_tags({"bridge": {"interest": "pizza", "goal": "Maps"}}), "x", TODAY)
+    apply_tags(m, parse_tags({"changed_subject": True}), "dinosaurs!", TODAY)
+    assert maps_goal.bounces == ["2026-10-10"] and fractions.bounces == []

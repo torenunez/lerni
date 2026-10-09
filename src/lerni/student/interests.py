@@ -291,11 +291,14 @@ def _seen(entry: Entry, day: str) -> None:
 
 
 def _link(m: InterestMap, a: str, b: str, kind: Literal["related", "bridge"], day: str) -> None:
-    for k in m.links:
-        if k.kind == kind and {k.a, k.b} == {a, b}:
-            k.day = day  # already there: just note it came up again
-            return
+    # the list is in order of recency: an existing link moves to the end
+    m.links = [k for k in m.links if not (k.kind == kind and {k.a, k.b} == {a, b})]
     m.links.append(Link(a, b, kind, day))
+
+
+def _said(name: str, text: str) -> bool:
+    """Whether ``name`` appears in ``text`` as whole words ("ant" isn't in "want")."""
+    return re.search(rf"(?<!\w){re.escape(name.casefold())}(?!\w)", text) is not None
 
 
 def apply_tags(m: InterestMap, tags: Tags, student_text: str, today: date) -> None:
@@ -306,7 +309,7 @@ def apply_tags(m: InterestMap, tags: Tags, student_text: str, today: date) -> No
     """
     if tags.skip:
         return  # excluded, personal, or scary: nothing is recorded
-    day, said = today.isoformat(), student_text.casefold()
+    day, said = today.isoformat(), " ".join(student_text.casefold().split())
     touched: dict[str, Entry] = {}
     for name in tags.about:
         if (e := m.find(name)) is not None:
@@ -318,7 +321,7 @@ def apply_tags(m: InterestMap, tags: Tags, student_text: str, today: date) -> No
             continue
         if (e := m.find(name)) is not None:
             touched[e.id] = e  # already on the map (an interest or a goal): it counts there
-        elif not m.is_removed(name) and name.casefold() in said and make_room(m):
+        elif not m.is_removed(name) and _said(name, said) and make_room(m):
             e = m.new_entry(name, "interest")
             m.entries.append(e)
             touched[e.id] = e
@@ -337,8 +340,8 @@ def apply_tags(m: InterestMap, tags: Tags, student_text: str, today: date) -> No
             g.explained.append(day)
     if tags.changed_subject:
         bridges = [k for k in m.links if k.kind == "bridge"]
-        if bridges:  # the bounce is from the most recent bridge's goal
-            g = m.get(max(bridges, key=lambda k: k.day).b)
+        if bridges:  # the bounce is from the most recent bridge's goal (links are in order)
+            g = m.get(bridges[-1].b)
             if day not in g.bounces:
                 g.bounces.append(day)
 
@@ -378,7 +381,7 @@ def map_block(m: InterestMap, today: date) -> str:
     if revisit:
         lines.append("Explained a while ago; ask a light question first: "
                      + ", ".join(g.name for g in revisit))
-    recent = sorted(bridges, key=lambda k: k.day)[-3:]
+    recent = bridges[-3:]  # links are in order of recency
     if recent:
         lines.append("Recent bridges: " + "; ".join(f"{names[k.a]} → {names[k.b]}" for k in recent))
     return "" if len(lines) == 1 else "\n".join(lines)[:MAX_BLOCK]

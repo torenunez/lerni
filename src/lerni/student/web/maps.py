@@ -57,6 +57,13 @@ def entry_choices(m: InterestMap) -> list[tuple[str, str]]:
     return [(f"{e.name} ({e.kind})", e.id) for e in m.entries]
 
 
+def entry_update(m: InterestMap, current: str | None) -> Any:
+    """The Entry dropdown after a redraw, keeping the pick if it's still on the map."""
+    choices = entry_choices(m)
+    keep = current if current in {entry_id for _, entry_id in choices} else None
+    return gr.update(choices=choices, value=keep)
+
+
 def _act(maps: MapStore, students: StudentStore, viewer: Viewer | None, requested: str | None,
          change: Any, done: str) -> str:
     try:
@@ -115,30 +122,31 @@ def map_tab(
             # My map asks for nobody else; Maps with no pick asks for "" (refused, never your own)
             return None if mine else (value or "")
 
-        def show(requested: str | None, request: gr.Request) -> list[Any]:
+        def show(
+            requested: str | None, current: str | None, request: gr.Request
+        ) -> list[Any]:
             viewer = signin.viewer(request.username)  # re-read on every request
             try:
                 owner = map_owner(students, viewer, requested_of(requested))
             except NotAllowed:
                 return ["", "", gr.update(choices=[], value=None)]
             m = maps.get(owner)
-            return [map_svg(m, date.today()), map_words(m, date.today()),
-                    gr.update(choices=entry_choices(m), value=None)]
+            return [map_svg(m, date.today()), map_words(m, date.today()), entry_update(m, current)]
 
         def on_add(n: str, t: str, requested: str | None, request: gr.Request) -> list[Any]:
             viewer = signin.viewer(request.username)
             message = add_goal_to(maps, students, viewer, requested_of(requested), n, t)
-            return [message, *cleared(2, message.startswith("✅")), *show(requested, request)]
+            return [message, *cleared(2, message.startswith("✅")), *show(requested, None, request)]
 
         def on_rename(e: str, n: str, requested: str | None, request: gr.Request) -> list[Any]:
             viewer = signin.viewer(request.username)
             message = rename_on(maps, students, viewer, requested_of(requested), e, n)
-            return [message, *cleared(1, message.startswith("✅")), *show(requested, request)]
+            return [message, *cleared(1, message.startswith("✅")), *show(requested, None, request)]
 
         def on_remove(e: str, requested: str | None, request: gr.Request) -> list[Any]:
             viewer = signin.viewer(request.username)
             message = remove_from(maps, students, viewer, requested_of(requested), e)
-            return [message, *show(requested, request)]
+            return [message, *show(requested, None, request)]
 
         shown = [picture, words, entry]  # order matches show()
         # Gradio needs a component for "which student"; My map passes a hidden empty one
@@ -147,8 +155,9 @@ def map_tab(
         rename_btn.click(on_rename, [entry, new_name, target], [status, new_name, *shown],
                          **PRIVATE)
         remove_btn.click(on_remove, [entry, target], [status, *shown], **PRIVATE)
-        tab.select(show, target, shown, **PRIVATE)  # redraw on opening: it grows as they talk
+        tab.select(show, [target, entry], shown, **PRIVATE)  # redraw on opening
         if who is not None:
-            who.change(show, who, shown, **PRIVATE)
-            gr.Timer(REFRESH_SECONDS).tick(show, who, shown, **PRIVATE)
+            who.change(show, [who, entry], shown, **PRIVATE)
+            # the redraw keeps the Rename/Remove pick
+            gr.Timer(REFRESH_SECONDS).tick(show, [who, entry], shown, **PRIVATE)
     return tab, who, picture, words, entry

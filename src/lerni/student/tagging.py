@@ -80,7 +80,7 @@ def tagger_input(m: InterestMap, previous: str, question: str, answer: str) -> s
     parts = ["Map entries:", *(entries or ["(none yet)"]), ""]
     bridges = [k for k in m.links if k.kind == "bridge"]
     if bridges:  # so a change of subject right after it can be seen
-        last = max(bridges, key=lambda k: k.day)
+        last = bridges[-1]  # links are in order of recency
         parts += [f"Last bridge: {m.get(last.a).name} → {m.get(last.b).name}", ""]
     if previous:
         parts += ["Lerni's previous message:", previous, ""]

@@ -55,3 +55,18 @@ def test_clear_during_a_reply_is_not_undone_when_it_finishes():
     convos.clear("sam")
     list(reply)  # ...and finishes after Clear
     assert convos.history("sam") == []
+
+
+def test_a_broken_map_never_locks_the_student_out():
+    # regression: an error building the prompt left them "still answering" until a restart
+    import pytest
+
+    from lerni.student.conversation import ConversationUnavailable
+
+    def broken(username):
+        raise ValueError("unreadable map")
+
+    convos = Conversations(FakeModel(), context=broken)
+    for _ in range(2):  # the second try must not say "Still answering"
+        with pytest.raises(ConversationUnavailable):
+            list(convos.ask("sam", "hi"))
