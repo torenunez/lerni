@@ -37,14 +37,14 @@ Settings never change on their own, and each takes effect at once.
 
 ## Constraints
 
-- No terminal, no code, and no IDs: educators work in a plain plan sheet, an activity card, and the educator view.
+- The educator uses only the app: everything they need, including instructions and examples, is in the educator view. No git, no files, no code, no IDs.
 - The educator is present for every Release 1 session; from Release 2, for most but not all. They can stop any session at any moment.
 - Before first use, the educator agrees to which outside services receive the student's data, and can withdraw that at any time.
 - No student identity or private observations go into shared curriculum.
 
 ## Release 1: seed, approve, and supervise
 
-Before the app, the educator fills in a plan sheet (one plain row per activity) and an activity card for the first activity ([curation guide](../../curation/README.md)); the admin turns them into the authoring tables and the app's format.
+The educator makes a learning plan and fills in an activity card in the educator view, starting from the example plans and the in-app guide; the admin turns a card into the app's activity format.
 
 ### Story: Approve an activity
 
@@ -135,7 +135,9 @@ Running the admin tool. Editing app code or lesson files directly.
 - 2026-10-08: Drafting and conversation use the admin's Claude account, so keys and billing stay with whoever runs the system.
 - 2026-10-08: The educator reviews drafts in the educator view.
 - 2026-10-08: The starting exclusion list covers violence, weapons, sexual content, self-harm, and drugs.
-- 2026-10-08: The educator writes plans in plain language (a plan sheet and activity cards); the admin converts them into the six authoring tables. The tables were too technical for an educator.
+- 2026-10-08: The educator writes plans in plain language; the six authoring tables were too technical for an educator. (Superseded the same day: planning moved into the educator view.)
+- 2026-10-08: The educator plans only in the educator view, from the start (Release 1, step 3), primed with example plans to edit. CSV authoring, the plan sheet, and the six authoring tables are retired. The admin packages a saved card at first, then it's automated; the educator records approvals in the app (step 6).
+- 2026-10-08: The educator can import a rough plan in any shape; Claude proposes a structured plan, and the educator saves or discards it. Each import asks the educator to confirm the notes go to Claude (Anthropic) and contain no names or personal details.
 - 2026-10-08: The educator view runs on the educator's own device (a phone or laptop), separate from the student's iPad, and controls the same session.
 - 2026-10-08: Only the educator logs in, with one passcode the admin sets; the student screen has no login. The educator can preview a draft on their own device before approving it.
 

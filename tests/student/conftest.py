@@ -23,6 +23,12 @@ from lerni.student.domain import (
 )
 
 
+@pytest.fixture(autouse=True)
+def isolated_student_data(tmp_path, monkeypatch):
+    """Point the student app's data folder at a temp dir, so no test writes to ~/.lerni."""
+    monkeypatch.setenv("LERNI_STUDENT_DATA", str(tmp_path / "student-data"))
+
+
 @pytest.fixture
 def valid_source() -> SourceReference:
     return SourceReference(
@@ -242,15 +248,6 @@ label = "Choice B"
 """
 
 
-@pytest.fixture
-def valid_lesson_toml() -> str:
-    """Approved TOML with a placeholder payload hash.
-
-    The placeholder is replaced with the real recomputed hash by
-    :func:`approved_lesson_toml`. A fixed test-only review date is acceptable
-    here because this is a fixture, never production content.
-    """
-    return VALID_LESSON_TOML
 
 
 @pytest.fixture

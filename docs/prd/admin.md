@@ -32,7 +32,6 @@ Commands and behavior: [admin tool reference](../reference/admin.md). Open maint
 ## Later
 
 - Try out a student activity in the terminal exactly as the student app would run it, including draft activities.
-- Run the curation checker and other admin tasks from the same tool.
 - Package a reviewed activity for the student app, recording the approvals real people gave.
 - Tune the mechanics the student app shares, once the shared core is designed.
 - Host the student app outside the home (such as Hugging Face Spaces), if the student needs it away from home.
@@ -49,6 +48,7 @@ Use by educators or students.
 - 2026-10-07: The admin has full access: learn topics, try anything the student would see, and run or tune the system.
 - 2026-10-07: The student app relies on mechanics the admin tunes here, so the two share a core.
 - 2026-10-07: The student app is a Gradio web app used on an iPad rather than as a native app.
+- 2026-10-08: For the prototype, the student app calls Claude through the Claude Code CLI on the home server and the Claude account it's logged into (no API key). Before anyone outside the household uses the app, or it's hosted outside the home, switch to an API-key adapter; Anthropic doesn't allow offering claude.ai login in products for others. Default model: Sonnet 5.5 (`LERNI_CLAUDE_MODEL` overrides it).
 - 2026-10-08: The command `study` was renamed `lerni`; `study` stays as a deprecated alias so existing scripts keep working.
 - 2026-10-08: The student app runs on a home server first: plain HTTP on the home Wi-Fi for Releases 1–2, then HTTPS on the same server for the microphone in Release 3. Hosting outside the home (such as Hugging Face Spaces) waits until it's needed.
 - 2026-10-07: For now, student data may leave the device, under educator supervision.

@@ -1,7 +1,7 @@
 # Explore Safe Slice — Portable Spreadsheet Curation and Early Graph Priming
 
 > **Status (2026-09-25).** New educator authoring uses the separate
-> [`educator-paths-v1`](../../specs/08c-educator-path-authoring.md) contract, which is
+> [`educator-paths-v1`](08c-educator-path-authoring.md) contract, which is
 > implemented as drafting templates and an offline checker. This spec remains the
 > **planned delivery/import format** and is not implemented. Two of its semantics
 > conflict with the newer authoring model and need an explicit adapter/spec revision

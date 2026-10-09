@@ -25,6 +25,10 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+student = [
+    "gradio>=6.30,<7",
+    "claude-agent-sdk>=0.2.165,<0.3",
+]
 dev = [
     "pytest>=8.0.0",
     "pytest-cov>=4.0.0",
@@ -48,6 +52,8 @@ where = ["src"]
   "*.toml",
   "assets/*.svg",
 ]
+"lerni.student.seed" = ["*.json"]
+"lerni.student.web" = ["*.md"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

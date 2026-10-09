@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "plan_id": "example-cars",
+  "interest": "Cars",
+  "goal": "Tell apart route distance, elapsed time, average speed, and change in speed.",
+  "is_example": true,
+  "updated_on": "2026-10-08",
+  "activities": [
+    {
+      "start_from": "Cars",
+      "idea": "Distance traveled",
+      "why": "Following a toy car makes route length concrete.",
+      "big_question": "Which toy-car route is longer?",
+      "card": null
+    },
+    {
+      "start_from": "Distance traveled",
+      "idea": "Elapsed time",
+      "why": "A journey also has a beginning and an end in time.",
+      "big_question": "Could the same road take different amounts of time?",
+      "card": null
+    },
+    {
+      "start_from": "Elapsed time",
+      "idea": "Average speed",
+      "why": "Combining distance with time makes a journey comparison useful.",
+      "big_question": "What does less time for the same road tell us?",
+      "card": null
+    },
+    {
+      "start_from": "Average speed",
+      "idea": "Average acceleration",
+      "why": "Speed invites a new question about changes in velocity.",
+      "big_question": "Could two cars reach the same speed in different times?",
+      "card": {
+        "explanation": [
+          "A car card might say 0–60 in 4 seconds. The 4 seconds are elapsed time: how long the speed change took.",
+          "Acceleration means how quickly velocity changes. If two cars make the same 0–60 change, the car with the shorter time has greater average acceleration."
+        ],
+        "question": "Car A goes from 0 to 60 in 4 seconds. Car B takes 8 seconds. Which car has greater average acceleration?",
+        "choices": [
+          "Car A — 4 seconds",
+          "Car B — 8 seconds",
+          "They have the same average acceleration"
+        ],
+        "answer": "Car A — 4 seconds",
+        "hints": [
+          "Both cars make the same speed change: 0 to 60 miles per hour.",
+          "The same change in less time means greater average acceleration."
+        ],
+        "right_text": "Yes. Car A makes the same speed change in less time, so its average acceleration is greater.",
+        "hints_run_out_text": "It is Car A. Both cars go from 0 to 60, but Car A does it in less time.",
+        "picture_idea": "Two cars side by side, each with its 0–60 time.",
+        "picture_description": "Two hypothetical cars both go from 0 to 60 miles per hour. Car A takes 4 seconds and Car B takes 8 seconds.",
+        "how_youll_know": "They can say why Car A wins (same change, less time), not just tap it.",
+        "sources": "NASA Glenn Research Center, Displacement, Velocity, Acceleration: https://www.grc.nasa.gov/WWW/K-12/airplane/disvelac.html",
+        "avoid": "0–60 shows an average; don't say the car speeds up evenly the whole time."
+      }
+    }
+  ]
+}

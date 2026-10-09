@@ -19,7 +19,7 @@ The student app treats knowledge as a map: **nodes** are ideas, and **edges** li
 6. [Roadmap](docs/roadmap.md): what comes next and who owns it.
 7. [Progress](docs/progress.md): where things stand, and a dated log of what was done.
 
-Educators can then open the [curation guide](curation/README.md) to prepare a path. Admins can use the [implementation index](plans/README.md) to find detailed specifications and tasks. The [admin tool reference](docs/reference/admin.md) covers its commands and behavior.
+Educators don't need this repository: everything for them, including a guide and example plans, is in the educator view of the app. Admins can use the [implementation index](plans/README.md) to find detailed specifications and tasks. The [admin tool reference](docs/reference/admin.md) covers its commands and behavior.
 
 The educator and admin can start now, in parallel. The first thing the student tries is the MVP app (Release 1); it needs an approved activity, prepared as described in the [educator PRD](docs/prd/educator.md#release-1-seed-approve-and-supervise).
 

@@ -6,13 +6,36 @@ Record each kind of "done" only when it actually happens, with the date: code bu
 
 ## Current state (2026-10-08)
 
-- **Built:** the student app's core (activity format, catalog, engine), the admin tool (`lerni`, with `study` as a deprecated alias), the educator's plan sheet and activity card (with a cars example), the admin's authoring tables, six draft example paths, and the checker. Tests: 197 passed, 2 expected failures.
-- **Not yet:** the student app's screens; any approved activity (the car activity is a draft with no approvals); any student session. The educator hasn't tried the plan sheet or card yet.
-- **Open:** the example paths have no sources for many records yet; the checker reports 51 warnings and 0 errors.
+- **Built:** the student app's core (activity format, catalog with approved listing and draft preview, engine); `lerni serve` with the student screen and the passcode-protected educator view (Guide, Sessions, and Learning plans with activity cards, primed with cars and sharks examples, and plan import with Claude); the admin tool (`lerni`, with `study` as a deprecated alias); a [code manifest](code-manifest.md) of every code and test file. Tests: 29 passed, 2 expected failures (trimmed to a minimal suite).
+- **Not yet:** a real Claude import (only tested with a fake); the session controller and activity screens; approvals in the app; any approved activity (the car activity is a draft with no approvals); any student session. The educator hasn't tried planning in the app yet.
+- **Open:** the sharks example plan has no activity cards or sources yet.
 
 When something changes, update this section and add a log entry below.
 
 ## Log
+
+### 2026-10-08 (Code manifest; minimal test suite)
+
+- `docs/code-manifest.md` describes every code and test file; a test fails if one is missing. Short inline comments added across the student-app code.
+- The test suite was cut from 194 to 29 tests (plus 2 expected failures): one happy path per module and a test for each safety guarantee. New tests come with bug fixes. The unused admin fixtures in `tests/conftest.py` were removed.
+
+### 2026-10-08 (Release 1 step 4: import a rough plan with Claude)
+
+- The educator pastes or uploads rough notes (.txt, .md, .docx, .pdf); Claude proposes a structured plan; the educator saves or discards it. A consent box is required for every import; uploads are deleted after reading.
+- Prototype call path: the Claude Agent SDK through the Claude Code CLI on the home server (the logged-in Claude account, no API key), with no tools, no settings or CLAUDE.md, an empty working folder, and read access to an uploaded PDF only.
+- Tests (fakes, no network): an import becomes an unsaved plan, and nothing is sent without consent. 191 passed, 2 expected failures. A real call has not been made yet.
+
+### 2026-10-08 (Planning moves into the educator view; CSV authoring retired)
+
+- Release 1 step 2: the catalog lists approved activities and drafts, with an educator-only `DraftPreview` type and a preview picture check.
+- Release 1 step 3: learning plans and activity cards in the educator view, saved as JSON on the home server, with cars and sharks examples to edit, and a Guide tab with the educator's instructions. The educator never uses the repo.
+- Retired: the CSV plan sheet and card, the six authoring tables, their schema, examples, checker, and tests (git history keeps them; the spec moved to `plans/later/`).
+
+### 2026-10-08 (Walking skeleton built)
+
+- `lerni serve` runs the student app: the student screen at `/` (no login) and the educator view at `/educator/` behind a passcode from `LERNI_EDUCATOR_PASSCODE`. Gradio 6.30 is an optional `[student]` extra; the screens live in `src/lerni/student/web/`.
+- Verified on this Mac: the student screen returns 200; educator routes return 401 without the passcode; a wrong passcode is refused; API schema pages return 404; no outbound connections while serving; the admin database untouched. Tests: 211 passed, 2 expected failures.
+- Verified on the real devices the same day: the iPad on the home Wi-Fi shows the waiting screen, and the educator view works with the passcode. The iPad must be on the same network as the home server.
 
 ### 2026-10-08 (PR #4 merged)
 

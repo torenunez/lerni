@@ -12,7 +12,7 @@ Earlier work packages and specs, kept for reference; only their paths and packag
 | [prs/06-gradio-app.md](prs/06-gradio-app.md), [specs/05-gradio-ui.md](specs/05-gradio-ui.md) | Release 1 background; the [MVP plan](../release-1-mvp.md) replaces it |
 | [prs/07-audio-input.md](prs/07-audio-input.md), [specs/06-audio-input.md](specs/06-audio-input.md), [prs/07a-capability-adapters.md](prs/07a-capability-adapters.md) | Release 3: voice and the Claude adapter |
 | [prs/08-pilot-gate.md](prs/08-pilot-gate.md), [specs/07-verification.md](specs/07-verification.md) | Release 1 background on checks before student use |
-| [prs/09-curation-csv.md](prs/09-curation-csv.md), [specs/08-graph-recommendations.md](specs/08-graph-recommendations.md), [runbooks/data-priming.md](runbooks/data-priming.md) | Later: importing spreadsheet content into the app |
+| [prs/09-curation-csv.md](prs/09-curation-csv.md), [specs/08-graph-recommendations.md](specs/08-graph-recommendations.md), [runbooks/data-priming.md](runbooks/data-priming.md) | Retired 2026-10-08: the educator plans in the app, and CSV authoring is gone. Kept for the concept-map ideas. |
 | [prs/10-curriculum-graph.md](prs/10-curriculum-graph.md), [specs/08a-curriculum-persistence.md](specs/08a-curriculum-persistence.md) | Releases 4–5: the stored concept map |
 | [prs/11-recommendations.md](prs/11-recommendations.md), [specs/08b-recommendation-feedback.md](specs/08b-recommendation-feedback.md) | Release 4: suggesting new ideas |
 | [runbooks/manual-setup.md](runbooks/manual-setup.md) | Release 3: accounts and credentials for outside services |
