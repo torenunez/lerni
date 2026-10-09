@@ -4,15 +4,21 @@ Where things really stand, then a dated log, newest first. Completed work is rec
 
 Record each kind of "done" only when it actually happens, with the date: code built, content approved, app ready, a student session held. Passing tests show code behaves as specified; they don't make anything ready for a student.
 
-## Current state (2026-10-09, steps 1–6 merged; step 7, the interest map, built on its branch)
+## Current state (2026-10-09, steps 1–7 merged; step 8, Upload and feedback, built on its branch)
 
-- **Built:** the student app's core (student accounts, sign-in, Ask Lerni's conversations, and the interest map with its tagger and 7-day logs; the older activity path, off the screens until step 10 removes it); `lerni serve` with a sign-in page and one app with tabs by role: an independent student's Ask (one ongoing text conversation with Claude, phone first), My map, and My account; an educator's Maps and Students on top; a supervised student's waiting screen. The admin tool (`lerni`, with `lerni student` and `lerni logs`). A [code manifest](code-manifest.md) of every file. Tests: 79 passed, 2 expected failures.
+- **Built:** the student app's core (student accounts, sign-in, Ask Lerni's conversations, the interest map with its tagger and 7-day logs, and Upload and educator feedback; the older activity path, off the screens until step 10 removes it); `lerni serve` with a sign-in page and one app with tabs by role: an independent student's Ask (one ongoing text conversation with Claude, phone first), My map (with Upload), and My account; an educator's Maps (with Upload and Feedback) and Students on top; a supervised student's waiting screen. The admin tool (`lerni`, with `lerni student`, `lerni logs`, and `lerni feedback`). A [code manifest](code-manifest.md) of every file. Tests: 86 passed, 2 expected failures.
 - **Designed:** the interest map, goals, the tagger, upload, feedback, and the supervised conversation ([specs/04-interest-map.md](../plans/specs/04-interest-map.md)); approved with PR #12.
 - **Not yet:** upload and feedback (step 8); the supervised conversation (step 9); removing the old activity path (step 10); any supervised student session.
 
 When something changes, update this section and add a log entry below.
 
 ## Log
+
+### 2026-10-09 (PR #14 merged; step 8 built: Upload and feedback)
+
+- PR #14 (step 7, the interest map) merged.
+- Built on `feat/upload-and-feedback`: `upload.py` (pasted notes and .txt/.md/.docx/.pdf files, Claude's proposals checked, only ticked ones added; a clash is skipped and named), `feedback.py` (saved to `feedback.jsonl`, summarized by Claude with instructions never to carry it out), `ClaudeCodeUploader` (a turn for its JSON from the start), Upload on My map and Maps, Feedback on Maps, and `lerni feedback` (list, `--summary`, `done N`). An uploaded file is deleted at once, even when the request is refused.
+- Found in the phone-size check: the file drop area was tall enough to push the ideas out of view; it's now short.
 
 ### 2026-10-09 (step 7 built: the interest map)
 

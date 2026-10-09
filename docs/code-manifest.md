@@ -92,6 +92,7 @@ What every code file does, in the order a request flows through it. When you add
 | File | What it does |
 |---|---|
 | `scripts/eval_tagger.py` | Tagger evals: three real cases (an interest and a dislike, a bridge, a personal detail), run by hand with the admin's Claude account. |
+| `scripts/eval_upload.py` | Upload evals: two real cases (an educator's notes with a made-up name, a person's own notes), run by hand. |
 | `scripts/generate_lesson_index.py` | Rebuilds `lesson_index.toml` from the real bytes after an activity or picture changes. It never approves anything. |
 
 ## Tests
