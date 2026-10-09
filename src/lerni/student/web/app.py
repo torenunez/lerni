@@ -17,12 +17,12 @@ os.environ["GRADIO_ANALYTICS_ENABLED"] = "False"
 import gradio as gr  # noqa: E402
 from fastapi import FastAPI, Request  # noqa: E402
 
-from lerni.student.catalog import PackageLessonCatalog  # noqa: E402
 from lerni.student.conversation import ChatModel, Conversations  # noqa: E402
-from lerni.student.plan_import import PlanDrafter  # noqa: E402
-from lerni.student.plans import PlanStore  # noqa: E402
+from lerni.student.interests import MapStore  # noqa: E402
+from lerni.student.logs import ConversationLog  # noqa: E402
 from lerni.student.signin import COOKIE_NAME, SignIn, load_secret  # noqa: E402
 from lerni.student.students import StudentStore, default_data_dir  # noqa: E402
+from lerni.student.tagging import MapKeeper, Tagger  # noqa: E402
 from lerni.student.web.main import build_main_view  # noqa: E402
 from lerni.student.web.signin_page import APP_PATH, add_signin_routes  # noqa: E402
 
@@ -90,17 +90,8 @@ _WELCOME_HTML = """
   <span class="lerni-float" aria-hidden="true">🔭</span>
   <span class="lerni-wave" aria-hidden="true">👋</span>
   <h1>Get ready to explore!</h1>
-  <p>Cool questions about the things you love are coming.</p>
-  <p class="lerni-ready">Waiting for your educator to start…</p>
-</div>
-"""
-
-# An independent student's Learn tab until step 7 brings their own plans.
-_INDEPENDENT_HTML = """
-<div class="lerni-welcome" role="main">
-  <span class="lerni-wave" aria-hidden="true">👋</span>
-  <h1>Your activities will appear here</h1>
-  <p>Planning your own learning is coming soon. Meanwhile, try Ask.</p>
+  <p>Talking with Lerni is coming soon.</p>
+  <p class="lerni-ready">Lerni is getting ready for you…</p>
 </div>
 """
 
@@ -126,20 +117,17 @@ def _theme() -> gr.themes.Base:
 def build_app(
     *,
     data_root: Path | None = None,
-    store: PlanStore | None = None,
-    catalog: PackageLessonCatalog | None = None,
-    drafter: PlanDrafter | None = None,
     chat_model: ChatModel | None = None,
+    tagger: Tagger | None = None,
 ) -> FastAPI:
     """Build the server: the sign-in page and the app at ``/app/``.
 
     Args:
         data_root: The home server's data folder; defaults to ``$LERNI_STUDENT_DATA``
             or ``~/.lerni/student``.
-        store: Learning plans; defaults to the plan folder under ``data_root``.
-        catalog: Packaged activities; defaults to the ones shipped with Lerni.
-        drafter: Claude behind an adapter for imports; ``None`` turns imports off.
         chat_model: Claude behind an adapter for Ask Lerni; ``None`` turns it off.
+        tagger: Claude behind an adapter for the map; ``None`` leaves maps unchanged
+            (exchanges are still logged).
     """
     root = data_root or default_data_dir()
     students = StudentStore(root)
@@ -153,16 +141,14 @@ def build_app(
         viewer = signin.viewer_from_cookie(request.cookies.get(COOKIE_NAME))
         return viewer.username if viewer else None
 
-    view = build_main_view(
-        signin,
-        store or PlanStore(root),
-        catalog or PackageLessonCatalog(),
-        students,
-        drafter,
-        Conversations(chat_model) if chat_model else None,
-        welcome_html=_WELCOME_HTML,
-        independent_html=_INDEPENDENT_HTML,
+    maps, log = MapStore(root), ConversationLog(root)
+    log.purge()  # at startup; then once a day as exchanges are logged
+    keeper = MapKeeper(maps, tagger, log)
+    conversations = (
+        Conversations(chat_model, context=keeper.context, on_exchange=keeper.after)
+        if chat_model else None
     )
+    view = build_main_view(signin, students, maps, conversations, welcome_html=_WELCOME_HTML)
     return gr.mount_gradio_app(
         app,
         view,

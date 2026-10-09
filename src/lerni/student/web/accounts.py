@@ -35,6 +35,15 @@ def require_educator(viewer: Viewer | None) -> Viewer:
     return viewer
 
 
+def cleared(count: int, done: bool) -> list[Any]:
+    """Updates that empty ``count`` fields after a save (or leave them after an error).
+
+    Each update is a fresh object: Gradio consumes an update's value, so a shared one
+    clears only the first field.
+    """
+    return [gr.update(value="") if done else gr.update() for _ in range(count)]
+
+
 def student_rows(students: StudentStore) -> list[list[str]]:
     """The Students table: names and kinds only, never plans or sessions."""
     return [
@@ -152,8 +161,7 @@ def students_tab(signin: SignIn, students: StudentStore) -> tuple[gr.Tab, gr.Dat
         def on_reset(u: str, p: str, request: gr.Request) -> list[Any]:
             message, rows = students_action(students, viewer(request), reset_student, u.strip(), p)
             done = message.startswith("✅")
-            cleared = [gr.update(value="")] * 2 if done else [gr.update()] * 2
-            return [message, rows, *cleared]
+            return [message, rows, *cleared(2, done)]
 
         def on_archive(u: str, request: gr.Request) -> list[Any]:
             return list(students_action(students, viewer(request), archive_student, u.strip()))

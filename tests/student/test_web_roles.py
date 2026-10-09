@@ -56,16 +56,14 @@ def test_page_config_carries_no_plans_or_usernames(tmp_path):
 
 
 def test_each_role_opens_on_a_tab_it_can_see():
-    # regression: the hidden Learn tab stayed selected, so the educator saw an empty page
+    # regression: a hidden tab stayed selected, so the educator saw an empty page
     from lerni.student.web.main import opening_tab, visible_tabs
 
     lee = Viewer("lee", "Lee", Role.SUPERVISED)
-    everything = ("learn", "ask", "guide", "sessions", "plans", "students", "account")
-    assert visible_tabs(EDUCATOR) == everything
-    assert visible_tabs(lee) == ("learn",)
-    assert visible_tabs(SAM) == ("learn", "ask", "guide", "account")
-    openings = (opening_tab(EDUCATOR), opening_tab(lee), opening_tab(SAM))
-    assert openings == ("guide", "learn", "ask")  # Ask while their Learn is empty
+    assert visible_tabs(EDUCATOR) == ("ask", "mymap", "maps", "students", "account")
+    assert visible_tabs(lee) == ("home",)  # the conversation arrives in step 9
+    assert visible_tabs(SAM) == ("ask", "mymap", "account")
+    assert (opening_tab(EDUCATOR), opening_tab(lee), opening_tab(SAM)) == ("ask", "home", "ask")
 
 
 def test_sign_out_is_a_same_tab_button(tmp_path):
@@ -90,24 +88,42 @@ def test_add_form_clears_after_a_save_and_educator_needs_independent():
     assert educator_box_for("independent")["interactive"] is True
 
 
-def test_only_independent_students_can_ask_lerni(tmp_path):
+def test_only_independent_students_can_ask_lerni():
     from lerni.student.conversation import Conversations
-    from lerni.student.plans import PlanStore
     from lerni.student.web.ask import ask_reply
 
     class Model:
         def stream(self, system, turns):
             yield "Hi."
 
-    convos, store = Conversations(Model()), PlanStore(tmp_path)
-    assert "".join(ask_reply(convos, store, SAM, "What is speed?", None)) == "Hi."
+    convos = Conversations(Model())
+    assert "".join(ask_reply(convos, SAM, "What is speed?")) == "Hi."
     with pytest.raises(NotAllowed):
-        list(ask_reply(convos, store, Viewer("lee", "Lee", Role.SUPERVISED), "hi", None))
-    # the topic id comes from the page: a library plan is only for educators
-    from lerni.student.conversation import ConversationError
-    from lerni.student.web.educator import new_plan
+        list(ask_reply(convos, Viewer("lee", "Lee", Role.SUPERVISED), "hi"))
 
-    library = new_plan(store).plan_id
-    with pytest.raises(ConversationError):
-        list(ask_reply(convos, store, SAM, "hi", library))
-    assert "".join(ask_reply(convos, store, EDUCATOR, "hi", library)) == "Hi."
+
+def test_maps_reach_only_their_owner_or_an_educator_for_a_supervised_student(tmp_path):
+    from lerni.student.interests import MapStore
+    from lerni.student.web.maps import add_goal_to, map_owner
+
+    students, maps = StudentStore(tmp_path), MapStore(tmp_path)
+    students.add("lee", "Lee", Kind.SUPERVISED, "1234")
+    students.add("zoe", "Zoe", Kind.INDEPENDENT, "long enough")
+    assert map_owner(students, SAM, None) == "sam"  # My map
+    assert map_owner(students, EDUCATOR, "lee") == "lee"  # Maps
+    for viewer, requested in ((SAM, "lee"), (EDUCATOR, "zoe"), (EDUCATOR, "nobody"),
+                              (Viewer("lee", "Lee", Role.SUPERVISED), None)):
+        with pytest.raises(NotAllowed):
+            map_owner(students, viewer, requested)
+    assert add_goal_to(maps, students, SAM, "lee", "Fractions", "").startswith("⚠️")
+    assert maps.get("lee").entries == []
+    assert add_goal_to(maps, students, EDUCATOR, "lee", "Fractions", "").startswith("✅")
+
+
+def test_cleared_fields_get_their_own_update():
+    # regression: one shared update cleared only the first field (Gradio consumes its value),
+    # so a reset left the new password in its box
+    from lerni.student.web.accounts import cleared
+
+    first, second = cleared(2, done=True)
+    assert first is not second and first["value"] == second["value"] == ""
