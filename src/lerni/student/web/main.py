@@ -58,7 +58,8 @@ def build_main_view(
     model: ChatModel | None = None,
 ) -> gr.Blocks:
     """Build the page; the tabs each viewer sees are set on load."""
-    with gr.Blocks(title="Lerni", analytics_enabled=False) as blocks:
+    # uploads picked but never sent expire within two hours (checked hourly)
+    with gr.Blocks(title="Lerni", analytics_enabled=False, delete_cache=(3600, 3600)) as blocks:
         with gr.Row():
             header = gr.Markdown()
             # a same-tab button: a Markdown link would open Sign out in a new tab

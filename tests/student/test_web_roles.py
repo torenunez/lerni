@@ -182,3 +182,17 @@ def test_ideas_made_for_one_student_never_land_on_another(tmp_path):
     message = add_proposals(maps, students, EDUCATOR, "kim", ideas, [ideas[0].label],
                             proposed_for="lee")
     assert message.startswith("⚠️") and maps.get("kim").entries == []
+
+
+def test_uploads_over_5_mb_are_refused_and_leftovers_expire(tmp_path):
+    # regression: any size was accepted, and a file picked but never sent stayed on disk
+    StudentStore(tmp_path).add("zoe", "Zoe", Kind.INDEPENDENT, "long enough")
+    app = build_app(data_root=tmp_path)
+    client = TestClient(app)
+    client.post("/signin", data={"username": "zoe", "password": "long enough"})
+    big = client.post("/app/gradio_api/upload",
+                      files={"files": ("notes.txt", b"x" * 5_100_000, "text/plain")})
+    assert big.status_code == 413
+    small = client.post("/app/gradio_api/upload",
+                        files={"files": ("notes.txt", b"cars", "text/plain")})
+    assert small.status_code == 200

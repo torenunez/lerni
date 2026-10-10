@@ -6,7 +6,7 @@ Record each kind of "done" only when it actually happens, with the date: code bu
 
 ## Current state (2026-10-09, steps 1–7 merged; step 8, Upload and feedback, built on its branch)
 
-- **Built:** the student app's core (student accounts, sign-in, Ask Lerni's conversations, the interest map with its tagger and 7-day logs, and Upload and educator feedback; the older activity path, off the screens until step 10 removes it); `lerni serve` with a sign-in page and one app with tabs by role: an independent student's Ask (one ongoing text conversation with Claude, phone first), My map (with Upload), and My account; an educator's Maps (with Upload and Feedback) and Students on top; a supervised student's waiting screen. The admin tool (`lerni`, with `lerni student`, `lerni logs`, and `lerni feedback`). A [code manifest](code-manifest.md) of every file. Tests: 86 passed, 2 expected failures.
+- **Built:** the student app's core (student accounts, sign-in, Ask Lerni's conversations, the interest map with its tagger and 7-day logs, and Upload and educator feedback; the older activity path, off the screens until step 10 removes it); `lerni serve` with a sign-in page and one app with tabs by role: an independent student's Ask (one ongoing text conversation with Claude, phone first), My map (with Upload), and My account; an educator's Maps (with Upload and Feedback) and Students on top; a supervised student's waiting screen. The admin tool (`lerni`, with `lerni student`, `lerni logs`, and `lerni feedback`). A [code manifest](code-manifest.md) of every file. Tests: 88 passed, 2 expected failures.
 - **Designed:** the interest map, goals, the tagger, upload, feedback, and the supervised conversation ([specs/04-interest-map.md](../plans/specs/04-interest-map.md)); approved with PR #12.
 - **Not yet:** upload and feedback (step 8); the supervised conversation (step 9); removing the old activity path (step 10); any supervised student session.
 
@@ -19,6 +19,7 @@ When something changes, update this section and add a log entry below.
 - PR #14 (step 7, the interest map) merged.
 - Built on `feat/upload-and-feedback`: `upload.py` (pasted notes and .txt/.md/.docx/.pdf files, Claude's proposals checked, only ticked ones added; a clash is skipped and named), `feedback.py` (saved to `feedback.jsonl`, summarized by Claude with instructions never to carry it out), `ClaudeCodeUploader` (a turn for its JSON from the start), Upload on My map and Maps, Feedback on Maps, and `lerni feedback` (list, `--summary`, `done N`). An uploaded file is deleted at once, even when the request is refused.
 - Found in the phone-size check: the file drop area was tall enough to push the ideas out of view; it's now short.
+- A fresh review of the branch found two issues, each fixed with a regression test: ideas proposed for one student could be added to another's map after switching students; uploads had no size limit (Gradio's own limit doesn't apply when it's mounted inside our server, so the server checks it), and files picked but never sent now expire within two hours. Upload evals: 2/2 pass.
 
 ### 2026-10-09 (step 7 built: the interest map)
 

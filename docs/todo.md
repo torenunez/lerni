@@ -46,6 +46,7 @@ After these, Release 1 needs sessions, not code: the educator sets goals, rehear
 
 ### Interest map: later
 
+- [ ] Small, from the step 8 review: cap how big a .docx may expand when read, and show a friendly message for a malformed one; a file-read error can hide its cause; no server-side check for real names in proposals; "Tick what to add" shows when every idea is already on the map; `lerni feedback done` can lose an entry saved at the same moment and finds entries by position; editing feedback after checking keeps the old summary; Claude pads goal notes with restatements.
 - [ ] Small, from the step 7 review: at a full map a just-added interest can be dropped by the next one; the map block's 1,500-character cut can cut a line mid-word; top interests rank by all-time days rather than the last 30; a faded explained goal can be listed twice in the block; the Maps timer ticks on every page; an unreadable map file shows a Gradio error; `lerni logs` can fail if a purge runs mid-read.
 - [ ] When a map outgrows the picture (more than 15 entries drawn): show more, for example by grouping or a focus on one entry and its links; the list below already has them all.
 

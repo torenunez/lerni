@@ -10,12 +10,14 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
+from typing import Any
 
 # Must be set before Gradio is imported: it also disables the version check.
 os.environ["GRADIO_ANALYTICS_ENABLED"] = "False"
 
 import gradio as gr  # noqa: E402
 from fastapi import FastAPI, Request  # noqa: E402
+from fastapi.responses import PlainTextResponse  # noqa: E402
 
 from lerni.student.conversation import ChatModel, Conversations  # noqa: E402
 from lerni.student.feedback import FeedbackStore  # noqa: E402
@@ -27,6 +29,9 @@ from lerni.student.tagging import MapKeeper, Tagger  # noqa: E402
 from lerni.student.upload import Uploader  # noqa: E402
 from lerni.student.web.main import build_main_view  # noqa: E402
 from lerni.student.web.signin_page import APP_PATH, add_signin_routes  # noqa: E402
+
+# Upload's 5 MB limit plus room for the form around the file.
+MAX_UPLOAD_REQUEST = 5_000_000 + 64_000
 
 # System fonts only, so the iPad never loads fonts from the internet.
 _SYSTEM_FONTS = ("-apple-system", "system-ui", "Helvetica Neue", "Arial", "sans-serif")
@@ -139,6 +144,16 @@ def build_app(
     # our own server; we turn off its docs pages too
     app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
     add_signin_routes(app, signin)
+
+    @app.middleware("http")
+    async def limit_uploads(request: Request, call_next: Any) -> Any:
+        # Gradio's own limit doesn't apply when it's mounted, so uploads are checked here
+        if request.url.path.endswith("/gradio_api/upload"):
+            size = request.headers.get("content-length", "")
+            if not size.isdigit() or int(size) > MAX_UPLOAD_REQUEST:
+                return PlainTextResponse("That file is too big (the limit is 5 MB).",
+                                         status_code=413)
+        return await call_next(request)
 
     def current_user(request: Request) -> str | None:
         # runs on every request: no valid cookie, no access
