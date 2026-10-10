@@ -73,6 +73,7 @@ def build_app(
     tagger: Tagger | None = None,
     uploader: Uploader | None = None,
     label: str = "",
+    version: str = "",
 ) -> FastAPI:
     """Build the server: the sign-in page and the app at ``/app/``.
 
@@ -84,13 +85,14 @@ def build_app(
             (exchanges are still logged).
         uploader: Claude behind an adapter for Upload; ``None`` turns it off.
         label: Shown on every page, e.g. ``"Development"``; empty for production.
+        version: Which code is running, shown small on the sign-in page.
     """
     root = data_root or default_data_dir()
     students = StudentStore(root)
     signin = SignIn(students, load_secret(root))
     # our own server; we turn off its docs pages too
     app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
-    add_signin_routes(app, signin, label)
+    add_signin_routes(app, signin, label, version)
 
     @app.middleware("http")
     async def limit_uploads(request: Request, call_next: Any) -> Any:

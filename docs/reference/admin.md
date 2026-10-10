@@ -77,7 +77,7 @@ lerni serve                                 # binds 0.0.0.0:7860
   `lerni student list`, `lerni student reset-password USERNAME`, and `lerni student educator USERNAME [--off]` cover recovery.
 - A supervised student's iPad is signed in only as that student. Try the app as yourself on your own device or in a private tab.
 - Data lives in `~/.lerni/student/` (or `$LERNI_STUDENT_DATA`): `students/` (accounts, password hashes only), `secret.key` (signs the sign-in cookie; keep it private; deleting it signs everyone out), `maps/` (interest maps), `logs/` (each exchange, deleted after 7 days), and `feedback.jsonl`.
-- `--port` changes the default port; `--host 127.0.0.1` keeps it on this computer only; `--label Development` marks a development server on every page.
+- `--port` changes the default port; `--host 127.0.0.1` keeps it on this computer only; `--label Development` marks a development server on every page. Startup prints the running version (branch, commit, date), and the sign-in page shows it at the bottom: check it there after updating.
 - If you start it over SSH, allow the virtual environment's Python through the macOS firewall first (nobody sees the prompt), and run it inside `tmux` so it keeps running after you disconnect.
 - It never touches the admin tool's database.
 - **Claude** (Ask, the map's tagger, and Upload) turns on when the `claude` CLI is installed and logged in on this computer; it uses that Claude account, so there's no API key. `LERNI_CLAUDE_MODEL` picks the answering and upload model (default `claude-sonnet-5-5`), `LERNI_TAGGER_MODEL` the tagger's (default `claude-haiku-5-5`). Startup prints whether it's on.

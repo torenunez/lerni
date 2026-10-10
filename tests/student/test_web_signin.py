@@ -50,3 +50,13 @@ def test_a_development_server_says_so_and_production_does_not(tmp_path):
     assert "Development" in dev.get("/app/config").text
     prod = TestClient(build_app(data_root=tmp_path))
     assert "Development" not in prod.get("/signin").text
+
+
+def test_the_sign_in_page_says_which_version_is_running(tmp_path):
+    # regression: an old server looked like a bug, with no way to tell from the iPad
+    from lerni.student.web.serve import running_version
+
+    version = running_version()
+    assert version and "@" in version  # e.g. "main @ e152c46, 2026-10-10" in a checkout
+    client = TestClient(build_app(data_root=tmp_path, version=version))
+    assert version in client.get("/signin").text
