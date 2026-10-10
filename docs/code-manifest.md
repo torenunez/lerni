@@ -88,7 +88,7 @@ Minimal on purpose: one happy path per module, plus a test for each safety guara
 
 | File | What it checks |
 |---|---|
-| `tests/student/test_students.py` | An account saves and checks its password; bad, reserved, and archived usernames are refused.; an account saved before step 10 still loads. |
+| `tests/student/test_students.py` | An account saves and checks its password; bad, reserved, and archived usernames are refused; an account saved before step 10 still loads. |
 | `tests/student/test_interests.py` | People's goal edits are saved; a goal takes over an interest of the same name; a full map says so; the tagger only adds what the student said and never touches goals; the prompt block stays short. |
 | `tests/student/test_tagging.py` | An exchange grows the map and is logged (a stopped one isn't tagged); a late result never undoes a person or a new conversation; logs older than 7 days are deleted. |
 | `tests/student/test_mapdraw.py` | The map picture escapes names and draws at most 15 entries; the list says the same in words. |
@@ -96,11 +96,11 @@ Minimal on purpose: one happy path per module, plus a test for each safety guara
 | `tests/student/test_feedback.py` | Feedback is summarized, saved (with or without a summary), and closed, and never touches a map. |
 | `tests/student/test_signin.py` | A cookie stops working after a reset; wrong passwords wait without signing anyone out. |
 | `tests/student/test_conversation.py` | Answers stream in and history stays short; the map comes before the rules and never says who is asking; each exchange is reported, stopped or not; New conversation during a reply isn't undone. |
-| `tests/student/test_claude_code_adapter.py` | Every Claude call (chat, tagger, uploader) runs with no tools, no settings, and no saved transcripts; the tagger and uploader have a turn for their JSON.; a student can't forge an earlier turn; Stop cancels the call. |
+| `tests/student/test_claude_code_adapter.py` | Every Claude call (chat, tagger, uploader) runs with no tools, no settings, and no saved transcripts; the tagger and uploader have a turn for their JSON; a student can't forge an earlier turn; Stop cancels the call. |
 | `tests/student/test_web_signin.py` | Signed-out visits go to the sign-in form; a right password opens the app; Sign out ends it; a first start says how to add the first account. |
 | `tests/student/test_cli_student.py` | The admin adds the first educator account from the terminal, reads the conversation logs, and lists and closes feedback. |
 | `tests/student/test_serve.py` | Ctrl-C stops the server within a few seconds, even with pages open. |
-| `tests/student/test_web_roles.py` | Students can't manage accounts; cleared fields each get their own update; the page config carries no plans or other students' names; each role opens on a tab it can see; a supervised student signs in to the conversation; each student asks in their own voice; a map is reached only by its owner, or by an educator for a supervised student.; upload and feedback check who is asking, and an upload is deleted even when refused. |
+| `tests/student/test_web_roles.py` | Students can't manage accounts; cleared fields each get their own update; the page config carries no plans or other students' names; each role opens on a tab it can see; a supervised student signs in to the conversation; each student asks in their own voice; a map is reached only by its owner, or by an educator for a supervised student; upload and feedback check who is asking, and an upload is deleted even when refused. |
 | `tests/student/test_core_imports.py` | The core imports only the standard library (never Gradio or a provider SDK). |
 | `tests/student/test_distribution.py` | Builds the wheel and sdist, installs each outside the repo, and checks the personas ship byte for byte. |
 | `tests/student/conftest.py` | Gives every test its own temporary data folder. |

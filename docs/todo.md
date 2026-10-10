@@ -11,7 +11,7 @@ Open tasks by who does the work. The educator and admin tracks run in parallel: 
 ### Later: Release 1 MVP
 
 - [ ] Once step 7 lands: talk with Lerni yourself for a few days and watch your own map; say what's confusing in Feedback (step 8) or to the admin.
-- [ ] Once step 9 lands: try the conversation with the supervised-student voice, then sit beside the supervised student for a short first conversation. Keep notes private, or put them in Feedback.
+- [ ] Try the conversation with the supervised-student voice, then sit beside the supervised student for a short first conversation. Keep notes private, or put them in Feedback.
 
 ## Admin
 
