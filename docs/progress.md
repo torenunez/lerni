@@ -4,15 +4,20 @@ Where things really stand, then a dated log, newest first. Completed work is rec
 
 Record each kind of "done" only when it actually happens, with the date: code built, content approved, app ready, a student session held. Passing tests show code behaves as specified; they don't make anything ready for a student.
 
-## Current state (2026-10-09, steps 1–9 merged; step 10 built on its branch: Release 1's code is complete)
+## Current state (2026-10-10, Release 1's code complete and merged; Release 2 step 1, HTTPS, built on its branch)
 
-- **Built:** the student app's core (student accounts, sign-in, Ask Lerni's conversations, the interest map with its tagger and 7-day logs, and Upload and educator feedback); `lerni serve` with a sign-in page and one app with tabs by role: an independent student's Ask (one ongoing text conversation with Claude, phone first), My map (with Upload), and My account; an educator's Maps (with Upload and Feedback) and Students on top; a supervised student's conversation, full screen, in the supervised voice. The admin tool (`lerni`, with `lerni student`, `lerni logs`, and `lerni feedback`). A [code manifest](code-manifest.md) of every file. Tests: 71 passed.
+- **Built:** the student app's core (student accounts, sign-in, Ask Lerni's conversations, the interest map with its tagger and 7-day logs, and Upload and educator feedback); `lerni serve` with a sign-in page and one app with tabs by role: an independent student's Ask (one ongoing text conversation with Claude, phone first), My map (with Upload), and My account; an educator's Maps (with Upload and Feedback) and Students on top; a supervised student's conversation, full screen, in the supervised voice. The admin tool (`lerni`, with `lerni student`, `lerni logs`, and `lerni feedback`). A [code manifest](code-manifest.md) of every file. Tests: 73 passed.
 - **Designed:** the interest map, goals, the tagger, upload, feedback, and the supervised conversation ([specs/04-interest-map.md](../plans/specs/04-interest-map.md)); approved with PR #12.
 - **Not yet:** any supervised student session.
 
 When something changes, update this section and add a log entry below.
 
 ## Log
+
+### 2026-10-10 (PR #18 merged; voice designed; Release 2 step 1 built: HTTPS)
+
+- PR #18 (step 10) merged: Release 1's code is complete. PR #19 (the voice design, [spec 05](../plans/specs/05-voice.md)) merged: hold to talk, local Whisper and Kokoro, audio carried as text through Gradio events with a small browser script, HTTPS with mkcert, everyone gets voice when the helpers run; audio may stay on the home server up to 7 days; Gradio's cached files reachable by anyone signed in, accepted for the household.
+- Built on `feat/https`: `lerni serve --cert --key` serves HTTPS (both files needed, checked before starting); the sign-in cookie is `Secure` over HTTPS; the admin reference has the mkcert setup. Checked with a throwaway certificate: HTTPS answers, plain HTTP doesn't on that port. Tests: 73 passed.
 
 ### 2026-10-09 (PRs #16 and #17 merged; step 10 built: the old activity path removed)
 

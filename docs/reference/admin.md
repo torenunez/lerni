@@ -84,6 +84,17 @@ lerni serve                                 # binds 0.0.0.0:7860
 - `lerni logs [USERNAME]` shows the last 7 days of conversations and what the tagger did; `lerni feedback` lists educators' feedback (`--summary` groups it, `done N` closes one).
 - Evals (real Claude calls, run by hand when instructions or models change): `scripts/eval_tagger.py`, `scripts/eval_upload.py`, `scripts/eval_supervised.py`.
 
+### HTTPS (for voice)
+
+iPad Safari allows the microphone only over HTTPS. Lerni uses its own certificate, made once with [mkcert](https://github.com/FiloSottile/mkcert) on the home server:
+
+1. `brew install mkcert`, then `mkcert -install` (creates a small private certificate authority on this Mac).
+2. Make the server's certificate, naming every way devices reach it: `mkcert -cert-file ~/.lerni/student/https.pem -key-file ~/.lerni/student/https-key.pem <home-server>.local <its-IP> localhost`. The key stays on the home server; never copy it into the repo.
+3. On each device (iPad, phones): send it the authority's certificate, `"$(mkcert -CAROOT)/rootCA.pem"` (AirDrop works), open it to install the profile (Settings → Profile Downloaded → Install), then turn on full trust (Settings → General → About → Certificate Trust Settings).
+4. Start with `lerni serve --cert ~/.lerni/student/https.pem --key ~/.lerni/student/https-key.pem` and open `https://<home-server>.local:7860/`.
+
+Safari's saved password is for the old `http://` address; sign in once more and let it save again. If the server's IP changes, make the certificate again (step 2).
+
 ## Maintenance
 
 Open work is tracked in [todo.md](../todo.md#admin-tool-maintenance). Existing scheduling tests do not establish complete application coverage.

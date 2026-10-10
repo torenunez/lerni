@@ -15,6 +15,7 @@ Open tasks by who does the work. The educator and admin tracks run in parallel: 
 
 ## Admin
 
+- [ ] Set up HTTPS on the home server and install its certificate on the iPad and phones ([admin reference: HTTPS](reference/admin.md#https-for-voice)); then start with `lerni serve --cert … --key …`.
 - [ ] Optionally delete the old plan files on the home server (`~/.lerni/student/plans/`); nothing reads them since step 10.
 
 ### Upcoming PRs
@@ -52,7 +53,7 @@ Release 1 now needs sessions, not code: the educator sets goals, rehearses, and 
 ### Later: Release 2 Voice
 
 - [ ] Write `plans/release-2-voice.md` and its spec: push-to-talk with Gradio's microphone and audio playback; local Whisper (speech-to-text) and Kokoro (text-to-speech) helper programs behind `transcribe`/`speak`; each sentence spoken as it's written; Stop silences it; audio in memory only; evals grown from the conversation evals.
-- [ ] Before it: check the home server can run both helpers (about 2–4 cores and 2 GB for text-to-speech), and how the iPad will trust its HTTPS certificate.
+- [ ] Before step 2: check the home server can run both helpers (about 2–4 cores and 2 GB for text-to-speech) and has the disk space.
 - [ ] Try the voice with the students before deciding whether a hosted voice (Inworld, about $18 a month) is worth it; a hosted service means student audio leaves the house, so it needs the educator's agreement first.
 - [ ] Before anyone outside the family uses the app: files in Gradio's cache (uploads, any voice audio) are reachable by URL to anyone signed in; serve them only to their owner, or keep none.
 - [ ] Before anyone outside the household uses the app: replace the Claude Code adapter with an API-key adapter (`env:ANTHROPIC_API_KEY`).
