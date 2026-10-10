@@ -14,10 +14,11 @@ Approved in conversation on 2026-10-10 (approach A, refined below). Requirements
 |---|---|---|
 | Button | Hold to talk (press, speak, release) | Walkie-talkie; nothing to forget to stop |
 | Speech services | Local helpers on the home server: whisper.cpp's server (speech-to-text) and Kokoro-FastAPI (text-to-speech), both speaking the OpenAI audio API | No audio leaves the house, no account, $0; a hosted service later is an address change |
-| Transport | Approach A, refined: Gradio events carry the audio as base64 text in hidden fields; a small browser script records and plays | Keeps every handler's sign-in check; Gradio's own audio components would write audio to its cache on disk, reachable by URL to anyone signed in |
+| Transport | Approach A, refined: Gradio events carry the audio as base64 text in hidden fields; a small browser script records and plays | Keeps every handler's sign-in check, and playback unlocked by the press is the dependable way to get sound on iPad Safari. If the iPad check shows Gradio's own audio player works, it may be used instead |
 | Sending | What was heard is sent at once and shown in the chat | Smooth for talking; local speech-to-text removes the privacy reason for a confirm step |
 | HTTPS | Our own certificate (mkcert) installed once on each device | Free, no account, home network only |
 | Who | Everyone, whenever the helpers are running | No setting to manage |
+| Keeping audio | Audio may stay on the home server for up to 7 days, like the conversation logs; Release 2 doesn't save it on purpose | The admin's call (2026-10-10): whatever is easiest for the MVP; a light audio log can come later if useful |
 
 ## How it works
 
@@ -34,7 +35,7 @@ Approved in conversation on 2026-10-10 (approach A, refined below). Requirements
 6. As Claude's answer streams, the handler cuts it into sentences. Each finished sentence is cleaned for speaking (no emoji, no markdown symbols, links read as "a link"), sent to the text-to-speech helper, and the returned mp3 goes back base64-encoded in a hidden field alongside the text.
 7. The script queues each sentence's audio and plays them in order with the unlocked audio context. Stop clears the queue, silences playback, and cancels the call (Release 1's Stop).
 
-**Audio stays in memory:** the clip and the spoken sentences are never written to disk: not by Lerni, not through Gradio's file cache (no Gradio audio or file component is used for voice), not in the logs (which keep text only, as today).
+**Audio stays in the house:** the clip and the spoken sentences never leave the home server. Lerni doesn't save them on purpose (the logs keep text only, as today); if a later change keeps audio (a Gradio audio player, or a light audio log), it's deleted within 7 days, like the logs.
 
 ## Code
 
@@ -66,7 +67,6 @@ Tests (fakes only, minimal):
 
 - `sentences` and `for_speaking`: pieces become whole sentences; emoji and markdown are dropped;
 - the talk handler with a fake `Speech`: the transcript reaches the conversation as the student's message, each sentence comes back with audio, a failed transcription gives the friendly message and sends nothing, and a supervised viewer still gets the supervised voice;
-- no file is written: the handler returns only text and base64 strings (no Gradio file or audio values);
 - a clip over the size limit is refused;
 - over HTTPS the sign-in cookie is `Secure`.
 
@@ -81,4 +81,4 @@ Evals (real helpers, run by hand; start with 2): a round trip (speak a sentence 
 
 ## Not in this design
 
-Hands-free talking (no button), a per-student voice switch, choosing a voice in the app, reading old messages aloud on demand, saving any audio.
+Hands-free talking (no button), a per-student voice switch, choosing a voice in the app, reading old messages aloud on demand, an audio log.
