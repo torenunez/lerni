@@ -35,6 +35,19 @@ def _claude_tagger() -> Any:
     return ClaudeCodeTagger(model=os.environ.get(TAGGER_ENV, DEFAULT_TAGGER_MODEL))
 
 
+def _claude_uploader() -> Any:
+    """Return the Claude Code uploader if the CLI is installed, else ``None``."""
+    from lerni.student.adapters.claude_code import (
+        DEFAULT_MODEL,
+        ClaudeCodeUploader,
+        claude_cli_available,
+    )
+
+    if not claude_cli_available():
+        return None
+    return ClaudeCodeUploader(model=os.environ.get(MODEL_ENV, DEFAULT_MODEL))
+
+
 def serve(host: str, port: int) -> None:
     """Start the student app and block until it stops.
 
@@ -49,14 +62,14 @@ def serve(host: str, port: int) -> None:
     from lerni.student.web.app import build_app
 
     chat, tagger = _claude_chat(), _claude_tagger()
-    app = build_app(chat_model=chat, tagger=tagger)
+    app = build_app(chat_model=chat, tagger=tagger, uploader=_claude_uploader())
     print(f"Sign in:  http://<this-computer>:{port}/", flush=True)
     if not any(s.educator for s in StudentStore().list_students()):
         print("No educator yet: lerni student add USERNAME --name NAME "
               "--kind independent --educator", flush=True)
     status = (f"on ({chat.model}; the map with {tagger.model})" if chat
               else "off (the claude CLI isn't installed)")
-    print(f"Ask Lerni and the interest map with Claude: {status}", flush=True)
+    print(f"Ask Lerni, the interest map, and Upload with Claude: {status}", flush=True)
     print("Conversation logs (7 days): lerni logs", flush=True)
     print("Home network only. Press Ctrl-C to stop.", flush=True)
     # Gradio keeps each open page connected; without a time limit, Ctrl-C waits forever

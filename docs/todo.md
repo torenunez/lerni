@@ -29,9 +29,8 @@ How PRs are split:
 
 | # | PR | Branch | Ships | Done when | Status |
 |---|---|---|---|---|---|
-| 1 | Step 8: upload and feedback | `feat/upload-and-feedback` | Upload proposes interests and goals, for educators and independent students; the Feedback box; `lerni feedback`; upload evals | The educator uploads notes and adds goals; the admin sees feedback summarized | Not started |
-| 2 | Step 9: the supervised conversation | `feat/supervised-conversation` | First the "before step 9" items below; then the supervised student's full-screen conversation; the supervised persona and rules; their map grows | The supervised student talks with Lerni, the educator beside them, and the map grows | Not started |
-| 3 | Step 10: remove the old activity path | `chore/remove-activities` | Plans, the old import, catalog, engine, lessons, seed, the index script, and their tests and docs | Tests pass; the code manifest matches | Not started |
+| 1 | Step 9: the supervised conversation | `feat/supervised-conversation` | First the "before step 9" items below; then the supervised student's full-screen conversation; the supervised persona and rules; their map grows | The supervised student talks with Lerni, the educator beside them, and the map grows | Not started |
+| 2 | Step 10: remove the old activity path | `chore/remove-activities` | Plans, the old import, catalog, engine, lessons, seed, the index script, and their tests and docs | Tests pass; the code manifest matches | Not started |
 
 After these, Release 1 needs sessions, not code: the educator sets goals, rehearses, and sits beside the supervised student (Educator and Student tasks above and below).
 
@@ -47,8 +46,8 @@ After these, Release 1 needs sessions, not code: the educator sets goals, rehear
 
 ### Interest map: later
 
+- [ ] Small, from the step 8 review: cap how big a .docx may expand when read, and show a friendly message for a malformed one; a file-read error can hide its cause; no server-side check for real names in proposals; "Tick what to add" shows when every idea is already on the map; `lerni feedback done` can lose an entry saved at the same moment and finds entries by position; editing feedback after checking keeps the old summary; Claude pads goal notes with restatements.
 - [ ] Small, from the step 7 review: at a full map a just-added interest can be dropped by the next one; the map block's 1,500-character cut can cut a line mid-word; top interests rank by all-time days rather than the last 30; a faded explained goal can be listed twice in the block; the Maps timer ticks on every page; an unreadable map file shows a Gradio error; `lerni logs` can fail if a purge runs mid-read.
-- [ ] Step 8: Upload's Claude call needs a second turn for its JSON answer (`max_turns` ≥ 2), like the tagger; the old import's drafter had one turn.
 - [ ] When a map outgrows the picture (more than 15 entries drawn): show more, for example by grouping or a focus on one entry and its links; the list below already has them all.
 
 ### Later: Release 2 Remembering

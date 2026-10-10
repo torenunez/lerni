@@ -169,6 +169,24 @@ def add_goal(m: InterestMap, name: str, notes: str = "") -> Entry:
     return entry
 
 
+def add_interest(m: InterestMap, name: str) -> Entry:
+    """A person adds an interest (as Upload does); it starts with no days.
+
+    Raises:
+        MapError: A bad name, a name already on the map, or a full map.
+    """
+    name = check_name(name)
+    if (existing := m.find(name)) is not None:
+        raise MapError(f"{existing.name} is already on the map.")
+    _unremove(m, name)  # a person may bring back what they removed
+    if not make_room(m):
+        raise MapError("This map is full; remove something first.")
+    entry = m.new_entry(name, "interest")
+    m.entries.append(entry)
+    m.edits += 1
+    return entry
+
+
 def rename(m: InterestMap, entry_id: str, name: str) -> Entry:
     """A person renames an interest or a goal; links keep pointing at it.
 

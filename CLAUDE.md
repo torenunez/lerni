@@ -4,7 +4,7 @@ Guidance for AI coding agents in this repository. Product context: [README](READ
 
 ## What's here
 
-- `src/lerni/student/`: the student app's core: accounts, sign-in, Ask Lerni's conversation, and the interest map (`interests.py`, `tagging.py`, `logs.py`) (built; [design](plans/specs/04-interest-map.md)). The older activity path (activity format, catalog, engine, learning plans, the plan import) is off the screens and removed in step 10.
+- `src/lerni/student/`: the student app's core: accounts, sign-in, Ask Lerni's conversation, the interest map (`interests.py`, `tagging.py`, `logs.py`), and Upload and feedback (`upload.py`, `feedback.py`) (built; [design](plans/specs/04-interest-map.md)). The older activity path (activity format, catalog, engine, learning plans, the plan import) is off the screens and removed in step 10.
 - `src/lerni/` (the rest): the admin tool, the `lerni` command.
 - `src/lerni/student/web/`: the Gradio screens (`lerni serve`), One app with sign-in and tabs by role. `scripts/`: the lesson index generator (removed in step 10). The educator never uses the repo; everything for them lives in the app.
 - `docs/prd/`: the source of truth for requirements, one PRD per role. `plans/`: one build plan per release ([release-1-mvp.md](plans/release-1-mvp.md) is current); `plans/later/` holds older designs for reference. A PRD wins where they disagree.
