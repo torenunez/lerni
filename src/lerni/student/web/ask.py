@@ -1,4 +1,5 @@
-"""The Ask tab: an independent student's text conversation with Claude.
+"""The conversation for both kinds of student: an independent student's Ask tab, and a
+supervised student's whole screen.
 
 :func:`ask_reply` is a plain function over the server-resolved viewer, so the
 role check can be tested without a browser; :func:`ask_tab` wires it to Gradio.
@@ -21,6 +22,7 @@ from lerni.student.signin import Role, SignIn, Viewer
 from lerni.student.web.accounts import PRIVATE, require
 
 EMPTY = "Ask Lerni anything."  # no fine print in the family prototype
+SUPERVISED_EMPTY = "Hi! What would you like to talk about?"
 MAX_AT_ONCE = 4  # answers streaming at the same time, across the household
 
 
@@ -30,17 +32,18 @@ def ask_reply(
     text: str,
     supervised_voice: bool = False,
 ) -> Iterator[str]:
-    """Answer an independent student's question, a piece at a time.
+    """Answer a student's question, a piece at a time.
+
+    A supervised student always gets the supervised voice; an educator can try it.
 
     Raises:
-        NotAllowed: The viewer isn't a signed-in independent student.
+        NotAllowed: Nobody is signed in.
         ConversationError: Empty, too long, or a reply is still coming.
         ConversationUnavailable: Claude didn't answer.
     """
-    v = require(viewer, Role.INDEPENDENT)
-    # educators can try the supervised-student voice; everyone else gets their own kind's
-    voice = "supervised" if supervised_voice and v.educator else "independent"
-    yield from conversations.ask(v.username, text, voice)
+    v = require(viewer, Role.INDEPENDENT, Role.SUPERVISED)
+    supervised = v.role is Role.SUPERVISED or (supervised_voice and v.educator)
+    yield from conversations.ask(v.username, text, "supervised" if supervised else "independent")
 
 
 def messages(conversations: Conversations, username: str) -> list[dict[str, str]]:
@@ -49,11 +52,12 @@ def messages(conversations: Conversations, username: str) -> list[dict[str, str]
 
 
 def ask_tab(
-    signin: SignIn, conversations: Conversations | None
+    signin: SignIn, conversations: Conversations | None, supervised: bool = False
 ) -> tuple[gr.Tab, gr.Chatbot, gr.Checkbox]:
-    """The Ask tab (hidden for everyone but independent students)."""
+    """Ask (independent students) or, with ``supervised``, a supervised student's whole screen."""
     ready = conversations is not None
-    with gr.Tab("Ask", id="ask", visible=False) as tab:
+    label, tab_id = ("Lerni", "home") if supervised else ("Ask", "ask")
+    with gr.Tab(label, id=tab_id, visible=False) as tab:
         if not ready:
             gr.Markdown("Claude isn't set up on this server yet.")
         # phone first: the chat grows with its messages, so the question box stays near the top
@@ -65,10 +69,10 @@ def ask_tab(
             height=None,  # grows with its messages...
             min_height=120,
             max_height="55dvh",  # ...up to about half the visible screen, then scrolls
-            placeholder=EMPTY,
+            placeholder=SUPERVISED_EMPTY if supervised else EMPTY,
             buttons=[],
             feedback_options=None,
-            elem_id="lerni-ask-chat",
+            elem_id="lerni-home-chat" if supervised else "lerni-ask-chat",
         )
         with gr.Row():
             question = gr.Textbox(
@@ -85,7 +89,8 @@ def ask_tab(
             # one button: Send, which becomes Stop while Lerni answers
             send = gr.Button("Send", variant="primary", scale=1, min_width=70, interactive=ready)
             stop = gr.Button("Stop", variant="stop", scale=1, min_width=70, visible=False)
-        new = gr.Button("New conversation", size="sm")
+        # the supervised screen keeps only the chat, the box, and Send/Stop
+        new = gr.Button("New conversation", size="sm", visible=not supervised)
         asked = gr.State("")  # the question being answered, so the box can be freed at once
         controls = [question, send, stop]  # order matches start and unlock
 
@@ -98,7 +103,7 @@ def ask_tab(
             text: str, supervised_voice: bool, request: gr.Request
         ) -> Iterator[list[Any]]:
             viewer = signin.viewer(request.username)  # re-read on every question
-            if not ready or viewer is None or viewer.role is not Role.INDEPENDENT:
+            if not ready or viewer is None:  # the role check lives in ask_reply
                 yield [gr.update(), gr.update()]
                 return
             # show the question right away, with an answer that fills as it streams

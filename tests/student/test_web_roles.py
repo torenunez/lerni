@@ -88,18 +88,28 @@ def test_add_form_clears_after_a_save_and_educator_needs_independent():
     assert educator_box_for("independent")["interactive"] is True
 
 
-def test_only_independent_students_can_ask_lerni():
+def test_each_student_asks_in_their_own_voice():
     from lerni.student.conversation import Conversations
     from lerni.student.web.ask import ask_reply
 
     class Model:
+        def __init__(self):
+            self.systems = []
+
         def stream(self, system, turns):
+            self.systems.append(system)
             yield "Hi."
 
-    convos = Conversations(Model())
+    model = Model()
+    convos = Conversations(model)
+    lee = Viewer("lee", "Lee", Role.SUPERVISED)
     assert "".join(ask_reply(convos, SAM, "What is speed?")) == "Hi."
+    # a supervised student gets the supervised voice, whatever the page asks for
+    assert "".join(ask_reply(convos, lee, "Why is the sky blue?", supervised_voice=False)) == "Hi."
+    assert "short, simple, playful" in model.systems[1] and "weapons" in model.systems[1]
+    assert "short, simple, playful" not in model.systems[0]
     with pytest.raises(NotAllowed):
-        list(ask_reply(convos, Viewer("lee", "Lee", Role.SUPERVISED), "hi"))
+        list(ask_reply(convos, None, "hi"))
 
 
 def test_maps_reach_only_their_owner_or_an_educator_for_a_supervised_student(tmp_path):
@@ -196,3 +206,16 @@ def test_uploads_over_5_mb_are_refused_and_leftovers_expire(tmp_path):
     small = client.post("/app/gradio_api/upload",
                         files={"files": ("notes.txt", b"cars", "text/plain")})
     assert small.status_code == 200
+
+
+def test_a_supervised_student_signs_in_to_the_conversation(tmp_path):
+    # the page has two chats (Ask and the supervised screen); only Home is a supervised tab
+    StudentStore(tmp_path).add("lee", "Lee", Kind.SUPERVISED, "1234")
+    client = TestClient(build_app(data_root=tmp_path))
+    client.post("/signin", data={"username": "lee", "password": "1234"})
+    config = client.get("/app/config").json()
+    labels = [c["props"].get("label") for c in config["components"] if c.get("type") == "tabitem"]
+    assert "Lerni" in labels
+    chats = [c for c in config["components"] if c.get("type") == "chatbot"]
+    assert len(chats) == 2
+    assert "Get ready to explore" not in client.get("/app/config").text  # no waiting screen

@@ -29,8 +29,7 @@ How PRs are split:
 
 | # | PR | Branch | Ships | Done when | Status |
 |---|---|---|---|---|---|
-| 1 | Step 9: the supervised conversation | `feat/supervised-conversation` | First the "before step 9" items below; then the supervised student's full-screen conversation; the supervised persona and rules; their map grows | The supervised student talks with Lerni, the educator beside them, and the map grows | Not started |
-| 2 | Step 10: remove the old activity path | `chore/remove-activities` | Plans, the old import, catalog, engine, lessons, seed, the index script, and their tests and docs | Tests pass; the code manifest matches | Not started |
+| 1 | Step 10: remove the old activity path | `chore/remove-activities` | Plans, the old import, catalog, engine, lessons, seed, the index script, and their tests and docs | Tests pass; the code manifest matches | Not started |
 
 After these, Release 1 needs sessions, not code: the educator sets goals, rehearses, and sits beside the supervised student (Educator and Student tasks above and below).
 
@@ -38,7 +37,6 @@ After these, Release 1 needs sessions, not code: the educator sets goals, rehear
 
 - [ ] After the first supervised sessions, if useful: count redirects per session, and a "flag this reply" button for the adult nearby.
 
-- [ ] Before the supervised conversation (step 9): Stop and New conversation end the answer on screen, but the Claude call can run on for up to 60 seconds; pass the cancel through to the adapter.
 - [ ] Before the supervised conversation: send real alternating turns instead of one "Them/You" transcript, so earlier answers can't be faked.
 - [ ] Try Ask on the iPad and a phone with the keyboard open; then a VoiceOver and keyboard-only pass.
 - [ ] Maybe: a daily cap per student once others use it.
@@ -46,6 +44,7 @@ After these, Release 1 needs sessions, not code: the educator sets goals, rehear
 
 ### Interest map: later
 
+- [ ] Small, from the step 9 review: Stop before the first word can be slow and a quick re-ask may say "Still answering"; the two chat panels allow 8 answers at once instead of 4 (share one concurrency id); a cancel can log "Exception ignored"; the new message isn't JSON like earlier turns; when Claude isn't set up the supervised screen greets over a disabled box; the guns redirect offered squirt guns (offer something unrelated).
 - [ ] Small, from the step 8 review: cap how big a .docx may expand when read, and show a friendly message for a malformed one; a file-read error can hide its cause; no server-side check for real names in proposals; "Tick what to add" shows when every idea is already on the map; `lerni feedback done` can lose an entry saved at the same moment and finds entries by position; editing feedback after checking keeps the old summary; Claude pads goal notes with restatements.
 - [ ] Small, from the step 7 review: at a full map a just-added interest can be dropped by the next one; the map block's 1,500-character cut can cut a line mid-word; top interests rank by all-time days rather than the last 30; a faded explained goal can be listed twice in the block; the Maps timer ticks on every page; an unreadable map file shows a Gradio error; `lerni logs` can fail if a purge runs mid-read.
 - [ ] When a map outgrows the picture (more than 15 entries drawn): show more, for example by grouping or a focus on one entry and its links; the list below already has them all.
@@ -64,7 +63,7 @@ After these, Release 1 needs sessions, not code: the educator sets goals, rehear
 
 ### Accounts: deferred review findings (family scale; harden before anyone else uses it)
 
-- [ ] Before the supervised conversation (step 9): a flood of sign-ins mustn't stall signed-in pages. Run the password check off the request threads with a small limit.
+- [ ] Before anyone outside the family uses the app: a flood of sign-ins mustn't stall signed-in pages. Run the password check off the request threads with a small limit.
 - [ ] Small: two educators archiving each other leaves none (recover with `lerni student add`); password hashing runs inside the account write lock; a live session can guess its current password in My account without the sign-in delay; a non-ASCII cookie gives a 500; an archived account is detectable by timing; `/signin` has no Origin check and `/signout` is a GET; no upload size limit; the data folder is created 0755; a password change doesn't sign out other devices.
 - [ ] Tests: the role check on each educator handler, cookie expiry, and a supervised cookie calling an educator event over HTTP.
 

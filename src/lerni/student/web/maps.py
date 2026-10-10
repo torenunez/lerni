@@ -210,7 +210,7 @@ def map_tab(
         who = None
         if not mine:
             gr.Markdown("Pick a student. Green: what they love. Coral: your goals. "
-                        "Dashed: where Lerni bridged.")
+                        "Dashed: where Lerni bridged. It grows as they talk.")
             who = gr.Dropdown(label="Student", choices=[], value=None)  # filled on load
         picture = gr.HTML()
         words = gr.Markdown()

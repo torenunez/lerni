@@ -10,16 +10,16 @@ What every code file does, in the order a request flows through it. When you add
 |---|---|
 | `src/lerni/commands/serve.py` | The `lerni serve` command: starts the student app, with a friendly message if Gradio isn't installed. |
 | `src/lerni/student/web/serve.py` | Picks the Claude chat, tagger, and uploader if the `claude` CLI is installed, builds the app, says how to add the first educator if there's none and where the logs are, and runs the web server (Ctrl-C stops it within 3 seconds). |
-| `src/lerni/student/web/app.py` | Builds the server: the sign-in page, and one Gradio app at `/app/` that Gradio's `auth_dependency` re-checks on every request; wires the conversation to the map keeper (maps, tagger, logs), Upload to the uploader, and Feedback to `feedback.jsonl` and purges old logs at startup. Turns off Gradio's analytics, run history, API pages, and other extras, and sets the look (system fonts, the playful waiting screen). |
+| `src/lerni/student/web/app.py` | Builds the server: the sign-in page, and one Gradio app at `/app/` that Gradio's `auth_dependency` re-checks on every request; wires the conversation to the map keeper (maps, tagger, logs), Upload to the uploader, and Feedback to `feedback.jsonl` and purges old logs at startup. Turns off Gradio's analytics, run history, API pages, and other extras, and sets the look (system fonts, 16px fields). |
 | `src/lerni/student/web/signin_page.py` | The sign-in page: a plain HTML form Safari can save, the signed cookie, Sign out (this device only), and sending signed-out visits to it. |
-| `src/lerni/student/web/main.py` | The one app's page: "Signed in as" with Sign out, then tabs by role on load: a supervised student's waiting screen until step 9; Ask, My map, and My account; Maps and Students for educators. Nothing per-user or from the data is built into the layout. |
+| `src/lerni/student/web/main.py` | The one app's page: "Signed in as" with Sign out, then tabs by role on load: a supervised student's conversation, full screen; Ask, My map, and My account; Maps and Students for educators. Nothing per-user or from the data is built into the layout. |
 
 **The screens** (the only code that imports Gradio)
 
 | File | What it does |
 |---|---|
 | `src/lerni/student/web/educator.py` | The old Guide, Sessions, and Learning plans tabs (plan table, activity-card form, Claude import). Not shown since step 7; removed in step 10. |
-| `src/lerni/student/web/ask.py` | The Ask tab for independent students: chat, one-line question box (Enter sends), a Send button that becomes Stop while answering, New conversation; one ongoing conversation per student; phone first (the chat and the box grow with content); educators can try the supervised-student voice. The role is checked on the server. |
+| `src/lerni/student/web/ask.py` | The conversation: an independent student's Ask tab (chat, one-line question box, Send that becomes Stop, New conversation; educators can try the supervised-student voice) and a supervised student's whole screen (chat, box, Send/Stop). One ongoing conversation per student; phone first. A supervised student always gets the supervised voice; the role is checked on the server. |
 | `src/lerni/student/web/maps.py` | My map and Maps: the picture, the list, Add goal, Rename, Remove, Upload notes (Claude proposes, the person ticks; the file is deleted at once), and, on Maps, Feedback for the admin; the username a page asks for is checked against the viewer (Maps shows only supervised students); Maps redraws every 30 seconds. |
 | `src/lerni/student/web/mapdraw.py` | Draws a map as inline SVG (at most 15 entries in a stable ring, three sizes, color-blind-safe green and coral, dashed bridges, every name escaped) and says the same in words. |
 | `src/lerni/student/web/accounts.py` | The Students tab (add, reset password, archive) and an independent student's My account (name, and password with the current one); handlers take the server-resolved viewer and refuse other roles. |
@@ -51,7 +51,7 @@ What every code file does, in the order a request flows through it. When you add
 
 | File | What it does |
 |---|---|
-| `src/lerni/student/adapters/claude_code.py` | Claude through the Claude Code CLI and the logged-in account (prototype; no API key): drafts a plan from notes, streams Ask Lerni's answers, tags each exchange for the map (a small model, JSON only), and proposes map entries from uploaded notes. No tools (except reading an uploaded PDF), no settings, and no saved transcripts. |
+| `src/lerni/student/adapters/claude_code.py` | Claude through the Claude Code CLI and the logged-in account (prototype; no API key): drafts a plan from notes, streams Ask Lerni's answers, tags each exchange for the map (a small model, JSON only), and proposes map entries from uploaded notes. Earlier turns go as JSON data, so a student can't fake one, and Stop cancels the call. No tools (except reading an uploaded PDF), no settings, and no saved transcripts. |
 | `src/lerni/student/adapters/__init__.py` | Marks the adapters package. |
 
 **Content shipped with the app**
@@ -93,6 +93,7 @@ What every code file does, in the order a request flows through it. When you add
 |---|---|
 | `scripts/eval_tagger.py` | Tagger evals: three real cases (an interest and a dislike, a bridge, a personal detail), run by hand with the admin's Claude account. |
 | `scripts/eval_upload.py` | Upload evals: two real cases (an educator's notes with a made-up name, a person's own notes), run by hand. |
+| `scripts/eval_supervised.py` | Supervised voice evals: three real cases (short and simple, a scary question, an excluded subject), run by hand. |
 | `scripts/generate_lesson_index.py` | Rebuilds `lesson_index.toml` from the real bytes after an activity or picture changes. It never approves anything. |
 
 ## Tests
@@ -116,12 +117,12 @@ Minimal on purpose: one happy path per module, plus a test for each safety guara
 | `tests/student/test_feedback.py` | Feedback is summarized, saved (with or without a summary), and closed, and never touches a map. |
 | `tests/student/test_signin.py` | A cookie stops working after a reset; wrong passwords wait without signing anyone out. |
 | `tests/student/test_conversation.py` | Answers stream in and history stays short; the map comes before the rules and never says who is asking; each exchange is reported, stopped or not; New conversation during a reply isn't undone. |
-| `tests/student/test_claude_code_adapter.py` | Every Claude call (drafter, chat, tagger, uploader) runs with no tools, no settings, and no saved transcripts; the tagger and uploader have a turn for their JSON. |
+| `tests/student/test_claude_code_adapter.py` | Every Claude call (drafter, chat, tagger, uploader) runs with no tools, no settings, and no saved transcripts; the tagger and uploader have a turn for their JSON.; a student can't forge an earlier turn; Stop cancels the call. |
 | `tests/student/test_plan_import.py` | Rough notes become an unsaved plan; nothing is sent to Claude without consent. |
 | `tests/student/test_web_signin.py` | Signed-out visits go to the sign-in form; a right password opens the app; Sign out ends it; a first start says how to add the first account. |
 | `tests/student/test_cli_student.py` | The admin adds the first educator account from the terminal, reads the conversation logs, and lists and closes feedback. |
 | `tests/student/test_serve.py` | Ctrl-C stops the server within a few seconds, even with pages open. |
-| `tests/student/test_web_roles.py` | Students can't manage accounts; cleared fields each get their own update; the page config carries no plans or other students' names; each role opens on a tab it can see; only independent students can ask; a map is reached only by its owner, or by an educator for a supervised student.; upload and feedback check who is asking, and an upload is deleted even when refused. |
+| `tests/student/test_web_roles.py` | Students can't manage accounts; cleared fields each get their own update; the page config carries no plans or other students' names; each role opens on a tab it can see; a supervised student signs in to the conversation; each student asks in their own voice; a map is reached only by its owner, or by an educator for a supervised student.; upload and feedback check who is asking, and an upload is deleted even when refused. |
 | `tests/student/test_core_imports.py` | The core imports only the standard library (never Gradio or a provider SDK). |
 | `tests/student/test_distribution.py` | The built package ships the activity files byte for byte (slow; needs `build`). |
 | `tests/student/conftest.py` | Shared test data: a synthetic activity, and a temporary data folder for every test. |

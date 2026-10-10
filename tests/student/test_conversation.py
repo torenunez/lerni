@@ -35,6 +35,9 @@ def test_the_map_is_information_before_the_rules_and_never_who_is_asking():
     for voice in ("independent", "supervised"):  # map text never comes after the rules
         prompt = system_prompt(block, voice)
         assert prompt.index("They love: cars") < prompt.index(SAFETY_RULES)
+    from lerni.student.conversation import SUPERVISED_RULES
+
+    assert system_prompt(block, "supervised").endswith(SUPERVISED_RULES)  # the very end
     model, seen = FakeModel(), []
     convos = Conversations(model, context=lambda u: block, on_exchange=seen.append)
     list(convos.ask("zephyrine", "hi"))
