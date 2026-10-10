@@ -107,7 +107,9 @@ iPad Safari allows the microphone only over HTTPS. Lerni uses its own certificat
 3. On each device (iPad, phones): send it the authority's certificate, `"$(mkcert -CAROOT)/rootCA.pem"` (AirDrop works), open it to install the profile (Settings → Profile Downloaded → Install), then turn on full trust (Settings → General → About → Certificate Trust Settings).
 4. Start with `lerni serve --cert ~/.lerni/student/https.pem --key ~/.lerni/student/https-key.pem` and open `https://<home-server>.local:7860/`.
 
-Safari's saved password is for the old `http://` address; sign in once more and let it save again. If the server's IP changes, make the certificate again (step 2).
+Safari's saved password is for the old `http://` address; sign in once more and let it save again. Replace any bookmark or home-screen icon with the `https://` address (the old one stops working). If the server's IP changes, make the certificate again (step 2); a fixed address for the server in the router avoids that.
+
+Once a device has signed in over HTTPS, keep serving HTTPS: if the server goes back to plain HTTP (started without `--cert`, or rolled back to a `main` from before HTTPS), that device may fail to sign in until its website data for the server is cleared (Safari: Settings → Apps → Safari → Advanced → Website Data).
 
 ## Maintenance
 
