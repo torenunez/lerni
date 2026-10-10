@@ -38,7 +38,6 @@ After these, Release 1 needs sessions, not code: the educator sets goals, rehear
 
 - [ ] After the first supervised sessions, if useful: count redirects per session, and a "flag this reply" button for the adult nearby.
 
-- [ ] Before the supervised conversation (step 9): Stop and New conversation end the answer on screen, but the Claude call can run on for up to 60 seconds; pass the cancel through to the adapter.
 - [ ] Before the supervised conversation: send real alternating turns instead of one "Them/You" transcript, so earlier answers can't be faked.
 - [ ] Try Ask on the iPad and a phone with the keyboard open; then a VoiceOver and keyboard-only pass.
 - [ ] Maybe: a daily cap per student once others use it.
