@@ -8,7 +8,7 @@ The admin can do anything Lerni does from the terminal: learn topics, try out wh
 
 ## Users
 
-- **Admin (engineer or developer):** has full access. Learns technical topics with it, tries activities and mechanics as the student would, finds what breaks, and tunes it. Also runs and maintains the system behind the student app, and uses that app as an independent student, with their own account, to try it as a learner.
+- **Admin (engineer or developer):** has full access. Learns technical topics with it, tries the mechanics as the student would, finds what breaks, and tunes it. Also runs and maintains the system behind the student app, and uses that app as an independent student, with their own account, to try it as a learner.
 
 ## Constraints
 
@@ -16,7 +16,7 @@ The admin can do anything Lerni does from the terminal: learn topics, try out wh
 - No credentials in files; tests use fakes and make no network calls.
 - Existing commands and data keep working.
 - The admin runs the student app: a Gradio web app on a home server (an always-on Mac), opened in Safari on an iPad on the home Wi-Fi.
-- Student data may leave the device, but only to services agreed to: by the educator for supervised students, by an independent student for themselves. No sharing, analytics, or advertising. Conversation text stays in memory and never reaches disk or logs; only accounts, interest maps, and feedback are saved.
+- Student data may leave the device, but only to services agreed to: by the educator for supervised students, by an independent student for themselves. No sharing, analytics, or advertising. Only accounts, interest maps, feedback, and 7-day conversation logs are saved.
 - These are prototype guardrails, not production moderation. One household; no public use.
 - Full access is for trying things out. In the app, the admin is an independent student like any other, with their own conversation and map. They create the first educator account (and can recover any account) with `lerni student` on the home server, and dogfood on their own device, never the supervised student's iPad.
 

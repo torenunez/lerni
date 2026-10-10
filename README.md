@@ -8,8 +8,8 @@ Lerni has two parts:
   - A **supervised student** talks with Lerni on an iPad, with an educator beside them. The educator chooses a few **goals**, and Lerni bridges toward them from what the student already loves. Educator involvement steps down over time, until the student talks with Lerni on their own and the educator only glances at their map.
   - An **independent student** is their own educator: they talk with Lerni and set their own goals: things to practice. The educator and admin use the app this way too, which tests it before a supervised student relies on it.
 
-  We are building it in steps: first a text conversation and the interest map; then a companion that remembers what each student likes; then speaking and listening. Sign-in and the text conversation exist; the interest map comes next.
-- **Admin tool — in the terminal.** Full access: learn topics with it, try out activities, and tune the learning mechanics before the student app relies on them. Available now. Educators never need it. To use the app as a learner, the admin has their own independent student account.
+  We are building it in releases: a text conversation and the interest map (built), then speaking and listening, then a companion that remembers what each student likes.
+- **Admin tool — in the terminal.** Full access: learn topics with it and tune the learning mechanics before the student app relies on them. Available now. Educators never need it. To use the app as a learner, the admin has their own independent student account.
 
 Each student has an **interest map**. **Interests** grow out of the conversation (cars, sharks, soccer), drawn bigger the more days they come up. **Goals** are what the educator would like them to explore (fractions, reading clocks), in coral, while interests are green. **Bridges** show where Lerni led from one to the other, so fractions met through cars becomes part of what the student loves. Design: [interest map spec](plans/specs/04-interest-map.md).
 

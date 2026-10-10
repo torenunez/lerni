@@ -74,7 +74,7 @@ A supervised student's iPad is signed in only as that student; the educator and 
 As a student, I want to ask anything by text and get clear, short answers, so that I can explore what I'm curious about right away.
 
 - WHEN a student sends a question THE SYSTEM SHALL stream Claude's answer, briefly and at their level, sometimes ending with one question that invites them to go deeper.
-- WHILE they're in a conversation THE SYSTEM SHALL keep one ongoing conversation per student, the last 20 messages, only in memory, the same on each of their devices, until they start a new conversation or the server restarts. Lerni keeps no transcript; Anthropic's own retention applies to what is sent.
+- WHILE they're in a conversation THE SYSTEM SHALL keep one ongoing conversation per student, the last 20 messages, in memory, the same on each of their devices, until they start a new conversation or the server restarts. Anthropic's own retention applies to what is sent.
 - WHILE an answer is streaming THE SYSTEM SHALL turn Send into Stop, keeping what was said so far if they press it, and keep their question if the answer fails.
 - WHEN the conversation fits naturally THE SYSTEM SHALL build a bridge from one of their interests to one goal, one at a time, never forced or announced.
 

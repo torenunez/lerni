@@ -4,7 +4,7 @@ The smallest app a student can try: sign in and talk with Lerni about what you l
 
 ## To build
 
-One PR per step, each from `main`. Steps 1–6 are built and merged. Steps 1–4 built an activity path (cards, plans, the plan import) that the interest map replaces; step 10 removes it.
+One PR per step, each from `main`. All ten steps are built and merged; step 10 removed the activity path (cards, plans, the plan import) of steps 1–4.
 
 1. **Walking skeleton: the app runs, and you can log in.** *(Built. Step 5 replaces the two apps with one app and sign-in for everyone.)* `lerni serve` starts the app on the home server (an always-on Mac), bound to all network addresses rather than only `localhost`, so other devices can reach it. Done when the educator logs in from their own phone or laptop and sees "No approved activities yet", and the iPad shows the student's waiting screen.
    - **Two apps, one server** (superseded by step 5). The student screen and the educator view are two Gradio apps mounted on separate routes of one server, sharing the controller. Gradio's login protects a whole app, not one tab, so only the educator app gets it. The passcode is set by the admin as an `env:VAR` reference, never in a file. Every educator handler (Start, Stop, Reset, recap, preview, draft pictures) checks it on the server; every event is hidden from the API page (`api_visibility="private"`; that hides, it doesn't protect). The student screen has no login.
