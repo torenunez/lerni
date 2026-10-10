@@ -28,6 +28,7 @@ How PRs are split:
 - **In order:** each branch starts from `main` after the PR before it merges.
 - **Each PR carries its own docs:** code manifest, in-app guide, todo, and progress for what it ships.
 - **Merged only by the admin,** after the "done when" is checked on the real devices.
+- **The shipped release stays in use:** each PR says in a Deploying section whether it's safe to put on the home server while the family uses it, how, and the caveats ([admin reference](reference/admin.md#updating-the-home-server)).
 - **When a PR merges:** delete its row and add a dated entry to [progress](progress.md). Work found along the way gets a new row or a task below, not a bigger PR.
 
 None queued. Release 2 (voice) starts with its spec (below).

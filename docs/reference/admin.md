@@ -84,6 +84,20 @@ lerni serve                                 # binds 0.0.0.0:7860
 - `lerni logs [USERNAME]` shows the last 7 days of conversations and what the tagger did; `lerni feedback` lists educators' feedback (`--summary` groups it, `done N` closes one).
 - Evals (real Claude calls, run by hand when instructions or models change): `scripts/eval_tagger.py`, `scripts/eval_upload.py`, `scripts/eval_supervised.py`.
 
+### Updating the home server
+
+The family uses whatever is on `main` while new features are built on branches on another computer. To put a merged change on the home server:
+
+1. In the repo folder: `git checkout main && git pull`.
+2. `.venv/bin/pip install -e ".[student]"` (only needed when a PR says dependencies or package files changed, but always safe).
+3. In the server's `tmux` session: Ctrl-C, then start `lerni serve` again (with `--cert` and `--key` once HTTPS is set up).
+
+Caveats:
+
+- A restart clears open conversations (they live in memory); accounts, maps, logs, and feedback stay. Restart between sessions, not during one.
+- Never run a branch on the home server; test branches on another computer with a throwaway data folder (`LERNI_STUDENT_DATA=/tmp/lerni-test lerni serve --port 7861`).
+- Each PR's Deploying section says whether it's safe to use yet and anything extra to do; if it says not yet, leave the server on the previous `main` (the merge can wait, or `git checkout <the previous merge>` on the server).
+
 ### HTTPS (for voice)
 
 iPad Safari allows the microphone only over HTTPS. Lerni uses its own certificate, made once with [mkcert](https://github.com/FiloSottile/mkcert) on the home server:
