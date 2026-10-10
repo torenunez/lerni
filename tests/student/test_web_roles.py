@@ -206,3 +206,16 @@ def test_uploads_over_5_mb_are_refused_and_leftovers_expire(tmp_path):
     small = client.post("/app/gradio_api/upload",
                         files={"files": ("notes.txt", b"cars", "text/plain")})
     assert small.status_code == 200
+
+
+def test_a_supervised_student_signs_in_to_the_conversation(tmp_path):
+    # the page has two chats (Ask and the supervised screen); only Home is a supervised tab
+    StudentStore(tmp_path).add("lee", "Lee", Kind.SUPERVISED, "1234")
+    client = TestClient(build_app(data_root=tmp_path))
+    client.post("/signin", data={"username": "lee", "password": "1234"})
+    config = client.get("/app/config").json()
+    labels = [c["props"].get("label") for c in config["components"] if c.get("type") == "tabitem"]
+    assert "Lerni" in labels
+    chats = [c for c in config["components"] if c.get("type") == "chatbot"]
+    assert len(chats) == 2
+    assert "Get ready to explore" not in client.get("/app/config").text  # no waiting screen

@@ -23,9 +23,9 @@ from lerni.student.web.ask import ask_tab, messages
 from lerni.student.web.mapdraw import map_svg, map_words
 from lerni.student.web.maps import entry_choices, map_tab, supervised_choices
 
-# Tab ids in page order. A supervised student gets Home (a waiting screen until
-# their conversation arrives in step 9); independent students get Ask, My map,
-# and My account; educators also get Maps and Students.
+# Tab ids in page order. A supervised student gets Home: their conversation,
+# full screen; independent students get Ask, My map, and My account; educators
+# also get Maps and Students.
 _TAB_IDS = ("home", "ask", "mymap", "maps", "students", "account")
 _EDUCATOR_TABS = {"maps", "students"}
 _INDEPENDENT_TABS = {"ask", "mymap", "account"}
@@ -52,7 +52,6 @@ def build_main_view(
     students: StudentStore,
     maps: MapStore,
     conversations: Conversations | None = None,
-    welcome_html: str = "",
     uploader: Uploader | None = None,
     feedback: FeedbackStore | None = None,
     model: ChatModel | None = None,
@@ -65,8 +64,7 @@ def build_main_view(
             # a same-tab button: a Markdown link would open Sign out in a new tab
             gr.Button("Sign out", link="/signout", link_target="_self", size="sm", scale=0)
         with gr.Tabs() as tabs:
-            with gr.Tab("Lerni", id="home", visible=False) as home:
-                gr.HTML(welcome_html)
+            home, home_chat, _ = ask_tab(signin, conversations, supervised=True)
             ask, chat, voice = ask_tab(signin, conversations)
             mymap, _, picture, words, entry = map_tab(signin, students, maps, mine=True,
                                                       uploader=uploader)
@@ -97,6 +95,8 @@ def build_main_view(
                 # one ongoing conversation per student: pick up where they left off
                 messages(conversations, viewer.username)
                 if conversations is not None and viewer is not None and "ask" in shown else [],
+                messages(conversations, viewer.username)  # the supervised screen's chat
+                if conversations is not None and viewer is not None and "home" in shown else [],
                 gr.update(visible=is_edu, value=False),  # educators can try the supervised voice
                 *own,  # My map: picture, words, entries
                 gr.update(choices=supervised_choices(students, viewer), value=None),  # Maps
@@ -107,7 +107,7 @@ def build_main_view(
             None,
             # order matches on_load: header, tabs, the _TAB_IDS tabs, then the rest
             [header, tabs, home, ask, mymap, maps_tab, students_tab_, account,
-             students_table, chat, voice, picture, words, entry, who],
+             students_table, chat, home_chat, voice, picture, words, entry, who],
             api_visibility="private",
         )
     return blocks

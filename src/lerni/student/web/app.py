@@ -37,69 +37,14 @@ MAX_UPLOAD_REQUEST = 5_000_000 + 64_000
 _SYSTEM_FONTS = ("-apple-system", "system-ui", "Helvetica Neue", "Arial", "sans-serif")
 _MONO_FONTS = ("ui-monospace", "Menlo", "monospace")
 
-# The student screen's look. Everything is local: emoji built into the
-# device and CSS animation, no images or web fonts. Motion stops when the
-# device asks for reduced motion.
+# The app's few style rules; everything else is Gradio's theme, all local.
 _CSS = """
-.lerni-welcome {
-  position: relative; overflow: hidden; border-radius: 28px;
-  min-height: 78vh; display: flex; flex-direction: column;
-  align-items: center; justify-content: center; text-align: center;
-  padding: 2rem 1rem; color: #1b1340;
-  background: linear-gradient(135deg, #ffe17a 0%, #ff9fb2 45%, #8fd3ff 100%);
+/* the chats' own trash icon is hidden: "New conversation" is the one way to start over */
+#lerni-ask-chat button[aria-label="Clear"], #lerni-home-chat button[aria-label="Clear"] {
+  display: none;
 }
-.lerni-welcome h1 {
-  font-size: clamp(2.6rem, 7vw, 4.5rem); margin: 0.2em 0; font-weight: 800;
-  letter-spacing: -0.02em; animation: lerni-bounce 2.4s ease-in-out infinite;
-}
-.lerni-welcome p { font-size: clamp(1.4rem, 3.4vw, 2rem); margin: 0.3em 0; }
-.lerni-welcome .lerni-wave { font-size: clamp(3rem, 9vw, 5.5rem); display: inline-block;
-  animation: lerni-wave 2s ease-in-out infinite; transform-origin: 70% 70%; }
-.lerni-welcome .lerni-ready {
-  margin-top: 1.4em; padding: 0.6em 1.2em; border-radius: 999px;
-  background: rgba(255, 255, 255, 0.75); font-size: clamp(1.2rem, 3vw, 1.6rem);
-  font-weight: 700; animation: lerni-pulse 1.8s ease-in-out infinite;
-}
-.lerni-float { position: absolute; font-size: clamp(2.2rem, 6vw, 3.6rem);
-  animation: lerni-float 7s ease-in-out infinite; opacity: 0.9; }
-.lerni-float:nth-of-type(1) { top: 8%;  left: 7%;  animation-delay: 0s; }
-.lerni-float:nth-of-type(2) { top: 14%; right: 9%; animation-delay: 1.2s; }
-.lerni-float:nth-of-type(3) { bottom: 14%; left: 10%; animation-delay: 2.4s; }
-.lerni-float:nth-of-type(4) { bottom: 9%; right: 8%; animation-delay: 0.6s; }
-.lerni-float:nth-of-type(5) { top: 45%; left: 3%; animation-delay: 3s; }
-.lerni-float:nth-of-type(6) { top: 42%; right: 3%; animation-delay: 1.8s; }
-@keyframes lerni-float { 0%, 100% { transform: translateY(0) rotate(-6deg); }
-  50% { transform: translateY(-18px) rotate(6deg); } }
-@keyframes lerni-bounce { 0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-8px); } }
-@keyframes lerni-wave { 0%, 60%, 100% { transform: rotate(0deg); }
-  15%, 45% { transform: rotate(16deg); } 30% { transform: rotate(-10deg); } }
-@keyframes lerni-pulse { 0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.06); } }
-/* Ask: hide the chat's own trash icon; "New conversation" is the one way to start over */
-#lerni-ask-chat button[aria-label="Clear"] { display: none; }
 /* 16px text in fields, so iPhone Safari doesn't zoom in and shift the page on tap */
 .gradio-container input, .gradio-container textarea { font-size: 16px !important; }
-@media (prefers-reduced-motion: reduce) {
-  .lerni-welcome *, .lerni-welcome { animation: none !important; }
-}
-"""
-
-# The student's waiting screen. The icons hint at the kinds of things there
-# are to explore; they are decoration, so screen readers skip them.
-_WELCOME_HTML = """
-<div class="lerni-welcome" role="main">
-  <span class="lerni-float" aria-hidden="true">🚗</span>
-  <span class="lerni-float" aria-hidden="true">🦈</span>
-  <span class="lerni-float" aria-hidden="true">⚽</span>
-  <span class="lerni-float" aria-hidden="true">🚀</span>
-  <span class="lerni-float" aria-hidden="true">🦖</span>
-  <span class="lerni-float" aria-hidden="true">🔭</span>
-  <span class="lerni-wave" aria-hidden="true">👋</span>
-  <h1>Get ready to explore!</h1>
-  <p>Talking with Lerni is coming soon.</p>
-  <p class="lerni-ready">Lerni is getting ready for you…</p>
-</div>
 """
 
 # Settings for the mounted app: no footer links (that hides the API
@@ -168,7 +113,7 @@ def build_app(
         if chat_model else None
     )
     view = build_main_view(
-        signin, students, maps, conversations, welcome_html=_WELCOME_HTML,
+        signin, students, maps, conversations,
         uploader=uploader, feedback=FeedbackStore(root), model=chat_model,
     )
     return gr.mount_gradio_app(
