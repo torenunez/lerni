@@ -56,3 +56,6 @@ secret.key
 # OS
 .DS_Store
 Thumbs.db
+
+# HTTPS certificates and keys (mkcert) never go in the repo
+*.pem

@@ -8,7 +8,7 @@ The admin can do anything Lerni does from the terminal: learn topics, try out wh
 
 ## Users
 
-- **Admin (engineer or developer):** has full access. Learns technical topics with it, tries activities and mechanics as the student would, finds what breaks, and tunes it. Also runs and maintains the system behind the student app, and uses that app as an independent student, with their own account, to try it as a learner.
+- **Admin (engineer or developer):** has full access. Learns technical topics with it, tries the mechanics as the student would, finds what breaks, and tunes it. Also runs and maintains the system behind the student app, and uses that app as an independent student, with their own account, to try it as a learner.
 
 ## Constraints
 
@@ -16,7 +16,7 @@ The admin can do anything Lerni does from the terminal: learn topics, try out wh
 - No credentials in files; tests use fakes and make no network calls.
 - Existing commands and data keep working.
 - The admin runs the student app: a Gradio web app on a home server (an always-on Mac), opened in Safari on an iPad on the home Wi-Fi.
-- Student data may leave the device, but only to services agreed to: by the educator for supervised students, by an independent student for themselves. No sharing, analytics, or advertising. Conversation text stays in memory and never reaches disk or logs; only accounts, interest maps, and feedback are saved.
+- Student data may leave the device, but only to services agreed to: by the educator for supervised students, by an independent student for themselves. No sharing, analytics, or advertising. Only accounts, interest maps, feedback, and 7-day conversation logs are saved.
 - These are prototype guardrails, not production moderation. One household; no public use.
 - Full access is for trying things out. In the app, the admin is an independent student like any other, with their own conversation and map. They create the first educator account (and can recover any account) with `lerni student` on the home server, and dogfood on their own device, never the supervised student's iPad.
 
@@ -57,8 +57,8 @@ Use by educators or students.
 - 2026-10-09: Ask Lerni's conversations also run through the admin's Claude account (the same known exception to Anthropic's consumer terms), for independent students only, with no tools and no saved transcripts.
 - 2026-10-09: The supervised student's conversation, the tagger, the upload, and the feedback summary also run through the admin's Claude account, with an educator beside the supervised student in every session. No API key is planned; revisit before anyone outside the family uses the app. The tagger uses a fast, cheap model (`LERNI_TAGGER_MODEL`). Educators' feedback is saved for the admin and never acted on automatically; the admin makes changes by hand.
 - 2026-10-09: The admin reads every student's conversations for up to 7 days in the terminal (`lerni logs`), with what the tagger did with each exchange, to check the map against what was said; the logs delete themselves after 7 days.
+- 2026-10-10: HTTPS on the home server uses a locally trusted certificate from mkcert, installed once on each device; no outside account. `lerni serve --cert --key` turns it on.
 
 ## Open questions
 
-- [NEEDS CLARIFICATION] (Release 2) How to add HTTPS on the home server for the microphone: a private network with its own certificates, or a locally trusted certificate. The admin decides while building.
 - [NEEDS CLARIFICATION] (Release 3) Does the companion's recall reuse the admin tool's scheduler (SM-2), given that the admin tool's database was not built for students' data?

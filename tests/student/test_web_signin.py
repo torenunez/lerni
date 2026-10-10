@@ -41,6 +41,14 @@ def test_first_start_says_how_to_add_the_first_account(tmp_path):
     assert "lerni student add" in client.get("/signin").text
 
 
+def test_the_cookie_is_secure_only_over_https(tmp_path):
+    StudentStore(tmp_path).add("sam", "Sam", Kind.INDEPENDENT, "long enough")
+    for base, secure in (("https://lerni.test", True), ("http://lerni.test", False)):
+        client = TestClient(build_app(data_root=tmp_path), base_url=base, follow_redirects=False)
+        response = client.post("/signin", data={"username": "sam", "password": "long enough"})
+        assert ("secure" in response.headers["set-cookie"].lower()) is secure
+
+
 def test_a_development_server_says_so_and_production_does_not(tmp_path):
     # two environments look alike; the label keeps them apart at a glance
     StudentStore(tmp_path).add("sam", "Sam", Kind.INDEPENDENT, "long enough")

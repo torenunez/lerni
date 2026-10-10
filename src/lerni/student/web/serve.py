@@ -70,15 +70,30 @@ def running_version() -> str:
         return f"version @ {metadata.version('lerni')}"  # installed without git
 
 
-def serve(host: str, port: int, label: str = "") -> None:
+def serve(
+    host: str, port: int, cert: Path | None = None, key: Path | None = None, label: str = ""
+) -> None:
     """Start the student app and block until it stops.
 
     Args:
         host: Address to bind. ``0.0.0.0`` lets the iPad and other devices on
             the home network reach it.
         port: Port to listen on.
+        cert: The HTTPS certificate (from mkcert); with ``key``, serves HTTPS.
+        key: The certificate's private key.
         label: Shown on every page (e.g. "Development"); empty for production.
+
+    Raises:
+        ValueError: Only one of ``cert`` and ``key``, or a file that doesn't exist.
     """
+    # check the HTTPS files before anything starts
+    if (cert is None) != (key is None):
+        raise ValueError("HTTPS needs both --cert and --key.")
+    for path in (cert, key):
+        if path is not None and not path.is_file():
+            raise ValueError(f"No such file: {path}")
+    scheme = "https" if cert else "http"
+
     import uvicorn
 
     from lerni.student.students import StudentStore
@@ -90,7 +105,7 @@ def serve(host: str, port: int, label: str = "") -> None:
         chat_model=chat, tagger=tagger, uploader=_claude_uploader(), label=label, version=version
     )
     print(f"Running:  {version}", flush=True)
-    print(f"Sign in:  http://<this-computer>:{port}/", flush=True)
+    print(f"Sign in:  {scheme}://<this-computer>:{port}/", flush=True)
     if not any(s.educator for s in StudentStore().list_students()):
         print("No educator yet: lerni student add USERNAME --name NAME "
               "--kind independent --educator", flush=True)
@@ -107,4 +122,6 @@ def serve(host: str, port: int, label: str = "") -> None:
         log_level="warning",
         access_log=False,
         timeout_graceful_shutdown=3,
+        ssl_certfile=str(cert) if cert else None,  # HTTPS when both files are given
+        ssl_keyfile=str(key) if key else None,
     )

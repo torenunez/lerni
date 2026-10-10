@@ -6,15 +6,16 @@ Open tasks by who does the work. The educator and admin tracks run in parallel: 
 
 ### Now: Release 1 MVP
 
-- [ ] Think of 2–3 things you'd like the supervised student to explore (with a note each on what you have in mind). You'll add them on the Maps tab once step 7 lands, or upload your notes once step 8 does.
+- [ ] Think of 2–3 things you'd like the supervised student to explore (with a note each on what you have in mind). You'll add them on the Maps tab, or upload your notes.
 
 ### Later: Release 1 MVP
 
-- [ ] Once step 7 lands: talk with Lerni yourself for a few days and watch your own map; say what's confusing in Feedback (step 8) or to the admin.
+- [ ] Talk with Lerni yourself for a few days and watch your own map; say what's confusing in Feedback or to the admin.
 - [ ] Try the conversation with the supervised-student voice, then sit beside the supervised student for a short first conversation. Keep notes private, or put them in Feedback.
 
 ## Admin
 
+- [ ] Set up HTTPS on the home server and install its certificate on the iPad and phones ([admin reference: HTTPS](reference/admin.md#https-for-voice)); then start with `lerni serve --cert … --key …`.
 - [ ] Optionally delete the old plan files on the home server (`~/.lerni/student/plans/`); nothing reads them since step 10.
 
 ### Upcoming PRs
@@ -25,11 +26,12 @@ How PRs are split:
 
 - **One unit per PR:** one build step (with the docs it changes), or one docs-only change, never two units in one PR.
 - **In order:** each branch starts from `main` after the PR before it merges.
-- **Each PR carries its own docs:** code manifest, in-app guide, todo, and progress for what it ships.
+- **Each PR carries its own docs:** code manifest, todo, and progress for what it ships.
 - **Merged only by the admin,** after the "done when" is checked on the real devices.
+- **The shipped release stays in use:** each PR says in a Deploying section whether it's safe to put on the home server while the family uses it, how, and the caveats ([admin reference](reference/admin.md#updating-the-home-server)).
 - **When a PR merges:** delete its row and add a dated entry to [progress](progress.md). Work found along the way gets a new row or a task below, not a bigger PR.
 
-None queued. Release 2 (voice) starts with its spec (below).
+Next: Release 2 step 1, HTTPS ([plan](../plans/release-2-step-1-https.md)); then step 2, voice ([spec 05](../plans/specs/05-voice.md)).
 
 Release 1 now needs sessions, not code: the educator sets goals, rehearses, and sits beside the supervised student (Educator and Student tasks above and below).
 
@@ -37,7 +39,6 @@ Release 1 now needs sessions, not code: the educator sets goals, rehearses, and 
 
 - [ ] After the first supervised sessions, if useful: count redirects per session, and a "flag this reply" button for the adult nearby.
 
-- [ ] Before the supervised conversation: send real alternating turns instead of one "Them/You" transcript, so earlier answers can't be faked.
 - [ ] Try Ask on the iPad and a phone with the keyboard open; then a VoiceOver and keyboard-only pass.
 - [ ] Maybe: a daily cap per student once others use it.
 - [ ] Before anyone outside the family uses Ask: a short notice of where messages go and that answers can be wrong.
@@ -49,10 +50,9 @@ Release 1 now needs sessions, not code: the educator sets goals, rehearses, and 
 - [ ] Small, from the step 7 review: at a full map a just-added interest can be dropped by the next one; the map block's 1,500-character cut can cut a line mid-word; top interests rank by all-time days rather than the last 30; a faded explained goal can be listed twice in the block; the Maps timer ticks on every page; an unreadable map file shows a Gradio error; `lerni logs` can fail if a purge runs mid-read.
 - [ ] When a map outgrows the picture (more than 15 entries drawn): show more, for example by grouping or a focus on one entry and its links; the list below already has them all.
 
-### Later: Release 2 Voice
+### Now: Release 2 Voice
 
-- [ ] Write `plans/release-2-voice.md` and its spec: push-to-talk with Gradio's microphone and audio playback; local Whisper (speech-to-text) and Kokoro (text-to-speech) helper programs behind `transcribe`/`speak`; each sentence spoken as it's written; Stop silences it; audio in memory only; evals grown from the conversation evals.
-- [ ] Before it: check the home server can run both helpers (about 2–4 cores and 2 GB for text-to-speech), and how the iPad will trust its HTTPS certificate.
+- [ ] Before step 2: check the home server can run both helpers (about 2–4 cores and 2 GB for text-to-speech) and has the disk space.
 - [ ] Try the voice with the students before deciding whether a hosted voice (Inworld, about $18 a month) is worth it; a hosted service means student audio leaves the house, so it needs the educator's agreement first.
 - [ ] Before anyone outside the family uses the app: files in Gradio's cache (uploads, any voice audio) are reachable by URL to anyone signed in; serve them only to their owner, or keep none.
 - [ ] Before anyone outside the household uses the app: replace the Claude Code adapter with an API-key adapter (`env:ANTHROPIC_API_KEY`).

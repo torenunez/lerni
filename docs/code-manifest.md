@@ -8,10 +8,10 @@ What every code file does, in the order a request flows through it. When you add
 
 | File | What it does |
 |---|---|
-| `src/lerni/commands/serve.py` | The `lerni serve` command: starts the student app, with a friendly message if Gradio isn't installed; `--label Development` marks a development server. |
-| `src/lerni/student/web/serve.py` | Says which code is running (branch, commit, date), picks the Claude chat, tagger, and uploader if the `claude` CLI is installed, builds the app, says how to add the first educator if there's none and where the logs are, and runs the web server (Ctrl-C stops it within 3 seconds). |
+| `src/lerni/commands/serve.py` | The `lerni serve` command: starts the student app, with a friendly message if Gradio isn't installed; `--cert` and `--key` serve HTTPS; `--label Development` marks a development server. |
+| `src/lerni/student/web/serve.py` | Says which code is running (branch, commit, date), picks the Claude chat, tagger, and uploader if the `claude` CLI is installed, builds the app, says how to add the first educator if there's none and where the logs are, and runs the web server (HTTPS with `--cert` and `--key`) (Ctrl-C stops it within 3 seconds). |
 | `src/lerni/student/web/app.py` | Builds the server: the sign-in page, and one Gradio app at `/app/` that Gradio's `auth_dependency` re-checks on every request; wires the conversation to the map keeper (maps, tagger, logs), Upload to the uploader, and Feedback to `feedback.jsonl` and purges old logs at startup. Turns off Gradio's analytics, run history, API pages, and other extras, and sets the look (system fonts, 16px fields). |
-| `src/lerni/student/web/signin_page.py` | The sign-in page: a plain HTML form Safari can save, the signed cookie, Sign out (this device only), and sending signed-out visits to it; shows the running version small at the bottom. |
+| `src/lerni/student/web/signin_page.py` | The sign-in page: a plain HTML form Safari can save, the signed cookie (`Secure` over HTTPS), Sign out (this device only), and sending signed-out visits to it; shows the running version small at the bottom. |
 | `src/lerni/student/web/main.py` | The one app's page: "Signed in as" with Sign out, then tabs by role on load: a supervised student's conversation, full screen; Ask, My map, and My account; Maps and Students for educators. Nothing per-user or from the data is built into the layout. |
 
 **The screens** (the only code that imports Gradio)
@@ -97,9 +97,9 @@ Minimal on purpose: one happy path per module, plus a test for each safety guara
 | `tests/student/test_signin.py` | A cookie stops working after a reset; wrong passwords wait without signing anyone out. |
 | `tests/student/test_conversation.py` | Answers stream in and history stays short; the map comes before the rules and never says who is asking; each exchange is reported, stopped or not; New conversation during a reply isn't undone. |
 | `tests/student/test_claude_code_adapter.py` | Every Claude call (chat, tagger, uploader) runs with no tools, no settings, and no saved transcripts; the tagger and uploader have a turn for their JSON; a student can't forge an earlier turn; Stop cancels the call. |
-| `tests/student/test_web_signin.py` | Signed-out visits go to the sign-in form; a right password opens the app; Sign out ends it; a first start says how to add the first account; a development server shows its label and production doesn't; the sign-in page says which version is running. |
+| `tests/student/test_web_signin.py` | Signed-out visits go to the sign-in form; a right password opens the app; Sign out ends it; a first start says how to add the first account; the cookie is `Secure` only over HTTPS; a development server shows its label and production doesn't; the sign-in page says which version is running. |
 | `tests/student/test_cli_student.py` | The admin adds the first educator account from the terminal, reads the conversation logs, and lists and closes feedback. |
-| `tests/student/test_serve.py` | Ctrl-C stops the server within a few seconds, even with pages open. |
+| `tests/student/test_serve.py` | Ctrl-C stops the server within a few seconds, even with pages open; HTTPS needs both files. |
 | `tests/student/test_web_roles.py` | Students can't manage accounts; cleared fields each get their own update; the page config carries no plans or other students' names; each role opens on a tab it can see; a supervised student signs in to the conversation; each student asks in their own voice; a map is reached only by its owner, or by an educator for a supervised student; upload and feedback check who is asking, and an upload is deleted even when refused. |
 | `tests/student/test_core_imports.py` | The core imports only the standard library (never Gradio or a provider SDK). |
 | `tests/student/test_distribution.py` | Builds the wheel and sdist, installs each outside the repo, and checks the personas ship byte for byte. |

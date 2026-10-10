@@ -29,7 +29,7 @@ flowchart LR
     server -. "adapter: the admin's Claude account" .-> ai[Claude]
 ```
 
-Release 1 uses plain HTTP on the home network and is never exposed to the internet. Release 2 (voice) adds HTTPS on the same server, because browsers allow the microphone only over HTTPS ([MDN](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia)).
+The app runs on the home network only and is never exposed to the internet. It serves plain HTTP, or HTTPS when `lerni serve` gets `--cert` and `--key` (a certificate made with mkcert and installed once on each device; Release 2), and voice needs HTTPS on the same server, because browsers allow the microphone only over HTTPS ([MDN](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia)).
 
 ## How a conversation grows the map
 
@@ -47,7 +47,7 @@ flowchart LR
 1. The student sends a question.
 2. The prompt is the persona for their kind, then their map as information (top interests, goals with notes, recent bridges), then the safety rules, always last.
 3. Claude answers, streamed. It follows their curiosity and, every few exchanges, bridges toward one goal.
-4. The answer is shown; the conversation stays in memory only.
+4. The answer is shown; the conversation stays in memory.
 5. In the background, a small call gets this exchange, Lerni's previous message, and the map's entries (never the username).
 6. It returns which entries the exchange was about, new interests, links, and whether a bridge happened. The server applies only the observations the [spec](../plans/specs/04-interest-map.md#the-agent) lists (people control goals), under one lock per map, and throws away a result that started before a person's edit. The exchange and what the tagger did go to the 7-day log. A failure is ignored.
 

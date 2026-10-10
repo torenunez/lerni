@@ -5,7 +5,7 @@ Build plans, one per release, named `release-<n>-<name>.md` and written when tha
 | Release | Plan | Status |
 |---|---|---|
 | 1 — MVP | [release-1-mvp.md](release-1-mvp.md) | Current |
-| 2 — Voice | Not written. Start from the [student PRD's Release 2](../docs/prd/student.md#release-2-talk-with-the-app) and the to-do list; older ideas in [later/prs/07-audio-input.md](later/prs/07-audio-input.md) and [later/prs/07a-capability-adapters.md](later/prs/07a-capability-adapters.md) | Next |
+| 2 — Voice | [spec 05](specs/05-voice.md), [step 1](release-2-step-1-https.md) | In progress |
 | 3 — Remembering | Not written | Later |
 | 4 — Suggested goals | Not written. Start from [later/prs/11-recommendations.md](later/prs/11-recommendations.md) | Later |
 | 5 — Without an educator present | Not written | Later |
