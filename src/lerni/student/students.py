@@ -18,7 +18,6 @@ import threading
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass, replace
-from datetime import date
 from enum import StrEnum
 from pathlib import Path
 from typing import Any
@@ -67,7 +66,6 @@ class Student:
     kind: Kind
     password: PasswordHash
     session_version: int = 1
-    explore_freely: date | None = None
     educator: bool = False  # may manage students and the family's plans
     archived: bool = False
 
@@ -132,7 +130,6 @@ def _to_dict(student: Student) -> dict[str, Any]:
         "kind": student.kind.value,
         "password": {"salt": p.salt, "hash": p.hash, "n": p.n, "r": p.r, "p": p.p},
         "session_version": student.session_version,
-        "explore_freely": student.explore_freely.isoformat() if student.explore_freely else None,
         "educator": student.educator,
         "archived": student.archived,
     }
@@ -140,14 +137,12 @@ def _to_dict(student: Student) -> dict[str, Any]:
 
 def _from_dict(data: dict[str, Any]) -> Student:
     try:
-        explore = data.get("explore_freely")
         return Student(
             username=check_username(data["username"]),
             display_name=str(data["display_name"]),
             kind=Kind(data["kind"]),
             password=PasswordHash(**data["password"]),
             session_version=int(data["session_version"]),
-            explore_freely=date.fromisoformat(explore) if explore else None,
             educator=bool(data.get("educator", False)),
             archived=bool(data["archived"]),
         )
