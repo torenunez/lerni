@@ -15,6 +15,7 @@
 - **The iPad check passed** (on the iPhone; same Safari rules): hold to record works, the clip reaches the server through a Gradio event, and the answer plays with no extra tap. Approach A stays.
 - **Text to speech:** the Mac's own voice (`say`), not Kokoro. The admin liked it; there's nothing to install and no second program to keep running. Kokoro can replace it behind the same `Speech` protocol.
 - **Speech to text:** `whisper-cli` per clip, not a running `whisper-server`. It's one less program to keep running, and loading the model costs well under a second on the M4. If that's too slow, `whisper-server` replaces it behind the same protocol.
+- **The button reacts at once** (turns red and pulses, "Listening… let go to send"), and **a live preview** shows what Lerni hears while the button is held: every ~1.5 s the clip so far goes to `whisper-cli` (about 0.6 s on the M4), and the newest result replaces the last (`trigger_mode="always_last"`, so previews never pile up). The admin chose this over Safari's dictation, which sends audio to Apple (2026-10-10).
 - **Only talked questions are answered aloud.** Typed questions stay text-only. The student never hears their own clip; what was heard shows in the chat so they can check it.
 
 ## Global Constraints
@@ -390,7 +391,13 @@ def test_a_talked_question_is_heard_then_answered_in_the_right_voice():
     with pytest.raises(NotAllowed):
         talk_reply(convos, speech, None, clip())
     assert speech.clips == 1  # nobody signed in: nothing transcribed
+    assert talk_preview(speech, lee, clip()) == "what do sharks eat"
+    assert talk_preview(speech, lee, "not a clip") == ""  # a bad preview shows nothing
+    with pytest.raises(NotAllowed):
+        talk_preview(speech, None, clip())
 ```
+
+(Import `talk_preview` alongside `talk_reply`.)
 
 (If `tests.student` isn't importable as a package, move `FakeSpeech` and `clip` into `tests/student/conftest.py` as plain helpers and import from there; ledger the ruling.)
 
@@ -420,7 +427,33 @@ def talk_reply(
     require(viewer, Role.INDEPENDENT, Role.SUPERVISED)
     text = heard(speech, clip_b64)
     return text, spoken_reply(speech, ask_reply(conversations, viewer, text, supervised_voice))
+
+
+def talk_preview(speech: Speech, viewer: Viewer | None, clip_b64: str) -> str:
+    """What has been heard so far while the button is held; "" if nothing usable.
+
+    Raises:
+        NotAllowed: Nobody is signed in.
+    """
+    require(viewer, Role.INDEPENDENT, Role.SUPERVISED)
+    try:
+        return heard(speech, clip_b64)
+    except (ClipRefused, SpeechUnavailable):
+        return ""
 ```
+
+The talk block also gets the preview: a `gr.Markdown(elem_id=f"lerni-preview-{suffix}")` under the button, a hidden `partial` textbox and hidden `peek` button, and
+
+```python
+            def on_peek(b64: str, request: gr.Request) -> str:
+                viewer = signin.viewer(request.username)
+                return f"🎤 {talk_preview(speech, viewer, b64)}" if viewer else ""
+
+            # only the newest preview runs; older ones are dropped
+            peek.click(on_peek, partial, preview, trigger_mode="always_last", **PRIVATE)
+```
+
+and `on_talk` clears the preview (`preview` joins its outputs; every yield adds `""` for it).
 
 In `ask_tab(..., speech: Speech | None = None)`, when `speech` and `ready`, under the question row:
 
@@ -476,7 +509,7 @@ In `ask_tab(..., speech: Speech | None = None)`, when `speech` and `ready`, unde
 
 Then: `stop.click(..., cancels=[answering, talking] if talking else [answering])`, plus `stop.click(None, None, None, js="() => window.lerniTalk?.stop()")`, and the same `cancels` and stop script on `new.click`. (Move the stop and new wiring below this block.) Imports: `base64`, `json`, and from `lerni.student.voice` `ClipRefused`, `SPOKE_NOTHING`, `Speech`, `SpeechUnavailable`, `heard`, `spoken_reply`.
 
-`main.py`: accept `speech` and pass it to both `ask_tab` calls. `app.py`: `build_app(..., speech=None)` passes it to `build_main_view`; `_CSS` gains `.lerni-hide { display: none !important; }`; `mount_gradio_app(..., head=_talk_head() if speech else "")`, where `_talk_head()` reads `talk.js` with `importlib.resources` and wraps it in `<script>`. `serve.py`: `speech = _speech()` (lazy import of `mac_speech_from_env`), pass it, and print `Voice (hold to talk): on` or `off (install whisper.cpp and the model: admin reference, Voice)`.
+`main.py`: accept `speech` and pass it to both `ask_tab` calls. `app.py`: `build_app(..., speech=None)` passes it to `build_main_view`; `_CSS` gains `.lerni-hide { display: none !important; }` and the held button's look (`.lerni-listening { background: #dc2626 !important; color: white !important; animation: lerni-pulse 1s ease-in-out infinite; }` with a `@keyframes lerni-pulse` that scales to 1.05 and back); `mount_gradio_app(..., head=_talk_head() if speech else "")`, where `_talk_head()` reads `talk.js` with `importlib.resources` and wraps it in `<script>`. `serve.py`: `speech = _speech()` (lazy import of `mac_speech_from_env`), pass it, and print `Voice (hold to talk): on` or `off (install whisper.cpp and the model: admin reference, Voice)`.
 
 - [ ] **Step 4: Run tests and commit**
 
@@ -525,6 +558,22 @@ git commit -m "Hold to talk: hear the question, answer aloud a sentence at a tim
     S.node.onaudioprocess = ev => { if (S.on) S.chunks.push(new Float32Array(ev.inputBuffer.getChannelData(0))); };
     S.src.connect(S.node); S.node.connect(S.ctx.destination);
     btn.textContent = '🔴 Listening… let go to send';
+    btn.classList.add('lerni-listening');  // red and pulsing while held
+    // every 1.5 s, send the clip so far for a live preview
+    S.peek = setInterval(() => fill(`lerni-partial-${suffixOf(btn)}`, `lerni-peek-${suffixOf(btn)}`), 1500);
+  }
+
+  const suffixOf = btn => btn.id.replace('lerni-talk-', '');
+
+  // put the clip so far in a hidden field and press its hidden button
+  function fill(boxId, buttonId) {
+    let n = 0; S.chunks.forEach(c => n += c.length);
+    if (n < S.ctx.sampleRate * 0.5) return;  // under half a second: nothing to show yet
+    const all = new Float32Array(n); let o = 0; S.chunks.forEach(c => { all.set(c, o); o += c.length; });
+    const box = document.querySelector(`#${boxId} textarea`);
+    box.value = b64(wav(downsample(all, S.ctx.sampleRate)));
+    box.dispatchEvent(new Event('input', {bubbles: true}));
+    setTimeout(() => document.getElementById(buttonId).click(), 50);
   }
 
   // average down to 16 kHz mono, at most 30 seconds
@@ -558,15 +607,11 @@ git commit -m "Hold to talk: hear the question, answer aloud a sentence at a tim
   function send(e, btn, suffix) {
     if (!S.on) return;
     e.preventDefault();
-    S.on = false; S.src.disconnect(); S.node.disconnect();
+    S.on = false; clearInterval(S.peek); S.src.disconnect(); S.node.disconnect();
     btn.textContent = '🎤 Hold to talk';
+    btn.classList.remove('lerni-listening');
     if ((performance.now() - S.t0) / 1000 < 0.5) return;  // too short: Whisper invents words
-    let n = 0; S.chunks.forEach(c => n += c.length);
-    const all = new Float32Array(n); let o = 0; S.chunks.forEach(c => { all.set(c, o); o += c.length; });
-    const box = document.querySelector(`#lerni-clip-${suffix} textarea`);
-    box.value = b64(wav(downsample(all, S.ctx.sampleRate)));
-    box.dispatchEvent(new Event('input', {bubbles: true}));
-    setTimeout(() => document.getElementById(`lerni-heard-${suffix}`).click(), 50);
+    fill(`lerni-clip-${suffix}`, `lerni-heard-${suffix}`);
   }
 
   async function next() {
