@@ -4,9 +4,9 @@ Guidance for AI coding agents in this repository. Product context: [README](READ
 
 ## What's here
 
-- `src/lerni/student/`: the student app's core: accounts, sign-in, the conversation for both kinds of student, the interest map (`interests.py`, `tagging.py`, `logs.py`), and Upload and feedback (`upload.py`, `feedback.py`) (built; [design](plans/specs/04-interest-map.md)). The older activity path (activity format, catalog, engine, learning plans, the plan import) is off the screens and removed in step 10.
+- `src/lerni/student/`: the student app's core: accounts, sign-in, the conversation for both kinds of student, the interest map (`interests.py`, `tagging.py`, `logs.py`), and Upload and feedback (`upload.py`, `feedback.py`) ([design](plans/specs/04-interest-map.md)). Release 1's code is complete.
 - `src/lerni/` (the rest): the admin tool, the `lerni` command.
-- `src/lerni/student/web/`: the Gradio screens (`lerni serve`), One app with sign-in and tabs by role. `scripts/`: the lesson index generator (removed in step 10). The educator never uses the repo; everything for them lives in the app.
+- `src/lerni/student/web/`: the Gradio screens (`lerni serve`), One app with sign-in and tabs by role. `scripts/`: the evals (real Claude calls, run by hand). The educator never uses the repo; everything for them lives in the app.
 - `docs/prd/`: the source of truth for requirements, one PRD per role. `plans/`: one build plan per release ([release-1-mvp.md](plans/release-1-mvp.md) is current); `plans/later/` holds older designs for reference. A PRD wins where they disagree.
 
 Python 3.11+, standard library first; typer and rich for the CLI; SQLite for admin data in `~/.lerni/`.
@@ -16,14 +16,14 @@ Python 3.11+, standard library first; typer and rich for the CLI; SQLite for adm
 ```bash
 .venv/bin/python -m pytest -q          # all tests
 .venv/bin/python -m ruff check <files> # lint; src/ has known pre-existing debt
-.venv/bin/python scripts/generate_lesson_index.py   # after changing a lesson file or asset
+.venv/bin/python scripts/eval_tagger.py           # evals: real Claude calls, run by hand (also eval_upload, eval_supervised)
 ```
 
 The commit gate (`.claude/hooks/quality-gate.sh`) lints staged Python and runs the full test suite; it skips tests when only Markdown is staged. Never commit `.claude/settings.local.json`. Cursor users run the same gate by enabling `.githooks/` once per clone: `git config core.hooksPath .githooks`.
 
 ## Rules
 
-1. **Vocabulary.** The people are the **student**, the **educator**, and the **admin**. A student is a **supervised student** or an **independent student**, set by supervision, not age. Don't write child, kid, parent, adult, or supervisor, and don't describe a student by age: the experience is simple and engaging for people of all ages. Exceptions: tree terms for concepts (a concept's parent or children), and older text kept as history (the log in `docs/progress.md`, `plans/later/`, `plans/specs/02-lesson-core.md`, the retired CSV templates in git history).
+1. **Vocabulary.** The people are the **student**, the **educator**, and the **admin**. A student is a **supervised student** or an **independent student**, set by supervision, not age. Don't write child, kid, parent, adult, or supervisor, and don't describe a student by age: the experience is simple and engaging for people of all ages. Exceptions: tree terms for concepts (a concept's parent or children), and older text kept as history (the log in `docs/progress.md`, `plans/later/`, and older files in git history).
 2. **No commit, push, branch, or pull request unless asked.** Pull requests follow the running list in [docs/todo.md](docs/todo.md#upcoming-prs): one unit each, in order, each from `main`.
 3. **No hardcoded providers.** Model and speech services go behind a replaceable adapter; credentials only as `env:VAR` references, never literal values.
 4. **Tests use fakes, and stay minimal.** No test calls a real model, service, or network. One happy path per module plus a test for each safety guarantee; add a regression test with each bug fix, not tests up front. This holds even when a plan or skill says to write tests first. Evals too: start with 2–3 cases and add one per problem seen.

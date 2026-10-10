@@ -111,3 +111,16 @@ def test_an_archived_account_can_not_become_an_educator(tmp_path):
     with pytest.raises(AccountError):
         store.set_educator("sam", True)
     assert not store.get("sam").educator
+
+
+def test_an_account_saved_before_step_10_still_loads(tmp_path):
+    # account files from before step 10 carry a retired "explore_freely" key
+    import json
+
+    store = StudentStore(tmp_path)
+    store.add("sam", "Sam", Kind.INDEPENDENT, "long enough")
+    path = tmp_path / "students" / "sam.json"
+    data = json.loads(path.read_text())
+    data["explore_freely"] = "2026-10-09"
+    path.write_text(json.dumps(data))
+    assert verify_password("long enough", store.get("sam").password)

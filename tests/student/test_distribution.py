@@ -1,7 +1,7 @@
 """Distribution tests.
 
-A lesson that loads from the source checkout but not from an installed wheel is
-a lesson that works for developers and fails for everyone else. These tests
+A persona that loads from the source checkout but not from an installed wheel is
+a conversation that works for developers and fails for everyone else. These tests
 build both distributions, install each into a throwaway environment outside the
 repository, and verify the packaged bytes are byte-identical to source.
 
@@ -22,8 +22,7 @@ import pytest
 pytestmark = pytest.mark.distribution
 
 REPO = pathlib.Path(__file__).resolve().parents[2]
-LESSONS = REPO / "src/lerni/student/lessons"
-LESSON_ID = "chain-1-acceleration"
+PERSONAS = REPO / "src/lerni/student/personas"
 
 
 def _digest(path: pathlib.Path) -> str:
@@ -87,26 +86,14 @@ def _load_from(site: pathlib.Path, snippet: str) -> str:
 
 LOAD_SNIPPET = """
 import hashlib
-from importlib import resources
-from lerni.student.catalog import PackageLessonCatalog, parse_lesson_toml
-
-pkg = resources.files("lerni.student.lessons")
-lesson_bytes = pkg.joinpath("chain_1_acceleration.toml").read_bytes()
-svg_bytes = pkg.joinpath("assets/chain_1_acceleration.svg").read_bytes()
-lesson = parse_lesson_toml(lesson_bytes.decode("utf-8"))
-print(lesson.id)
-print(hashlib.sha256(lesson_bytes).hexdigest())
-print(hashlib.sha256(svg_bytes).hexdigest())
-print(type(PackageLessonCatalog()).__name__)
-print(str(pkg))
+from lerni.student.conversation import persona
+for voice in ("independent", "supervised"):
+    print(hashlib.sha256(persona(voice).encode("utf-8")).hexdigest())
 """
 
 
 @pytest.mark.parametrize("kind", ["wheel", "sdist"])
-def test_installed_distribution_carries_exact_lesson_bytes(built, kind):
+def test_installed_distribution_carries_exact_persona_bytes(built, kind):
     site = _install(built[kind])
-    lesson_id, lesson_hash, svg_hash, catalog_name, _ = _load_from(site, LOAD_SNIPPET).splitlines()
-    assert lesson_id == LESSON_ID
-    assert catalog_name == "PackageLessonCatalog"
-    assert lesson_hash == _digest(LESSONS / "chain_1_acceleration.toml")
-    assert svg_hash == _digest(LESSONS / "assets/chain_1_acceleration.svg")
+    hashes = _load_from(site, LOAD_SNIPPET).splitlines()
+    assert hashes == [_digest(PERSONAS / "independent.md"), _digest(PERSONAS / "supervised.md")]

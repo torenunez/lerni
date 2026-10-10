@@ -11,9 +11,11 @@ Open tasks by who does the work. The educator and admin tracks run in parallel: 
 ### Later: Release 1 MVP
 
 - [ ] Once step 7 lands: talk with Lerni yourself for a few days and watch your own map; say what's confusing in Feedback (step 8) or to the admin.
-- [ ] Once step 9 lands: try the conversation with the supervised-student voice, then sit beside the supervised student for a short first conversation. Keep notes private, or put them in Feedback.
+- [ ] Try the conversation with the supervised-student voice, then sit beside the supervised student for a short first conversation. Keep notes private, or put them in Feedback.
 
 ## Admin
+
+- [ ] Optionally delete the old plan files on the home server (`~/.lerni/student/plans/`); nothing reads them since step 10.
 
 ### Upcoming PRs
 
@@ -27,11 +29,9 @@ How PRs are split:
 - **Merged only by the admin,** after the "done when" is checked on the real devices.
 - **When a PR merges:** delete its row and add a dated entry to [progress](progress.md). Work found along the way gets a new row or a task below, not a bigger PR.
 
-| # | PR | Branch | Ships | Done when | Status |
-|---|---|---|---|---|---|
-| 1 | Step 10: remove the old activity path | `chore/remove-activities` | Plans, the old import, catalog, engine, lessons, seed, the index script, and their tests and docs | Tests pass; the code manifest matches | Not started |
+None queued. Release 2 (voice) starts with its spec (below).
 
-After these, Release 1 needs sessions, not code: the educator sets goals, rehearses, and sits beside the supervised student (Educator and Student tasks above and below).
+Release 1 now needs sessions, not code: the educator sets goals, rehearses, and sits beside the supervised student (Educator and Student tasks above and below).
 
 ### Ask Lerni: deferred review findings
 

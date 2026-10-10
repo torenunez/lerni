@@ -6,14 +6,12 @@ pytest.importorskip("claude_agent_sdk")
 
 from lerni.student.adapters.claude_code import (  # noqa: E402
     ClaudeCodeChat,
-    ClaudeCodeDrafter,
     ClaudeCodeTagger,
     ClaudeCodeUploader,
 )
 
 
 @pytest.mark.parametrize("options", [
-    ClaudeCodeDrafter().options("/tmp/x"),
     ClaudeCodeChat().options("Be brief.", "/tmp/x"),
     ClaudeCodeTagger().options("Tag it.", "/tmp/x"),
     ClaudeCodeUploader().options("Sort it.", "/tmp/x"),

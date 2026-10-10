@@ -1,8 +1,7 @@
 """Claude through the Claude Code CLI on the home server (prototype only).
 
-Four uses: drafting a plan from rough notes (old; removed in step 10), Ask
-Lerni's conversation, tagging each exchange for the interest map, and
-proposing map entries from uploaded notes.
+Three uses: Ask Lerni's conversation, tagging each exchange for the interest
+map, and proposing map entries from uploaded notes.
 
 Uses the Claude account the CLI is logged into, so there's no API key to
 store. Before anyone outside the household uses the app, replace this with an
@@ -31,13 +30,6 @@ from claude_agent_sdk import (
 )
 
 from lerni.student.conversation import ConversationUnavailable, Turn
-from lerni.student.plan_import import (
-    PLAN_SCHEMA,
-    SYSTEM_PROMPT,
-    DrafterUnavailable,
-    DraftResult,
-    ImportSource,
-)
 from lerni.student.tagging import TAG_SCHEMA
 from lerni.student.upload import UPLOAD_SCHEMA, UploaderUnavailable, UploadSource
 
@@ -60,65 +52,6 @@ def _isolated() -> dict[str, Any]:
 def claude_cli_available() -> bool:
     """Return whether the `claude` CLI is installed on this machine."""
     return shutil.which("claude") is not None
-
-
-class ClaudeCodeDrafter:
-    """Propose a learning plan with one tightly limited Claude Code call."""
-
-    def __init__(self, model: str = DEFAULT_MODEL) -> None:
-        self.model = model
-
-    def options(
-        self, workdir: str, pdf_path: Path | None = None, can_use_tool: Any = None
-    ) -> Any:
-        """The call's options: no tools (except reading one uploaded PDF), nothing kept."""
-        return ClaudeAgentOptions(
-            system_prompt=SYSTEM_PROMPT,
-            model=self.model,
-            tools=["Read"] if pdf_path else [],  # only to read this one PDF
-            cwd=workdir,
-            max_turns=3 if pdf_path else 1,
-            output_format={"type": "json_schema", "schema": PLAN_SCHEMA},
-            can_use_tool=can_use_tool,
-            **_isolated(),
-        )
-
-    def draft(self, source: ImportSource) -> DraftResult:
-        """Send the notes to Claude and return its structured proposal.
-
-        Raises:
-            DrafterUnavailable: Claude didn't run or returned no plan.
-        """
-        try:
-            return asyncio.run(asyncio.wait_for(self._draft(source), TIMEOUT_SECONDS))
-        except DrafterUnavailable:
-            raise
-        except Exception as exc:  # never echo the notes in errors
-            raise DrafterUnavailable("Claude didn't respond. Try again in a moment.") from exc
-
-    async def _draft(self, source: ImportSource) -> DraftResult:
-        # empty working folder: no project files or settings in reach
-        with tempfile.TemporaryDirectory(prefix="lerni-import-") as workdir:
-            prompt = "Structure these notes into a learning plan.\n\n" + source.text
-            pdf_path: Path | None = None
-            if source.pdf is not None:
-                pdf_path = Path(workdir) / "notes.pdf"
-                pdf_path.write_bytes(source.pdf)
-                prompt += f"\n\nThe notes are also in the PDF at {pdf_path}."
-
-            async def only_this_pdf(name: str, args: dict[str, Any], _ctx: Any) -> Any:
-                if pdf_path and name == "Read" and Path(args.get("file_path", "")) == pdf_path:
-                    return PermissionResultAllow()
-                return PermissionResultDeny(message="Not allowed.")
-
-            options = self.options(workdir, pdf_path, only_this_pdf if pdf_path else None)
-            result: ResultMessage | None = None
-            async for message in query(prompt=_prompt_stream(prompt), options=options):
-                if isinstance(message, ResultMessage):
-                    result = message
-        if result is None or result.is_error or not isinstance(result.structured_output, dict):
-            raise DrafterUnavailable("Claude didn't return a plan. Try shorter notes.")
-        return DraftResult(proposal=result.structured_output)
 
 
 class ClaudeCodeChat:

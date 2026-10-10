@@ -60,7 +60,7 @@ Grades mean blackout (0), recognition after seeing the answer (1), apparent ease
 
 ## Running the student app
 
-`lerni serve` runs the student app on the home server (Release 1 steps 1–5: sign-in, the educator's Guide, Students, Sessions, and Learning plans tabs with the Claude import, and the student's waiting screen).
+`lerni serve` runs the student app on the home server (Release 1: sign-in; Ask, My map, and My account for independent students; Maps and Students for educators; the conversation, full screen, for a supervised student).
 
 ```bash
 pip install -e ".[student]"                # once: installs Gradio
@@ -76,11 +76,13 @@ lerni serve                                 # binds 0.0.0.0:7860
 
   `lerni student list`, `lerni student reset-password USERNAME`, and `lerni student educator USERNAME [--off]` cover recovery.
 - A supervised student's iPad is signed in only as that student. Try the app as yourself on your own device or in a private tab.
-- Sign-in data lives in `~/.lerni/student/` (or `$LERNI_STUDENT_DATA`): `students/` (accounts, password hashes only) and `secret.key` (signs the sign-in cookie; keep it private). Deleting `secret.key` signs everyone out.
+- Data lives in `~/.lerni/student/` (or `$LERNI_STUDENT_DATA`): `students/` (accounts, password hashes only), `secret.key` (signs the sign-in cookie; keep it private; deleting it signs everyone out), `maps/` (interest maps), `logs/` (each exchange, deleted after 7 days), and `feedback.jsonl`.
 - `--port` changes the default port; `--host 127.0.0.1` keeps it on this computer only.
 - If you start it over SSH, allow the virtual environment's Python through the macOS firewall first (nobody sees the prompt), and run it inside `tmux` so it keeps running after you disconnect.
 - It never touches the admin tool's database.
-- **Plan import with Claude** turns on when the `claude` CLI is installed and logged in on this computer; it uses that Claude account, so there's no API key. `LERNI_CLAUDE_MODEL` picks the model (default `claude-sonnet-5-5`). Startup prints whether it's on.
+- **Claude** (Ask, the map's tagger, and Upload) turns on when the `claude` CLI is installed and logged in on this computer; it uses that Claude account, so there's no API key. `LERNI_CLAUDE_MODEL` picks the answering and upload model (default `claude-sonnet-5-5`), `LERNI_TAGGER_MODEL` the tagger's (default `claude-haiku-5-5`). Startup prints whether it's on.
+- `lerni logs [USERNAME]` shows the last 7 days of conversations and what the tagger did; `lerni feedback` lists educators' feedback (`--summary` groups it, `done N` closes one).
+- Evals (real Claude calls, run by hand when instructions or models change): `scripts/eval_tagger.py`, `scripts/eval_upload.py`, `scripts/eval_supervised.py`.
 
 ## Maintenance
 
