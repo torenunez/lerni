@@ -80,13 +80,16 @@ def add_signin_routes(app: FastAPI, signin: SignIn) -> None:
         return _page(first_start=not signin.students.list_students())
 
     @app.post("/signin")
-    def signin_submit(username: str = Form(""), password: str = Form("")) -> Response:
+    def signin_submit(
+        request: Request, username: str = Form(""), password: str = Form("")
+    ) -> Response:
         cookie, message = signin.attempt(username, password)
         if cookie is None:
             return _page(message, status=401)
         response = RedirectResponse(APP_PATH + "/", status_code=303)
         response.set_cookie(
-            COOKIE_NAME, cookie, max_age=SESSION_SECONDS, httponly=True, samesite="lax", path="/"
+            COOKIE_NAME, cookie, max_age=SESSION_SECONDS, httponly=True, samesite="lax",
+            path="/", secure=request.url.scheme == "https",  # Secure once served over HTTPS
         )
         return response
 

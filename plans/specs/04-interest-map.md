@@ -97,7 +97,7 @@ Left out of the map to keep it minimal: stepping-stone ideas between an interest
 
 ## Upload
 
-- On Maps and on My map (so independent students can use it too), **Upload**: paste notes in any shape, or upload a .txt, .md, .docx, or .pdf, as the plan import accepts today. Module: `src/lerni/student/upload.py`.
+- On Maps and on My map (so independent students can use it too), **Upload**: paste notes in any shape, or upload a .txt, .md, .docx, or .pdf. Module: `src/lerni/student/upload.py`.
 - Claude returns a list of proposed entries, each labeled **interest** (something they love, to seed the map) or **goal** (with short notes), for that kind of student. The prompt keeps today's instruction to write "the student" instead of any real name. Nothing is saved until the person ticks which to add and presses **Add**, so the goals and notes are still set by a person. Uploaded interests start with no days and grow as they come up.
 - Same isolation as today's import: no tools (except reading the one PDF), no settings, an empty folder, no saved transcript.
 - Pressing Upload is the consent, as with Ask in the family prototype.
