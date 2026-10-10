@@ -4,13 +4,12 @@ How Lerni works: what runs where, how a conversation grows a student's interest 
 
 ## Bird's-eye view
 
-**Built (steps 1–9):** everyone signs in at `/signin` to one app at `/app/`.
+**Built (Release 1, steps 1–10):** everyone signs in at `/signin` to one app at `/app/`.
 
 - **Independent students** (educators included) have **Ask**, one ongoing text conversation with Claude. After each exchange, a small background call (the tagger) updates their **interest map**: interests (sized by the days they come up), links, and bridges. They see it on **My map**, set their own goals there, and can **Upload** notes that Claude turns into proposed interests and goals to tick. Each exchange is kept 7 days in logs the admin reads (`lerni logs`).
 - **Educators** also have **Maps**, where they add goals to a supervised student's map (by hand or by Upload), watch it, and leave **feedback** for the admin (`lerni feedback`), and **Students**.
 - **Supervised students** see only the conversation, full screen, in the supervised voice, with an adult nearby (a household rule). Their map grows on the educator's Maps.
 
-**Planned (step 10):** removing the old activity path.
 
 It assumes one household, a few students, one map per student. Students use an iPad or any browser on the home network. The admin tool (`lerni` in a terminal) is separate: the admin's own learning tool with its own data, plus `lerni student` and (planned) `lerni feedback`.
 
@@ -81,7 +80,6 @@ flowchart LR
 | Conversation logs | Each exchange and what the tagger did with it | The admin reads them (`lerni logs`) | `~/.lerni/student/logs/<username>/<date>.jsonl`, deleted after 7 days (built) |
 | Feedback | Date, who, which map, the educator's text, the agent's summary | The admin processes it | `~/.lerni/student/feedback.jsonl` (built) |
 | Sign-in | The signing secret; wrong-password delays | The app | `~/.lerni/student/secret.key`; delays in memory (built) |
-| Learning plans, packaged activities | The older activity path | — | `plans/`, `lessons/` (built; removed in step 10) |
 | Admin data | The admin's own questions, concepts, and reviews | Admin | SQLite at `~/.lerni/lerni.db` (built) |
 
 ## Boundaries that must hold
@@ -100,8 +98,8 @@ If a change would break one of these, stop and ask.
 
 Every code file, one line each: [code manifest](code-manifest.md).
 
-- `src/lerni/student/`: `students.py` (accounts and passwords), `signin.py` (the signed cookie, who's signed in), `jsonfiles.py` (atomic JSON writes), `conversation.py` (the prompt, in-memory conversations), `personas/` (one starting persona per kind of student), `interests.py` (the map, its rules, and its store), `tagging.py` (the tagger and the map keeper), `logs.py` (7-day conversation logs), `upload.py` (reading notes, checking and adding proposals), `feedback.py` (educator feedback, summarized, never acted on), `adapters/claude_code.py` (Claude through the Claude Code CLI, including the tagger; prototype). Removed in step 10: `domain.py`, `catalog.py`, `engine.py`, `canonical.py`, `lessons/`, `plans.py`, `plan_import.py`, `seed/`.
-- `src/lerni/student/web/`: the Gradio screens: `signin_page.py`, `main.py` (tabs by role), `ask.py`, `maps.py` (My map and Maps), `mapdraw.py` (the inline SVG picture and the list), `accounts.py`; `educator.py` is off the screens and goes in step 10.
+- `src/lerni/student/`: `students.py` (accounts and passwords), `signin.py` (the signed cookie, who's signed in), `jsonfiles.py` (atomic JSON writes), `conversation.py` (the prompt, in-memory conversations), `personas/` (one starting persona per kind of student), `interests.py` (the map, its rules, and its store), `tagging.py` (the tagger and the map keeper), `logs.py` (7-day conversation logs), `upload.py` (reading notes, checking and adding proposals), `feedback.py` (educator feedback, summarized, never acted on), `adapters/claude_code.py` (Claude through the Claude Code CLI, including the tagger; prototype).
+- `src/lerni/student/web/`: the Gradio screens: `signin_page.py`, `main.py` (tabs by role), `ask.py`, `maps.py` (My map and Maps), `mapdraw.py` (the inline SVG picture and the list), `accounts.py`.
 - `src/lerni/cli.py`, `commands/`, `db.py`, `sm2.py`: the admin tool, plus `commands/student.py`, `commands/logs.py`, and `commands/feedback.py` for the student app.
 - `tests/`: pytest, fakes only. `plans/`: build plans and specs.
 

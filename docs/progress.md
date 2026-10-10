@@ -4,15 +4,21 @@ Where things really stand, then a dated log, newest first. Completed work is rec
 
 Record each kind of "done" only when it actually happens, with the date: code built, content approved, app ready, a student session held. Passing tests show code behaves as specified; they don't make anything ready for a student.
 
-## Current state (2026-10-09, steps 1–8 merged; step 9, the supervised conversation, built on its branch)
+## Current state (2026-10-09, steps 1–9 merged; step 10 built on its branch: Release 1's code is complete)
 
-- **Built:** the student app's core (student accounts, sign-in, Ask Lerni's conversations, the interest map with its tagger and 7-day logs, and Upload and educator feedback; the older activity path, off the screens until step 10 removes it); `lerni serve` with a sign-in page and one app with tabs by role: an independent student's Ask (one ongoing text conversation with Claude, phone first), My map (with Upload), and My account; an educator's Maps (with Upload and Feedback) and Students on top; a supervised student's conversation, full screen, in the supervised voice. The admin tool (`lerni`, with `lerni student`, `lerni logs`, and `lerni feedback`). A [code manifest](code-manifest.md) of every file. Tests: 91 passed, 2 expected failures.
+- **Built:** the student app's core (student accounts, sign-in, Ask Lerni's conversations, the interest map with its tagger and 7-day logs, and Upload and educator feedback); `lerni serve` with a sign-in page and one app with tabs by role: an independent student's Ask (one ongoing text conversation with Claude, phone first), My map (with Upload), and My account; an educator's Maps (with Upload and Feedback) and Students on top; a supervised student's conversation, full screen, in the supervised voice. The admin tool (`lerni`, with `lerni student`, `lerni logs`, and `lerni feedback`). A [code manifest](code-manifest.md) of every file. Tests: 71 passed.
 - **Designed:** the interest map, goals, the tagger, upload, feedback, and the supervised conversation ([specs/04-interest-map.md](../plans/specs/04-interest-map.md)); approved with PR #12.
 - **Not yet:** upload and feedback (step 8); the supervised conversation (step 9); removing the old activity path (step 10); any supervised student session.
 
 When something changes, update this section and add a log entry below.
 
 ## Log
+
+### 2026-10-09 (PRs #16 and #17 merged; step 10 built: the old activity path removed)
+
+- PR #16 (docs: voice becomes Release 2, remembering Release 3) and PR #17 (step 9, the supervised conversation) merged.
+- Built on `chore/remove-activities`: the activity format, catalog, engine, canonical, learning plans, the plan import and its Claude drafter, the packaged lesson and example plans, the old educator tabs and guide, the lesson index script, and their tests are gone; spec 02 and the chain-1 runbook stay in git history. Two guard tests hold before and after: an account saved before this step (with the retired `explore_freely` key) still loads, and the installed package carries the persona files byte for byte. The two long-standing expected failures went with the content they tested. Tests: 71 passed.
+- Release 1's code is complete; what remains is sessions (the admin and educator using it, then the supervised student with an adult nearby).
 
 ### 2026-10-09 (PR #15 merged; voice moved to Release 2; step 9 built: the supervised conversation)
 
