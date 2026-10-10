@@ -49,7 +49,30 @@ def _claude_uploader() -> Any:
     return ClaudeCodeUploader(model=os.environ.get(MODEL_ENV, DEFAULT_MODEL))
 
 
-def serve(host: str, port: int, cert: Path | None = None, key: Path | None = None) -> None:
+def running_version() -> str:
+    """Which code is running: ``"<branch> @ <commit>, <date>"``, or the package version."""
+    import subprocess
+    from importlib import metadata
+
+    here = Path(__file__).resolve().parent
+    try:
+        # the checkout this code runs from, as git sees it
+        out = subprocess.run(
+            ["git", "-C", str(here), "log", "-1", "--format=%h %cs"],
+            capture_output=True, text=True, timeout=5, check=True,
+        ).stdout.split()
+        branch = subprocess.run(
+            ["git", "-C", str(here), "rev-parse", "--abbrev-ref", "HEAD"],
+            capture_output=True, text=True, timeout=5, check=True,
+        ).stdout.strip()
+        return f"{branch} @ {out[0]}, {out[1]}"
+    except (OSError, subprocess.SubprocessError, IndexError):
+        return f"version @ {metadata.version('lerni')}"  # installed without git
+
+
+def serve(
+    host: str, port: int, cert: Path | None = None, key: Path | None = None, label: str = ""
+) -> None:
     """Start the student app and block until it stops.
 
     Args:
@@ -58,6 +81,7 @@ def serve(host: str, port: int, cert: Path | None = None, key: Path | None = Non
         port: Port to listen on.
         cert: The HTTPS certificate (from mkcert); with ``key``, serves HTTPS.
         key: The certificate's private key.
+        label: Shown on every page (e.g. "Development"); empty for production.
 
     Raises:
         ValueError: Only one of ``cert`` and ``key``, or a file that doesn't exist.
@@ -76,7 +100,11 @@ def serve(host: str, port: int, cert: Path | None = None, key: Path | None = Non
     from lerni.student.web.app import build_app
 
     chat, tagger = _claude_chat(), _claude_tagger()
-    app = build_app(chat_model=chat, tagger=tagger, uploader=_claude_uploader())
+    version = running_version()
+    app = build_app(
+        chat_model=chat, tagger=tagger, uploader=_claude_uploader(), label=label, version=version
+    )
+    print(f"Running:  {version}", flush=True)
     print(f"Sign in:  {scheme}://<this-computer>:{port}/", flush=True)
     if not any(s.educator for s in StudentStore().list_students()):
         print("No educator yet: lerni student add USERNAME --name NAME "

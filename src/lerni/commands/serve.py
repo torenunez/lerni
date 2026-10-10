@@ -15,6 +15,7 @@ def serve_cmd(
         None, help="HTTPS certificate (from mkcert); needs --key."),
     key: Path = typer.Option(  # noqa: B008
         None, help="The certificate's private key; needs --cert."),
+    label: str = typer.Option("", help="Shown on every page, e.g. Development."),
 ) -> None:
     """Run the student app: the sign-in page and the app with tabs by role."""
     try:
@@ -23,7 +24,7 @@ def serve_cmd(
         console.print('[red]The student app needs Gradio: pip install -e ".[student]"[/red]')
         raise typer.Exit(1) from None
     try:
-        serve(host=host, port=port, cert=cert, key=key)
+        serve(host=host, port=port, cert=cert, key=key, label=label)
     except ValueError as exc:  # a missing or unpaired HTTPS file
         console.print(f"[red]{exc}[/red]")
         raise typer.Exit(1) from None

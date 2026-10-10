@@ -7,6 +7,7 @@ every signed-in browser the same page config.
 
 from __future__ import annotations
 
+import html
 from datetime import date
 from typing import Any
 
@@ -55,10 +56,14 @@ def build_main_view(
     uploader: Uploader | None = None,
     feedback: FeedbackStore | None = None,
     model: ChatModel | None = None,
+    label: str = "",
 ) -> gr.Blocks:
     """Build the page; the tabs each viewer sees are set on load."""
     # uploads picked but never sent expire within two hours (checked hourly)
     with gr.Blocks(title="Lerni", analytics_enabled=False, delete_cache=(3600, 3600)) as blocks:
+        if label:  # a development server says so on every page (the same for everyone)
+            gr.HTML(f'<div style="background:#6b21a8;color:white;font-weight:700;'
+                    f'text-align:center;padding:.3rem;border-radius:8px">{html.escape(label)}</div>')
         with gr.Row():
             header = gr.Markdown()
             # a same-tab button: a Markdown link would open Sign out in a new tab

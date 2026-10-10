@@ -32,8 +32,12 @@ input {{ font-size: 1.3rem; padding: .6rem; border-radius: 12px; border: 1px sol
 button {{ font-size: 1.3rem; padding: .7rem; border-radius: 999px; border: 0;
   background: #1b1340; color: white; font-weight: 700; }}
 .error {{ color: #a10000; }}
+.version {{ position: fixed; bottom: .4rem; left: 0; right: 0; text-align: center;
+  font-size: .75rem; color: #555; }}
+.env {{ position: fixed; top: 0; left: 0; right: 0; padding: .3rem; text-align: center;
+  background: #6b21a8; color: white; font-weight: 700; }}
 </style></head><body>
-<form method="post" action="/signin">
+{label}<form method="post" action="/signin">
   <h1>👋 Lerni</h1>
   <p class="error" role="alert">{message}</p>
   <label for="username">Username</label>
@@ -43,7 +47,7 @@ button {{ font-size: 1.3rem; padding: .7rem; border-radius: 999px; border: 0;
   <input id="password" name="password" type="password" autocomplete="current-password" required>
   <button type="submit">Sign in</button>
   <p>{hint}</p>
-</form></body></html>"""
+</form>{version}</body></html>"""
 
 
 NO_ACCOUNTS_HINT = (
@@ -52,14 +56,23 @@ NO_ACCOUNTS_HINT = (
 )
 
 
-def _page(message: str = "", status: int = 200, first_start: bool = False) -> HTMLResponse:
+def _page(
+    message: str = "", status: int = 200, first_start: bool = False, label: str = "",
+    version: str = "",
+) -> HTMLResponse:
     hint = NO_ACCOUNTS_HINT if first_start else "No account yet? Ask your educator."
+    # a development server says so; production has no label
+    strip = f'<div class="env">{escape(label)}</div>' if label else ""
     return HTMLResponse(
-        _PAGE.format(message=escape(message), hint=escape(hint)), status_code=status
+        _PAGE.format(message=escape(message), hint=escape(hint), label=strip,
+                     version=f'<p class="version">{escape(version)}</p>' if version else ""),
+        status_code=status,
     )
 
 
-def add_signin_routes(app: FastAPI, signin: SignIn) -> None:
+def add_signin_routes(
+    app: FastAPI, signin: SignIn, label: str = "", version: str = ""
+) -> None:
     """Add ``/``, ``/signin``, ``/signout``, and the signed-out redirect for the app page."""
 
     @app.middleware("http")
@@ -77,7 +90,7 @@ def add_signin_routes(app: FastAPI, signin: SignIn) -> None:
 
     @app.get("/signin")
     def signin_form() -> HTMLResponse:
-        return _page(first_start=not signin.students.list_students())
+        return _page(first_start=not signin.students.list_students(), label=label, version=version)
 
     @app.post("/signin")
     def signin_submit(
@@ -85,7 +98,7 @@ def add_signin_routes(app: FastAPI, signin: SignIn) -> None:
     ) -> Response:
         cookie, message = signin.attempt(username, password)
         if cookie is None:
-            return _page(message, status=401)
+            return _page(message, status=401, label=label, version=version)
         response = RedirectResponse(APP_PATH + "/", status_code=303)
         response.set_cookie(
             COOKIE_NAME, cookie, max_age=SESSION_SECONDS, httponly=True, samesite="lax",
