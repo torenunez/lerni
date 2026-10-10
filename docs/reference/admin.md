@@ -84,6 +84,12 @@ lerni serve                                 # binds 0.0.0.0:7860
 - `lerni logs [USERNAME]` shows the last 7 days of conversations and what the tagger did; `lerni feedback` lists educators' feedback (`--summary` groups it, `done N` closes one).
 - Evals (real Claude calls, run by hand when instructions or models change): `scripts/eval_tagger.py`, `scripts/eval_upload.py`, `scripts/eval_supervised.py`.
 
+### Two environments
+
+- **Production:** the home server, on `main`, port 7860, the real data folder (`~/.lerni/student/`). The family uses it; on the student's iPad, open it in Safari and use Share → Add to Home Screen.
+- **Development:** the computer where changes are built, on a branch, port 7861, its own data folder and made-up test accounts: `LERNI_STUDENT_DATA=~/.lerni/student-dev lerni serve --port 7861` (add accounts the same way: `LERNI_STUDENT_DATA=~/.lerni/student-dev lerni student add tester …`). Bookmark it on the admin's phone; it's up only while it's started.
+- Never point development at `~/.lerni/student/`, or test conversations land in the real maps and logs. Both use the admin's Claude account, so heavy testing uses the same plan.
+
 ### Updating the home server
 
 The family uses whatever is on `main` while new features are built on branches on another computer. To put a merged change on the home server:
