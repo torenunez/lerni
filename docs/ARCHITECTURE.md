@@ -30,7 +30,7 @@ flowchart LR
     server -. "adapter: the admin's Claude account" .-> ai[Claude]
 ```
 
-Releases 1–2 use plain HTTP on the home network and are never exposed to the internet. Release 3 adds HTTPS on the same server, because browsers allow the microphone only over HTTPS ([MDN](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia)).
+Release 1 uses plain HTTP on the home network and is never exposed to the internet. Release 2 (voice) adds HTTPS on the same server, because browsers allow the microphone only over HTTPS ([MDN](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia)).
 
 ## How a conversation grows the map
 
@@ -109,8 +109,8 @@ Every code file, one line each: [code manifest](code-manifest.md).
 
 | Piece | Release | Seam to leave room for now |
 |---|---|---|
-| Remembering preferences, recall | 2 | The map is the memory; preferences and recall build on it. |
-| Voice and HTTPS | 3 | Nothing depends on a particular address. Audio goes to a speech-to-text service the educator approved; the confirmed text enters the conversation like typing. Recordings are deleted after use. |
+| Voice and HTTPS | 2 | Nothing depends on a particular address. Speech-to-text and text-to-speech run as helper programs on the home server behind two calls (`transcribe`, `speak`, set by environment variables, like every outside service); what was heard enters the conversation like typing; audio stays in memory. |
+| Remembering preferences, recall | 3 | The map is the memory; preferences and recall build on it. |
 | Suggested goals | 4 | Suggestions are shown for the educator to accept; they never become goals on their own (boundary 1). |
 | Curated or checked content | — | None planned; if ever needed, it arrives as information in the map block, never as a separate path. |
 | Without an educator present | 5 | Needs a safety review first: checked replies for supervised students and consent for sensitive subjects. |

@@ -24,8 +24,8 @@ Each stage needs evidence from the one before.
 
 | Setting | Default | Effect | From release |
 |---|---|---|---|
-| Voice | Off | When on, the student can hold the talk button | 3 |
-| Remembering preferences | On | When off, the companion keeps no preferences beyond the map | 2 |
+| Voice | Off | When on, the student can hold the talk button | 2 |
+| Remembering preferences | On | When off, the companion keeps no preferences beyond the map | 3 |
 | Without me present | Off | When on, the supervised student may talk with Lerni without an educator beside them | 5 |
 
 Settings never change on their own, and each takes effect at once. The starting exclusion list (violence, weapons, sexual content, self-harm, drugs) is built into the supervised rules.
@@ -90,7 +90,7 @@ As an educator, I want to tell the admin what to change in plain words, so that 
 
 These notes are for the admin and educator, not the app; the in-app text stays short (CLAUDE.md rule 9).
 
-## Release 2: remembering
+## Release 3: remembering
 
 ### Story: See and delete what's remembered
 

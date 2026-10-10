@@ -60,5 +60,5 @@ Use by educators or students.
 
 ## Open questions
 
-- [NEEDS CLARIFICATION] (Release 3) How to add HTTPS on the home server for the microphone: a private network with its own certificates, or a locally trusted certificate. The admin decides while building.
-- [NEEDS CLARIFICATION] (Release 2) Does the companion's recall reuse the admin tool's scheduler (SM-2), given that the admin tool's database was not built for students' data?
+- [NEEDS CLARIFICATION] (Release 2) How to add HTTPS on the home server for the microphone: a private network with its own certificates, or a locally trusted certificate. The admin decides while building.
+- [NEEDS CLARIFICATION] (Release 3) Does the companion's recall reuse the admin tool's scheduler (SM-2), given that the admin tool's database was not built for students' data?

@@ -50,17 +50,17 @@ After these, Release 1 needs sessions, not code: the educator sets goals, rehear
 - [ ] Small, from the step 7 review: at a full map a just-added interest can be dropped by the next one; the map block's 1,500-character cut can cut a line mid-word; top interests rank by all-time days rather than the last 30; a faded explained goal can be listed twice in the block; the Maps timer ticks on every page; an unreadable map file shows a Gradio error; `lerni logs` can fail if a purge runs mid-read.
 - [ ] When a map outgrows the picture (more than 15 entries drawn): show more, for example by grouping or a focus on one entry and its links; the list below already has them all.
 
-### Later: Release 2 Remembering
+### Later: Release 2 Voice
 
-- [ ] Personal personas: Lerni learns what each student likes over time (topics, examples, answer length), starting from the persona for their kind; visible to the student, and to the educator for a supervised student.
-- [ ] Write `plans/release-2-remembering.md`, starting from the map: recall questions about goals the student once explained, tracking the last recall attempt apart from the last time a goal was discussed.
-
-### Later: Release 3 Voice
-
-- [ ] Plan voice on top of the conversation and map: hold to talk, confirm the text, answer aloud; grow its evals from the conversation and tagger evals.
+- [ ] Write `plans/release-2-voice.md` and its spec: push-to-talk with Gradio's microphone and audio playback; local Whisper (speech-to-text) and Kokoro (text-to-speech) helper programs behind `transcribe`/`speak`; each sentence spoken as it's written; Stop silences it; audio in memory only; evals grown from the conversation evals.
+- [ ] Before it: check the home server can run both helpers (about 2–4 cores and 2 GB for text-to-speech), and how the iPad will trust its HTTPS certificate.
+- [ ] Try the voice with the students before deciding whether a hosted voice (Inworld, about $18 a month) is worth it; a hosted service means student audio leaves the house, so it needs the educator's agreement first.
 - [ ] Before anyone outside the household uses the app: replace the Claude Code adapter with an API-key adapter (`env:ANTHROPIC_API_KEY`).
 
-- [ ] Before choosing speech or model services, check each one's data retention for a student's audio and text, and get the educator's agreement.
+### Later: Release 3 Remembering
+
+- [ ] Personal personas: Lerni learns what each student likes over time (topics, examples, answer length), starting from the persona for their kind; visible to the student, and to the educator for a supervised student.
+- [ ] Write `plans/release-3-remembering.md`, starting from the map: recall questions about goals the student once explained, tracking the last recall attempt apart from the last time a goal was discussed.
 
 ### Accounts: deferred review findings (family scale; harden before anyone else uses it)
 
