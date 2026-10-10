@@ -88,18 +88,28 @@ def test_add_form_clears_after_a_save_and_educator_needs_independent():
     assert educator_box_for("independent")["interactive"] is True
 
 
-def test_only_independent_students_can_ask_lerni():
+def test_each_student_asks_in_their_own_voice():
     from lerni.student.conversation import Conversations
     from lerni.student.web.ask import ask_reply
 
     class Model:
+        def __init__(self):
+            self.systems = []
+
         def stream(self, system, turns):
+            self.systems.append(system)
             yield "Hi."
 
-    convos = Conversations(Model())
+    model = Model()
+    convos = Conversations(model)
+    lee = Viewer("lee", "Lee", Role.SUPERVISED)
     assert "".join(ask_reply(convos, SAM, "What is speed?")) == "Hi."
+    # a supervised student gets the supervised voice, whatever the page asks for
+    assert "".join(ask_reply(convos, lee, "Why is the sky blue?", supervised_voice=False)) == "Hi."
+    assert "short, simple, playful" in model.systems[1] and "weapons" in model.systems[1]
+    assert "short, simple, playful" not in model.systems[0]
     with pytest.raises(NotAllowed):
-        list(ask_reply(convos, Viewer("lee", "Lee", Role.SUPERVISED), "hi"))
+        list(ask_reply(convos, None, "hi"))
 
 
 def test_maps_reach_only_their_owner_or_an_educator_for_a_supervised_student(tmp_path):

@@ -1,4 +1,5 @@
-"""The Ask tab: an independent student's text conversation with Claude.
+"""The conversation for both kinds of student: an independent student's Ask tab, and a
+supervised student's whole screen.
 
 :func:`ask_reply` is a plain function over the server-resolved viewer, so the
 role check can be tested without a browser; :func:`ask_tab` wires it to Gradio.
@@ -30,17 +31,18 @@ def ask_reply(
     text: str,
     supervised_voice: bool = False,
 ) -> Iterator[str]:
-    """Answer an independent student's question, a piece at a time.
+    """Answer a student's question, a piece at a time.
+
+    A supervised student always gets the supervised voice; an educator can try it.
 
     Raises:
-        NotAllowed: The viewer isn't a signed-in independent student.
+        NotAllowed: Nobody is signed in.
         ConversationError: Empty, too long, or a reply is still coming.
         ConversationUnavailable: Claude didn't answer.
     """
-    v = require(viewer, Role.INDEPENDENT)
-    # educators can try the supervised-student voice; everyone else gets their own kind's
-    voice = "supervised" if supervised_voice and v.educator else "independent"
-    yield from conversations.ask(v.username, text, voice)
+    v = require(viewer, Role.INDEPENDENT, Role.SUPERVISED)
+    supervised = v.role is Role.SUPERVISED or (supervised_voice and v.educator)
+    yield from conversations.ask(v.username, text, "supervised" if supervised else "independent")
 
 
 def messages(conversations: Conversations, username: str) -> list[dict[str, str]]:
@@ -98,7 +100,7 @@ def ask_tab(
             text: str, supervised_voice: bool, request: gr.Request
         ) -> Iterator[list[Any]]:
             viewer = signin.viewer(request.username)  # re-read on every question
-            if not ready or viewer is None or viewer.role is not Role.INDEPENDENT:
+            if not ready or viewer is None:  # the role check lives in ask_reply
                 yield [gr.update(), gr.update()]
                 return
             # show the question right away, with an answer that fills as it streams
