@@ -4,15 +4,21 @@ Where things really stand, then a dated log, newest first. Completed work is rec
 
 Record each kind of "done" only when it actually happens, with the date: code built, content approved, app ready, a student session held. Passing tests show code behaves as specified; they don't make anything ready for a student.
 
-## Current state (2026-10-09, steps 1–7 merged; step 8, Upload and feedback, built on its branch)
+## Current state (2026-10-09, steps 1–8 merged; step 9, the supervised conversation, built on its branch)
 
-- **Built:** the student app's core (student accounts, sign-in, Ask Lerni's conversations, the interest map with its tagger and 7-day logs, and Upload and educator feedback; the older activity path, off the screens until step 10 removes it); `lerni serve` with a sign-in page and one app with tabs by role: an independent student's Ask (one ongoing text conversation with Claude, phone first), My map (with Upload), and My account; an educator's Maps (with Upload and Feedback) and Students on top; a supervised student's waiting screen. The admin tool (`lerni`, with `lerni student`, `lerni logs`, and `lerni feedback`). A [code manifest](code-manifest.md) of every file. Tests: 88 passed, 2 expected failures.
+- **Built:** the student app's core (student accounts, sign-in, Ask Lerni's conversations, the interest map with its tagger and 7-day logs, and Upload and educator feedback; the older activity path, off the screens until step 10 removes it); `lerni serve` with a sign-in page and one app with tabs by role: an independent student's Ask (one ongoing text conversation with Claude, phone first), My map (with Upload), and My account; an educator's Maps (with Upload and Feedback) and Students on top; a supervised student's conversation, full screen, in the supervised voice. The admin tool (`lerni`, with `lerni student`, `lerni logs`, and `lerni feedback`). A [code manifest](code-manifest.md) of every file. Tests: 91 passed, 2 expected failures.
 - **Designed:** the interest map, goals, the tagger, upload, feedback, and the supervised conversation ([specs/04-interest-map.md](../plans/specs/04-interest-map.md)); approved with PR #12.
 - **Not yet:** upload and feedback (step 8); the supervised conversation (step 9); removing the old activity path (step 10); any supervised student session.
 
 When something changes, update this section and add a log entry below.
 
 ## Log
+
+### 2026-10-09 (PR #15 merged; voice moved to Release 2; step 9 built: the supervised conversation)
+
+- PR #15 (step 8, Upload and feedback) merged. PR #16 (docs) opened: voice becomes Release 2 with local speech services, remembering Release 3.
+- Built on `feat/supervised-conversation`: earlier turns go to Claude as JSON data, so a student can't fake an earlier answer; Stop and New conversation now cancel the Claude call, not just the screen; a supervised student always gets the supervised voice, with the exclusion list (violence, weapons, sexual content, self-harm, drugs) and the kind redirect in code; their whole screen is the conversation (chat, box, Send/Stop), replacing the waiting screen; their map grows on Maps.
+- Decided: the sign-in-flood fix waits until before anyone outside the family uses the app (one household, an adult nearby).
 
 ### 2026-10-09 (PR #14 merged; step 8 built: Upload and feedback)
 
