@@ -94,7 +94,7 @@ As a student, I want to hold one button to talk and let go when I'm done, so tha
 
 - WHEN the student holds the talk button THE SYSTEM SHALL listen until they let go, show what it heard in the chat, and send it at once, as if typed; Stop works as it does for text.
 - WHEN Lerni answers THE SYSTEM SHALL speak it aloud a sentence at a time as it's written, with the text visible; Stop silences it.
-- WHEN speech is turned into text, or text into speech, THE SYSTEM SHALL do it on the home server, so no audio leaves the house; audio is held in memory only and never saved.
+- WHEN speech is turned into text, or text into speech, THE SYSTEM SHALL do it on the home server, so no audio leaves the house; any audio kept on the server is deleted within 7 days, like the conversation logs.
 - WHEN voice is unavailable THE SYSTEM SHALL still accept typing.
 
 ## Release 3: a companion that remembers me
@@ -145,6 +145,8 @@ Public access and a native iPad app.
 - 2026-10-09: A supervised student talks with Lerni by text in Release 1, through the admin's Claude account, with an educator beside them in every session. No API key is planned. (Replaces the earlier decision to wait for Release 3 and an API key.)
 - 2026-10-09: After two outside reviews of the map design: interests are sized by the days they come up and goals by the days the student explained them back (Lerni's guess at competence), replacing time spent. Every student's conversation is kept for 7 days in logs the admin reads, so the map can be checked against what was said (replaces "conversation text is never saved"). Release 1 has no automatic reply check and no app-enforced co-presence: the household keeps an adult nearby, the iPad is signed in only as the student, and the adults never save their passwords on it.
 - 2026-10-09: Voice comes before remembering: Release 2 is voice, Release 3 remembering. Speech-to-text and text-to-speech run on the home server (local Whisper and Kokoro, as separate helper programs behind two calls, "transcribe" and "speak", set by environment variables), so no audio leaves the house and no new account is needed; a hosted service only if the local ones are too slow or flat with the students. What Lerni heard is sent at once, shown in the chat, instead of waiting for a confirm tap. (Replaces "remembering comes before voice" and "show the text for correction before it reaches the conversation", and answers which speech services to use.)
+- 2026-10-10: Voice audio may stay on the home server for up to 7 days, like the conversation logs; Release 2 keeps whatever is easiest (it doesn't save audio on purpose). (Replaces "audio is held in memory only and never saved".)
+- 2026-10-10: Files Gradio keeps in its cache on the home server (an upload before it's read, any voice audio) can be reached by URL by anyone signed in. Accepted for the household: at most three people signed in, each with their own account. Revisit before anyone outside the family uses the app.
 
 ## Open questions
 
