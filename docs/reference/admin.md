@@ -92,16 +92,16 @@ lerni serve                                 # binds 0.0.0.0:7860
 
 ### Updating the home server
 
-The family uses whatever is on `main` while new features are built on branches on another computer. To put a merged change on the home server:
+The family uses whatever is on `main` while new features are built on branches. Production runs from its own checkout, so building never changes it, even on the same computer (once: `git worktree add -b production ~/lerni-prod origin/main`, then its own `.venv`). To put a merged change on the home server:
 
-1. In the repo folder: `git checkout main && git pull`.
+1. In the production checkout: `git pull`.
 2. `.venv/bin/pip install -e ".[student]"` (only needed when a PR says dependencies or package files changed, but always safe).
 3. In the server's `tmux` session: Ctrl-C, then start `lerni serve` again (with `--cert` and `--key` once HTTPS is set up).
 
 Caveats:
 
 - A restart clears open conversations (they live in memory); accounts, maps, logs, and feedback stay. Restart between sessions, not during one.
-- Never run a branch on the home server; test branches on another computer with a throwaway data folder (`LERNI_STUDENT_DATA=/tmp/lerni-test lerni serve --port 7861`).
+- Never run a branch as production; test branches as development ("Two environments" above).
 - Each PR's Deploying section says whether it's safe to use yet and anything extra to do; if it says not yet, leave the server on the previous `main` (the merge can wait, or `git checkout <the previous merge>` on the server).
 
 ### HTTPS (for voice)
