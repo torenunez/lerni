@@ -72,6 +72,7 @@ def build_app(
     chat_model: ChatModel | None = None,
     tagger: Tagger | None = None,
     uploader: Uploader | None = None,
+    label: str = "",
 ) -> FastAPI:
     """Build the server: the sign-in page and the app at ``/app/``.
 
@@ -82,13 +83,14 @@ def build_app(
         tagger: Claude behind an adapter for the map; ``None`` leaves maps unchanged
             (exchanges are still logged).
         uploader: Claude behind an adapter for Upload; ``None`` turns it off.
+        label: Shown on every page, e.g. ``"Development"``; empty for production.
     """
     root = data_root or default_data_dir()
     students = StudentStore(root)
     signin = SignIn(students, load_secret(root))
     # our own server; we turn off its docs pages too
     app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None)
-    add_signin_routes(app, signin)
+    add_signin_routes(app, signin, label)
 
     @app.middleware("http")
     async def limit_uploads(request: Request, call_next: Any) -> Any:
@@ -114,7 +116,7 @@ def build_app(
     )
     view = build_main_view(
         signin, students, maps, conversations,
-        uploader=uploader, feedback=FeedbackStore(root), model=chat_model,
+        uploader=uploader, feedback=FeedbackStore(root), model=chat_model, label=label,
     )
     return gr.mount_gradio_app(
         app,

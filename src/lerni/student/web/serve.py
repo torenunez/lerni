@@ -48,13 +48,14 @@ def _claude_uploader() -> Any:
     return ClaudeCodeUploader(model=os.environ.get(MODEL_ENV, DEFAULT_MODEL))
 
 
-def serve(host: str, port: int) -> None:
+def serve(host: str, port: int, label: str = "") -> None:
     """Start the student app and block until it stops.
 
     Args:
         host: Address to bind. ``0.0.0.0`` lets the iPad and other devices on
             the home network reach it.
         port: Port to listen on.
+        label: Shown on every page (e.g. "Development"); empty for production.
     """
     import uvicorn
 
@@ -62,7 +63,7 @@ def serve(host: str, port: int) -> None:
     from lerni.student.web.app import build_app
 
     chat, tagger = _claude_chat(), _claude_tagger()
-    app = build_app(chat_model=chat, tagger=tagger, uploader=_claude_uploader())
+    app = build_app(chat_model=chat, tagger=tagger, uploader=_claude_uploader(), label=label)
     print(f"Sign in:  http://<this-computer>:{port}/", flush=True)
     if not any(s.educator for s in StudentStore().list_students()):
         print("No educator yet: lerni student add USERNAME --name NAME "

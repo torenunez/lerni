@@ -39,3 +39,14 @@ def test_a_right_password_opens_the_app_and_sign_out_ends_it(client):
 def test_first_start_says_how_to_add_the_first_account(tmp_path):
     client = TestClient(build_app(data_root=tmp_path))
     assert "lerni student add" in client.get("/signin").text
+
+
+def test_a_development_server_says_so_and_production_does_not(tmp_path):
+    # two environments look alike; the label keeps them apart at a glance
+    StudentStore(tmp_path).add("sam", "Sam", Kind.INDEPENDENT, "long enough")
+    dev = TestClient(build_app(data_root=tmp_path, label="Development"))
+    assert "Development" in dev.get("/signin").text
+    dev.post("/signin", data={"username": "sam", "password": "long enough"})
+    assert "Development" in dev.get("/app/config").text
+    prod = TestClient(build_app(data_root=tmp_path))
+    assert "Development" not in prod.get("/signin").text

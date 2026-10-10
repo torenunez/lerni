@@ -32,8 +32,10 @@ input {{ font-size: 1.3rem; padding: .6rem; border-radius: 12px; border: 1px sol
 button {{ font-size: 1.3rem; padding: .7rem; border-radius: 999px; border: 0;
   background: #1b1340; color: white; font-weight: 700; }}
 .error {{ color: #a10000; }}
+.env {{ position: fixed; top: 0; left: 0; right: 0; padding: .3rem; text-align: center;
+  background: #6b21a8; color: white; font-weight: 700; }}
 </style></head><body>
-<form method="post" action="/signin">
+{label}<form method="post" action="/signin">
   <h1>👋 Lerni</h1>
   <p class="error" role="alert">{message}</p>
   <label for="username">Username</label>
@@ -52,14 +54,18 @@ NO_ACCOUNTS_HINT = (
 )
 
 
-def _page(message: str = "", status: int = 200, first_start: bool = False) -> HTMLResponse:
+def _page(
+    message: str = "", status: int = 200, first_start: bool = False, label: str = ""
+) -> HTMLResponse:
     hint = NO_ACCOUNTS_HINT if first_start else "No account yet? Ask your educator."
+    # a development server says so; production has no label
+    strip = f'<div class="env">{escape(label)}</div>' if label else ""
     return HTMLResponse(
-        _PAGE.format(message=escape(message), hint=escape(hint)), status_code=status
+        _PAGE.format(message=escape(message), hint=escape(hint), label=strip), status_code=status
     )
 
 
-def add_signin_routes(app: FastAPI, signin: SignIn) -> None:
+def add_signin_routes(app: FastAPI, signin: SignIn, label: str = "") -> None:
     """Add ``/``, ``/signin``, ``/signout``, and the signed-out redirect for the app page."""
 
     @app.middleware("http")
@@ -77,13 +83,13 @@ def add_signin_routes(app: FastAPI, signin: SignIn) -> None:
 
     @app.get("/signin")
     def signin_form() -> HTMLResponse:
-        return _page(first_start=not signin.students.list_students())
+        return _page(first_start=not signin.students.list_students(), label=label)
 
     @app.post("/signin")
     def signin_submit(username: str = Form(""), password: str = Form("")) -> Response:
         cookie, message = signin.attempt(username, password)
         if cookie is None:
-            return _page(message, status=401)
+            return _page(message, status=401, label=label)
         response = RedirectResponse(APP_PATH + "/", status_code=303)
         response.set_cookie(
             COOKIE_NAME, cookie, max_age=SESSION_SECONDS, httponly=True, samesite="lax", path="/"
