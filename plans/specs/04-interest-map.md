@@ -17,7 +17,7 @@ The conversation is the whole activity. There are no cards, plans, or approvals.
 
 ## What each person sees
 
-- **Supervised student:** the conversation, full screen: the chat, the question box, and one Send button that becomes Stop. No tabs and no topic picker; the agent decides where to steer. Hold-to-talk replaces typing in Release 3.
+- **Supervised student:** the conversation, full screen: the chat, the question box, and one Send button that becomes Stop. No tabs and no topic picker; the agent decides where to steer. Hold-to-talk comes in Release 2 (voice).
 - **Independent student:** Ask (no topic picker; they say what they want), **My map** (their own map; they add their own goals, things to practice, and can Upload too), and My account.
 - **Educator:** their own Ask, My map, and My account, plus Students (unchanged) and **Maps**: pick a supervised student to see their map, with:
   - the picture: green circles for interests, coral circles for goals (outlined until one comes up, filled once it has), dashed coral lines for bridges, thin grey lines for related interests; anything not discussed in 30 days fades. Sizes and states are described under [Data](#data);
@@ -82,7 +82,7 @@ The map is the agent's memory between days: the chat is forgotten on restart, bu
 Each adds one cue on the map or one habit for the agent, and no new screens ([learning concepts](../../docs/learning-concepts.md)):
 
 - **Feynman technique, explain it back:** now and then, after a bridge, the agent asks the student to explain the goal in their own words. Each day Lerni thinks they did grows the goal. It's the AI's read, not mastery; repeating Lerni's words doesn't count, and one good day counts once.
-- **Spaced repetition, fade and revisit:** entries fade when they haven't been discussed in 30 days; fading means "not discussed", not "forgotten". The agent prefers returning to a faded goal they once explained, and asks a light question before explaining again. Fuller recall is Release 2.
+- **Spaced repetition, fade and revisit:** entries fade when they haven't been discussed in 30 days; fading means "not discussed", not "forgotten". The agent prefers returning to a faded goal they once explained, and asks a light question before explaining again. Fuller recall is Release 3.
 - **Transfer, a second bridge:** once a goal has a bridge, the next one comes from a different interest (fractions through cars, later through pizza). The agent briefly names the shared idea when it helps, then asks one fresh question to see if the student applies it, without announcing a lesson. Two bridges into one goal show connections offered, not transfer proven.
 - **Culturally responsive, their words:** interests are named the way the student says them ("monster trucks", not "vehicles"); the server checks the name appears in what they said.
 - **Zone of proximal development, back off:** after two bounces from the same goal within 7 days, the agent leaves it alone for 3 days and then tries from a different interest. That respects their engagement; it doesn't mean the goal was too hard.
@@ -141,4 +141,4 @@ Evals (real calls, run by hand when instructions or models change; start with 2â
 
 ## Not in this design
 
-Voice (Release 3); the agent suggesting new goals (Release 4); conversations without an educator present (Release 5); an editable, draggable map, or one the student taps to start a topic; more than one map per student; curated or checked content (if ever needed, it arrives as information in the map block, never as a separate path); a screen for the logs.
+Voice (Release 2); the agent suggesting new goals (Release 4); conversations without an educator present (Release 5); an editable, draggable map, or one the student taps to start a topic; more than one map per student; curated or checked content (if ever needed, it arrives as information in the map block, never as a separate path); a screen for the logs.

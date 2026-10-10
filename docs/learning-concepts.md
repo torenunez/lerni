@@ -12,7 +12,7 @@ These concepts guide how Lerni's conversation and interest map are designed ([sp
 
 *Example:* Ask the learner to explain a ratio today, revisit it a few days later, and return to it the following week. Adjust the timing based on what they remember. These intervals are illustrative.
 
-*In Lerni:* the admin tool schedules reviews with SM-2 and asks you to explain from memory before showing your old answer ([details](reference/admin.md#scheduling)). In the student app, map entries fade when they haven't been discussed in 30 days (not discussed, not forgotten), and the agent prefers returning to faded goals the student once explained; fuller recall checks come in Release 2.
+*In Lerni:* the admin tool schedules reviews with SM-2 and asks you to explain from memory before showing your old answer ([details](reference/admin.md#scheduling)). In the student app, map entries fade when they haven't been discussed in 30 days (not discussed, not forgotten), and the agent prefers returning to faded goals the student once explained; fuller recall checks come in Release 3.
 
 **Analogical scaffolding and transfer.** Analogical scaffolding uses guided comparisons to make an unfamiliar idea easier to understand. Transfer means applying what was learned to a different problem or context. Make the shared principle explicit, then check whether the learner can use it independently. [Research on scaffolding](https://journals.aps.org/prper/abstract/10.1103/PhysRevSTPER.3.010109) · [Research on transfer](https://gwern.net/doc/psychology/1983-gick.pdf).
 

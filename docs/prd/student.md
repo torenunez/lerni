@@ -20,8 +20,8 @@ Both kinds share the same conversation and map, and the experience is simple and
 | Release | What the student gets |
 |---|---|
 | 1 | A text conversation about what they love that gently bridges to goals, and grows their interest map |
-| 2 | A companion that remembers what they like and checks they still remember earlier ideas |
-| 3 | A conversation they can hold by voice: one button, held to talk |
+| 2 | A conversation they can hold by voice: one button, held to talk |
+| 3 | A companion that remembers what they like and checks they still remember earlier ideas |
 | 4 | New goals suggested from their map, for the educator to accept |
 | 5 | Conversation without an educator present |
 
@@ -86,20 +86,20 @@ As a student, I want what I talk about to be remembered as interests, so that th
 - WHEN a new conversation starts THE SYSTEM SHALL start from the map: their top interests and the goals.
 - WHEN an independent student opens My map THE SYSTEM SHALL show their map and let them add, rename, and remove entries, set their own goals (things to practice), and Upload notes that Claude turns into proposed interests and goals, saving only the ones they tick.
 
-## Release 2: a companion that remembers me
-
-The companion learns what each student likes (how they like to be talked to, which examples land) and, after a gap, asks one quick recall question about an earlier idea from their map. Stories to be written when Release 2 starts.
-
-## Release 3: talk with the app
+## Release 2: talk with the app
 
 ### Story: Hold to talk
 
 As a student, I want to hold one button to talk and let go when I'm done, so that I can learn without reading or typing.
 
-- WHEN the student holds the talk button THE SYSTEM SHALL listen until they let go, then answer aloud with the text visible.
-- WHEN speech is turned into text THE SYSTEM SHALL show it for correction before it reaches the conversation. The audio itself goes only to a speech-to-text service the educator approved.
+- WHEN the student holds the talk button THE SYSTEM SHALL listen until they let go, show what it heard in the chat, and send it at once, as if typed; Stop works as it does for text.
+- WHEN Lerni answers THE SYSTEM SHALL speak it aloud a sentence at a time as it's written, with the text visible; Stop silences it.
+- WHEN speech is turned into text, or text into speech, THE SYSTEM SHALL do it on the home server, so no audio leaves the house; audio is held in memory only and never saved.
 - WHEN voice is unavailable THE SYSTEM SHALL still accept typing.
-- WHEN a recording has been used THE SYSTEM SHALL delete it.
+
+## Release 3: a companion that remembers me
+
+The companion learns what each student likes (how they like to be talked to, which examples land) and, after a gap, asks one quick recall question about an earlier idea from their map. Stories to be written when Release 3 starts.
 
 ## Release 4: new goals from the map
 
@@ -139,14 +139,14 @@ Public access and a native iPad app.
 - 2026-10-09: Release 5 is renamed "free conversation", so it isn't confused with Explore freely.
 - 2026-10-09: Release 1 saves the account and an independent student's plans, but still no progress record. (Replaces "nothing about the student is saved".) (Replaced 2026-10-09 by the interest map.)
 - 2026-10-09: The app is AI-enabled from Release 1: independent students get Ask Lerni, a text conversation with Claude (open questions, kept only in memory). It comes before cards, and Release 3 adds voice on top of it.
-- 2026-10-09: Ask Lerni is one ongoing conversation per student, not one per visit: the start of a companion that, from Release 2, remembers what each student likes. For an independent student it helps them study directly. Confirmed by the admin's first real use: after answering "what's the fastest car?", it asked whether they were more interested in top speed or acceleration. Narrowing follow-ups like that are the direction to keep.
+- 2026-10-09: Ask Lerni is one ongoing conversation per student, not one per visit: the start of a companion that, from Release 3, remembers what each student likes. For an independent student it helps them study directly. Confirmed by the admin's first real use: after answering "what's the fastest car?", it asked whether they were more interested in top speed or acceleration. Narrowing follow-ups like that are the direction to keep.
 - 2026-10-09: A supervised student's AI conversation is Release 3, not Release 1. Their whole screen is the conversation: one button they hold to talk and release when done. The agent is a companion that starts from the student's interests and gracefully steers back to the educator-approved learning plan, so learning feels like play; it isn't an open chat. It runs on an API key under Anthropic's commercial terms, with reply checks, and the educator can see the conversation. (Replaced 2026-10-09 by the interest map.)
 - 2026-10-09: The interest map replaces activity cards, learning plans, approvals, Explore freely, and the plan import. The conversation is the whole activity; interests grow from it, the educator adds goals, and the agent bridges between them. Upload is a way to add interests and goals. Only educators see a supervised student's map. (Replaces the Release 1 cards-and-taps design. Remembering, Release 2, still comes before voice, Release 3.)
 - 2026-10-09: A supervised student talks with Lerni by text in Release 1, through the admin's Claude account, with an educator beside them in every session. No API key is planned. (Replaces the earlier decision to wait for Release 3 and an API key.)
 - 2026-10-09: After two outside reviews of the map design: interests are sized by the days they come up and goals by the days the student explained them back (Lerni's guess at competence), replacing time spent. Every student's conversation is kept for 7 days in logs the admin reads, so the map can be checked against what was said (replaces "conversation text is never saved"). Release 1 has no automatic reply check and no app-enforced co-presence: the household keeps an adult nearby, the iPad is signed in only as the student, and the adults never save their passwords on it.
+- 2026-10-09: Voice comes before remembering: Release 2 is voice, Release 3 remembering. Speech-to-text and text-to-speech run on the home server (local Whisper and Kokoro, as separate helper programs behind two calls, "transcribe" and "speak", set by environment variables), so no audio leaves the house and no new account is needed; a hosted service only if the local ones are too slow or flat with the students. What Lerni heard is sent at once, shown in the chat, instead of waiting for a confirm tap. (Replaces "remembering comes before voice" and "show the text for correction before it reaches the conversation", and answers which speech services to use.)
 
 ## Open questions
 
-- [NEEDS CLARIFICATION] (Release 2) Should a supervised student see their own map, as a way to feel progress? (Release 1: educators only.)
-- [NEEDS CLARIFICATION] (Release 3) Which speech-to-text service and which reading-aloud voice? Audio must reach the speech-to-text service before there is any text to confirm, so "send nothing until confirmed" covers what happens after transcription. Does transcription run on the home server or at an outside service the educator approved?
+- [NEEDS CLARIFICATION] (Release 3) Should a supervised student see their own map, as a way to feel progress? (Release 1: educators only.)
 - [NEEDS CLARIFICATION] (Release 5) How does a consent request reach the educator, and how long does the student wait?
