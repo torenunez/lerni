@@ -109,7 +109,7 @@ Minimal on purpose: one happy path per module, plus a test for each safety guara
 | `tests/student/test_domain.py` | The snapshot type has no field for the answer key. |
 | `tests/student/test_canonical.py` | The same content always gives the same bytes. |
 | `tests/student/test_plans.py` | Plans save and load; examples seed once; plan ids can't escape the plans folder. |
-| `tests/student/test_students.py` | An account saves and checks its password; bad, reserved, and archived usernames are refused. |
+| `tests/student/test_students.py` | An account saves and checks its password; bad, reserved, and archived usernames are refused.; an account saved before step 10 still loads. |
 | `tests/student/test_interests.py` | People's goal edits are saved; a goal takes over an interest of the same name; a full map says so; the tagger only adds what the student said and never touches goals; the prompt block stays short. |
 | `tests/student/test_tagging.py` | An exchange grows the map and is logged (a stopped one isn't tagged); a late result never undoes a person or a new conversation; logs older than 7 days are deleted. |
 | `tests/student/test_mapdraw.py` | The map picture escapes names and draws at most 15 entries; the list says the same in words. |
@@ -124,7 +124,7 @@ Minimal on purpose: one happy path per module, plus a test for each safety guara
 | `tests/student/test_serve.py` | Ctrl-C stops the server within a few seconds, even with pages open. |
 | `tests/student/test_web_roles.py` | Students can't manage accounts; cleared fields each get their own update; the page config carries no plans or other students' names; each role opens on a tab it can see; a supervised student signs in to the conversation; each student asks in their own voice; a map is reached only by its owner, or by an educator for a supervised student.; upload and feedback check who is asking, and an upload is deleted even when refused. |
 | `tests/student/test_core_imports.py` | The core imports only the standard library (never Gradio or a provider SDK). |
-| `tests/student/test_distribution.py` | The built package ships the activity files byte for byte (slow; needs `build`). |
+| `tests/student/test_distribution.py` | Builds the wheel and sdist, installs each outside the repo, and checks the personas ship byte for byte. |
 | `tests/student/conftest.py` | Shared test data: a synthetic activity, and a temporary data folder for every test. |
 | `tests/test_sm2.py` | Good reviews keep lengthening the interval. |
 | `tests/test_cli_alias.py` | `study` still runs `lerni`, with a deprecation note. |
