@@ -19,6 +19,7 @@ Approved in conversation on 2026-10-10 (approach A, refined below). Requirements
 | HTTPS | Our own certificate (mkcert) installed once on each device | Free, no account, home network only |
 | Who | Everyone, whenever the helpers are running | No setting to manage |
 | Keeping audio | Audio may stay on the home server for up to 7 days, like the conversation logs; Release 2 doesn't save it on purpose | The admin's call (2026-10-10): whatever is easiest for the MVP; a light audio log can come later if useful |
+| Who could hear it | If audio ends up in Gradio's cache, anyone signed in could reach it by URL | Accepted for the household (at most three people signed in, each with their own account); revisit before anyone outside the family uses the app |
 
 ## How it works
 
