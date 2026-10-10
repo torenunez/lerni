@@ -15,7 +15,6 @@ Open tasks by who does the work. The educator and admin tracks run in parallel: 
 
 ## Admin
 
-- [ ] Install the home server's certificate on the iPad and phones ([admin reference: HTTPS](reference/admin.md#https-for-voice), step 3), sign in again at the `https://` address, and replace the iPad's home-screen icon. (The server side is done.)
 - [ ] Optionally delete the old plan files on the home server (`~/.lerni/student/plans/`); nothing reads them since step 10.
 
 ### Upcoming PRs
