@@ -104,6 +104,8 @@ Left out of the map to keep it minimal: stepping-stone ideas between an interest
 
 ## Educator feedback
 
+Feedback now comes from the Maps chat ([spec 06](06-educator-chat.md)); the rules below hold.
+
 - On Maps, a **Feedback** box: free text about the app's design or about a map ("he's bored of sharks, lean into soccer"; "the circles are too small on my phone").
 - The agent replies with a one- or two-line summary of what it understood, and at most one clarifying question if it's vague. The educator can correct it, then presses **Save feedback**.
 - **It never acts on feedback:** it doesn't change the map, the goals, or the app. A rule in code says feedback is summarized, never carried out, and the call has no tools.

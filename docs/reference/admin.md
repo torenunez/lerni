@@ -68,7 +68,7 @@ lerni serve                                 # binds 0.0.0.0:7860
 ```
 
 - Every device opens `http://<home-server>:7860/` and signs in at `/signin`; the app itself is at `/app/`.
-- **First start:** add the first educator on the home server, then that educator adds everyone else in the **Students** tab:
+- **First start:** add the first educator on the home server, then that educator adds everyone else in **Students** (☰ menu):
 
   ```bash
   lerni student add USERNAME --name NAME --kind independent --educator   # asks for the password
@@ -80,9 +80,9 @@ lerni serve                                 # binds 0.0.0.0:7860
 - `--port` changes the default port; `--host 127.0.0.1` keeps it on this computer only; `--label Development` marks a development server on every page. Startup prints the running version (number, branch, commit, date), and the sign-in page shows it at the bottom: check it there after updating.
 - Start it in a Terminal window on the home server's own desktop, never inside `tmux` or over SSH: there macOS `say` makes empty audio, so answers show as text but are never spoken.
 - It never touches the admin tool's database.
-- **Claude** (Ask, the map's tagger, and Upload) turns on when the `claude` CLI is installed and logged in on this computer; it uses that Claude account, so there's no API key. `LERNI_CLAUDE_MODEL` picks the answering and upload model (default `claude-sonnet-5-5`), `LERNI_TAGGER_MODEL` the tagger's (default `claude-haiku-5-5`). Startup prints whether it's on.
+- **Claude** (Ask, the map's tagger, Upload, and the Maps chat) turns on when the `claude` CLI is installed and logged in on this computer; it uses that Claude account, so there's no API key. `LERNI_CLAUDE_MODEL` picks the answering and upload model (default `claude-sonnet-5-5`), `LERNI_TAGGER_MODEL` the tagger's (default `claude-haiku-5-5`). Startup prints whether it's on.
 - `lerni logs [USERNAME]` shows the last 7 days of conversations and what the tagger did; `lerni feedback` lists educators' feedback (`--summary` groups it, `done N` closes one).
-- Evals (real Claude calls, run by hand when instructions or models change): `scripts/eval_tagger.py`, `scripts/eval_upload.py`, `scripts/eval_supervised.py`.
+- Evals (real Claude calls, run by hand when instructions or models change): `scripts/eval_tagger.py`, `scripts/eval_upload.py`, `scripts/eval_supervised.py`, `scripts/eval_voice.py`, `scripts/eval_educator.py`.
 
 ### Two environments
 

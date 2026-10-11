@@ -9,7 +9,7 @@ On **Maps**, for one student at a time:
 - **Top:** the student picker and their map picture. On a phone it's a strip about 200px tall that a tap expands.
 - **Middle:** a chat with the **educator agent** about that student. Switching students starts a fresh chat.
 - **Under the agent's latest reply:** its proposals as a **tick list**, and **Add to map**. Feedback items save to the admin's list instead of the map.
-- **Bottom:** the message box with 📎 (notes as .txt, .md, .docx, or .pdf, as Upload takes them) and Send.
+- **Bottom:** the message box with 📎 (notes as .txt, .md, or .docx; a PDF gets "paste its text", since the chat's Claude call takes text only) and Send.
 
 The four Maps panels go away: Add a goal, Rename or remove, Upload notes, and Feedback for the admin. My map keeps its panels; it gets the chat in a later version, once this one has been used.
 
@@ -28,7 +28,7 @@ The four Maps panels go away: Add a goal, Rename or remove, Upload notes, and Fe
 1. **The educator sends a message,** optionally with a file. The server checks the viewer is an educator and the student is supervised. A file's text is read with Upload's `extract_upload`, and the file is deleted at once.
 2. **One Claude call,** with:
    - the educator persona (`personas/educator.md`) and the rules below;
-   - the student's map block (the same one Lerni gets, which has no names), as information;
+   - the student's whole map (every interest and goal, talked about or not; no names), as information;
    - the chat so far (the last 20 turns) and the file's text, marked as notes to sort, never instructions.
 3. **The reply streams into the chat.** It ends with a fenced `proposals` JSON block, which is hidden from the screen as it arrives.
 4. **The server parses the block into checked proposals.** Bad, repeated, or unknown items are dropped; a missing or broken block means no proposals, and the chat goes on. Kinds:

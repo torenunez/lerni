@@ -4,9 +4,9 @@ Guidance for AI coding agents in this repository. Product context: [README](READ
 
 ## What's here
 
-- `src/lerni/student/`: the student app's core: accounts, sign-in, the conversation for both kinds of student, the interest map (`interests.py`, `tagging.py`, `logs.py`), and Upload and feedback (`upload.py`, `feedback.py`) ([design](plans/specs/04-interest-map.md)). Versions 1 (conversation and map) and 2 (voice) are built.
+- `src/lerni/student/`: the student app's core: accounts, sign-in, the conversation for both kinds of student, the interest map (`interests.py`, `tagging.py`, `logs.py`), Upload and feedback (`upload.py`, `feedback.py`), and the educator agent (`educator_agent.py`) ([design](plans/specs/04-interest-map.md)). Versions 1 (conversation and map) and 2 (voice) are built.
 - `src/lerni/` (the rest): the admin tool, the `lerni` command.
-- `src/lerni/student/web/`: the Gradio screens (`lerni serve`), One app with sign-in and tabs by role. `scripts/`: the evals (real Claude calls, run by hand). The educator never uses the repo; everything for them lives in the app.
+- `src/lerni/student/web/`: the Gradio screens (`lerni serve`), one app with sign-in and a ☰ menu of sections by role. `scripts/`: the evals (real Claude calls, run by hand). The educator never uses the repo; everything for them lives in the app.
 - `docs/prd/`: the source of truth for requirements, one PRD per role. `plans/`: build plans and specs; `plans/later/` holds older designs for reference. A PRD wins where they disagree.
 
 Python 3.11+, standard library first; typer and rich for the CLI; SQLite for admin data in `~/.lerni/`.
