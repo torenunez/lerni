@@ -1,14 +1,14 @@
 # To do
 
-Open tasks by who does the work. The educator and admin tracks run in parallel: building and troubleshooting the app never waits for content, and content never waits for the app. Within each role, **Now** comes first and later work is grouped by release; the admin's build work is the running list of [upcoming PRs](#upcoming-prs). When a task is done, delete it; if it changed where things stand, add a dated entry to [progress](progress.md). What completes each release: [roadmap](roadmap.md).
+Open tasks by who does the work. The educator and admin tracks run in parallel: building and troubleshooting the app never waits for content, and content never waits for the app. Within each role, **Now** comes first and later work is grouped by version; the admin's build work is the running list of [upcoming versions](#upcoming-versions). When a task is done, delete it; if it changed where things stand, add a dated entry to [progress](progress.md). What completes each version: [roadmap](roadmap.md).
 
 ## Educator
 
-### Now: Release 1 MVP
+### Now: Version 1 MVP
 
 - [ ] Think of 2–3 things you'd like the supervised student to explore (with a note each on what you have in mind). You'll add them on the Maps tab, or upload your notes.
 
-### Later: Release 1 MVP
+### Later: Version 1 MVP
 
 - [ ] Talk with Lerni yourself for a few days and watch your own map; say what's confusing in Feedback or to the admin.
 - [ ] Try the conversation with the supervised-student voice, then sit beside the supervised student for a short first conversation. Keep notes private, or put them in Feedback.
@@ -17,22 +17,23 @@ Open tasks by who does the work. The educator and admin tracks run in parallel: 
 
 - [ ] Optionally delete the old plan files on the home server (`~/.lerni/student/plans/`); nothing reads them since step 10.
 
-### Upcoming PRs
+### Upcoming versions
 
-The running list of what ships next, in order. Design: [specs/04-interest-map.md](../plans/specs/04-interest-map.md); step details: [Release 1 plan](../plans/release-1-mvp.md#to-build).
+What ships next, in order, one PR each ([how versions work](roadmap.md#versions)):
+
+1. **v2.9: production fixes:** whatever the production and development comparison after v2.8 turns up (likely: the app page is never cached, and a failed spoken answer is logged).
+2. **Version 3, remembering:** not planned yet; its first PR writes the plan.
 
 How PRs are split:
 
-- **One unit per PR:** one build step (with the docs it changes), or one docs-only change, never two units in one PR.
+- **One unit per PR:** one change (with the docs it changes), or one docs-only change, never two units in one PR.
 - **In order:** each branch starts from `main` after the PR before it merges.
-- **Each PR carries its own docs:** code manifest, todo, and progress for what it ships.
+- **Each PR carries its own docs:** code manifest, todo, and progress for what it ships, and its version: the `vX.Y:` title and `version` in `pyproject.toml`.
 - **Merged only by the admin,** after the "done when" is checked on the real devices.
-- **The shipped release stays in use:** each PR says in a Deploying section whether it's safe to put on the home server while the family uses it, how, and the caveats ([admin reference](reference/admin.md#updating-the-home-server)).
-- **When a PR merges:** delete its row and add a dated entry to [progress](progress.md). Work found along the way gets a new row or a task below, not a bigger PR.
+- **The shipped version stays in use:** each PR says in a Deploying section whether it's safe to put on the home server while the family uses it, how, and the caveats ([admin reference](reference/admin.md#updating-the-home-server)).
+- **When a PR merges:** tag `main` with its version, delete its row, and add a dated entry to [progress](progress.md). Work found along the way gets a new row or a task below, not a bigger PR.
 
-Next: Release 2 step 2, voice ([plan](../plans/release-2-step-2-voice.md)), in review.
-
-Release 1 now needs sessions, not code: the educator sets goals, rehearses, and sits beside the supervised student (Educator and Student tasks above and below).
+Versions 1 and 2 now need sessions, not code: the educator sets goals, rehearses, and sits beside the supervised student (Educator and Student tasks above and below).
 
 ### Ask Lerni: deferred review findings
 
@@ -49,14 +50,14 @@ Release 1 now needs sessions, not code: the educator sets goals, rehearses, and 
 - [ ] Small, from the step 7 review: at a full map a just-added interest can be dropped by the next one; the map block's 1,500-character cut can cut a line mid-word; top interests rank by all-time days rather than the last 30; a faded explained goal can be listed twice in the block; the Maps timer ticks on every page; an unreadable map file shows a Gradio error; `lerni logs` can fail if a purge runs mid-read.
 - [ ] When a map outgrows the picture (more than 15 entries drawn): show more, for example by grouping or a focus on one entry and its links; the list below already has them all.
 
-### Now: Release 2 Voice
+### Now: Version 2 Voice
 
 - [ ] Pick Lerni's voice ([admin reference: Voice](reference/admin.md#voice)), try Hold to talk on the iPad, then with the supervised student and an adult nearby (step 2 is done when their map grows from a spoken conversation).
 - [ ] Try the voice with the students before deciding whether a hosted voice (Inworld, about $18 a month) is worth it; a hosted service means student audio leaves the house, so it needs the educator's agreement first.
 - [ ] Before anyone outside the family uses the app: files in Gradio's cache (uploads, any voice audio) are reachable by URL to anyone signed in; serve them only to their owner, or keep none.
 - [ ] Before anyone outside the household uses the app: replace the Claude Code adapter with an API-key adapter (`env:ANTHROPIC_API_KEY`).
 
-### Later: Release 3 Remembering
+### Later: Version 3 Remembering
 
 - [ ] Personal personas: Lerni learns what each student likes over time (topics, examples, answer length), starting from the persona for their kind; visible to the student, and to the educator for a supervised student.
 - [ ] Write `plans/release-3-remembering.md`, starting from the map: recall questions about goals the student once explained, tracking the last recall attempt apart from the last time a goal was discussed.
@@ -77,7 +78,7 @@ Release 1 now needs sessions, not code: the educator sets goals, rehearses, and 
 
 ## Student
 
-### Later: Release 1 MVP
+### Later: Version 1 MVP
 
 - [ ] Independent student (the admin first): once step 7 lands, talk with Lerni over a few days on your own device, add a goal, and check the map matches what you talked about; note what's confusing.
 - [ ] Supervised student: try the MVP with the educator beside them. They can say no or stop at any time.

@@ -40,3 +40,15 @@ def test_https_needs_both_files_and_passes_them_to_uvicorn(monkeypatch, tmp_path
     serve.serve("127.0.0.1", 0, cert=cert, key=key)
     assert seen["ssl_certfile"] == str(cert) and seen["ssl_keyfile"] == str(key)
     assert "https://" in capsys.readouterr().out
+
+
+def test_the_sign_in_version_comes_from_pyproject():
+    # the checkout's pyproject.toml, so a version bump shows without reinstalling
+    import tomllib
+    from pathlib import Path
+
+    from lerni.student.web import serve
+
+    pyproject = Path(__file__).resolve().parents[2] / "pyproject.toml"
+    version = tomllib.loads(pyproject.read_text())["project"]["version"]
+    assert serve.running_version().startswith(f"v{version} · ")

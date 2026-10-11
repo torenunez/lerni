@@ -1,6 +1,6 @@
 # Release 1 MVP: build plan
 
-The smallest app a student can try: sign in and talk with Lerni about what you love, while your interest map grows and Lerni bridges toward goals. The admin and educator try it first as independent students; then a supervised student talks with Lerni on an iPad, with the educator beside them. Steps 7–10 follow the [interest map spec](specs/04-interest-map.md); accounts and sign-in follow the [student accounts spec](specs/03-student-accounts.md). Requirements: [student PRD, Release 1](../docs/prd/student.md#release-1-talk-about-what-you-love) and [educator PRD, Release 1](../docs/prd/educator.md#release-1-set-goals-watch-and-give-feedback). Where this plan and a PRD disagree, the PRD wins.
+The smallest app a student can try: sign in and talk with Lerni about what you love, while your interest map grows and Lerni bridges toward goals. The admin and educator try it first as independent students; then a supervised student talks with Lerni on an iPad, with the educator beside them. Steps 7–10 follow the [interest map spec](specs/04-interest-map.md); accounts and sign-in follow the [student accounts spec](specs/03-student-accounts.md). Requirements: [student PRD, Release 1](../docs/prd/student.md#version-1-talk-about-what-you-love) and [educator PRD, Release 1](../docs/prd/educator.md#version-1-set-goals-watch-and-give-feedback). Where this plan and a PRD disagree, the PRD wins.
 
 ## To build
 
