@@ -107,7 +107,7 @@ Every code file, one line each: [code manifest](code-manifest.md).
 
 | Piece | Release | Seam to leave room for now |
 |---|---|---|
-| Voice and HTTPS | 2 | Nothing depends on a particular address. Speech-to-text and text-to-speech run as helper programs on the home server behind two calls (`transcribe`, `speak`, set by environment variables, like every outside service); what was heard enters the conversation like typing; audio stays in memory. |
+| Voice and HTTPS | 2 | Nothing depends on a particular address. Speech-to-text (whisper.cpp's `whisper-cli`) and text-to-speech (macOS `say`) run as commands on the home server behind one adapter (`Speech`: `transcribe`, `speak`); what was heard enters the conversation like typing; audio stays on the home server, in memory or temp files deleted at once. |
 | Remembering preferences, recall | 3 | The map is the memory; preferences and recall build on it. |
 | Suggested goals | 4 | Suggestions are shown for the educator to accept; they never become goals on their own (boundary 1). |
 | Curated or checked content | — | None planned; if ever needed, it arrives as information in the map block, never as a separate path. |
