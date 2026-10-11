@@ -11,7 +11,7 @@ How Lerni works: what runs where, how a conversation grows a student's interest 
 - **Supervised students** see only the conversation, full screen, in the supervised voice, with an adult nearby (a household rule). Their map grows on the educator's Maps.
 
 
-It assumes one household, a few students, one map per student. Students use an iPad or any browser on the home network. The admin tool (`lerni` in a terminal) is separate: the admin's own learning tool with its own data, plus `lerni student` and (planned) `lerni feedback`.
+It assumes one household, a few students, one map per student. Students use an iPad or any browser on the home network. The admin tool (`lerni` in a terminal) is separate: the admin's own learning tool with its own data, plus `lerni student`, `lerni logs`, and `lerni feedback`.
 
 ## Context
 
@@ -55,7 +55,7 @@ flowchart LR
 
 - **The home network is the outer boundary:** no port forwarding, never Gradio's public share links.
 - **Everyone signs in** on our own sign-in page, and Gradio's `auth_dependency` re-checks the account on every request, so after an archive or password reset every device is refused at its next request (an answer already streaming finishes).
-- **Every handler resolves the signed-in account on the server** and checks every id the page sends against it. Hiding a tab, a component, or an event (`api_visibility="private"`) is not protection. Nothing per-user is built into the page layout, because Gradio sends every signed-in browser the same config. Passwords travel unencrypted on the home network until HTTPS (Version 3), which is accepted.
+- **Every handler resolves the signed-in account on the server** and checks every id the page sends against it. Hiding a tab, a component, or an event (`api_visibility="private"`) is not protection. Nothing per-user is built into the page layout, because Gradio sends every signed-in browser the same config. Passwords travel over HTTPS when the server is started with `--cert` and `--key` ([admin reference](reference/admin.md#https-for-voice)).
 - **Who can do what:**
 
   | Who | Can |

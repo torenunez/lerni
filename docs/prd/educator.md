@@ -75,7 +75,7 @@ As an educator, I want to tell the admin what to change in plain words, so that 
 
 - The student uses the iPad with you beside them. Offer it in one sentence; they may say no or stop at any time.
 - Plan on 5–10 minutes. Finishing is not the goal.
-- Afterward, keep brief private notes, or write them in Feedback: what caught their interest, what confused them, what to change. Keep what happened separate from what you think it means.
+- Afterward, keep brief private notes, or tell the Maps chat (it goes to the admin): what caught their interest, what confused them, what to change. Keep what happened separate from what you think it means.
 
 | Watch for | It shapes |
 |---|---|
