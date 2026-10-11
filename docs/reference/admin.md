@@ -124,6 +124,7 @@ Hold to talk needs HTTPS and two tools on the home server, run as commands (noth
 1. `brew install whisper.cpp` (speech to text), then its model, about 0.5 GB: `mkdir -p ~/.lerni/models && curl -L -o ~/.lerni/models/ggml-small.bin https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small.bin`. Another place: set `LERNI_WHISPER_MODEL`.
 2. Lerni speaks with the Mac's own voice (`say`). To pick one, list them with `say -v '?'`, try one with `say -v NAME "Sharks are amazing swimmers!"`, and set `LERNI_SAY_VOICE=NAME` before `lerni serve`. Nicer voices download in System Settings → Accessibility → Spoken Content → System Voice.
 3. Restart `lerni serve`; it prints `Voice (hold to talk): on`. Check it with `.venv/bin/python scripts/eval_voice.py`.
+4. On each device, so Safari stops asking for the microphone: on the Lerni page, the page menu in the address bar → Website Settings → Microphone → Allow.
 
 Audio stays on the home server: each clip's temp file is deleted once it's heard, and spoken sentences are never saved.
 
