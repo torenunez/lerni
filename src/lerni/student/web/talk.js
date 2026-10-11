@@ -2,14 +2,16 @@
 // and play the spoken answer a sentence at a time.
 (() => {
   const S = {ctx: null, stream: null, src: null, node: null, chunks: [], t0: 0, on: false,
-             peek: null, queue: [], playing: null};
+             peek: null, queue: [], playing: null, player: new Audio()};
+  const session = navigator.audioSession;  // Safari 16.4+: says whether we record or play
 
-  // resume audio inside the tap, so answers can play later without another tap
+  // inside the tap: wake the recorder, and play a moment of silence on the player,
+  // so iPad and iPhone Safari let it play the answer later without another tap
   function unlock() {
     if (!S.ctx) S.ctx = new (window.AudioContext || window.webkitAudioContext)();
     S.ctx.resume();
-    const s = S.ctx.createBufferSource();
-    s.buffer = S.ctx.createBuffer(1, 1, 22050); s.connect(S.ctx.destination); s.start(0);
+    S.player.src = URL.createObjectURL(new Blob([wav(new Float32Array(1600))], {type: 'audio/wav'}));
+    S.player.play().catch(() => {});
   }
 
   async function start(e, btn, suffix) {
@@ -22,6 +24,7 @@
     btn.classList.add('lerni-listening');
     S.on = true; S.chunks = []; S.t0 = performance.now();
     try {
+      if (session) session.type = 'play-and-record';
       if (!S.stream) S.stream = await navigator.mediaDevices.getUserMedia({audio: true});
     } catch (err) { reset(btn); return; }  // no microphone: typing still works
     if (!S.on) return;  // let go while Safari was asking
@@ -38,6 +41,9 @@
   function reset(btn) {
     S.on = false; clearInterval(S.peek);
     if (S.src) { S.src.disconnect(); S.node.disconnect(); S.src = S.node = null; }
+    // release the microphone, so Safari goes back to normal (loud) playback
+    if (S.stream) { S.stream.getTracks().forEach(t => t.stop()); S.stream = null; }
+    if (session) session.type = 'playback';  // plays even when the device is on silent
     btn.textContent = '🎤 Hold to talk';
     btn.classList.remove('lerni-listening');
   }
@@ -96,30 +102,30 @@
     reset(btn);
   }
 
-  async function next() {
+  // play the next sentence on the player the tap unlocked
+  function next() {
     if (S.playing || !S.queue.length) return;
     const bin = Uint8Array.from(atob(S.queue.shift()), c => c.charCodeAt(0));
-    const src = S.ctx.createBufferSource();
-    S.playing = src;  // claimed before decoding, so sentences never overlap
-    try {
-      src.buffer = await S.ctx.decodeAudioData(bin.buffer);
-    } catch (err) { S.playing = null; next(); return; }  // skip a sentence that won't play
-    if (S.playing !== src) return;  // stopped while decoding
-    src.connect(S.ctx.destination);
-    src.onended = () => { if (S.playing === src) { S.playing = null; next(); } };
-    src.start(0);
+    const url = URL.createObjectURL(new Blob([bin], {type: 'audio/mp4'}));
+    S.playing = url;  // one sentence at a time
+    const done = () => {
+      URL.revokeObjectURL(url);
+      if (S.playing === url) { S.playing = null; next(); }
+    };
+    S.player.onended = done;
+    S.player.src = url;
+    S.player.play().catch(done);  // skip a sentence that won't play
   }
 
   // the server sends [count, audio]; play each sentence in order
   function play(v) {
-    if (!v || !S.ctx) return;
+    if (!v) return;
     S.queue.push(JSON.parse(v)[1]); next();
   }
 
   function stop() {
-    S.queue = [];
-    const src = S.playing; S.playing = null;
-    if (src) { try { src.stop(); } catch (err) {} }  // not started yet: nothing to stop
+    S.queue = []; S.playing = null;
+    S.player.pause();
   }
 
   window.lerniTalk = {play, stop};
