@@ -68,3 +68,36 @@ def test_stop_cancels_the_claude_call():
     assert next(reply) == "Hi"
     reply.close()  # Stop
     assert cancelled.wait(2)
+
+
+def test_a_paused_lerni_never_calls_claude(monkeypatch):
+    from datetime import datetime, timedelta
+
+    import lerni.student.adapters.claude_code as cc
+    from lerni.student.conversation import ConversationUnavailable, Turn
+    from lerni.student.usage import Usage
+
+    def no_call(**_kw):
+        raise AssertionError("Claude was called")
+
+    monkeypatch.setattr(cc, "query", no_call)
+    usage = Usage()
+    later = int((datetime.now() + timedelta(days=1)).timestamp())
+    usage.record({"seven_day": (0.97, later)}, overage=False)
+    with pytest.raises(ConversationUnavailable, match="resting"):
+        list(ClaudeCodeChat(usage=usage).stream("Be brief.", [Turn("user", "hi")]))
+
+
+def test_rate_limit_events_update_usage():
+    from claude_agent_sdk import RateLimitEvent, RateLimitInfo
+
+    from lerni.student.adapters.claude_code import _note_limits
+    from lerni.student.usage import Usage
+
+    raw = {"status": "allowed_warning", "isUsingOverage": False, "unifiedWindows": {
+        "five_hour": {"utilization": 0.13, "resetsAt": 1791779400},
+        "seven_day": {"utilization": 0.88, "resetsAt": 1791853200}}}
+    usage = Usage()
+    _note_limits(usage, RateLimitEvent(
+        rate_limit_info=RateLimitInfo(status="allowed_warning", raw=raw), uuid="u", session_id="s"))
+    assert "88%" in usage.warning()

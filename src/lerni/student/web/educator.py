@@ -14,7 +14,7 @@ from typing import Any
 
 import gradio as gr
 
-from lerni.student.conversation import MAX_MESSAGE
+from lerni.student.conversation import MAX_MESSAGE, ConversationUnavailable
 from lerni.student.educator_agent import EducatorChats, apply_educator_proposals
 from lerni.student.feedback import FeedbackStore
 from lerni.student.interests import MapStore
@@ -202,7 +202,7 @@ def educator_tab(
                     answer += piece
                     shown[-1]["content"] = answer or "…"
                     yield [shown, hidden, gr.update(visible=False), "", "", "", None]
-            except (NotAllowed, UploadError) as exc:
+            except (NotAllowed, UploadError, ConversationUnavailable) as exc:
                 shown[-1]["content"] = f"⚠️ {exc}"
                 yield [shown, hidden, gr.update(visible=False), "", "", message, None]
                 return

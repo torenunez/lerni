@@ -28,6 +28,7 @@ from lerni.student.signin import SignIn, cookie_name, load_secret  # noqa: E402
 from lerni.student.students import StudentStore, default_data_dir  # noqa: E402
 from lerni.student.tagging import MapKeeper, Tagger  # noqa: E402
 from lerni.student.upload import Uploader  # noqa: E402
+from lerni.student.usage import Usage  # noqa: E402
 from lerni.student.voice import Speech  # noqa: E402
 from lerni.student.web.main import build_main_view  # noqa: E402
 from lerni.student.web.signin_page import APP_PATH, add_signin_routes  # noqa: E402
@@ -58,6 +59,7 @@ _CSS = """
 .tab-wrapper { display: none !important; }
 .lerni-menu-btn { font-size: 26px; line-height: 1; padding: 4px 10px; background: none; }
 .lerni-title p { font-size: 18px; margin: 0; }
+.lerni-usage { background: #fef3c7; color: #78350f; border-radius: 8px; padding: .4rem .7rem; }
 #lerni-drawer { position: fixed !important; top: 0; bottom: 0; left: 0; z-index: 1001;
   width: min(80vw, 320px); padding: 16px !important; overflow-y: auto;
   background: var(--background-fill-primary); box-shadow: 2px 0 12px rgba(0, 0, 0, .2);
@@ -143,6 +145,7 @@ def build_app(
     label: str = "",
     version: str = "",
     speech: Speech | None = None,
+    usage: Usage | None = None,
 ) -> FastAPI:
     """Build the server: the sign-in page and the app at ``/app/``.
 
@@ -156,6 +159,7 @@ def build_app(
         label: Shown on every page, e.g. ``"Development"``; empty for production.
         version: Which code is running, shown small on the sign-in page.
         speech: Speech to text and back for Hold to talk; ``None`` turns it off.
+        usage: Claude usage, for the educators' warning; ``None`` shows none.
     """
     root = data_root or default_data_dir()
     students = StudentStore(root)
@@ -204,6 +208,7 @@ def build_app(
         label=label,
         speech=speech,
         educator_chats=EducatorChats(chat_model, maps, log) if chat_model else None,
+        usage=usage,
     )
     return gr.mount_gradio_app(
         app,

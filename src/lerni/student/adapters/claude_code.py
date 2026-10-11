@@ -24,6 +24,7 @@ from claude_agent_sdk import (
     ClaudeAgentOptions,
     PermissionResultAllow,
     PermissionResultDeny,
+    RateLimitEvent,
     ResultMessage,
     StreamEvent,
     query,
@@ -32,6 +33,7 @@ from claude_agent_sdk import (
 from lerni.student.conversation import ConversationUnavailable, Turn
 from lerni.student.tagging import TAG_SCHEMA
 from lerni.student.upload import UPLOAD_SCHEMA, UploaderUnavailable, UploadSource
+from lerni.student.usage import Usage
 
 DEFAULT_MODEL = "claude-sonnet-5-5"
 TIMEOUT_SECONDS = 120
@@ -49,6 +51,22 @@ def _isolated() -> dict[str, Any]:
     }
 
 
+def _note_limits(usage: Usage | None, message: Any) -> None:
+    """Pass a rate-limit event's numbers on to ``usage``."""
+    if usage is None or not isinstance(message, RateLimitEvent):
+        return
+    info = message.rate_limit_info
+    raw = info.raw or {}
+    windows = {
+        name: (float(w["utilization"]), int(w["resetsAt"]))
+        for name, w in (raw.get("unifiedWindows") or {}).items()
+        if w.get("utilization") is not None and w.get("resetsAt")
+    }
+    if info.status == "rejected" and info.rate_limit_type and info.resets_at:
+        windows[info.rate_limit_type] = (1.0, info.resets_at)  # this one is full
+    usage.record(windows, overage=bool(raw.get("isUsingOverage")))
+
+
 def claude_cli_available() -> bool:
     """Return whether the `claude` CLI is installed on this machine."""
     return shutil.which("claude") is not None
@@ -57,8 +75,8 @@ def claude_cli_available() -> bool:
 class ClaudeCodeChat:
     """Answer Ask Lerni conversations, streaming the reply as it's written."""
 
-    def __init__(self, model: str = DEFAULT_MODEL) -> None:
-        self.model = model
+    def __init__(self, model: str = DEFAULT_MODEL, usage: Usage | None = None) -> None:
+        self.model, self.usage = model, usage
 
     def options(self, system: str, workdir: str) -> Any:
         """The call's options: no tools, one turn, partial text as it arrives, nothing kept."""
@@ -76,8 +94,10 @@ class ClaudeCodeChat:
         """Yield the reply a piece at a time; closing it (Stop) cancels the call.
 
         Raises:
-            ConversationUnavailable: Claude didn't answer in time or at all.
+            ConversationUnavailable: Claude didn't answer in time or at all, or Lerni is resting.
         """
+        if self.usage is not None and (resting := self.usage.paused()):
+            raise ConversationUnavailable(resting)  # near the limit: no call at all
         pieces: queue.Queue[str | BaseException | None] = queue.Queue()
         running: dict[str, Any] = {}  # the call's event loop and task, to cancel it
 
@@ -116,6 +136,7 @@ class ClaudeCodeChat:
         with tempfile.TemporaryDirectory(prefix="lerni-ask-") as workdir:
             options = self.options(system, workdir)
             async for message in query(prompt=_prompt_with_history(turns), options=options):
+                _note_limits(self.usage, message)
                 if isinstance(message, ResultMessage) and message.is_error:
                     raise ConversationUnavailable("Claude didn't finish.")  # don't save it as done
                 if not isinstance(message, StreamEvent):
@@ -129,8 +150,8 @@ class ClaudeCodeChat:
 class ClaudeCodeTagger:
     """Say what one exchange was about, as structured JSON, with one isolated call."""
 
-    def __init__(self, model: str = DEFAULT_TAGGER_MODEL) -> None:
-        self.model = model
+    def __init__(self, model: str = DEFAULT_TAGGER_MODEL, usage: Usage | None = None) -> None:
+        self.model, self.usage = model, usage
 
     def options(self, system: str, workdir: str) -> Any:
         """The call's options: no tools, one turn, JSON only, nothing kept."""
@@ -150,12 +171,15 @@ class ClaudeCodeTagger:
         Raises:
             RuntimeError: No answer in time, or not JSON (the caller skips this update).
         """
+        if self.usage is not None and self.usage.paused():
+            raise RuntimeError("resting")  # the map waits; nothing is lost but this update
         return asyncio.run(asyncio.wait_for(self._tag(system, prompt), TAG_TIMEOUT_SECONDS))
 
     async def _tag(self, system: str, prompt: str) -> dict[str, Any]:
         with tempfile.TemporaryDirectory(prefix="lerni-tag-") as workdir:
             result: ResultMessage | None = None
             async for message in query(prompt=prompt, options=self.options(system, workdir)):
+                _note_limits(self.usage, message)
                 if isinstance(message, ResultMessage):
                     result = message
         if result is None or result.is_error or not isinstance(result.structured_output, dict):
@@ -166,8 +190,8 @@ class ClaudeCodeTagger:
 class ClaudeCodeUploader:
     """Propose map entries from notes with one tightly limited call (may read one PDF)."""
 
-    def __init__(self, model: str = DEFAULT_MODEL) -> None:
-        self.model = model
+    def __init__(self, model: str = DEFAULT_MODEL, usage: Usage | None = None) -> None:
+        self.model, self.usage = model, usage
 
     def options(
         self, system: str, workdir: str, pdf_path: Path | None = None, can_use_tool: Any = None
@@ -188,8 +212,10 @@ class ClaudeCodeUploader:
         """Send the notes and return Claude's structured proposals.
 
         Raises:
-            UploaderUnavailable: Claude didn't run or returned nothing usable.
+            UploaderUnavailable: Claude didn't run or returned nothing usable, or Lerni is resting.
         """
+        if self.usage is not None and (resting := self.usage.paused()):
+            raise UploaderUnavailable(resting)
         try:
             return asyncio.run(asyncio.wait_for(self._propose(system, source), TIMEOUT_SECONDS))
         except UploaderUnavailable:
@@ -215,6 +241,7 @@ class ClaudeCodeUploader:
             options = self.options(system, workdir, pdf_path, only_this_pdf if pdf_path else None)
             result: ResultMessage | None = None
             async for message in query(prompt=_prompt_stream(prompt), options=options):
+                _note_limits(self.usage, message)
                 if isinstance(message, ResultMessage):
                     result = message
         if result is None or result.is_error or not isinstance(result.structured_output, dict):

@@ -10,7 +10,7 @@ MODEL_ENV = "LERNI_CLAUDE_MODEL"
 TAGGER_ENV = "LERNI_TAGGER_MODEL"
 
 
-def _claude_chat() -> Any:
+def _claude_chat(usage: Any = None) -> Any:
     """Return the Claude Code chat model for Ask Lerni if the CLI is installed, else ``None``."""
     from lerni.student.adapters.claude_code import (
         DEFAULT_MODEL,
@@ -20,10 +20,10 @@ def _claude_chat() -> Any:
 
     if not claude_cli_available():
         return None
-    return ClaudeCodeChat(model=os.environ.get(MODEL_ENV, DEFAULT_MODEL))
+    return ClaudeCodeChat(model=os.environ.get(MODEL_ENV, DEFAULT_MODEL), usage=usage)
 
 
-def _claude_tagger() -> Any:
+def _claude_tagger(usage: Any = None) -> Any:
     """Return the Claude Code tagger if the CLI is installed, else ``None``."""
     from lerni.student.adapters.claude_code import (
         DEFAULT_TAGGER_MODEL,
@@ -33,10 +33,10 @@ def _claude_tagger() -> Any:
 
     if not claude_cli_available():
         return None
-    return ClaudeCodeTagger(model=os.environ.get(TAGGER_ENV, DEFAULT_TAGGER_MODEL))
+    return ClaudeCodeTagger(model=os.environ.get(TAGGER_ENV, DEFAULT_TAGGER_MODEL), usage=usage)
 
 
-def _claude_uploader() -> Any:
+def _claude_uploader(usage: Any = None) -> Any:
     """Return the Claude Code uploader if the CLI is installed, else ``None``."""
     from lerni.student.adapters.claude_code import (
         DEFAULT_MODEL,
@@ -46,7 +46,7 @@ def _claude_uploader() -> Any:
 
     if not claude_cli_available():
         return None
-    return ClaudeCodeUploader(model=os.environ.get(MODEL_ENV, DEFAULT_MODEL))
+    return ClaudeCodeUploader(model=os.environ.get(MODEL_ENV, DEFAULT_MODEL), usage=usage)
 
 
 def _speech() -> Any:
@@ -117,17 +117,20 @@ def serve(
     import uvicorn
 
     from lerni.student.students import StudentStore
+    from lerni.student.usage import Usage
     from lerni.student.web.app import build_app
 
-    chat, tagger, speech = _claude_chat(), _claude_tagger(), _speech()
+    usage = Usage()  # one for every Claude call: the warning and the pause
+    chat, tagger, speech = _claude_chat(usage), _claude_tagger(usage), _speech()
     version = running_version()
     app = build_app(
         chat_model=chat,
         tagger=tagger,
-        uploader=_claude_uploader(),
+        uploader=_claude_uploader(usage),
         label=label,
         version=version,
         speech=speech,
+        usage=usage,
     )
     print(f"Running:  {version}", flush=True)
     print(f"Sign in:  {scheme}://<this-computer>:{port}/", flush=True)
