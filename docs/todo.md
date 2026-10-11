@@ -30,7 +30,7 @@ How PRs are split:
 - **The shipped release stays in use:** each PR says in a Deploying section whether it's safe to put on the home server while the family uses it, how, and the caveats ([admin reference](reference/admin.md#updating-the-home-server)).
 - **When a PR merges:** delete its row and add a dated entry to [progress](progress.md). Work found along the way gets a new row or a task below, not a bigger PR.
 
-Next: Release 2 step 2, voice ([plan](../plans/release-2-step-2-voice.md)), in review.
+Next: Release 3, remembering (not planned yet). Release 2 needs sessions, not code (Educator tasks above).
 
 Release 1 now needs sessions, not code: the educator sets goals, rehearses, and sits beside the supervised student (Educator and Student tasks above and below).
 
