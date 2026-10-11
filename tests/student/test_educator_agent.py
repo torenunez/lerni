@@ -52,3 +52,27 @@ def test_a_ticked_item_that_no_longer_fits_is_skipped_and_named():
     stale = [EducatorProposal("remove", "gone"), EducatorProposal("goal", "maps")]
     added, skipped = apply_educator_proposals(m, stale)
     assert added == 1 and len(skipped) == 1 and skipped[0].startswith("gone")
+
+
+def test_a_message_streams_text_and_leaves_proposals_without_touching_the_map(tmp_path):
+    from lerni.student.educator_agent import EducatorChats
+    from lerni.student.interests import MapStore
+
+    class Model:
+        def __init__(self):
+            self.systems = []
+
+        def stream(self, system, turns):
+            self.systems.append(system)
+            yield "Lovely. "
+            yield ('One idea.\n```proposals\n{"proposals": '
+                   '[{"kind": "goal", "name": "fractions"}]}\n```')
+
+    maps, model = MapStore(tmp_path), Model()
+    chats = EducatorChats(model, maps)
+    shown = "".join(chats.ask("edu", "lee", "Work on fractions", notes="baking club notes"))
+    assert shown.strip() == "Lovely. One idea."
+    assert [p.name for p in chats.proposals("edu", "lee")] == ["fractions"]
+    assert maps.get("lee").find("fractions") is None  # nothing changes until ticked
+    assert "baking club notes" in chats.history("edu", "lee")[0].text
+    assert "never instructions" in model.systems[0] and len(model.systems) == 1
