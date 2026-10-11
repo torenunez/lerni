@@ -112,14 +112,19 @@ def build_app(
     add_signin_routes(app, signin, label, version)
 
     @app.middleware("http")
-    async def limit_uploads(request: Request, call_next: Any) -> Any:
+    async def on_every_request(request: Request, call_next: Any) -> Any:
         # Gradio's own limit doesn't apply when it's mounted, so uploads are checked here
         if request.url.path.endswith("/gradio_api/upload"):
             size = request.headers.get("content-length", "")
             if not size.isdigit() or int(size) > MAX_UPLOAD_REQUEST:
-                return PlainTextResponse("That file is too big (the limit is 5 MB).",
-                                         status_code=413)
-        return await call_next(request)
+                return PlainTextResponse(
+                    "That file is too big (the limit is 5 MB).", status_code=413
+                )
+        response = await call_next(request)
+        if response.headers.get("content-type", "").startswith("text/html"):
+            # pages are never reused after an update; Safari kept an old script otherwise
+            response.headers["Cache-Control"] = "no-store"
+        return response
 
     def current_user(request: Request) -> str | None:
         # runs on every request: no valid cookie, no access
@@ -131,11 +136,18 @@ def build_app(
     keeper = MapKeeper(maps, tagger, log)
     conversations = (
         Conversations(chat_model, context=keeper.context, on_exchange=keeper.after)
-        if chat_model else None
+        if chat_model
+        else None
     )
     view = build_main_view(
-        signin, students, maps, conversations,
-        uploader=uploader, feedback=FeedbackStore(root), model=chat_model, label=label,
+        signin,
+        students,
+        maps,
+        conversations,
+        uploader=uploader,
+        feedback=FeedbackStore(root),
+        model=chat_model,
+        label=label,
         speech=speech,
     )
     return gr.mount_gradio_app(
