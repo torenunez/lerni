@@ -51,9 +51,24 @@ _CSS = """
   --layout-gap: 8px; }
 .gradio-container .main { padding: 0 !important; }
 .lerni-header { align-items: center !important; flex-wrap: nowrap !important; }
-.lerni-header p { font-size: 14px; margin: 0; }
-/* a tab bar with one tab (a supervised student's screen) is just space */
-.tab-wrapper:not(:has([role="tab"] ~ [role="tab"])) { display: none !important; }
+.lerni-header > * { flex: none !important; min-width: 0 !important; width: auto !important; }
+.lerni-header > .lerni-title { flex: 1 !important; }
+/* the menu replaces the tab bar: ☰ and the section's name, and a drawer from the left */
+.tab-wrapper { display: none !important; }
+.lerni-menu-btn { font-size: 26px; line-height: 1; padding: 4px 10px; background: none; }
+.lerni-title p { font-size: 18px; margin: 0; }
+#lerni-drawer { position: fixed !important; top: 0; bottom: 0; left: 0; z-index: 1001;
+  width: min(80vw, 320px); padding: 16px !important; overflow-y: auto;
+  background: var(--background-fill-primary); box-shadow: 2px 0 12px rgba(0, 0, 0, .2);
+  transform: translateX(-105%); transition: transform .2s ease; }
+#lerni-drawer.lerni-open { transform: none; }
+.lerni-backdrop { display: none; position: fixed; inset: 0; z-index: 1000;
+  background: rgba(0, 0, 0, .35); }
+.lerni-backdrop.lerni-open { display: block; }
+.lerni-nav-item { justify-content: flex-start !important; font-size: 18px !important;
+  padding: 12px !important; background: none !important; box-shadow: none !important; }
+.lerni-nav-item.lerni-here { background: var(--color-accent-soft) !important;
+  font-weight: 600; }
 #lerni-ask-chat :is(p, li), #lerni-home-chat :is(p, li) { font-size: 19px !important;
   line-height: 1.45 !important; }
 .lerni-type textarea { font-size: 18px !important; }
@@ -97,11 +112,13 @@ _MOUNT_OPTIONS = {
 }
 
 
-def _talk_head() -> str:
-    """The browser side of Hold to talk, inlined so the page loads nothing else."""
+def _head(speech: bool) -> str:
+    """The page's scripts, inlined so it loads nothing else: the menu, and Hold to talk."""
     from importlib.resources import files
 
-    return f"<script>{files('lerni.student.web').joinpath('talk.js').read_text()}</script>"
+    names = ["nav.js", "talk.js"] if speech else ["nav.js"]
+    return "".join(f"<script>{files('lerni.student.web').joinpath(n).read_text()}</script>"
+                   for n in names)
 
 
 def _theme() -> gr.themes.Base:
@@ -187,6 +204,6 @@ def build_app(
         auth_dependency=current_user,
         theme=_theme(),
         css=_CSS,
-        head=_talk_head() if speech else "",
+        head=_head(speech is not None),
         **_MOUNT_OPTIONS,
     )

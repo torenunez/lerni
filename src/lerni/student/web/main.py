@@ -31,6 +31,8 @@ from lerni.student.web.maps import entry_choices, map_tab, supervised_choices
 _TAB_IDS = ("home", "ask", "mymap", "maps", "students", "account")
 _EDUCATOR_TABS = {"maps", "students"}
 _INDEPENDENT_TABS = {"ask", "mymap", "account"}
+_LABELS = {"home": "Lerni", "ask": "Ask", "mymap": "My map", "maps": "Maps",
+           "students": "Students", "account": "My account"}  # the menu's names for the tabs
 
 
 def visible_tabs(viewer: Viewer | None) -> tuple[str, ...]:
@@ -66,10 +68,19 @@ def build_main_view(
         if label:  # a development server says so on every page (the same for everyone)
             gr.HTML(f'<div style="background:#6b21a8;color:white;font-weight:700;'
                     f'text-align:center;padding:.3rem;border-radius:8px">{html.escape(label)}</div>')
+        # the header: a menu button and the open section's name (nav.js opens the menu)
         with gr.Row(elem_classes="lerni-header"):
+            gr.HTML('<button type="button" class="lerni-menu-btn" aria-label="Menu"'
+                    ' aria-expanded="false">☰</button>', padding=False)
+            title = gr.Markdown(elem_classes="lerni-title")
+        # the menu: who's signed in, a button per section they can see, and Sign out
+        with gr.Column(elem_id="lerni-drawer"):
             header = gr.Markdown()
+            nav = {tab: gr.Button(_LABELS[tab], visible=False, elem_classes="lerni-nav-item")
+                   for tab in _TAB_IDS}
             # a same-tab button: a Markdown link would open Sign out in a new tab
-            gr.Button("Sign out", link="/signout", link_target="_self", size="sm", scale=0)
+            gr.Button("Sign out", link="/signout", link_target="_self", size="sm")
+        gr.HTML('<div class="lerni-backdrop"></div>', padding=False)  # a tap closes the menu
         with gr.Tabs() as tabs:
             home, home_chat, _ = ask_tab(signin, conversations, supervised=True, speech=speech)
             ask, chat, voice = ask_tab(signin, conversations, speech=speech)
@@ -94,10 +105,14 @@ def build_main_view(
                 m = maps.get(viewer.username)
                 own = [map_svg(m, date.today()), map_words(m, date.today()),
                        gr.update(choices=entry_choices(m), value=None)]
+            opening = opening_tab(viewer)
             return [
                 f"Signed in as **{name}**",
-                gr.update(selected=opening_tab(viewer)),  # open a tab they can see
+                f"**{_LABELS[opening]}**" if opening else "",
+                gr.update(selected=opening),  # open a tab they can see
                 *(gr.update(visible=tab in shown) for tab in _TAB_IDS),
+                # the menu lists their sections; one section needs no list
+                *(gr.update(visible=tab in shown and len(shown) > 1) for tab in _TAB_IDS),
                 student_rows(students) if is_edu else [],
                 # one ongoing conversation per student: pick up where they left off
                 messages(conversations, viewer.username)
@@ -112,9 +127,21 @@ def build_main_view(
         blocks.load(
             on_load,
             None,
-            # order matches on_load: header, tabs, the _TAB_IDS tabs, then the rest
-            [header, tabs, home, ask, mymap, maps_tab, students_tab_, account,
+            # order matches on_load: header, title, tabs, the _TAB_IDS tabs, their menu
+            # buttons, then the rest
+            [header, title, tabs, home, ask, mymap, maps_tab, students_tab_, account,
+             *nav.values(),
              students_table, chat, home_chat, voice, picture, words, entry, who],
             api_visibility="private",
         )
+
+        # a menu button opens its section and closes the menu
+        for tab, button in nav.items():
+            button.click(
+                lambda tab=tab: [gr.update(selected=tab), f"**{_LABELS[tab]}**"],
+                None,
+                [tabs, title],
+                js="() => { window.lerniMenu?.(false); }",
+                api_visibility="private",
+            )
     return blocks

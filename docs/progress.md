@@ -14,7 +14,9 @@ When something changes, update this section and add a log entry below.
 
 ## Log
 
-### 2026-10-11 (version numbers; voice shipped; v2.9–v2.12)
+### 2026-10-11 (version numbers; voice shipped; v2.9–v2.13)
+
+- v2.13: a menu replaces the tab bar, which overflowed on a phone for an educator (five tabs). The header is ☰ and the open section's name; the menu holds who's signed in, their sections (the open one highlighted), and Sign out. Chosen by the admin from three options (a bottom bar, the menu, an icon bar). A supervised student's menu holds only their name and Sign out.
 
 - v2.12: the conversation screen, redesigned after the student asked to type too and the admin found the button thin and the text small. The chat fills the screen (sized to fit exactly, keyboard up or down), its text is 19px, a big round Hold to talk button sits in the thumb zone, and a Talk/Type toggle swaps in the question box, remembered on each device; answers are spoken in both modes. Checked at phone size in a browser; tests: 85 passed.
 
