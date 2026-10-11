@@ -12,6 +12,7 @@ Build plans, named `v<major>.<minor>-<name>.md` for the version they ship (older
 
 ## Still current
 
+- [specs/06-educator-chat.md](specs/06-educator-chat.md): the educator plans a student's map by talking with an educator agent (v2.14; designed).
 - [specs/04-interest-map.md](specs/04-interest-map.md): the interest map, goals, the tagger, upload, feedback, and the supervised conversation; Version 1 steps 7–10 (built; step plans: `release-1-step-7-…` through `release-1-step-10-…`).
 - [specs/03-student-accounts.md](specs/03-student-accounts.md): accounts, sign-in, and Ask Lerni (built). Its plans, cards, approvals, Explore freely, and import-eval sections are superseded by spec 04.
 

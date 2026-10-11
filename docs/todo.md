@@ -21,9 +21,10 @@ Open tasks by who does the work. The educator and admin tracks run in parallel: 
 
 What ships next, in order, one PR each ([how versions work](roadmap.md#versions)):
 
-1. **v2.14: voice that can't speak says so:** if `say` returns empty audio, startup prints `Voice (hold to talk): off` with the reason, instead of sending silence.
-2. **v2.15: production keeps running on its own:** run production and development the same way, as macOS LaunchAgents in the desktop session (start at login, restart after a crash); check `say` works there first. Until then both run in Terminal windows, and production stops if that window or the Mac does.
-3. **Version 3, remembering:** not planned yet; its first PR writes the plan.
+1. **v2.14: educator chat:** on Maps, the educator talks with an educator agent about one student; it proposes goals, interests, rewording, removals, and feedback as a tick list ([spec 06](../plans/specs/06-educator-chat.md)).
+2. **v2.15: voice that can't speak says so:** if `say` returns empty audio, startup prints `Voice (hold to talk): off` with the reason, instead of sending silence.
+3. **v2.16: production keeps running on its own:** run production and development the same way, as macOS LaunchAgents in the desktop session (start at login, restart after a crash); check `say` works there first. Until then both run in Terminal windows, and production stops if that window or the Mac does.
+4. **Version 3, remembering:** not planned yet; its first PR writes the plan.
 
 How PRs are split:
 
