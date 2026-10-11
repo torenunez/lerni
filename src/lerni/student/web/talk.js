@@ -19,10 +19,8 @@
     stop();  // a tap silences Lerni; a hold also asks something new
     document.getElementById(`lerni-hush-${suffix}`)?.click();  // and stops the answer coming
     unlock();
-    // react at once, even while Safari asks for the microphone
-    btn.textContent = '🔴\nListening…';
-    btn.classList.add('lerni-listening');
-    S.on = true; S.chunks = []; S.t0 = performance.now();
+    // the button turns red only once the microphone hears, so no first words are lost
+    S.on = true; S.live = false; S.chunks = []; S.t0 = Infinity;
     try {
       if (session) session.type = 'play-and-record';
       if (!S.stream) S.stream = await navigator.mediaDevices.getUserMedia({audio: true});
@@ -31,7 +29,15 @@
     S.src = S.ctx.createMediaStreamSource(S.stream);
     S.node = S.ctx.createScriptProcessor(4096, 1, 1);
     S.node.onaudioprocess = ev => {
-      if (S.on) S.chunks.push(new Float32Array(ev.inputBuffer.getChannelData(0)));
+      if (!S.on) return;
+      const buf = ev.inputBuffer.getChannelData(0);
+      if (!S.live) {
+        if (!buf.some(x => x !== 0)) return;  // the microphone is still waking up
+        S.live = true; S.t0 = performance.now();
+        btn.textContent = '🔴\nListening…';  // now it's safe to talk
+        btn.classList.add('lerni-listening');
+      }
+      S.chunks.push(new Float32Array(buf));
     };
     S.src.connect(S.node); S.node.connect(S.ctx.destination);
     // every 1.5 s, send the clip so far for a live preview
