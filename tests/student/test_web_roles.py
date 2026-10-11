@@ -251,3 +251,20 @@ def test_a_talked_question_is_heard_then_answered_in_the_right_voice():
     assert talk_preview(speech, lee, "not a clip") == ""  # a bad preview shows nothing
     with pytest.raises(NotAllowed):
         talk_preview(speech, None, clip())
+
+
+def test_a_typed_question_is_answered_aloud_when_voice_is_on():
+    # the student asked to type sometimes; answers are still spoken (the admin's choice)
+    from lerni.student.conversation import Conversations
+    from lerni.student.web.ask import typed_reply
+    from tests.student.test_voice import FakeSpeech
+
+    class Model:
+        def stream(self, system, turns):
+            yield "Fish. Seals too."
+
+    speech, lee = FakeSpeech(), Viewer("lee", "Lee", Role.SUPERVISED)
+    out = list(typed_reply(Conversations(Model()), speech, lee, "What do sharks eat?"))
+    assert speech.spoken == ["Fish.", "Seals too."] and sum(1 for _, a in out if a) == 2
+    silent = list(typed_reply(Conversations(Model()), None, lee, "And whales?"))
+    assert "".join(t for t, _ in silent) == "Fish. Seals too." and not any(a for _, a in silent)

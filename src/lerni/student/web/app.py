@@ -46,13 +46,41 @@ _CSS = """
 }
 /* 16px text in fields, so iPhone Safari doesn't zoom in and shift the page on tap */
 .gradio-container input, .gradio-container textarea { font-size: 16px !important; }
-/* Hold to talk: hidden fields, and a red, pulsing button while it's held */
+/* use the whole screen: thin margins, small gaps, a one-line header, bigger chat text */
+.gradio-container { padding: 4px 8px !important; max-width: 100% !important;
+  --layout-gap: 8px; }
+.gradio-container .main { padding: 0 !important; }
+.lerni-header { align-items: center !important; flex-wrap: nowrap !important; }
+.lerni-header p { font-size: 14px; margin: 0; }
+/* a tab bar with one tab (a supervised student's screen) is just space */
+.tab-wrapper:not(:has([role="tab"] ~ [role="tab"])) { display: none !important; }
+#lerni-ask-chat :is(p, li), #lerni-home-chat :is(p, li) { font-size: 19px !important;
+  line-height: 1.45 !important; }
+.lerni-type textarea { font-size: 18px !important; }
+/* the chat fills the screen above the dock (talk.js sizes it exactly) */
+#lerni-ask-chat, #lerni-home-chat { height: calc(100dvh - 330px) !important;
+  min-height: 160px; }
+.lerni-dock { align-items: center; gap: 8px !important; }
+.lerni-dock .lerni-type { width: 100%; }
+/* Talk or Type: the voice dock shows one of them, Talk until the student picks Type */
+.lerni-voice:not([data-mode="type"]) .lerni-type { display: none !important; }
+.lerni-voice[data-mode="type"] .lerni-talk,
+.lerni-voice[data-mode="type"] [id^="lerni-preview-"] { display: none !important; }
+.lerni-mode { display: flex; width: fit-content; margin: 0 auto; border-radius: 999px;
+  border: 1px solid var(--border-color-primary); overflow: hidden; font-size: 16px; }
+.lerni-mode button { padding: 6px 18px; background: none; }
+.lerni-mode button[aria-pressed="true"] { background: var(--color-accent-soft);
+  font-weight: 600; }
+/* Hold to talk: a big round button for the thumb, red and pulsing while held */
 .lerni-hide { display: none !important; }
-#lerni-talk-ask, #lerni-talk-home { touch-action: none; user-select: none;
-  -webkit-user-select: none; -webkit-touch-callout: none; }
+.lerni-talk { width: 120px !important; height: 120px !important; min-width: 0 !important;
+  flex: none !important; border-radius: 50% !important; font-size: 17px !important;
+  white-space: pre-line; line-height: 1.3; background: var(--button-primary-background-fill)
+  !important; color: var(--button-primary-text-color) !important; touch-action: none;
+  user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
 .lerni-listening { background: #dc2626 !important; color: white !important;
   animation: lerni-pulse 1s ease-in-out infinite; }
-@keyframes lerni-pulse { 50% { transform: scale(1.05); } }
+@keyframes lerni-pulse { 50% { transform: scale(1.06); } }
 """
 
 # Settings for the mounted app: no footer links (that hides the API
@@ -135,8 +163,9 @@ def build_app(
     log.purge()  # at startup; then once a day as exchanges are logged
     keeper = MapKeeper(maps, tagger, log)
     conversations = (
-        Conversations(chat_model, context=keeper.context, on_exchange=keeper.after,
-                      spoken=speech is not None)
+        Conversations(
+            chat_model, context=keeper.context, on_exchange=keeper.after, spoken=speech is not None
+        )
         if chat_model
         else None
     )
