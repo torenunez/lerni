@@ -78,7 +78,7 @@ lerni serve                                 # binds 0.0.0.0:7860
 - A supervised student's iPad is signed in only as that student. Try the app as yourself on your own device or in a private tab.
 - Data lives in `~/.lerni/student/` (or `$LERNI_STUDENT_DATA`): `students/` (accounts, password hashes only), `secret.key` (signs the sign-in cookie; keep it private; deleting it signs everyone out), `maps/` (interest maps), `logs/` (each exchange, deleted after 7 days), and `feedback.jsonl`.
 - `--port` changes the default port; `--host 127.0.0.1` keeps it on this computer only; `--label Development` marks a development server on every page. Startup prints the running version (number, branch, commit, date), and the sign-in page shows it at the bottom: check it there after updating.
-- If you start it over SSH, allow the virtual environment's Python through the macOS firewall first (nobody sees the prompt), and run it inside `tmux` so it keeps running after you disconnect.
+- Start it in a Terminal window on the home server's own desktop, never inside `tmux` or over SSH: there macOS `say` makes empty audio, so answers show as text but are never spoken.
 - It never touches the admin tool's database.
 - **Claude** (Ask, the map's tagger, and Upload) turns on when the `claude` CLI is installed and logged in on this computer; it uses that Claude account, so there's no API key. `LERNI_CLAUDE_MODEL` picks the answering and upload model (default `claude-sonnet-5-5`), `LERNI_TAGGER_MODEL` the tagger's (default `claude-haiku-5-5`). Startup prints whether it's on.
 - `lerni logs [USERNAME]` shows the last 7 days of conversations and what the tagger did; `lerni feedback` lists educators' feedback (`--summary` groups it, `done N` closes one).
@@ -96,7 +96,7 @@ The family uses whatever is on `main` while new features are built on branches. 
 
 1. In the production checkout: `git pull`.
 2. `.venv/bin/pip install -e ".[student]"` (only needed when a PR says dependencies or package files changed, but always safe).
-3. In the server's `tmux` session: Ctrl-C, then start `lerni serve` again (with `--cert` and `--key` once HTTPS is set up).
+3. In the Terminal window running it: Ctrl-C, then start `lerni serve` again (with `--cert` and `--key` once HTTPS is set up).
 
 Caveats:
 
@@ -125,6 +125,8 @@ Hold to talk needs HTTPS and two tools on the home server, run as commands (noth
 2. Lerni speaks with the Mac's own voice (`say`). To pick one, list them with `say -v '?'`, try one with `say -v NAME "Sharks are amazing swimmers!"`, and set `LERNI_SAY_VOICE=NAME` before `lerni serve`. Nicer voices download in System Settings → Accessibility → Spoken Content → System Voice.
 3. Restart `lerni serve`; it prints `Voice (hold to talk): on`. Check it with `.venv/bin/python scripts/eval_voice.py`.
 4. On each device, so Safari stops asking for the microphone: on the Lerni page, the page menu in the address bar → Website Settings → Microphone → Allow.
+
+If answers show but are never spoken, on every device: the server was started inside `tmux` or over SSH; restart it in a Terminal window on the Mac.
 
 Audio stays on the home server: each clip's temp file is deleted once it's heard, and spoken sentences are never saved.
 

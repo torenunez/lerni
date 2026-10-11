@@ -14,7 +14,9 @@ When something changes, update this section and add a log entry below.
 
 ## Log
 
-### 2026-10-11 (version numbers; voice shipped; v2.9)
+### 2026-10-11 (version numbers; voice shipped; v2.9; v2.10)
+
+- v2.10: production was still silent after v2.9 on the iPhone and the iPad, while development spoke. Same code; the difference was where each ran. Production ran inside `tmux`, which is cut off from the Mac's desktop session, and there `say` made empty audio (0.005 s instead of 2 s), so answers came as text only. Production now runs in a Terminal window like development, and both speak. The admin reference says never to start it in `tmux` or over SSH.
 
 - v2.9: production and development compared on v2.8: same commit, same speech settings, and `say` works inside production's tmux. The difference was Safari reusing an old copy of production's page (with the script from before the iPad fix), so pages are now sent with `Cache-Control: no-store`.
 
