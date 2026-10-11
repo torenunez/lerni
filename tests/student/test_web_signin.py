@@ -78,3 +78,10 @@ def test_a_development_server_keeps_its_own_sign_in(tmp_path):
     response = client.post("/signin", data={"username": "sam", "password": "long enough"})
     assert response.headers["set-cookie"].startswith("lerni_session_development=")
     assert client.get("/").headers["location"] == "/app/"
+
+
+def test_the_app_page_is_never_kept_by_the_browser(client):
+    # regression: Safari reused a page from before an update, with the old talk.js
+    sign_in(client, "sam", "1234")
+    page = client.get("/app/")
+    assert page.status_code == 200 and "no-store" in page.headers.get("cache-control", "")

@@ -21,8 +21,7 @@ Open tasks by who does the work. The educator and admin tracks run in parallel: 
 
 What ships next, in order, one PR each ([how versions work](roadmap.md#versions)):
 
-1. **v2.9: production fixes:** whatever the production and development comparison after v2.8 turns up (likely: the app page is never cached, and a failed spoken answer is logged).
-2. **Version 3, remembering:** not planned yet; its first PR writes the plan.
+1. **Version 3, remembering:** not planned yet; its first PR writes the plan.
 
 How PRs are split:
 
