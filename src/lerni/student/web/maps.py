@@ -15,8 +15,7 @@ from typing import Any
 
 import gradio as gr
 
-from lerni.student.conversation import ChatModel
-from lerni.student.feedback import MAX_FEEDBACK, FeedbackError, FeedbackStore, summarize
+from lerni.student.feedback import FeedbackError, FeedbackStore
 from lerni.student.interests import InterestMap, MapError, MapStore, add_goal, remove, rename
 from lerni.student.signin import Role, SignIn, Viewer
 from lerni.student.students import AccountError, Kind, StudentStore
@@ -164,23 +163,6 @@ def add_proposals(
     return message + (" Skipped: " + "; ".join(skipped) if skipped else "")
 
 
-def check_feedback(model: ChatModel | None, viewer: Viewer | None, text: str) -> str:
-    """Claude's short summary of an educator's feedback, before it's saved."""
-    try:
-        require_educator(viewer)
-    except NotAllowed as exc:
-        return f"⚠️ {exc}"
-    text = (text or "").strip()
-    if not text or len(text) > MAX_FEEDBACK:
-        return f"⚠️ Write 1–{MAX_FEEDBACK} characters first."
-    if model is None:
-        return "⚠️ Claude isn't set up on this server yet; you can still save it."
-    try:
-        return summarize(model, text)
-    except Exception:  # noqa: BLE001 - never echo the text in errors
-        return "⚠️ Claude didn't answer; you can still save it."
-
-
 def save_feedback(
     store: FeedbackStore, students: StudentStore, viewer: Viewer | None,
     requested: str | None, text: str, summary: str,
@@ -201,8 +183,6 @@ def map_tab(
     maps: MapStore,
     mine: bool,
     uploader: Uploader | None = None,
-    feedback: FeedbackStore | None = None,
-    model: ChatModel | None = None,
 ) -> tuple[gr.Tab, gr.Dropdown | None, gr.HTML, gr.Markdown, gr.Dropdown]:
     """My map (``mine``) or Maps; hidden until the page loads for an allowed viewer."""
     with gr.Tab("My map" if mine else "Maps", id="mymap" if mine else "maps",
@@ -235,14 +215,6 @@ def map_tab(
             ideas = gr.CheckboxGroup(label="Tick what to add", choices=[])
             add_ideas = gr.Button("Add ticked", variant="primary")
             held = gr.State({})  # the ideas shown and whose map they're for, kept on the server
-        if not mine:
-            with gr.Accordion("Feedback for the admin", open=False):
-                fb_text = gr.Textbox(label="What should change? (the app, or this map)",
-                                     lines=3, max_length=MAX_FEEDBACK)
-                fb_check = gr.Button("Check what Claude understood")
-                fb_summary = gr.Markdown()
-                fb_save = gr.Button("Save feedback", variant="primary")
-                fb_held = gr.State("")
         status = gr.Markdown()
 
         def requested_of(value: str | None) -> str | None:
@@ -313,25 +285,6 @@ def map_tab(
                       [status, ideas_notes, ideas, held, pasted, upload], **PRIVATE)
         add_ideas.click(on_add_ideas, [ideas, held, target, entry],
                         [status, ideas, held, *shown], **PRIVATE)
-        if not mine:
-            def on_check(t: str, request: gr.Request) -> list[Any]:
-                summary = check_feedback(model, signin.viewer(request.username), t)
-                return [summary, summary]
-
-            def on_save(t: str, summary: str, requested: str | None,
-                        request: gr.Request) -> list[Any]:
-                viewer = signin.viewer(request.username)
-                if feedback is None:  # never fall back to a default folder
-                    return ["⚠️ Feedback isn't set up.", gr.update(), summary, gr.update()]
-                message = save_feedback(feedback, students, viewer, requested or None, t, summary)
-                done = message.startswith("✅")
-                # a saved entry clears the box and the summary; an error keeps both
-                return [message, *cleared(1, done), "" if done else summary,
-                        "" if done else gr.update()]
-
-            fb_check.click(on_check, fb_text, [fb_summary, fb_held], **PRIVATE)
-            fb_save.click(on_save, [fb_text, fb_held, who],
-                          [status, fb_text, fb_held, fb_summary], **PRIVATE)
         if who is not None:
             who.change(show, [who, entry], shown, **PRIVATE)
             # the redraw keeps the Rename/Remove pick

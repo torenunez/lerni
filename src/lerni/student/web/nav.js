@@ -20,6 +20,10 @@
       open(false);
     }
   });
+  // Maps: a tap on the map strip opens or closes the whole picture
+  document.addEventListener('click', e => {
+    e.target.closest('.lerni-map-strip')?.classList.toggle('lerni-open');
+  });
   document.addEventListener('keydown', e => { if (e.key === 'Escape') open(false); });
   window.lerniMenu = open;  // a section's button closes the menu
 })();

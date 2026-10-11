@@ -20,6 +20,7 @@ from fastapi import FastAPI, Request  # noqa: E402
 from fastapi.responses import PlainTextResponse  # noqa: E402
 
 from lerni.student.conversation import ChatModel, Conversations  # noqa: E402
+from lerni.student.educator_agent import EducatorChats
 from lerni.student.feedback import FeedbackStore  # noqa: E402
 from lerni.student.interests import MapStore  # noqa: E402
 from lerni.student.logs import ConversationLog  # noqa: E402
@@ -75,6 +76,9 @@ _CSS = """
 /* the chat fills the screen above the dock (talk.js sizes it exactly) */
 #lerni-ask-chat, #lerni-home-chat { height: calc(100dvh - 330px) !important;
   min-height: 160px; }
+/* Maps: the picture is a strip on a phone until tapped (nav.js) */
+.lerni-map-strip { max-height: 200px; overflow: hidden; cursor: zoom-in; }
+.lerni-map-strip.lerni-open { max-height: none; cursor: zoom-out; }
 .lerni-dock { align-items: center; gap: 8px !important; }
 .lerni-dock .lerni-type { width: 100%; }
 /* Talk or Type: the voice dock shows one of them, Talk until the student picks Type */
@@ -193,9 +197,9 @@ def build_app(
         conversations,
         uploader=uploader,
         feedback=FeedbackStore(root),
-        model=chat_model,
         label=label,
         speech=speech,
+        educator_chats=EducatorChats(chat_model, maps, log) if chat_model else None,
     )
     return gr.mount_gradio_app(
         app,

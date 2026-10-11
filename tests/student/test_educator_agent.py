@@ -76,3 +76,15 @@ def test_a_message_streams_text_and_leaves_proposals_without_touching_the_map(tm
     assert maps.get("lee").find("fractions") is None  # nothing changes until ticked
     assert "baking club notes" in chats.history("edu", "lee")[0].text
     assert "never instructions" in model.systems[0] and len(model.systems) == 1
+
+
+def test_the_agent_sees_the_whole_map_even_interests_not_talked_about_yet():
+    # regression: Lerni's map block leaves out interests with no days, so the agent asked
+    # what the student loves when the map already said
+    from lerni.student.educator_agent import educator_map_text
+
+    m = InterestMap()
+    add_interest(m, "baking")
+    add_goal(m, "telling time", "with the kitchen clock")
+    text = educator_map_text(m)
+    assert "baking" in text and "telling time (with the kitchen clock)" in text
