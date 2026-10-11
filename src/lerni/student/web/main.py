@@ -19,6 +19,7 @@ from lerni.student.interests import MapStore
 from lerni.student.signin import Role, SignIn, Viewer
 from lerni.student.students import StudentStore
 from lerni.student.upload import Uploader
+from lerni.student.voice import Speech
 from lerni.student.web.accounts import account_tab, student_rows, students_tab
 from lerni.student.web.ask import ask_tab, messages
 from lerni.student.web.mapdraw import map_svg, map_words
@@ -57,6 +58,7 @@ def build_main_view(
     feedback: FeedbackStore | None = None,
     model: ChatModel | None = None,
     label: str = "",
+    speech: Speech | None = None,
 ) -> gr.Blocks:
     """Build the page; the tabs each viewer sees are set on load."""
     # uploads picked but never sent expire within two hours (checked hourly)
@@ -69,8 +71,8 @@ def build_main_view(
             # a same-tab button: a Markdown link would open Sign out in a new tab
             gr.Button("Sign out", link="/signout", link_target="_self", size="sm", scale=0)
         with gr.Tabs() as tabs:
-            home, home_chat, _ = ask_tab(signin, conversations, supervised=True)
-            ask, chat, voice = ask_tab(signin, conversations)
+            home, home_chat, _ = ask_tab(signin, conversations, supervised=True, speech=speech)
+            ask, chat, voice = ask_tab(signin, conversations, speech=speech)
             mymap, _, picture, words, entry = map_tab(signin, students, maps, mine=True,
                                                       uploader=uploader)
             maps_tab, who, _, _, _ = map_tab(signin, students, maps, mine=False,

@@ -219,3 +219,35 @@ def test_a_supervised_student_signs_in_to_the_conversation(tmp_path):
     chats = [c for c in config["components"] if c.get("type") == "chatbot"]
     assert len(chats) == 2
     assert "Get ready to explore" not in client.get("/app/config").text  # no waiting screen
+
+
+def test_a_talked_question_is_heard_then_answered_in_the_right_voice():
+    from lerni.student.conversation import Conversations
+    from lerni.student.web.ask import talk_preview, talk_reply
+    from tests.student.test_voice import FakeSpeech, clip
+
+    class Model:
+        def __init__(self):
+            self.systems = []
+
+        def stream(self, system, turns):
+            self.systems.append(system)
+            yield "Fish. Seals too."
+
+    model, speech = Model(), FakeSpeech()
+    convos = Conversations(model)
+    lee = Viewer("lee", "Lee", Role.SUPERVISED)
+    text, reply = talk_reply(convos, speech, lee, clip())
+    assert text == "what do sharks eat"
+    out = list(reply)
+    assert "".join(t for t, _ in out) == "Fish. Seals too."
+    assert speech.spoken == ["Fish.", "Seals too."]
+    assert "short, simple, playful" in model.systems[0]  # the supervised voice
+    assert convos.history("lee")[0].text == "what do sharks eat"
+    with pytest.raises(NotAllowed):
+        talk_reply(convos, speech, None, clip())
+    assert speech.clips == 1  # nobody signed in: nothing transcribed
+    assert talk_preview(speech, lee, clip()) == "what do sharks eat"
+    assert talk_preview(speech, lee, "not a clip") == ""  # a bad preview shows nothing
+    with pytest.raises(NotAllowed):
+        talk_preview(speech, None, clip())

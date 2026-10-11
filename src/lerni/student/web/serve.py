@@ -49,6 +49,13 @@ def _claude_uploader() -> Any:
     return ClaudeCodeUploader(model=os.environ.get(MODEL_ENV, DEFAULT_MODEL))
 
 
+def _speech() -> Any:
+    """Return the Mac's speech for Hold to talk if its tools are installed, else ``None``."""
+    from lerni.student.adapters.mac_speech import mac_speech_from_env
+
+    return mac_speech_from_env()
+
+
 def running_version() -> str:
     """Which code is running: ``"<branch> @ <commit>, <date>"``, or the package version."""
     import subprocess
@@ -99,10 +106,11 @@ def serve(
     from lerni.student.students import StudentStore
     from lerni.student.web.app import build_app
 
-    chat, tagger = _claude_chat(), _claude_tagger()
+    chat, tagger, speech = _claude_chat(), _claude_tagger(), _speech()
     version = running_version()
     app = build_app(
-        chat_model=chat, tagger=tagger, uploader=_claude_uploader(), label=label, version=version
+        chat_model=chat, tagger=tagger, uploader=_claude_uploader(), label=label, version=version,
+        speech=speech,
     )
     print(f"Running:  {version}", flush=True)
     print(f"Sign in:  {scheme}://<this-computer>:{port}/", flush=True)
@@ -112,6 +120,8 @@ def serve(
     status = (f"on ({chat.model}; the map with {tagger.model})" if chat
               else "off (the claude CLI isn't installed)")
     print(f"Ask Lerni, the interest map, and Upload with Claude: {status}", flush=True)
+    print("Voice (hold to talk): " + ("on" if speech else
+          "off (install whisper.cpp and its model: admin reference, Voice)"), flush=True)
     print("Conversation logs (7 days): lerni logs", flush=True)
     print("Home network only. Press Ctrl-C to stop.", flush=True)
     # Gradio keeps each open page connected; without a time limit, Ctrl-C waits forever
