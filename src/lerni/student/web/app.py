@@ -135,7 +135,8 @@ def build_app(
     log.purge()  # at startup; then once a day as exchanges are logged
     keeper = MapKeeper(maps, tagger, log)
     conversations = (
-        Conversations(chat_model, context=keeper.context, on_exchange=keeper.after)
+        Conversations(chat_model, context=keeper.context, on_exchange=keeper.after,
+                      spoken=speech is not None)
         if chat_model
         else None
     )

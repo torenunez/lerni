@@ -44,6 +44,13 @@ anything scary or sad, say kindly that it's a great one to talk about with their
 educator, and offer something fun to explore instead.\
 """
 
+# Added when the server has speech, so Lerni describes itself correctly.
+SPOKEN = """\
+They can talk with you: speech-to-text turns what they say into the messages you \
+get, and text-to-speech reads your answers aloud. So you can hear them and talk \
+back; if asked, say so. Write answers that sound natural spoken aloud.\
+"""
+
 
 def persona(voice: Voice) -> str:
     """The starting persona for this kind of student, from ``personas/<voice>.md``."""
@@ -72,7 +79,7 @@ class ChatModel(Protocol):
     def stream(self, system: str, turns: Sequence[Turn]) -> Iterator[str]: ...
 
 
-def system_prompt(map_text: str = "", voice: Voice = "independent") -> str:
+def system_prompt(map_text: str = "", voice: Voice = "independent", spoken: bool = False) -> str:
     """The instructions for Claude: persona, their map as information, then the safety rules.
 
     Example:
@@ -81,6 +88,8 @@ def system_prompt(map_text: str = "", voice: Voice = "independent") -> str:
     """
     rules = SAFETY_RULES + ("\n" + SUPERVISED_RULES if voice == "supervised" else "")
     lines = [persona(voice).strip()]
+    if spoken:
+        lines += ["", SPOKEN]  # hold to talk is on
     if map_text:
         lines += ["", map_text]
     lines += ["", rules]  # the rules come last, after the map
@@ -95,8 +104,10 @@ class Conversations:
         model: ChatModel,
         context: Callable[[str], str] | None = None,
         on_exchange: Callable[[Exchange], None] | None = None,
+        spoken: bool = False,
     ) -> None:
         self.model = model
+        self.spoken = spoken  # the server can hear and speak
         self.context = context or (lambda _username: "")  # the student's map block
         self.on_exchange = on_exchange  # told about each finished or stopped exchange
         self._turns: dict[str, list[Turn]] = {}
@@ -141,7 +152,7 @@ class Conversations:
         answer: list[str] = []
         try:
             # inside the try: a broken map must still free them below
-            system = system_prompt(self.context(username), voice)
+            system = system_prompt(self.context(username), voice, self.spoken)
             # pass each piece on as it arrives, and keep it for the history
             for piece in self.model.stream(system, turns):
                 answer.append(piece)

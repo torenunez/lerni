@@ -73,3 +73,13 @@ def test_a_broken_map_never_locks_the_student_out():
     for _ in range(2):  # the second try must not say "Still answering"
         with pytest.raises(ConversationUnavailable):
             list(convos.ask("sam", "hi"))
+
+
+def test_with_voice_on_lerni_knows_it_can_hear_and_speak():
+    # regression: asked "can you hear me?", Lerni said it could only read and write
+    model = FakeModel()
+    list(Conversations(model, spoken=True).ask("sam", "Can you hear me?"))
+    assert "hear" in model.calls[0][0] and "aloud" in model.calls[0][0]
+    model = FakeModel()
+    list(Conversations(model).ask("sam", "Can you hear me?"))  # voice off: no such claim
+    assert "aloud" not in model.calls[0][0]
