@@ -14,8 +14,9 @@ When something changes, update this section and add a log entry below.
 
 ## Log
 
-### 2026-10-11 (version numbers; voice shipped; v2.9–v2.14)
+### 2026-10-11 (version numbers; voice shipped; v2.9–v2.15)
 
+- v2.15: a Games section in the supervised student's ☰ menu, a placeholder that says games are coming soon. Checked at phone size: the menu now lists Lerni and Games, and switching back keeps the conversation.
 - v2.14: on Maps, one chat with an educator agent replaces the four panels (designed in [spec 06](../plans/specs/06-educator-chat.md)). It proposes goals, interests, new notes, removals, and feedback for the admin as a tick list; only ticked items change the map or reach the admin. Checked at phone size: a goal and a feedback item proposed from one message, the goal ticked and added, the feedback unticked and not saved. Found and fixed: the agent first saw only Lerni's map block, which leaves out interests not talked about yet. Evals: 3 of 3 pass. Tests: 93 passed.
 
 - v2.13: a menu replaces the tab bar, which overflowed on a phone for an educator (five tabs). The header is ☰ and the open section's name; the menu holds who's signed in, their sections (the open one highlighted), and Sign out. Chosen by the admin from three options (a bottom bar, the menu, an icon bar). A supervised student's menu holds only their name and Sign out.
