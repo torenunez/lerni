@@ -88,3 +88,13 @@ def test_the_agent_sees_the_whole_map_even_interests_not_talked_about_yet():
     add_goal(m, "telling time", "with the kitchen clock")
     text = educator_map_text(m)
     assert "baking" in text and "telling time (with the kitchen clock)" in text
+
+
+def test_loose_blocks_still_parse_and_odd_items_are_dropped():
+    # review findings: text after the closing fence, null notes, and rewording an interest
+    m = InterestMap()
+    add_interest(m, "trains")
+    raw = ('```proposals\n{"proposals": [{"kind": "goal", "name": "clocks", "notes": null},'
+           '{"kind": "reword", "name": "trains", "notes": "x"}]}\n```\nAnything after.')
+    found = parse_educator_proposals(raw, m)
+    assert [(p.kind, p.name, p.notes) for p in found] == [("goal", "clocks", "")]

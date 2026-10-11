@@ -140,7 +140,7 @@ def educator_tab(
             )
             attach = gr.UploadButton(
                 "📎",
-                file_types=[".txt", ".md", ".docx", ".pdf"],
+                file_types=[".txt", ".md", ".docx"],  # the chat sends text only, for now
                 type="filepath",
                 scale=0,
                 min_width=48,
@@ -159,12 +159,16 @@ def educator_tab(
                 return ["", ""]
             return [map_svg(m, date.today()), map_words(m, date.today())]
 
-        def on_pick(requested: str | None, previous: str, request: gr.Request) -> list[Any]:
+        def on_pick(
+            requested: str | None, previous: str, path: str | None, request: gr.Request
+        ) -> list[Any]:
             viewer = signin.viewer(request.username)
             if chats is not None and viewer is not None and previous:
                 chats.clear(viewer.username, previous)  # a new student starts a fresh chat
+            if path:
+                Path(path).unlink(missing_ok=True)  # notes attached for the last student
             hidden = gr.update(choices=[], value=[], visible=False)
-            return [*draw(requested, request), [], hidden, gr.update(visible=False), "", ""]
+            return [*draw(requested, request), [], hidden, gr.update(visible=False), "", "", None]
 
         def on_attach(path: str | None) -> list[Any]:
             return [path, f"📎 {Path(path).name}, sent with your next message" if path else ""]
@@ -209,7 +213,11 @@ def educator_tab(
             finally:
                 if path:
                     Path(path).unlink(missing_ok=True)  # files are never kept
-            owner = map_owner(students, viewer, requested or "")
+            try:
+                owner = map_owner(students, viewer, requested or "")
+            except NotAllowed:  # archived or no longer theirs while it answered
+                yield [shown, hidden, gr.update(visible=False), "", "", "", None]
+                return
             found = chats.proposals(viewer.username, owner)
             labels = [p.label for p in found]
             yield [
@@ -235,20 +243,22 @@ def educator_tab(
                 *draw(owner, request),
             ]
 
-        who.change(
-            on_pick,
-            [who, owner_state],
-            [picture, words, chat, ticks, add, status, owner_state],
-            **PRIVATE,
-        )
-        attach.upload(on_attach, attach, [held_file, status], **PRIVATE)
-        gr.on(
+        sending = gr.on(
             [send.click, text.submit],
             on_send,
             [text, held_file, who],
             [chat, ticks, add, status, owner_state, text, held_file],
             **PRIVATE,
         )
+        # a new student stops a reply still coming for the last one, and drops its notes
+        who.change(
+            on_pick,
+            [who, owner_state, held_file],
+            [picture, words, chat, ticks, add, status, owner_state, held_file],
+            cancels=[sending],
+            **PRIVATE,
+        )
+        attach.upload(on_attach, attach, [held_file, status], **PRIVATE)
         add.click(on_add, [ticks, owner_state], [status, ticks, add, picture, words], **PRIVATE)
         tab.select(draw, who, [picture, words], **PRIVATE)  # redraw on opening
         gr.Timer(REFRESH_SECONDS).tick(draw, who, [picture, words], **PRIVATE)
