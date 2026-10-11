@@ -23,7 +23,7 @@ from lerni.student.conversation import ChatModel, Conversations  # noqa: E402
 from lerni.student.feedback import FeedbackStore  # noqa: E402
 from lerni.student.interests import MapStore  # noqa: E402
 from lerni.student.logs import ConversationLog  # noqa: E402
-from lerni.student.signin import COOKIE_NAME, SignIn, load_secret  # noqa: E402
+from lerni.student.signin import SignIn, cookie_name, load_secret  # noqa: E402
 from lerni.student.students import StudentStore, default_data_dir  # noqa: E402
 from lerni.student.tagging import MapKeeper, Tagger  # noqa: E402
 from lerni.student.upload import Uploader  # noqa: E402
@@ -123,7 +123,7 @@ def build_app(
 
     def current_user(request: Request) -> str | None:
         # runs on every request: no valid cookie, no access
-        viewer = signin.viewer_from_cookie(request.cookies.get(COOKIE_NAME))
+        viewer = signin.viewer_from_cookie(request.cookies.get(cookie_name(label)))
         return viewer.username if viewer else None
 
     maps, log = MapStore(root), ConversationLog(root)
