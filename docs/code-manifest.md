@@ -31,6 +31,7 @@ What every code file does, in the order a request flows through it. When you add
 | `src/lerni/student/interests.py` | Interest maps: entries (interests and goals), links, the rules for people's edits (add a goal or an interest, names, the 60-entry cap, remove for good) and for the tagger's observations, the map block for the prompt, and `MapStore` (one JSON file per student, one change at a time). |
 | `src/lerni/student/tagging.py` | The tagger's instructions and schema, and `MapKeeper`: tags each exchange in the background, applies it under the map's lock unless a person changed the map or the conversation was cleared, and logs it. |
 | `src/lerni/student/logs.py` | Conversation logs: each exchange and what the tagger did, one file per student per day, deleted after 7 days; the only place message text is saved. |
+| `src/lerni/student/voice.py` | Voice: checks a spoken clip (a WAV of at most 30 seconds) and gets what was said; cuts Lerni's answer into clean sentences to speak (no markdown, emoji, or web addresses); a failed voice leaves the text. Keeps no audio. |
 | `src/lerni/student/upload.py` | Upload: reads pasted notes and .txt/.md/.docx/.pdf files, the instructions and schema for Claude's proposals, and checks and adds the ticked interests and goals. |
 | `src/lerni/student/feedback.py` | Educator feedback: saved one line per entry in `feedback.jsonl`, summarized by Claude with instructions never to carry it out, listed and closed only by `lerni feedback`. |
 | `src/lerni/student/students.py` | Student accounts: usernames, kinds, scrypt password hashes, the data folder (`default_data_dir`), and `StudentStore` (one JSON file per student; archived in place, never reused). |
@@ -92,6 +93,7 @@ Minimal on purpose: one happy path per module, plus a test for each safety guara
 | `tests/student/test_interests.py` | People's goal edits are saved; a goal takes over an interest of the same name; a full map says so; the tagger only adds what the student said and never touches goals; the prompt block stays short. |
 | `tests/student/test_tagging.py` | An exchange grows the map and is logged (a stopped one isn't tagged); a late result never undoes a person or a new conversation; logs older than 7 days are deleted. |
 | `tests/student/test_mapdraw.py` | The map picture escapes names and draws at most 15 entries; the list says the same in words. |
+| `tests/student/test_voice.py` | Answers are spoken a clean sentence at a time; bad clips are refused before transcribing; a failed voice keeps the text. |
 | `tests/student/test_upload.py` | Proposals are checked and only ticked ones are added (a clash is skipped and named); uploads are read or refused politely. |
 | `tests/student/test_feedback.py` | Feedback is summarized, saved (with or without a summary), and closed, and never touches a map. |
 | `tests/student/test_signin.py` | A cookie stops working after a reset; wrong passwords wait without signing anyone out. |
