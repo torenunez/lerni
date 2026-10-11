@@ -14,7 +14,9 @@ When something changes, update this section and add a log entry below.
 
 ## Log
 
-### 2026-10-11 (version numbers; voice shipped; v2.9; v2.10)
+### 2026-10-11 (version numbers; voice shipped; v2.9–v2.11)
+
+- v2.11: with voice on, Lerni's instructions say it hears through speech-to-text and answers aloud; before, asked "can you hear me?", it said it could only read and write. Eval: it now says yes (3 of 3 voice evals pass).
 
 - v2.10: production was still silent after v2.9 on the iPhone and the iPad, while development spoke. Same code; the difference was where each ran. Production ran inside `tmux`, which is cut off from the Mac's desktop session, and there `say` made empty audio (0.005 s instead of 2 s), so answers came as text only. Production now runs in a Terminal window like development, and both speak. The admin reference says never to start it in `tmux` or over SSH.
 

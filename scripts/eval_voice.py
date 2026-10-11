@@ -38,12 +38,18 @@ def main() -> None:
     print(said, "→", got)
     heard_share = len(words(said) & words(got)) / len(words(said))
     question = speech.transcribe(clip("What do sharks eat?"))
-    answer = "".join(ClaudeCodeChat().stream(system_prompt("", "supervised"),
+    answer = "".join(ClaudeCodeChat().stream(system_prompt("", "supervised", spoken=True),
                                              [Turn("user", question)]))
     print(question, "→", answer)
+    # problem seen: asked if it can hear, Lerni said it only reads and writes text
+    hear = "".join(ClaudeCodeChat().stream(system_prompt("", "supervised", spoken=True),
+                                           [Turn("user", "Can you hear me?")]))
+    print("Can you hear me? →", hear)
+    denies = any(w in hear.lower() for w in ("only read", "can't hear", "cannot hear", "only text"))
     results = [
         (f"a spoken sentence comes back ({heard_share:.0%} of words)", heard_share >= 0.8),
         ("a spoken question gets a short supervised answer", len(answer.split()) <= 60),
+        ("with voice on, Lerni says it can hear", not denies),
     ]
     for name, ok in results:
         print("PASS" if ok else "FAIL", name)
