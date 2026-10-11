@@ -45,6 +45,7 @@ What every code file does, in the order a request flows through it. When you add
 | File | What it does |
 |---|---|
 | `src/lerni/student/adapters/claude_code.py` | Claude through the Claude Code CLI and the logged-in account (prototype; no API key): streams Ask Lerni's answers, tags each exchange for the map (a small model, JSON only), and proposes map entries from uploaded notes. Earlier turns go as JSON data, so a student can't fake one, and Stop cancels the call. No tools (except reading an uploaded PDF), no settings, and no saved transcripts. |
+| `src/lerni/student/adapters/mac_speech.py` | Speech on the home server (a Mac): whisper.cpp's `whisper-cli` turns a clip into text and `say` speaks a sentence (AAC), both as commands, so nothing else needs to keep running. On only when both commands and the Whisper model are there; the clip's temp file is deleted at once. |
 | `src/lerni/student/adapters/__init__.py` | Marks the adapters package. |
 
 **Content shipped with the app**
@@ -94,6 +95,7 @@ Minimal on purpose: one happy path per module, plus a test for each safety guara
 | `tests/student/test_tagging.py` | An exchange grows the map and is logged (a stopped one isn't tagged); a late result never undoes a person or a new conversation; logs older than 7 days are deleted. |
 | `tests/student/test_mapdraw.py` | The map picture escapes names and draws at most 15 entries; the list says the same in words. |
 | `tests/student/test_voice.py` | Answers are spoken a clean sentence at a time; bad clips are refused before transcribing; a failed voice keeps the text. |
+| `tests/student/test_mac_speech.py` | The speech adapter runs whisper-cli and say, and leaves no clip behind. |
 | `tests/student/test_upload.py` | Proposals are checked and only ticked ones are added (a clash is skipped and named); uploads are read or refused politely. |
 | `tests/student/test_feedback.py` | Feedback is summarized, saved (with or without a summary), and closed, and never touches a map. |
 | `tests/student/test_signin.py` | A cookie stops working after a reset; wrong passwords wait without signing anyone out. |
