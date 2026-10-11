@@ -4,7 +4,7 @@ How Lerni works: what runs where, how a conversation grows a student's interest 
 
 ## Bird's-eye view
 
-**Built (Release 1, steps 1–10):** everyone signs in at `/signin` to one app at `/app/`.
+**Built (Version 1, steps 1–10):** everyone signs in at `/signin` to one app at `/app/`.
 
 - **Independent students** (educators included) have **Ask**, one ongoing text conversation with Claude. After each exchange, a small background call (the tagger) updates their **interest map**: interests (sized by the days they come up), links, and bridges. They see it on **My map**, set their own goals there, and can **Upload** notes that Claude turns into proposed interests and goals to tick. Each exchange is kept 7 days in logs the admin reads (`lerni logs`).
 - **Educators** also have **Maps**, where they add goals to a supervised student's map (by hand or by Upload), watch it, and leave **feedback** for the admin (`lerni feedback`), and **Students**.
@@ -29,7 +29,7 @@ flowchart LR
     server -. "adapter: the admin's Claude account" .-> ai[Claude]
 ```
 
-The app runs on the home network only and is never exposed to the internet. It serves plain HTTP, or HTTPS when `lerni serve` gets `--cert` and `--key` (a certificate made with mkcert and installed once on each device; Release 2), and voice needs HTTPS on the same server, because browsers allow the microphone only over HTTPS ([MDN](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia)).
+The app runs on the home network only and is never exposed to the internet. It serves plain HTTP, or HTTPS when `lerni serve` gets `--cert` and `--key` (a certificate made with mkcert and installed once on each device; Version 2), and voice needs HTTPS on the same server, because browsers allow the microphone only over HTTPS ([MDN](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia)).
 
 ## How a conversation grows the map
 
@@ -55,7 +55,7 @@ flowchart LR
 
 - **The home network is the outer boundary:** no port forwarding, never Gradio's public share links.
 - **Everyone signs in** on our own sign-in page, and Gradio's `auth_dependency` re-checks the account on every request, so after an archive or password reset every device is refused at its next request (an answer already streaming finishes).
-- **Every handler resolves the signed-in account on the server** and checks every id the page sends against it. Hiding a tab, a component, or an event (`api_visibility="private"`) is not protection. Nothing per-user is built into the page layout, because Gradio sends every signed-in browser the same config. Passwords travel unencrypted on the home network until HTTPS (Release 3), which is accepted.
+- **Every handler resolves the signed-in account on the server** and checks every id the page sends against it. Hiding a tab, a component, or an event (`api_visibility="private"`) is not protection. Nothing per-user is built into the page layout, because Gradio sends every signed-in browser the same config. Passwords travel unencrypted on the home network until HTTPS (Version 3), which is accepted.
 - **Who can do what:**
 
   | Who | Can |
@@ -67,7 +67,7 @@ flowchart LR
 
   No educator screen shows an independent student's map. That is privacy by default, not a protection: the educator can reset a password and sign in as that student, and the admin can read every file.
 - **Devices are a household rule:** a supervised student's iPad is signed in only as that student.
-- **Outbound:** all calls go to Claude (Anthropic) through the admin's Claude account, behind an adapter: the answers, the tagger, the upload, and the feedback summary. No account details are added, and Claude Code keeps no transcript on the server (Anthropic's retention still applies). A supervised student's conversation through this consumer account is a choice the admin made for the household; an API key is not planned, revisit before anyone outside the family uses the app ([spec](../plans/specs/04-interest-map.md#supervised-students)). Release 1 has no automatic reply check; the adult nearby and the 7-day logs are the check.
+- **Outbound:** all calls go to Claude (Anthropic) through the admin's Claude account, behind an adapter: the answers, the tagger, the upload, and the feedback summary. No account details are added, and Claude Code keeps no transcript on the server (Anthropic's retention still applies). A supervised student's conversation through this consumer account is a choice the admin made for the household; an API key is not planned, revisit before anyone outside the family uses the app ([spec](../plans/specs/04-interest-map.md#supervised-students)). Version 1 has no automatic reply check; the adult nearby and the 7-day logs are the check.
 - **Files:** uploads are read and deleted at once; maps, feedback, and logs are written only by the server. Gradio serves cached files to anyone signed in, so nothing private is ever served as a file: the map picture is inline.
 
 ## Who owns each kind of data
@@ -103,9 +103,9 @@ Every code file, one line each: [code manifest](code-manifest.md).
 - `src/lerni/cli.py`, `commands/`, `db.py`, `sm2.py`: the admin tool, plus `commands/student.py`, `commands/logs.py`, and `commands/feedback.py` for the student app.
 - `tests/`: pytest, fakes only. `plans/`: build plans and specs.
 
-## Later releases
+## Later versions
 
-| Piece | Release | Seam to leave room for now |
+| Piece | Version | Seam to leave room for now |
 |---|---|---|
 | Voice and HTTPS | 2 | Nothing depends on a particular address. Speech-to-text (whisper.cpp's `whisper-cli`) and text-to-speech (macOS `say`) run as commands on the home server behind one adapter (`Speech`: `transcribe`, `speak`); what was heard enters the conversation like typing; audio stays on the home server, in memory or temp files deleted at once. |
 | Remembering preferences, recall | 3 | The map is the memory; preferences and recall build on it. |

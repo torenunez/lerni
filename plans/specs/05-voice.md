@@ -1,11 +1,11 @@
-# Voice: hold to talk, answers aloud (Release 2)
+# Voice: hold to talk, answers aloud (Version 2)
 
-Approved in conversation on 2026-10-10 (approach A, refined below). Requirements: [student PRD, Release 2](../../docs/prd/student.md#release-2-talk-with-the-app). Builds on the conversation and map from [spec 04](04-interest-map.md); nothing about the agent, the map, or the tagger changes.
+Approved in conversation on 2026-10-10 (approach A, refined below). Requirements: [student PRD, Version 2](../../docs/prd/student.md#version-2-talk-with-the-app). Builds on the conversation and map from [spec 04](04-interest-map.md); nothing about the agent, the map, or the tagger changes.
 
 ## What each person sees
 
 - **Every student** (supervised and independent), when the speech helpers are running on the home server: one big **Hold to talk** button under the chat, beside the question box. Hold it and speak; let go to send. What Lerni heard appears in the chat as their message and goes to Lerni at once, as if typed. Lerni's answer appears as text, as today, and is spoken a sentence at a time as it's written. With voice on, the screen is just the chat and the button: a tap silences Lerni and a hold interrupts it (changed 2026-10-10; was Stop plus typing).
-- **When the helpers aren't running:** no talk button; typing only, exactly as in Release 1. If a helper fails during a conversation: "I couldn't hear that. Try again, or type it." (or "…couldn't speak that…"), and the text answer still shows.
+- **When the helpers aren't running:** no talk button; typing only, exactly as in Version 1. If a helper fails during a conversation: "I couldn't hear that. Try again, or type it." (or "…couldn't speak that…"), and the text answer still shows.
 - No setting and no new screen. (The educator PRD's per-student Voice switch waits until someone needs voice off for one student.)
 
 ## Decisions
@@ -18,7 +18,7 @@ Approved in conversation on 2026-10-10 (approach A, refined below). Requirements
 | Sending | What was heard is sent at once and shown in the chat | Smooth for talking; local speech-to-text removes the privacy reason for a confirm step |
 | HTTPS | Our own certificate (mkcert) installed once on each device | Free, no account, home network only |
 | Who | Everyone, whenever the helpers are running | No setting to manage |
-| Keeping audio | Audio may stay on the home server for up to 7 days, like the conversation logs; Release 2 doesn't save it on purpose | The admin's call (2026-10-10): whatever is easiest for the MVP; a light audio log can come later if useful |
+| Keeping audio | Audio may stay on the home server for up to 7 days, like the conversation logs; Version 2 doesn't save it on purpose | The admin's call (2026-10-10): whatever is easiest for the MVP; a light audio log can come later if useful |
 | Who could hear it | If audio ends up in Gradio's cache, anyone signed in could reach it by URL | Accepted for the household (at most three people signed in, each with their own account); revisit before anyone outside the family uses the app |
 
 ## How it works
@@ -34,7 +34,7 @@ Approved in conversation on 2026-10-10 (approach A, refined below). Requirements
 **Answering aloud** (server → browser):
 
 6. As Claude's answer streams, the handler cuts it into sentences. Each finished sentence is cleaned for speaking (no emoji, no markdown symbols, links read as "a link"), sent to the text-to-speech helper, and the returned mp3 goes back base64-encoded in a hidden field alongside the text.
-7. The script queues each sentence's audio and plays them in order with the unlocked audio context. Stop clears the queue, silences playback, and cancels the call (Release 1's Stop).
+7. The script queues each sentence's audio and plays them in order with the unlocked audio context. Stop clears the queue, silences playback, and cancels the call (Version 1's Stop).
 
 **Audio stays in the house:** the clip and the spoken sentences never leave the home server. Lerni doesn't save them on purpose (the logs keep text only, as today); if a later change keeps audio (a Gradio audio player, or a light audio log), it's deleted within 7 days, like the logs.
 

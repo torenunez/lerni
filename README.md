@@ -8,7 +8,7 @@ Lerni has two parts:
   - A **supervised student** talks with Lerni on an iPad, with an educator beside them. The educator chooses a few **goals**, and Lerni bridges toward them from what the student already loves. Educator involvement steps down over time, until the student talks with Lerni on their own and the educator only glances at their map.
   - An **independent student** is their own educator: they talk with Lerni and set their own goals: things to practice. The educator and admin use the app this way too, which tests it before a supervised student relies on it.
 
-  We are building it in releases: a text conversation and the interest map (built), then speaking and listening, then a companion that remembers what each student likes.
+  We are building it in versions: a text conversation and the interest map (built), then speaking and listening, then a companion that remembers what each student likes.
 - **Admin tool — in the terminal.** Full access: learn topics with it and tune the learning mechanics before the student app relies on them. Available now. Educators never need it. To use the app as a learner, the admin has their own independent student account.
 
 Each student has an **interest map**. **Interests** grow out of the conversation (cars, sharks, soccer), drawn bigger the more days they come up. **Goals** are what the educator would like them to explore (fractions, reading clocks), in coral, while interests are green. **Bridges** show where Lerni led from one to the other, so fractions met through cars becomes part of what the student loves. Design: [interest map spec](plans/specs/04-interest-map.md).
@@ -25,7 +25,7 @@ Each student has an **interest map**. **Interests** grow out of the conversation
 
 Educators don't need this repository: everything for them is in the app. Admins can use the [implementation index](plans/README.md) to find detailed specifications and tasks. The [admin tool reference](docs/reference/admin.md) covers its commands and behavior.
 
-The first thing anyone tries is the MVP app (Release 1): the admin and educator first, as independent students, then a supervised student with the educator beside them ([educator PRD](docs/prd/educator.md#release-1-set-goals-watch-and-give-feedback)). The design: [interest map spec](plans/specs/04-interest-map.md); accounts and sign-in: [student accounts spec](plans/specs/03-student-accounts.md).
+The first thing anyone tries is the MVP app (Version 1): the admin and educator first, as independent students, then a supervised student with the educator beside them ([educator PRD](docs/prd/educator.md#version-1-set-goals-watch-and-give-feedback)). The design: [interest map spec](plans/specs/04-interest-map.md); accounts and sign-in: [student accounts spec](plans/specs/03-student-accounts.md).
 
 ## Setup
 

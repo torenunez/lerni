@@ -191,7 +191,7 @@ Added after step 5 was tried: the app is AI-enabled from the start. Independent 
 
 ## Build order
 
-One PR per unit, in order, each from `main` (the running list: [to-do](../../docs/todo.md#upcoming-prs)).
+One PR per unit, in order, each from `main` (the running list: [to-do](../../docs/todo.md#upcoming-versions)).
 
 | PR | What | Done when |
 |---|---|---|

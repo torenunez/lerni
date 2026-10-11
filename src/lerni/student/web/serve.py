@@ -57,24 +57,37 @@ def _speech() -> Any:
 
 
 def running_version() -> str:
-    """Which code is running: ``"<branch> @ <commit>, <date>"``, or the package version."""
+    """Which code is running: ``"v<version> · <branch> @ <commit>, <date>"``."""
     import subprocess
+    import tomllib
     from importlib import metadata
 
     here = Path(__file__).resolve().parent
     try:
+        # the checkout's pyproject.toml, so a bump shows without reinstalling
+        pyproject = here.parents[3] / "pyproject.toml"
+        version = "v" + tomllib.loads(pyproject.read_text())["project"]["version"]
+    except (OSError, KeyError, tomllib.TOMLDecodeError):
+        version = "v" + metadata.version("lerni")  # installed without the checkout
+    try:
         # the checkout this code runs from, as git sees it
         out = subprocess.run(
             ["git", "-C", str(here), "log", "-1", "--format=%h %cs"],
-            capture_output=True, text=True, timeout=5, check=True,
+            capture_output=True,
+            text=True,
+            timeout=5,
+            check=True,
         ).stdout.split()
         branch = subprocess.run(
             ["git", "-C", str(here), "rev-parse", "--abbrev-ref", "HEAD"],
-            capture_output=True, text=True, timeout=5, check=True,
+            capture_output=True,
+            text=True,
+            timeout=5,
+            check=True,
         ).stdout.strip()
-        return f"{branch} @ {out[0]}, {out[1]}"
+        return f"{version} · {branch} @ {out[0]}, {out[1]}"
     except (OSError, subprocess.SubprocessError, IndexError):
-        return f"version @ {metadata.version('lerni')}"  # installed without git
+        return version  # installed without git
 
 
 def serve(
@@ -109,19 +122,31 @@ def serve(
     chat, tagger, speech = _claude_chat(), _claude_tagger(), _speech()
     version = running_version()
     app = build_app(
-        chat_model=chat, tagger=tagger, uploader=_claude_uploader(), label=label, version=version,
+        chat_model=chat,
+        tagger=tagger,
+        uploader=_claude_uploader(),
+        label=label,
+        version=version,
         speech=speech,
     )
     print(f"Running:  {version}", flush=True)
     print(f"Sign in:  {scheme}://<this-computer>:{port}/", flush=True)
     if not any(s.educator for s in StudentStore().list_students()):
-        print("No educator yet: lerni student add USERNAME --name NAME "
-              "--kind independent --educator", flush=True)
-    status = (f"on ({chat.model}; the map with {tagger.model})" if chat
-              else "off (the claude CLI isn't installed)")
+        print(
+            "No educator yet: lerni student add USERNAME --name NAME --kind independent --educator",
+            flush=True,
+        )
+    status = (
+        f"on ({chat.model}; the map with {tagger.model})"
+        if chat
+        else "off (the claude CLI isn't installed)"
+    )
     print(f"Ask Lerni, the interest map, and Upload with Claude: {status}", flush=True)
-    print("Voice (hold to talk): " + ("on" if speech else
-          "off (install whisper.cpp and its model: admin reference, Voice)"), flush=True)
+    print(
+        "Voice (hold to talk): "
+        + ("on" if speech else "off (install whisper.cpp and its model: admin reference, Voice)"),
+        flush=True,
+    )
     print("Conversation logs (7 days): lerni logs", flush=True)
     print("Home network only. Press Ctrl-C to stop.", flush=True)
     # Gradio keeps each open page connected; without a time limit, Ctrl-C waits forever

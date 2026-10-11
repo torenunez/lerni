@@ -1,18 +1,23 @@
 # Progress
 
-Where things really stand, then a dated log, newest first. Completed work is recorded here; nothing here is a future task. The plan and each release's status: [roadmap](roadmap.md). Next steps: [to-do list](todo.md).
+Where things really stand, then a dated log, newest first. Completed work is recorded here; nothing here is a future task. The plan and each version's status: [roadmap](roadmap.md). Next steps: [to-do list](todo.md).
 
 Record each kind of "done" only when it actually happens, with the date: code built, content approved, app ready, a student session held. Passing tests show code behaves as specified; they don't make anything ready for a student.
 
-## Current state (2026-10-10, Release 1's code complete; Release 2 step 1, HTTPS, shipped; step 2, voice, built on its branch)
+## Current state (2026-10-11, v2.8: Versions 1 and 2 built and on the home server: the conversation, the map, HTTPS, and voice)
 
-- **Built:** the student app's core (student accounts, sign-in, Ask Lerni's conversations, the interest map with its tagger and 7-day logs, and Upload and educator feedback); `lerni serve` with a sign-in page and one app with tabs by role: an independent student's Ask (one ongoing text conversation with Claude, phone first), My map (with Upload), and My account; an educator's Maps (with Upload and Feedback) and Students on top; a supervised student's conversation, full screen, in the supervised voice. The admin tool (`lerni`, with `lerni student`, `lerni logs`, and `lerni feedback`). A [code manifest](code-manifest.md) of every file. Tests: 73 passed.
+- **Built:** the student app's core (student accounts, sign-in, Ask Lerni's conversations, the interest map with its tagger and 7-day logs, and Upload and educator feedback); `lerni serve` with a sign-in page and one app with tabs by role: an independent student's Ask (one ongoing text conversation with Claude, phone first), My map (with Upload), and My account; an educator's Maps (with Upload and Feedback) and Students on top; a supervised student's conversation, full screen, in the supervised voice. The admin tool (`lerni`, with `lerni student`, `lerni logs`, and `lerni feedback`). Hold to talk on both conversation screens, with spoken answers. A [code manifest](code-manifest.md) of every file. Tests: 82 passed.
 - **Designed:** the interest map, goals, the tagger, upload, feedback, and the supervised conversation ([specs/04-interest-map.md](../plans/specs/04-interest-map.md)); approved with PR #12.
 - **Not yet:** any supervised student session.
 
 When something changes, update this section and add a log entry below.
 
 ## Log
+
+### 2026-10-11 (version numbers; voice shipped)
+
+- PRs #24 (voice) and #26 (spoken answers on the iPad) merged, and production updated; voice works in development on the iPad, while production showed answers without sound.
+- Versions replace releases and steps: each PR is the next `vX.Y`, set in `pyproject.toml`, tagged on `main`, and shown on the sign-in page ([roadmap](roadmap.md#versions)). Version 2 so far is PRs #19–#24 and #26, so `5b4fb73` is tagged v2.7; this change is v2.8 (it also carries PR #25's docs, closed).
 
 ### 2026-10-10 (HTTPS shipped; Release 2 step 2 built: voice)
 

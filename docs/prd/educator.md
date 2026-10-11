@@ -12,7 +12,7 @@ The educator steers a supervised student's learning through what the student alr
 
 ## How educator involvement changes
 
-| Stage | Student app releases | The educator… |
+| Stage | Student app versions | The educator… |
 |---|---|---|
 | 1. Beside them | 1–3 | chooses goals, is beside the student in every session, and gives feedback |
 | 2. Accept suggestions | 4 | accepts or declines goals the agent suggests from the map |
@@ -22,7 +22,7 @@ Each stage needs evidence from the one before.
 
 ## Settings
 
-| Setting | Default | Effect | From release |
+| Setting | Default | Effect | From version |
 |---|---|---|---|
 | Voice | Off | When on, the student can hold the talk button | 2 |
 | Remembering preferences | On | When off, the companion keeps no preferences beyond the map | 3 |
@@ -38,7 +38,7 @@ Settings never change on their own, and each takes effect at once. The starting 
 - Before first use, the educator agrees to which outside services receive the student's data, and can withdraw that at any time.
 - No student identity or private observations go into the repository.
 
-## Release 1: set goals, watch, and give feedback
+## Version 1: set goals, watch, and give feedback
 
 The educator signs in with their own account, which has educator access (the admin creates the first one), adds the student accounts, and opens **Maps**.
 
@@ -90,7 +90,7 @@ As an educator, I want to tell the admin what to change in plain words, so that 
 
 These notes are for the admin and educator, not the app; the in-app text stays short (CLAUDE.md rule 9).
 
-## Release 3: remembering
+## Version 3: remembering
 
 ### Story: See and delete what's remembered
 
@@ -98,7 +98,7 @@ As an educator, I want to see and delete what the app remembers about a supervis
 
 - WHEN the educator removes an entry THE SYSTEM SHALL delete it from Lerni's storage, keeping only its name so it isn't re-added; copies an outside service keeps follow that service's rules.
 
-## Settings (Releases 2, 3, and 5)
+## Settings (Versions 2, 3, and 5)
 
 ### Story: Change a setting
 
@@ -106,11 +106,11 @@ As an educator, I want to turn voice, remembering, and conversation without me o
 
 - WHEN the educator changes a setting THE SYSTEM SHALL apply it at once and keep it until the educator changes it again.
 
-## Release 4: accept suggested goals
+## Version 4: accept suggested goals
 
 - WHEN the agent suggests a goal from the map THE SYSTEM SHALL show it on Maps for the educator to accept or decline.
 
-## Release 5: occasional monitoring
+## Version 5: occasional monitoring
 
 ### Story: Consent to a sensitive subject
 
@@ -128,23 +128,23 @@ Running the admin tool. Editing app code or files directly.
 - 2026-10-07: Educator involvement steps down in stages: seed, then draft and approve, then occasional monitoring once drafting is reliable.
 - 2026-10-07: Every educator task lives in this PRD; the student PRD covers only the student, and admin terminal work stays in the admin tool PRD.
 - 2026-10-07: The educator keeps an allowlist and an exclusion list, set before first use and added to over time. (Replaced 2026-10-09 by the interest map.)
-- 2026-10-07: The educator is present for every Release 1 session, then usually but not always. First-hand observation plus the concept map replace reading transcripts; the educator never gates every interaction, and consent is asked only for sensitive subjects.
+- 2026-10-07: The educator is present for every Version 1 session, then usually but not always. First-hand observation plus the concept map replace reading transcripts; the educator never gates every interaction, and consent is asked only for sensitive subjects.
 - 2026-10-08: Exploration mode, voice, and remembering are educator settings. They never change on their own; voice is authorized once, not per session. (Replaced 2026-10-09 by the interest map.)
 - 2026-10-08: Drafting and conversation use the admin's Claude account, so keys and billing stay with whoever runs the system.
 - 2026-10-08: The educator reviews drafts in the educator view. (Replaced 2026-10-09 by the interest map.)
 - 2026-10-08: The starting exclusion list covers violence, weapons, sexual content, self-harm, and drugs.
 - 2026-10-08: The educator writes plans in plain language; the six authoring tables were too technical for an educator. (Superseded the same day: planning moved into the educator view.)
-- 2026-10-08: The educator plans only in the educator view, from the start (Release 1, step 3), primed with example plans to edit. CSV authoring, the plan sheet, and the six authoring tables are retired. The admin packages a saved card at first, then it's automated; the educator records approvals in the app (step 6, now step 9). (Replaced 2026-10-09 by the interest map.)
+- 2026-10-08: The educator plans only in the educator view, from the start (Version 1, step 3), primed with example plans to edit. CSV authoring, the plan sheet, and the six authoring tables are retired. The admin packages a saved card at first, then it's automated; the educator records approvals in the app (step 6, now step 9). (Replaced 2026-10-09 by the interest map.)
 - 2026-10-08: The educator can import a rough plan in any shape; Claude proposes a structured plan, and the educator saves or discards it. Each import asks the educator to confirm the notes go to Claude (Anthropic) and contain no names or personal details. (Replaced 2026-10-09 by the interest map.)
 - 2026-10-08: The educator view runs on the educator's own device (a phone or laptop), separate from the student's iPad, and controls the same session.
 - 2026-10-08: Only the educator logs in, with one passcode the admin sets; the student screen has no login. The educator can preview a draft on their own device before approving it. (Sign-in replaced 2026-10-09.)
 - 2026-10-09: The educator manages every student account (supervised and independent) in a Students tab. No educator screen shows an independent student's plans or sessions; that's privacy by default, since the educator is trusted with account recovery.
 - 2026-10-09: The app has one sign-in; the educator signs in as `educator` with the passcode, and the separate educator view at `/educator/` goes away. (Replaces "only the educator logs in; the student screen has no login".)
 - 2026-10-09: No plan assignment yet: a supervised student sees every activity the educator approved. Assignment comes when an educator has more than one supervised student. (Replaced 2026-10-09 by the interest map.)
-- 2026-10-09: In Release 1 the educator approves library cards in the app; the supervised student's first activity is the cars example's car card. Packaged activity files aren't played or approved in the app. (Replaced 2026-10-09 by the interest map.)
+- 2026-10-09: In Version 1 the educator approves library cards in the app; the supervised student's first activity is the cars example's car card. Packaged activity files aren't played or approved in the app. (Replaced 2026-10-09 by the interest map.)
 - 2026-10-09: Educator is a permission on a person's independent account, not a shared `educator` sign-in, so the educator signs in once for both learning and planning. The educator passcode is gone; the admin creates the first educator account from the terminal. (Replaces the earlier 2026-10-09 decision about signing in as `educator`.)
 - 2026-10-09: The educator no longer writes plans, cards, or approvals. They choose goals (a name and optional notes, or uploaded notes Claude turns into proposed interests and goals), watch each supervised student's interest map, and give free-text feedback that the agent summarizes for the admin and never acts on. Only educators see a supervised student's map. (Replaces planning, approvals, Sessions, and the allowlist from the earlier decisions.)
 
 ## Open questions
 
-- [NEEDS CLARIFICATION] (Release 4) What evidence shows the agent's suggested goals are good enough to move from accepting each one to occasional monitoring?
+- [NEEDS CLARIFICATION] (Version 4) What evidence shows the agent's suggested goals are good enough to move from accepting each one to occasional monitoring?
