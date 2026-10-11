@@ -4,7 +4,7 @@ Approved in conversation on 2026-10-10 (approach A, refined below). Requirements
 
 ## What each person sees
 
-- **Every student** (supervised and independent), when the speech helpers are running on the home server: one big **Hold to talk** button under the chat, beside the question box. Hold it and speak; let go to send. What Lerni heard appears in the chat as their message and goes to Lerni at once, as if typed. Lerni's answer appears as text, as today, and is spoken a sentence at a time as it's written. **Stop** stops the answer and the voice. Typing still works.
+- **Every student** (supervised and independent), when the speech helpers are running on the home server: one big **Hold to talk** button under the chat, beside the question box. Hold it and speak; let go to send. What Lerni heard appears in the chat as their message and goes to Lerni at once, as if typed. Lerni's answer appears as text, as today, and is spoken a sentence at a time as it's written. With voice on, the screen is just the chat and the button: a tap silences Lerni and a hold interrupts it (changed 2026-10-10; was Stop plus typing).
 - **When the helpers aren't running:** no talk button; typing only, exactly as in Release 1. If a helper fails during a conversation: "I couldn't hear that. Try again, or type it." (or "…couldn't speak that…"), and the text answer still shows.
 - No setting and no new screen. (The educator PRD's per-student Voice switch waits until someone needs voice off for one student.)
 
@@ -13,7 +13,7 @@ Approved in conversation on 2026-10-10 (approach A, refined below). Requirements
 | Decision | Choice | Why |
 |---|---|---|
 | Button | Hold to talk (press, speak, release) | Walkie-talkie; nothing to forget to stop |
-| Speech services | Local helpers on the home server: whisper.cpp's server (speech-to-text) and Kokoro-FastAPI (text-to-speech), both speaking the OpenAI audio API | No audio leaves the house, no account, $0; a hosted service later is an address change |
+| Speech services | Commands on the home server: whisper.cpp's `whisper-cli` (speech-to-text) and macOS `say` (text-to-speech), behind one adapter. Changed during the build (2026-10-10; was a Whisper server and Kokoro): see the [step 2 plan](../release-2-step-2-voice.md) | No audio leaves the house, no account, $0, nothing extra to keep running |
 | Transport | Approach A, refined: Gradio events carry the audio as base64 text in hidden fields; a small browser script records and plays | Keeps every handler's sign-in check, and playback unlocked by the press is the dependable way to get sound on iPad Safari. If the iPad check shows Gradio's own audio player works, it may be used instead |
 | Sending | What was heard is sent at once and shown in the chat | Smooth for talking; local speech-to-text removes the privacy reason for a confirm step |
 | HTTPS | Our own certificate (mkcert) installed once on each device | Free, no account, home network only |
@@ -42,8 +42,7 @@ Approved in conversation on 2026-10-10 (approach A, refined below). Requirements
 
 - **`src/lerni/student/voice.py`** (core, standard library only):
   - `Speech` protocol: `transcribe(wav: bytes) -> str` and `speak(text: str) -> bytes` (mp3).
-  - `HelperSpeech`: an OpenAI-audio-API client over `urllib` for the two helpers, with addresses from `LERNI_STT_URL` and `LERNI_TTS_URL` (and the voice name from `LERNI_TTS_VOICE`); a short timeout; errors become a `SpeechUnavailable` with a general message, never the text.
-  - `speech_from_env() -> Speech | None`: `None` unless both helpers answer a quick check at startup.
+  - The adapter, `adapters/mac_speech.py` (`MacSpeech`, `mac_speech_from_env()`), runs the two commands; voice is off unless both and the Whisper model are there. Settings: `LERNI_WHISPER_MODEL`, `LERNI_SAY_VOICE`.
   - `sentences(stream)`: turns streamed answer pieces into finished sentences; `for_speaking(text)`: the cleanup.
   - `MIN_CLIP_SECONDS = 0.5`, `MAX_CLIP_SECONDS = 30`, `MAX_CLIP_BYTES` (30 s of 16 kHz 16-bit mono, plus the WAV header).
 - **`src/lerni/student/web/talk.js`** (shipped as package data, loaded with Gradio's `head`): the hold button (pointer events, so it works with touch and mouse), recording, the WAV encoding, the hidden fields, and the playback queue. About 100 lines, commented.

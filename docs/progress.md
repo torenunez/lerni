@@ -4,7 +4,7 @@ Where things really stand, then a dated log, newest first. Completed work is rec
 
 Record each kind of "done" only when it actually happens, with the date: code built, content approved, app ready, a student session held. Passing tests show code behaves as specified; they don't make anything ready for a student.
 
-## Current state (2026-10-10, Release 1's code complete and merged; Release 2 step 1, HTTPS, built on its branch)
+## Current state (2026-10-10, Release 1's code complete; Release 2 step 1, HTTPS, shipped; step 2, voice, built on its branch)
 
 - **Built:** the student app's core (student accounts, sign-in, Ask Lerni's conversations, the interest map with its tagger and 7-day logs, and Upload and educator feedback); `lerni serve` with a sign-in page and one app with tabs by role: an independent student's Ask (one ongoing text conversation with Claude, phone first), My map (with Upload), and My account; an educator's Maps (with Upload and Feedback) and Students on top; a supervised student's conversation, full screen, in the supervised voice. The admin tool (`lerni`, with `lerni student`, `lerni logs`, and `lerni feedback`). A [code manifest](code-manifest.md) of every file. Tests: 73 passed.
 - **Designed:** the interest map, goals, the tagger, upload, feedback, and the supervised conversation ([specs/04-interest-map.md](../plans/specs/04-interest-map.md)); approved with PR #12.
@@ -13,6 +13,12 @@ Record each kind of "done" only when it actually happens, with the date: code bu
 When something changes, update this section and add a log entry below.
 
 ## Log
+
+### 2026-10-10 (HTTPS shipped; Release 2 step 2 built: voice)
+
+- PRs #20 and #21 (HTTPS; the version footer and `--label`) merged; production runs from its own checkout over HTTPS, and the iPad and the admin's phone trust its certificate.
+- The iPad check (a throwaway page, tried on the admin's phone) passed: a held button records, the clip reaches the server through a Gradio event, and the answer plays with no extra tap.
+- Built on `feat/voice`: Hold to talk on both conversation screens. The button turns red while held and shows what's heard so far; what was heard becomes the student's message; the answer is spoken a sentence at a time with the Mac's own voice (`say`), and Stop silences it. Speech to text is whisper.cpp's `whisper-cli` (about 0.6 s a clip on the home server). Evals: a spoken sentence came back word for word; a spoken question got a short supervised answer. Tests: 80 passed.
 
 ### 2026-10-10 (PR #18 merged; voice designed; Release 2 step 1 built: HTTPS)
 

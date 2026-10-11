@@ -49,6 +49,7 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 "lerni.student.personas" = ["*.md"]
+"lerni.student.web" = ["*.js"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

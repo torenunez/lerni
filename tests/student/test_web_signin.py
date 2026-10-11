@@ -68,3 +68,13 @@ def test_the_sign_in_page_says_which_version_is_running(tmp_path):
     assert version and "@" in version  # e.g. "main @ e152c46, 2026-10-10" in a checkout
     client = TestClient(build_app(data_root=tmp_path, version=version))
     assert version in client.get("/signin").text
+
+
+def test_a_development_server_keeps_its_own_sign_in(tmp_path):
+    # same host, another port: its cookie mustn't replace production's
+    StudentStore(tmp_path).add("sam", "Sam", Kind.INDEPENDENT, "long enough")
+    client = TestClient(build_app(data_root=tmp_path, label="Development"),
+                        base_url="https://lerni.test", follow_redirects=False)
+    response = client.post("/signin", data={"username": "sam", "password": "long enough"})
+    assert response.headers["set-cookie"].startswith("lerni_session_development=")
+    assert client.get("/").headers["location"] == "/app/"

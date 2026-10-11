@@ -30,7 +30,7 @@ How PRs are split:
 - **The shipped release stays in use:** each PR says in a Deploying section whether it's safe to put on the home server while the family uses it, how, and the caveats ([admin reference](reference/admin.md#updating-the-home-server)).
 - **When a PR merges:** delete its row and add a dated entry to [progress](progress.md). Work found along the way gets a new row or a task below, not a bigger PR.
 
-Next: Release 2 step 1, HTTPS ([plan](../plans/release-2-step-1-https.md)); then step 2, voice ([spec 05](../plans/specs/05-voice.md)).
+Next: Release 2 step 2, voice ([plan](../plans/release-2-step-2-voice.md)), in review.
 
 Release 1 now needs sessions, not code: the educator sets goals, rehearses, and sits beside the supervised student (Educator and Student tasks above and below).
 
@@ -51,7 +51,7 @@ Release 1 now needs sessions, not code: the educator sets goals, rehearses, and 
 
 ### Now: Release 2 Voice
 
-- [ ] Before step 2: check the home server can run both helpers (about 2–4 cores and 2 GB for text-to-speech) and has the disk space.
+- [ ] Pick Lerni's voice ([admin reference: Voice](reference/admin.md#voice)), try Hold to talk on the iPad, then with the supervised student and an adult nearby (step 2 is done when their map grows from a spoken conversation).
 - [ ] Try the voice with the students before deciding whether a hosted voice (Inworld, about $18 a month) is worth it; a hosted service means student audio leaves the house, so it needs the educator's agreement first.
 - [ ] Before anyone outside the family uses the app: files in Gradio's cache (uploads, any voice audio) are reachable by URL to anyone signed in; serve them only to their owner, or keep none.
 - [ ] Before anyone outside the household uses the app: replace the Claude Code adapter with an API-key adapter (`env:ANTHROPIC_API_KEY`).

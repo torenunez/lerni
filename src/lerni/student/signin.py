@@ -30,6 +30,12 @@ from lerni.student.students import (
 )
 
 COOKIE_NAME = "lerni_session"
+
+
+def cookie_name(label: str = "") -> str:
+    """The sign-in cookie's name; a labeled server gets its own, since ports share cookies."""
+    slug = "".join(c for c in label.lower() if c.isalnum())
+    return f"{COOKIE_NAME}_{slug}" if slug else COOKIE_NAME
 SESSION_SECONDS = 30 * 24 * 3600
 FREE_FAILURES = 3  # wrong passwords before delays start
 MAX_WAIT = 30.0

@@ -23,10 +23,11 @@ from lerni.student.conversation import ChatModel, Conversations  # noqa: E402
 from lerni.student.feedback import FeedbackStore  # noqa: E402
 from lerni.student.interests import MapStore  # noqa: E402
 from lerni.student.logs import ConversationLog  # noqa: E402
-from lerni.student.signin import COOKIE_NAME, SignIn, load_secret  # noqa: E402
+from lerni.student.signin import SignIn, cookie_name, load_secret  # noqa: E402
 from lerni.student.students import StudentStore, default_data_dir  # noqa: E402
 from lerni.student.tagging import MapKeeper, Tagger  # noqa: E402
 from lerni.student.upload import Uploader  # noqa: E402
+from lerni.student.voice import Speech  # noqa: E402
 from lerni.student.web.main import build_main_view  # noqa: E402
 from lerni.student.web.signin_page import APP_PATH, add_signin_routes  # noqa: E402
 
@@ -45,6 +46,13 @@ _CSS = """
 }
 /* 16px text in fields, so iPhone Safari doesn't zoom in and shift the page on tap */
 .gradio-container input, .gradio-container textarea { font-size: 16px !important; }
+/* Hold to talk: hidden fields, and a red, pulsing button while it's held */
+.lerni-hide { display: none !important; }
+#lerni-talk-ask, #lerni-talk-home { touch-action: none; user-select: none;
+  -webkit-user-select: none; -webkit-touch-callout: none; }
+.lerni-listening { background: #dc2626 !important; color: white !important;
+  animation: lerni-pulse 1s ease-in-out infinite; }
+@keyframes lerni-pulse { 50% { transform: scale(1.05); } }
 """
 
 # Settings for the mounted app: no footer links (that hides the API
@@ -61,6 +69,13 @@ _MOUNT_OPTIONS = {
 }
 
 
+def _talk_head() -> str:
+    """The browser side of Hold to talk, inlined so the page loads nothing else."""
+    from importlib.resources import files
+
+    return f"<script>{files('lerni.student.web').joinpath('talk.js').read_text()}</script>"
+
+
 def _theme() -> gr.themes.Base:
     """Return a theme that uses only fonts already on the device."""
     return gr.themes.Base(font=_SYSTEM_FONTS, font_mono=_MONO_FONTS)
@@ -74,6 +89,7 @@ def build_app(
     uploader: Uploader | None = None,
     label: str = "",
     version: str = "",
+    speech: Speech | None = None,
 ) -> FastAPI:
     """Build the server: the sign-in page and the app at ``/app/``.
 
@@ -86,6 +102,7 @@ def build_app(
         uploader: Claude behind an adapter for Upload; ``None`` turns it off.
         label: Shown on every page, e.g. ``"Development"``; empty for production.
         version: Which code is running, shown small on the sign-in page.
+        speech: Speech to text and back for Hold to talk; ``None`` turns it off.
     """
     root = data_root or default_data_dir()
     students = StudentStore(root)
@@ -106,7 +123,7 @@ def build_app(
 
     def current_user(request: Request) -> str | None:
         # runs on every request: no valid cookie, no access
-        viewer = signin.viewer_from_cookie(request.cookies.get(COOKIE_NAME))
+        viewer = signin.viewer_from_cookie(request.cookies.get(cookie_name(label)))
         return viewer.username if viewer else None
 
     maps, log = MapStore(root), ConversationLog(root)
@@ -119,6 +136,7 @@ def build_app(
     view = build_main_view(
         signin, students, maps, conversations,
         uploader=uploader, feedback=FeedbackStore(root), model=chat_model, label=label,
+        speech=speech,
     )
     return gr.mount_gradio_app(
         app,
@@ -127,5 +145,6 @@ def build_app(
         auth_dependency=current_user,
         theme=_theme(),
         css=_CSS,
+        head=_talk_head() if speech else "",
         **_MOUNT_OPTIONS,
     )

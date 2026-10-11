@@ -11,7 +11,7 @@ from html import escape
 from fastapi import FastAPI, Form, Request
 from fastapi.responses import HTMLResponse, RedirectResponse, Response
 
-from lerni.student.signin import COOKIE_NAME, SESSION_SECONDS, SignIn
+from lerni.student.signin import SESSION_SECONDS, SignIn, cookie_name
 
 APP_PATH = "/app"
 
@@ -74,18 +74,19 @@ def add_signin_routes(
     app: FastAPI, signin: SignIn, label: str = "", version: str = ""
 ) -> None:
     """Add ``/``, ``/signin``, ``/signout``, and the signed-out redirect for the app page."""
+    cookie_key = cookie_name(label)  # development keeps its own, so production stays signed in
 
     @app.middleware("http")
     async def signed_out_to_signin(request: Request, call_next):  # type: ignore[no-untyped-def]
         # only the app's page itself redirects; its API calls get Gradio's 401
         if request.method == "GET" and request.url.path in (APP_PATH, APP_PATH + "/"):
-            if signin.viewer_from_cookie(request.cookies.get(COOKIE_NAME)) is None:
+            if signin.viewer_from_cookie(request.cookies.get(cookie_key)) is None:
                 return RedirectResponse("/signin", status_code=303)
         return await call_next(request)
 
     @app.get("/")
     def root(request: Request) -> Response:
-        signed_in = signin.viewer_from_cookie(request.cookies.get(COOKIE_NAME))
+        signed_in = signin.viewer_from_cookie(request.cookies.get(cookie_key))
         return RedirectResponse(APP_PATH + "/" if signed_in else "/signin", status_code=303)
 
     @app.get("/signin")
@@ -101,7 +102,7 @@ def add_signin_routes(
             return _page(message, status=401, label=label, version=version)
         response = RedirectResponse(APP_PATH + "/", status_code=303)
         response.set_cookie(
-            COOKIE_NAME, cookie, max_age=SESSION_SECONDS, httponly=True, samesite="lax",
+            cookie_key, cookie, max_age=SESSION_SECONDS, httponly=True, samesite="lax",
             path="/", secure=request.url.scheme == "https",  # Secure once served over HTTPS
         )
         return response
@@ -110,5 +111,5 @@ def add_signin_routes(
     def signout() -> Response:
         # this device only; other devices stay signed in
         response = RedirectResponse("/signin", status_code=303)
-        response.delete_cookie(COOKIE_NAME, path="/")
+        response.delete_cookie(cookie_key, path="/")
         return response

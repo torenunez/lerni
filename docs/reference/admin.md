@@ -87,7 +87,7 @@ lerni serve                                 # binds 0.0.0.0:7860
 ### Two environments
 
 - **Production:** the home server, on `main`, port 7860, the real data folder (`~/.lerni/student/`). The family uses it; on the student's iPad, open it in Safari and use Share → Add to Home Screen.
-- **Development:** the computer where changes are built, on a branch, port 7861, its own data folder and made-up test accounts: `LERNI_STUDENT_DATA=~/.lerni/student-dev lerni serve --port 7861 --label Development` (add accounts the same way: `LERNI_STUDENT_DATA=~/.lerni/student-dev lerni student add tester …`). Bookmark it on the admin's phone; it's up only while it's started.
+- **Development:** the computer where changes are built, on a branch, port 7861, its own data folder and made-up test accounts: `LERNI_STUDENT_DATA=~/.lerni/student-dev lerni serve --port 7861 --label Development` plus the same `--cert` and `--key` as production, so its address stays `https://` (add accounts the same way: `LERNI_STUDENT_DATA=~/.lerni/student-dev lerni student add tester …`). Bookmark it on the admin's phone; it's up only while it's started, and it has its own sign-in, so both bookmarks stay signed in.
 - Never point development at `~/.lerni/student/`, or test conversations land in the real maps and logs. Both use the admin's Claude account, so heavy testing uses the same plan.
 
 ### Updating the home server
@@ -116,6 +116,17 @@ iPad Safari allows the microphone only over HTTPS. Lerni uses its own certificat
 Safari's saved password is for the old `http://` address; sign in once more and let it save again. Replace any bookmark or home-screen icon with the `https://` address (the old one stops working). If the server's IP changes, make the certificate again (step 2); a fixed address for the server in the router avoids that.
 
 Once a device has signed in over HTTPS, keep serving HTTPS: if the server goes back to plain HTTP (started without `--cert`, or rolled back to a `main` from before HTTPS), that device may fail to sign in until its website data for the server is cleared (Safari: Settings → Apps → Safari → Advanced → Website Data).
+
+### Voice
+
+Hold to talk needs HTTPS and two tools on the home server, run as commands (nothing else to keep running):
+
+1. `brew install whisper.cpp` (speech to text), then its model, about 0.5 GB: `mkdir -p ~/.lerni/models && curl -L -o ~/.lerni/models/ggml-small.bin https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small.bin`. Another place: set `LERNI_WHISPER_MODEL`.
+2. Lerni speaks with the Mac's own voice (`say`). To pick one, list them with `say -v '?'`, try one with `say -v NAME "Sharks are amazing swimmers!"`, and set `LERNI_SAY_VOICE=NAME` before `lerni serve`. Nicer voices download in System Settings → Accessibility → Spoken Content → System Voice.
+3. Restart `lerni serve`; it prints `Voice (hold to talk): on`. Check it with `.venv/bin/python scripts/eval_voice.py`.
+4. On each device, so Safari stops asking for the microphone: on the Lerni page, the page menu in the address bar → Website Settings → Microphone → Allow.
+
+Audio stays on the home server: each clip's temp file is deleted once it's heard, and spoken sentences are never saved.
 
 ## Maintenance
 
