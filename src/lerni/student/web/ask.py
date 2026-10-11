@@ -121,7 +121,9 @@ def ask_tab(
             feedback_options=None,
             elem_id="lerni-home-chat" if supervised else "lerni-ask-chat",
         )
-        with gr.Row():
+        talks = speech is not None and ready
+        # with voice on, the screen is the chat and one big button; typing returns without it
+        with gr.Row(visible=not talks):
             question = gr.Textbox(
                 label="Question",
                 show_label=False,
@@ -136,7 +138,6 @@ def ask_tab(
             # one button: Send, which becomes Stop while Lerni answers
             send = gr.Button("Send", variant="primary", scale=1, min_width=70, interactive=ready)
             stop = gr.Button("Stop", variant="stop", scale=1, min_width=70, visible=False)
-        talks = speech is not None and ready
         if talks:
             suffix = "home" if supervised else "ask"  # talk.js finds each panel's parts by id
             gr.Button("🎤 Hold to talk", elem_id=f"lerni-talk-{suffix}", size="lg")
@@ -148,6 +149,7 @@ def ask_tab(
             spoken = gr.Textbox(elem_id=f"lerni-spoken-{suffix}", **hide)
             heard_btn = gr.Button(elem_id=f"lerni-heard-{suffix}", elem_classes="lerni-hide")
             peek = gr.Button(elem_id=f"lerni-peek-{suffix}", elem_classes="lerni-hide")
+            hush = gr.Button(elem_id=f"lerni-hush-{suffix}", elem_classes="lerni-hide")
         # the supervised screen keeps only the chat, the box, and Send/Stop
         new = gr.Button("New conversation", size="sm", visible=not supervised)
         asked = gr.State("")  # the question being answered, so the box can be freed at once
@@ -239,6 +241,8 @@ def ask_tab(
                         shown[-1]["content"] += f"\n\n🔇 {SPOKE_NOTHING}"
                 except (ConversationError, ConversationUnavailable) as exc:
                     shown[-1]["content"] = f"{answer}\n\n⚠️ {exc}" if answer else f"⚠️ {exc}"
+                finally:
+                    reply.close()  # interrupted: frees the conversation for the next question
                 yield [shown, gr.update(), ""]
 
             def lock() -> list[Any]:
@@ -265,4 +269,7 @@ def ask_tab(
         # Stop keeps what was said so far; New conversation forgets it, even mid-answer
         stop.click(unlock, None, controls, cancels=events, **PRIVATE)
         new.click(on_new, None, [chat, *controls], cancels=events, **PRIVATE)
+        if talks:
+            # pressing the talk button stops any answer, like Stop (the page presses hush)
+            hush.click(unlock, None, controls, cancels=events, **PRIVATE)
     return tab, chat, voice

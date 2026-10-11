@@ -14,7 +14,8 @@
 
   async function start(e, btn, suffix) {
     e.preventDefault();
-    stop();  // a new question silences the old answer
+    stop();  // a tap silences Lerni; a hold also asks something new
+    document.getElementById(`lerni-hush-${suffix}`)?.click();  // and stops the answer coming
     unlock();
     // react at once, even while Safari asks for the microphone
     btn.textContent = '🔴 Listening… let go to send';
