@@ -8,7 +8,7 @@ How Lerni works: what runs where, how a conversation grows a student's interest 
 
 - **Independent students** (educators included) have **Ask**, one ongoing text conversation with Claude. After each exchange, a small background call (the tagger) updates their **interest map**: interests (sized by the days they come up), links, and bridges. They see it on **My map**, set their own goals there, and can **Upload** notes that Claude turns into proposed interests and goals to tick. Each exchange is kept 7 days in logs the admin reads (`lerni logs`).
 - **Educators** also have **Maps**, where they plan a supervised student's map by chatting with an educator agent (it proposes; only what they tick changes the map or reaches the admin as **feedback**, `lerni feedback`), and **Students**.
-- **Supervised students** see only the conversation, full screen, in the supervised voice, with an adult nearby (a household rule). Their map grows on the educator's Maps.
+- **Supervised students** see the conversation, full screen (and Games, coming soon), in the supervised voice, with an adult nearby (a household rule). Their map grows on the educator's Maps.
 
 
 It assumes one household, a few students, one map per student. Students use an iPad or any browser on the home network. The admin tool (`lerni` in a terminal) is separate: the admin's own learning tool with its own data, plus `lerni student`, `lerni logs`, and `lerni feedback`.

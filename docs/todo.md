@@ -21,8 +21,8 @@ Open tasks by who does the work. The educator and admin tracks run in parallel: 
 
 What ships next, in order, one PR each ([how versions work](roadmap.md#versions)):
 
-1. **v2.15: voice that can't speak says so:** if `say` returns empty audio, startup prints `Voice (hold to talk): off` with the reason, instead of sending silence.
-2. **v2.16: production keeps running on its own:** run production and development the same way, as macOS LaunchAgents in the desktop session (start at login, restart after a crash); check `say` works there first. Until then both run in Terminal windows, and production stops if that window or the Mac does.
+1. **v2.16: voice that can't speak says so:** if `say` returns empty audio, startup prints `Voice (hold to talk): off` with the reason, instead of sending silence.
+2. **v2.17: production keeps running on its own:** run production and development the same way, as macOS LaunchAgents in the desktop session (start at login, restart after a crash); check `say` works there first. Until then both run in Terminal windows, and production stops if that window or the Mac does.
 3. **Version 3, remembering:** not planned yet; its first PR writes the plan.
 
 How PRs are split:

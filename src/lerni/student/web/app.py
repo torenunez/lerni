@@ -79,6 +79,10 @@ _CSS = """
 /* Maps: the picture is a strip on a phone until tapped (nav.js) */
 .lerni-map-strip { max-height: 200px; overflow: hidden; cursor: zoom-in; }
 .lerni-map-strip.lerni-open { max-height: none; cursor: zoom-out; }
+/* Games: a coming-soon placeholder, centered */
+.lerni-soon { text-align: center; padding: 15vh 1rem; }
+.lerni-soon div { font-size: 120px; line-height: 1; }
+.lerni-soon p { font-size: 26px !important; font-weight: 700; margin-top: 1rem; }
 .lerni-dock { align-items: center; gap: 8px !important; }
 .lerni-dock .lerni-type { width: 100%; }
 /* Talk or Type: the voice dock shows one of them, Talk until the student picks Type */

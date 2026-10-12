@@ -27,13 +27,14 @@ from lerni.student.web.educator import educator_tab
 from lerni.student.web.mapdraw import map_svg, map_words
 from lerni.student.web.maps import entry_choices, map_tab, supervised_choices
 
-# Tab ids in page order. A supervised student gets Home: their conversation,
-# full screen; independent students get Ask, My map, and My account; educators
-# also get Maps and Students.
-_TAB_IDS = ("home", "ask", "mymap", "maps", "students", "account")
+# Tab ids in page order. A supervised student gets Home (their conversation,
+# full screen) and Games; independent students get Ask, My map, and My account;
+# educators also get Maps and Students.
+_TAB_IDS = ("home", "games", "ask", "mymap", "maps", "students", "account")
+_SUPERVISED_TABS = {"home", "games"}
 _EDUCATOR_TABS = {"maps", "students"}
 _INDEPENDENT_TABS = {"ask", "mymap", "account"}
-_LABELS = {"home": "Lerni", "ask": "Ask", "mymap": "My map", "maps": "Maps",
+_LABELS = {"home": "Lerni", "games": "Games", "ask": "Ask", "mymap": "My map", "maps": "Maps",
            "students": "Students", "account": "My account"}  # the menu's names for the tabs
 
 
@@ -41,7 +42,7 @@ def visible_tabs(viewer: Viewer | None) -> tuple[str, ...]:
     """The tab ids ``viewer`` sees, in page order."""
     if viewer is None:
         return ()
-    shown = {"home"} if viewer.role is Role.SUPERVISED else set(_INDEPENDENT_TABS)
+    shown = set(_SUPERVISED_TABS) if viewer.role is Role.SUPERVISED else set(_INDEPENDENT_TABS)
     if viewer.educator:
         shown |= _EDUCATOR_TABS
     return tuple(tab for tab in _TAB_IDS if tab in shown)
@@ -85,6 +86,9 @@ def build_main_view(
         gr.HTML('<div class="lerni-backdrop"></div>', padding=False)  # a tap closes the menu
         with gr.Tabs() as tabs:
             home, home_chat, _ = ask_tab(signin, conversations, supervised=True, speech=speech)
+            with gr.Tab("Games", id="games", visible=False) as games:  # a placeholder for now
+                gr.HTML('<div class="lerni-soon"><div aria-hidden="true">🎮</div>'
+                        "<p>Games are coming soon!</p></div>")
             ask, chat, voice = ask_tab(signin, conversations, speech=speech)
             mymap, _, picture, words, entry = map_tab(signin, students, maps, mine=True,
                                                       uploader=uploader)
@@ -130,7 +134,7 @@ def build_main_view(
             None,
             # order matches on_load: header, title, tabs, the _TAB_IDS tabs, their menu
             # buttons, then the rest
-            [header, title, tabs, home, ask, mymap, maps_tab, students_tab_, account,
+            [header, title, tabs, home, games, ask, mymap, maps_tab, students_tab_, account,
              *nav.values(),
              students_table, chat, home_chat, voice, picture, words, entry, who],
             api_visibility="private",

@@ -62,7 +62,7 @@ The student signs in and talks with Lerni by text. Their map grows as they talk;
 As a student, I want to sign in as myself, so that my conversation and map are my own.
 
 - WHEN someone opens the app without being signed in THE SYSTEM SHALL show a standard sign-in form (username and password) that the browser can offer to save.
-- WHEN a supervised student signs in THE SYSTEM SHALL show only the conversation, full screen; WHEN an independent student signs in, Ask, My map, and My account.
+- WHEN a supervised student signs in THE SYSTEM SHALL show the conversation, full screen, with Games (coming soon) in the ☰ menu; WHEN an independent student signs in, Ask, My map, and My account.
 - WHILE someone is signed in THE SYSTEM SHALL show "Signed in as <display name> · <kind>" and Sign out (in the ☰ menu); Sign out signs out this device only.
 - WHEN a username gets 3 or more wrong passwords in a row THE SYSTEM SHALL wait longer before checking each further attempt (up to 30 seconds), without affecting anyone already signed in.
 - WHEN an account is archived or its password reset THE SYSTEM SHALL sign it out on every device at once.

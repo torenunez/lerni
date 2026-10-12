@@ -61,7 +61,7 @@ def test_each_role_opens_on_a_tab_it_can_see():
 
     lee = Viewer("lee", "Lee", Role.SUPERVISED)
     assert visible_tabs(EDUCATOR) == ("ask", "mymap", "maps", "students", "account")
-    assert visible_tabs(lee) == ("home",)  # the conversation arrives in step 9
+    assert visible_tabs(lee) == ("home", "games")
     assert visible_tabs(SAM) == ("ask", "mymap", "account")
     assert (opening_tab(EDUCATOR), opening_tab(lee), opening_tab(SAM)) == ("ask", "home", "ask")
 
