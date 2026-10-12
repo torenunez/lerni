@@ -6,9 +6,9 @@ How Lerni works: what runs where, how a conversation grows a student's interest 
 
 **Built (Version 1, steps 1–10):** everyone signs in at `/signin` to one app at `/app/`.
 
-- **Independent students** (educators included) have **Ask**, one ongoing text conversation with Claude. After each exchange, a small background call (the tagger) updates their **interest map**: interests (sized by the days they come up), links, and bridges. They see it on **My map**, set their own goals there, and can **Upload** notes that Claude turns into proposed interests and goals to tick. Each exchange is kept 7 days in logs the admin reads (`lerni logs`).
-- **Educators** also have **Maps**, where they plan a supervised student's map by chatting with an educator agent (it proposes; only what they tick changes the map or reaches the admin as **feedback**, `lerni feedback`), and **Students**.
-- **Supervised students** see the conversation, full screen (and Games, coming soon), in the supervised voice, with an adult nearby (a household rule). Their map grows on the educator's Maps.
+- **Independent students** (educators included) have **Ask**, one ongoing text conversation with Claude. After each exchange, a small background call (the tagger) updates their **interest map**: interests (sized by the days they come up), links, and bridges. They see it on **My MentalMap**, a picture and an editable list of goals and interests (removing an interest steers Lerni away from it), and can **Upload** notes that Claude turns into proposed interests and goals to tick. Each exchange is kept 7 days in logs the admin reads (`lerni logs`).
+- **Educators** also have **MentalMaps**, where they edit a supervised student's list and plan by chatting with an educator agent (it proposes; only what they tick changes the map or reaches the admin as **feedback**, `lerni feedback`), and **Students**.
+- **Supervised students** see the conversation, full screen (and Games, coming soon), in the supervised voice, with an adult nearby (a household rule). Their map grows on the educator's MentalMaps.
 
 
 It assumes one household, a few students, one map per student. Students use an iPad or any browser on the home network. The admin tool (`lerni` in a terminal) is separate: the admin's own learning tool with its own data, plus `lerni student`, `lerni logs`, and `lerni feedback`.
@@ -18,8 +18,8 @@ It assumes one household, a few students, one map per student. Students use an i
 ```mermaid
 flowchart LR
     student([Supervised student]) -- "types" --> ipad["iPad<br/>the conversation"]
-    indep([Independent student]) -- "types, goals" --> idev["Own device<br/>Ask, My map, My account"]
-    educator([Educator]) -- "accounts, goals, feedback" --> edev["Phone or laptop<br/>Ask, Maps, Students"]
+    indep([Independent student]) -- "types, goals" --> idev["Own device<br/>Ask, My MentalMap, My account"]
+    educator([Educator]) -- "accounts, goals, feedback" --> edev["Phone or laptop<br/>Ask, MentalMaps, Students"]
     subgraph home[Home network only]
         ipad -- "HTTP, sign-in" --> server["Home server<br/>always-on Mac"]
         idev -- "HTTP, sign-in" --> server
@@ -41,7 +41,7 @@ flowchart LR
     claude -- "4 answer" --> screen
     convo -. "5 the exchange" .-> tagger["Claude: tagger<br/>(small, background)"]
     tagger -. "6 interests, links, bridge" .-> check["Server checks"] --> maps
-    edev["Maps chat"] -- "ticked proposals" --> maps
+    edev["MentalMaps chat"] -- "ticked proposals" --> maps
 ```
 
 1. The student sends a question.
@@ -99,7 +99,7 @@ If a change would break one of these, stop and ask.
 Every code file, one line each: [code manifest](code-manifest.md).
 
 - `src/lerni/student/`: `students.py` (accounts and passwords), `signin.py` (the signed cookie, who's signed in), `jsonfiles.py` (atomic JSON writes), `conversation.py` (the prompt, in-memory conversations), `personas/` (one starting persona per kind of student), `interests.py` (the map, its rules, and its store), `tagging.py` (the tagger and the map keeper), `logs.py` (7-day conversation logs), `educator_agent.py` (the educator agent), `upload.py` (reading notes, checking and adding proposals), `feedback.py` (educator feedback, summarized, never acted on), `adapters/claude_code.py` (Claude through the Claude Code CLI, including the tagger; prototype).
-- `src/lerni/student/web/`: the Gradio screens: `signin_page.py`, `main.py` (a ☰ menu of sections by role), `ask.py`, `maps.py` (My map), `educator.py` (Maps), `mapdraw.py` (the inline SVG picture and the list), `accounts.py`.
+- `src/lerni/student/web/`: the Gradio screens: `signin_page.py`, `main.py` (a ☰ menu of sections by role), `ask.py`, `maps.py` (My MentalMap), `educator.py` (MentalMaps), `mapdraw.py` (the inline SVG picture and the list), `accounts.py`.
 - `src/lerni/cli.py`, `commands/`, `db.py`, `sm2.py`: the admin tool, plus `commands/student.py`, `commands/logs.py`, and `commands/feedback.py` for the student app.
 - `tests/`: pytest, fakes only. `plans/`: build plans and specs.
 

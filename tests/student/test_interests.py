@@ -11,11 +11,16 @@ from lerni.student.interests import (
     MapError,
     MapStore,
     add_goal,
+    add_interest,
     apply_tags,
+    delete_for_good,
+    details,
     map_block,
     parse_tags,
+    put_back,
     remove,
     rename,
+    strength,
 )
 
 
@@ -97,3 +102,78 @@ def test_names_must_be_whole_words_the_student_said_and_bounces_hit_the_latest_b
     apply_tags(m, parse_tags({"bridge": {"interest": "pizza", "goal": "Maps"}}), "x", TODAY)
     apply_tags(m, parse_tags({"changed_subject": True}), "dinosaurs!", TODAY)
     assert maps_goal.bounces == ["2026-10-10"] and fractions.bounces == []
+
+
+def test_put_back_restores_a_removed_goal_and_old_files_still_load(tmp_path):
+    m = InterestMap()
+    goal = add_goal(m, "Fractions", "through baking")
+    goal.bounces = [TODAY.isoformat()]
+    remove(m, goal.id)
+    back = put_back(m, "fractions")
+    assert (back.kind, back.notes) == ("goal", "through baking") and m.removed == []
+    assert back.bounces == [TODAY.isoformat()]  # regression: a resting goal stays resting
+    old = tmp_path / "maps"
+    old.mkdir()
+    (old / "sam.json").write_text('{"schema": 1, "entries": [], "links": [], '
+                                  '"removed": ["sharks"], "edits": 1, "next_id": 2}')
+    assert put_back(MapStore(tmp_path).get("sam"), "sharks").kind == "interest"
+
+
+def test_renaming_onto_a_removed_name_takes_it_off_removed():
+    m = InterestMap()
+    remove(m, add_goal(m, "Sharks").id)
+    rename(m, add_goal(m, "Fish").id, "sharks")
+    assert m.removed == []  # or Lerni would steer away from what's on the map
+
+
+def test_strength_and_details():
+    m = InterestMap()
+    apply_tags(m, parse_tags({"new_interests": ["trains"]}), "trains", TODAY)
+    trains = m.find("trains")
+    assert strength(trains, TODAY) == "faint"
+    trains.days = ["2026-09-20", "2026-09-25", "2026-10-01", TODAY.isoformat()]
+    goal = add_goal(m, "Fractions")
+    assert strength(trains, TODAY) == "strong" and strength(goal, TODAY) == "not yet"
+    bridge = {"interest": "trains", "goal": "Fractions"}
+    apply_tags(m, parse_tags({"about": ["trains"], "bridge": bridge}), "trains", TODAY)
+    d = details(m, goal.id, TODAY)
+    assert d.bridges == [(trains.id, "trains")] and d.strength == "not yet"
+
+
+def test_a_removed_interest_is_steered_away_from_and_a_removed_goal_is_not():
+    m = InterestMap()
+    remove(m, add_interest(m, "sharks").id)
+    remove(m, add_goal(m, "Fractions").id)
+    block = map_block(m, TODAY)
+    assert "Set aside" in block and "sharks" in block and "Fractions" not in block
+
+
+def test_put_back_keeps_the_days_and_links_a_mis_tap_would_lose():
+    m = InterestMap()
+    goal = add_goal(m, "Fractions")
+    bridge = {"interest": "baking", "goal": "Fractions"}
+    apply_tags(m, parse_tags({"new_interests": ["baking"], "bridge": bridge}), "baking", TODAY)
+    remove(m, m.find("baking").id)
+    back = put_back(m, "baking")
+    assert back.days == [TODAY.isoformat()]
+    assert details(m, goal.id, TODAY).bridges == [(back.id, "baking")]
+
+
+def test_the_set_aside_line_survives_a_full_prompt_block():
+    # regression: long goal notes pushed it past the 1,500-character cut
+    m = InterestMap()
+    for i in range(8):
+        add_goal(m, f"Goal number {i}", "x" * 190)
+    remove(m, add_interest(m, "sharks").id)
+    assert "Set aside by a person: sharks" in map_block(m, TODAY)
+
+
+def test_delete_for_good_keeps_only_the_name_and_kind():
+    m = InterestMap()
+    goal = add_goal(m, "Fractions", "through baking")
+    goal.days = [TODAY.isoformat()]
+    remove(m, goal.id)
+    delete_for_good(m, "fractions")
+    assert m.removed == ["Fractions"] and m.removed_info == {"fractions": {"kind": "goal"}}
+    back = put_back(m, "Fractions")
+    assert (back.kind, back.notes, back.days) == ("goal", "", [])

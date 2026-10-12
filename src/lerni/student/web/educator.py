@@ -1,4 +1,4 @@
-"""Maps for educators: one student's map above, a chat with the educator agent below.
+"""MentalMaps for educators: a student's picture and list, then a chat with the educator agent.
 
 :func:`educator_send` and :func:`educator_add` are plain functions over the
 server-resolved viewer, so the role checks can be tested without a browser;
@@ -22,8 +22,9 @@ from lerni.student.signin import SignIn, Viewer
 from lerni.student.students import StudentStore
 from lerni.student.upload import UploadError, extract_upload
 from lerni.student.web.accounts import PRIVATE, NotAllowed, require_educator
-from lerni.student.web.mapdraw import map_svg, map_words
+from lerni.student.web.mapdraw import map_svg
 from lerni.student.web.maps import REFRESH_SECONDS, map_owner, save_feedback
+from lerni.student.web.mentallist import bump, mental_list
 
 NOTES_MARK = "\n\nAttached notes"  # where a message's attached notes begin
 EMPTY = "Tell me what you'd like for this student, or attach notes with 📎."
@@ -110,12 +111,14 @@ def educator_tab(
     chats: EducatorChats | None,
     feedback: FeedbackStore | None,
 ) -> tuple[gr.Tab, gr.Dropdown]:
-    """Maps: pick a supervised student, see their map, and plan it by talking."""
-    with gr.Tab("Maps", id="maps", visible=False) as tab:
+    """MentalMaps: pick a supervised student, see and edit their list, and plan it by talking."""
+    with gr.Tab("MentalMaps", id="maps", visible=False) as tab:
         who = gr.Dropdown(label="Student", choices=[], value=None)  # filled on load
         # a strip on a phone; a tap opens the whole picture (nav.js)
         picture = gr.HTML(elem_classes="lerni-map-strip")
-        words = gr.Markdown()
+        list_owner, version = gr.State(""), gr.State(0)  # set only after map_owner's check
+        # edits go to the student the list shows, never a newer dropdown pick
+        mental_list(signin, students, maps, list_owner, list_owner, version, "Pick a student.")
         chat = gr.Chatbot(
             show_label=False,
             placeholder=EMPTY,
@@ -125,7 +128,7 @@ def educator_tab(
             height=360,
         )
         ticks = gr.CheckboxGroup(label="Tick what to add", choices=[], visible=False)
-        add = gr.Button("Add to map", variant="primary", visible=False)
+        add = gr.Button("Add to MentalMap", variant="primary", visible=False)
         status = gr.Markdown()
         with gr.Row(elem_classes="lerni-type"):
             text = gr.Textbox(
@@ -151,16 +154,22 @@ def educator_tab(
         held_file = gr.State(None)  # an attached file's temp path, until it's sent
         owner_state = gr.State("")  # whose map the shown proposals are for
 
-        def draw(requested: str | None, request: gr.Request) -> list[Any]:
+        def draw(requested: str | None, request: gr.Request) -> str:
             viewer = signin.viewer(request.username)  # re-read on every request
             try:
                 m = maps.get(map_owner(students, viewer, requested or ""))
             except NotAllowed:
-                return ["", ""]
-            return [map_svg(m, date.today()), map_words(m, date.today())]
+                return ""
+            return map_svg(m, date.today())
+
+        def checked_owner(requested: str | None, request: gr.Request) -> str:
+            try:  # whose list to draw: only after the check
+                return map_owner(students, signin.viewer(request.username), requested or "")
+            except NotAllowed:
+                return ""
 
         def on_pick(
-            requested: str | None, previous: str, path: str | None, request: gr.Request
+            requested: str | None, previous: str, path: str | None, v: int, request: gr.Request
         ) -> list[Any]:
             viewer = signin.viewer(request.username)
             if chats is not None and viewer is not None and previous:
@@ -168,7 +177,8 @@ def educator_tab(
             if path:
                 Path(path).unlink(missing_ok=True)  # notes attached for the last student
             hidden = gr.update(choices=[], value=[], visible=False)
-            return [*draw(requested, request), [], hidden, gr.update(visible=False), "", "", None]
+            return [draw(requested, request), checked_owner(requested, request), bump(), [], hidden,
+                    gr.update(visible=False), "", "", None]
 
         def on_attach(path: str | None) -> list[Any]:
             return [path, f"📎 {Path(path).name}, sent with your next message" if path else ""]
@@ -230,17 +240,18 @@ def educator_tab(
                 None,
             ]
 
-        def on_add(picked: list[str], owner: str, request: gr.Request) -> list[Any]:
+        def on_add(picked: list[str], owner: str, v: int, request: gr.Request) -> list[Any]:
             viewer = signin.viewer(request.username)
             if chats is None or not owner:
-                return ["", gr.update(), gr.update(), *draw(owner, request)]
+                return ["", gr.update(), gr.update(), draw(owner, request), v]
             message = educator_add(chats, maps, feedback, students, viewer, owner, picked or [])
             left = [p.label for p in chats.proposals(viewer.username, owner)] if viewer else []
             return [
                 message,
                 gr.update(choices=left, value=[], visible=bool(left)),
                 gr.update(visible=bool(left)),
-                *draw(owner, request),
+                draw(owner, request),
+                bump(),  # the list shows what was added
             ]
 
         sending = gr.on(
@@ -253,13 +264,16 @@ def educator_tab(
         # a new student stops a reply still coming for the last one, and drops its notes
         who.change(
             on_pick,
-            [who, owner_state, held_file],
-            [picture, words, chat, ticks, add, status, owner_state, held_file],
+            [who, owner_state, held_file, version],
+            [picture, list_owner, version, chat, ticks, add, status, owner_state, held_file],
             cancels=[sending],
             **PRIVATE,
         )
         attach.upload(on_attach, attach, [held_file, status], **PRIVATE)
-        add.click(on_add, [ticks, owner_state], [status, ticks, add, picture, words], **PRIVATE)
-        tab.select(draw, who, [picture, words], **PRIVATE)  # redraw on opening
-        gr.Timer(REFRESH_SECONDS).tick(draw, who, [picture, words], **PRIVATE)
+        add.click(on_add, [ticks, owner_state, version], [status, ticks, add, picture, version],
+                  **PRIVATE)
+        tab.select(draw, who, picture, **PRIVATE)  # redraw on opening
+        version.change(draw, who, picture, **PRIVATE)  # a list edit redraws it
+        # the picture only: redrawing the list would wipe a half-typed rename
+        gr.Timer(REFRESH_SECONDS).tick(draw, who, picture, **PRIVATE)
     return tab, who
