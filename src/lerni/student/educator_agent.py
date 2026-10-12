@@ -84,7 +84,8 @@ def educator_map_text(m: InterestMap) -> str:
     lines = [MAP_HEADER]
     lines += [f"They love: {', '.join(loves)}"] if loves else []
     lines += ["Goals:", *(f"- {g}" for g in goals)] if goals else []
-    lines += [f"Removed (don't propose again): {', '.join(m.removed)}"] if m.removed else []
+    gone = m.removed[-20:]  # the latest, so the prompt doesn't grow with history
+    lines += [f"Removed (don't propose again): {', '.join(gone)}"] if gone else []
     return "\n".join(lines)
 
 

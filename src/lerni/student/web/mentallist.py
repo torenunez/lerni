@@ -8,6 +8,7 @@ so whose map it shows comes from a server-side State that only checked handlers 
 
 from __future__ import annotations
 
+import time
 from datetime import date
 from typing import Any
 
@@ -80,6 +81,11 @@ def save_notes(maps, students, viewer, requested, entry_id: str, notes: str) -> 
     )
 
 
+def bump() -> int:
+    """A new list version: always different, so two quick edits both redraw."""
+    return time.monotonic_ns()
+
+
 def _plural(n: int, word: str) -> str:
     return f"{n} {word}{'s' * (n != 1)}"
 
@@ -91,14 +97,16 @@ def mental_list(
     owner: gr.State,
     requested: Any,
     version: gr.State,
+    empty: str = "",
 ) -> None:
     """The add form, then 🎯 Goals and 💚 Interests as rows to open, rename, or remove.
 
     Args:
         owner: Whose map to draw, set only by checked handlers ("" for none yet).
         requested: What edits ask :func:`map_owner` for: a ``gr.State(None)`` for
-            My MentalMap, or the student dropdown on MentalMaps.
+            My MentalMap, or on MentalMaps the same server-side owner the list shows.
         version: Bumped by every change, so the list redraws.
+        empty: What shows before there's a map to draw.
     """
     opened = gr.State(None)  # the open item's id
     with gr.Row(elem_classes="lerni-add"):
@@ -115,12 +123,13 @@ def mental_list(
         return action(maps, students, signin.viewer(request.username), req, *args)
 
     def done(message: str, v: int) -> list[Any]:
-        return [message, v + message.startswith("✅")]
+        return [message, bump() if message.startswith("✅") else v]
 
     def on_add(k: str, n: str, t: str, req: Any, v: int, request: gr.Request) -> list[Any]:
         message = run(add_item, req, k, n, t, request=request)
         return [message, *cleared(2, message.startswith("✅")), done(message, v)[1]]
 
+    owner.change(lambda: None, None, opened, **PRIVATE)  # a new map opens with nothing open
     add.click(
         on_add, [kind, name, notes, requested, version], [status, name, notes, version], **PRIVATE
     )
@@ -162,7 +171,7 @@ def mental_list(
     @gr.render(inputs=[owner, version, opened])
     def draw(who: str, _v: int, open_id: str | None) -> None:
         if not who:
-            gr.Markdown("Pick a student.")
+            gr.Markdown(empty)
             return
         m, today = maps.get(who), date.today()
         for title, kind_ in (("🎯 Goals", "goal"), ("💚 Interests", "interest")):

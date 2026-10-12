@@ -233,7 +233,8 @@ def remove(m: InterestMap, entry_id: str) -> None:
     # what Put back restores: its kind, notes, history, and links
     m.removed_info[entry.name.casefold()] = {
         "kind": entry.kind, "notes": entry.notes, "id": entry.id, "days": entry.days,
-        "mentions": entry.mentions, "explained": entry.explained, "links": links,
+        "mentions": entry.mentions, "explained": entry.explained, "bounces": entry.bounces,
+        "links": links,
     }
     m.edits += 1
 
@@ -253,7 +254,7 @@ def put_back(m: InterestMap, name: str) -> Entry:
     else:
         entry = add_interest(m, found)
     entry.days, entry.explained = list(info.get("days", [])), list(info.get("explained", []))
-    entry.mentions = int(info.get("mentions", 0))
+    entry.mentions, entry.bounces = int(info.get("mentions", 0)), list(info.get("bounces", []))
     ids, old = {e.id for e in m.entries}, info.get("id")
     for k in info.get("links", []):  # links whose other end is still on the map
         a, b = (entry.id if x == old else x for x in (k["a"], k["b"]))
@@ -494,6 +495,10 @@ def map_block(m: InterestMap, today: date) -> str:
     steer = sorted((g for g in goals if not backed_off(g, today)), key=lambda g: covered[g.id])[:8]
     revisit = [g for g in goals if g.explained and faded(g, today)]
     lines = [MAP_HEADER]
+    avoid = [r for r in m.removed  # removed interests (older removals count as interests)
+             if m.removed_info.get(r.casefold(), {}).get("kind", "interest") == "interest"][-8:]
+    if avoid:  # first, so the 1,500-character cut never drops it
+        lines.append(STEER_AWAY + ", ".join(avoid))
     if interests:
         lines.append("They love: " + ", ".join(e.name for e in interests))
     if steer:
@@ -504,10 +509,6 @@ def map_block(m: InterestMap, today: date) -> str:
             "Explained a while ago; ask a light question first: "
             + ", ".join(g.name for g in revisit)
         )
-    avoid = [r for r in m.removed  # removed interests (older removals count as interests)
-             if m.removed_info.get(r.casefold(), {}).get("kind", "interest") == "interest"][-8:]
-    if avoid:
-        lines.append(STEER_AWAY + ", ".join(avoid))
     recent = bridges[-3:]  # links are in order of recency
     if recent:
         lines.append("Recent bridges: " + "; ".join(f"{names[k.a]} → {names[k.b]}" for k in recent))

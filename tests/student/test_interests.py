@@ -106,9 +106,11 @@ def test_names_must_be_whole_words_the_student_said_and_bounces_hit_the_latest_b
 def test_put_back_restores_a_removed_goal_and_old_files_still_load(tmp_path):
     m = InterestMap()
     goal = add_goal(m, "Fractions", "through baking")
+    goal.bounces = [TODAY.isoformat()]
     remove(m, goal.id)
     back = put_back(m, "fractions")
     assert (back.kind, back.notes) == ("goal", "through baking") and m.removed == []
+    assert back.bounces == [TODAY.isoformat()]  # regression: a resting goal stays resting
     old = tmp_path / "maps"
     old.mkdir()
     (old / "sam.json").write_text('{"schema": 1, "entries": [], "links": [], '
@@ -154,3 +156,12 @@ def test_put_back_keeps_the_days_and_links_a_mis_tap_would_lose():
     back = put_back(m, "baking")
     assert back.days == [TODAY.isoformat()]
     assert details(m, goal.id, TODAY).bridges == [(back.id, "baking")]
+
+
+def test_the_set_aside_line_survives_a_full_prompt_block():
+    # regression: long goal notes pushed it past the 1,500-character cut
+    m = InterestMap()
+    for i in range(8):
+        add_goal(m, f"Goal number {i}", "x" * 190)
+    remove(m, add_interest(m, "sharks").id)
+    assert "Set aside by a person: sharks" in map_block(m, TODAY)

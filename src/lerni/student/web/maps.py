@@ -157,7 +157,7 @@ def map_tab(
     Returns:
         The tab, its picture, whose map the list shows, and the list's version.
     """
-    from lerni.student.web.mentallist import mental_list  # it uses this module's checks
+    from lerni.student.web.mentallist import bump, mental_list  # it uses this module's checks
 
     with gr.Tab("My MentalMap", id="mymap", visible=False) as tab:
         picture = gr.HTML()
@@ -181,7 +181,7 @@ def map_tab(
                 who = map_owner(students, viewer, None)
             except NotAllowed:
                 return ["", "", v]
-            return [map_svg(maps.get(who), date.today()), who, v + 1]
+            return [map_svg(maps.get(who), date.today()), who, bump()]
 
         def on_propose(t: str, path: str | None, request: gr.Request) -> list[Any]:
             viewer = signin.viewer(request.username)

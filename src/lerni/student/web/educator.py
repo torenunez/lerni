@@ -24,7 +24,7 @@ from lerni.student.upload import UploadError, extract_upload
 from lerni.student.web.accounts import PRIVATE, NotAllowed, require_educator
 from lerni.student.web.mapdraw import map_svg
 from lerni.student.web.maps import REFRESH_SECONDS, map_owner, save_feedback
-from lerni.student.web.mentallist import mental_list
+from lerni.student.web.mentallist import bump, mental_list
 
 NOTES_MARK = "\n\nAttached notes"  # where a message's attached notes begin
 EMPTY = "Tell me what you'd like for this student, or attach notes with 📎."
@@ -117,7 +117,8 @@ def educator_tab(
         # a strip on a phone; a tap opens the whole picture (nav.js)
         picture = gr.HTML(elem_classes="lerni-map-strip")
         list_owner, version = gr.State(""), gr.State(0)  # set only after map_owner's check
-        mental_list(signin, students, maps, list_owner, who, version)
+        # edits go to the student the list shows, never a newer dropdown pick
+        mental_list(signin, students, maps, list_owner, list_owner, version, "Pick a student.")
         chat = gr.Chatbot(
             show_label=False,
             placeholder=EMPTY,
@@ -176,7 +177,7 @@ def educator_tab(
             if path:
                 Path(path).unlink(missing_ok=True)  # notes attached for the last student
             hidden = gr.update(choices=[], value=[], visible=False)
-            return [draw(requested, request), checked_owner(requested, request), v + 1, [], hidden,
+            return [draw(requested, request), checked_owner(requested, request), bump(), [], hidden,
                     gr.update(visible=False), "", "", None]
 
         def on_attach(path: str | None) -> list[Any]:
@@ -250,7 +251,7 @@ def educator_tab(
                 gr.update(choices=left, value=[], visible=bool(left)),
                 gr.update(visible=bool(left)),
                 draw(owner, request),
-                v + 1,  # the list shows what was added
+                bump(),  # the list shows what was added
             ]
 
         sending = gr.on(
