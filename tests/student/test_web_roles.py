@@ -209,7 +209,7 @@ def test_uploads_over_5_mb_are_refused_and_leftovers_expire(tmp_path):
 
 
 def test_a_supervised_student_signs_in_to_the_conversation(tmp_path):
-    # the page has two chats (Ask and the supervised screen); only Home is a supervised tab
+    # the page has three chats (Ask, the supervised screen, Maps); only Home is a supervised tab
     StudentStore(tmp_path).add("lee", "Lee", Kind.SUPERVISED, "1234")
     client = TestClient(build_app(data_root=tmp_path))
     client.post("/signin", data={"username": "lee", "password": "1234"})
@@ -217,7 +217,7 @@ def test_a_supervised_student_signs_in_to_the_conversation(tmp_path):
     labels = [c["props"].get("label") for c in config["components"] if c.get("type") == "tabitem"]
     assert "Lerni" in labels
     chats = [c for c in config["components"] if c.get("type") == "chatbot"]
-    assert len(chats) == 2
+    assert len(chats) == 3
     assert "Get ready to explore" not in client.get("/app/config").text  # no waiting screen
 
 
@@ -268,3 +268,47 @@ def test_a_typed_question_is_answered_aloud_when_voice_is_on():
     assert speech.spoken == ["Fish.", "Seals too."] and sum(1 for _, a in out if a) == 2
     silent = list(typed_reply(Conversations(Model()), None, lee, "And whales?"))
     assert "".join(t for t, _ in silent) == "Fish. Seals too." and not any(a for _, a in silent)
+
+
+def test_educator_chat_is_for_educators_and_applies_only_ticked_items(tmp_path):
+    from lerni.student.educator_agent import EducatorChats
+    from lerni.student.feedback import FeedbackStore
+    from lerni.student.interests import MapStore
+    from lerni.student.web.educator import educator_add, educator_send
+
+    class Model:
+        def stream(self, system, turns):
+            yield ('Ideas.\n```proposals\n{"proposals": ['
+                   '{"kind": "goal", "name": "fractions"},'
+                   '{"kind": "interest", "name": "baking"},'
+                   '{"kind": "feedback", "notes": "bigger buttons"}]}\n```')
+
+    students, maps, store = StudentStore(tmp_path), MapStore(tmp_path), FeedbackStore(tmp_path)
+    students.add("lee", "Lee", Kind.SUPERVISED, "1234")
+    students.add("kim", "Kim", Kind.SUPERVISED, "1234")
+    chats = EducatorChats(Model(), maps)
+    with pytest.raises(NotAllowed):
+        list(educator_send(chats, students, SAM, "lee", "hi"))  # not an educator
+    shown = "".join(educator_send(chats, students, EDUCATOR, "lee", "fractions please"))
+    assert shown.strip() == "Ideas."
+    labels = [p.label for p in chats.proposals("alba", "lee")]
+    assert educator_add(chats, maps, store, students, SAM, "lee", labels).startswith("⚠️")
+    # the student picked meanwhile doesn't matter: the held owner is used
+    msg = educator_add(chats, maps, store, students, EDUCATOR, "lee", [labels[0], labels[2]])
+    assert msg.startswith("✅")
+    assert maps.get("lee").find("fractions") and not maps.get("lee").find("baking")
+    assert maps.get("kim").find("fractions") is None
+    assert [(f.text, f.map) for f in store.entries()] == [("bigger buttons", "lee")]
+
+
+def test_a_pdf_in_the_educator_chat_gets_a_friendly_message(tmp_path):
+    from lerni.student.educator_agent import EducatorChats
+    from lerni.student.interests import MapStore
+    from lerni.student.upload import UploadError
+    from lerni.student.web.educator import educator_send
+
+    students = StudentStore(tmp_path)
+    students.add("lee", "Lee", Kind.SUPERVISED, "1234")
+    chats = EducatorChats(object(), MapStore(tmp_path))  # never called
+    with pytest.raises(UploadError, match="PDF"):
+        list(educator_send(chats, students, EDUCATOR, "lee", "", "notes.pdf", b"%PDF-1.4"))

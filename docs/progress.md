@@ -6,7 +6,7 @@ Record each kind of "done" only when it actually happens, with the date: code bu
 
 ## Current state (2026-10-11, v2.9: Versions 1 and 2 built and on the home server: the conversation, the map, HTTPS, and voice)
 
-- **Built:** the student app's core (student accounts, sign-in, Ask Lerni's conversations, the interest map with its tagger and 7-day logs, and Upload and educator feedback); `lerni serve` with a sign-in page and one app with tabs by role: an independent student's Ask (one ongoing text conversation with Claude, phone first), My map (with Upload), and My account; an educator's Maps (with Upload and Feedback) and Students on top; a supervised student's conversation, full screen, in the supervised voice. The admin tool (`lerni`, with `lerni student`, `lerni logs`, and `lerni feedback`). Hold to talk on both conversation screens, with spoken answers. A [code manifest](code-manifest.md) of every file. Tests: 85 passed.
+- **Built:** the student app's core (student accounts, sign-in, Ask Lerni's conversations, the interest map with its tagger and 7-day logs, and Upload and educator feedback); `lerni serve` with a sign-in page and one app with tabs by role: an independent student's Ask (one ongoing text conversation with Claude, phone first), My map (with Upload), and My account; an educator's Maps (with Upload and Feedback) and Students on top; a supervised student's conversation, full screen, in the supervised voice. The admin tool (`lerni`, with `lerni student`, `lerni logs`, and `lerni feedback`). Hold to talk on both conversation screens, with spoken answers. A [code manifest](code-manifest.md) of every file. Tests: 93 passed.
 - **Designed:** the interest map, goals, the tagger, upload, feedback, and the supervised conversation ([specs/04-interest-map.md](../plans/specs/04-interest-map.md)); approved with PR #12.
 - **Not yet:** any supervised student session.
 
@@ -14,7 +14,9 @@ When something changes, update this section and add a log entry below.
 
 ## Log
 
-### 2026-10-11 (version numbers; voice shipped; v2.9–v2.13)
+### 2026-10-11 (version numbers; voice shipped; v2.9–v2.14)
+
+- v2.14: on Maps, one chat with an educator agent replaces the four panels (designed in [spec 06](../plans/specs/06-educator-chat.md)). It proposes goals, interests, new notes, removals, and feedback for the admin as a tick list; only ticked items change the map or reach the admin. Checked at phone size: a goal and a feedback item proposed from one message, the goal ticked and added, the feedback unticked and not saved. Found and fixed: the agent first saw only Lerni's map block, which leaves out interests not talked about yet. Evals: 3 of 3 pass. Tests: 93 passed.
 
 - v2.13: a menu replaces the tab bar, which overflowed on a phone for an educator (five tabs). The header is ☰ and the open section's name; the menu holds who's signed in, their sections (the open one highlighted), and Sign out. Chosen by the admin from three options (a bottom bar, the menu, an icon bar). A supervised student's menu holds only their name and Sign out.
 

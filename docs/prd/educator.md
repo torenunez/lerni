@@ -32,7 +32,7 @@ Settings never change on their own, and each takes effect at once. The starting 
 
 ## Constraints
 
-- The educator uses only the app: everything they need is on the Maps tab. No git, no files, no code, no IDs.
+- The educator uses only the app: everything they need is in the app (Maps and Students). No git, no files, no code, no IDs.
 - No educator screen shows an independent student's map. That is privacy by default, not a protection: the educator is trusted with account recovery, and a password reset lets them sign in as that student (who notices, because their password stops working).
 - An adult (the educator or admin) is near a supervised student whenever they use Lerni, and can press Stop or take the iPad at any moment. That's a household rule, not something the app enforces.
 - Before first use, the educator agrees to which outside services receive the student's data, and can withdraw that at any time.
@@ -55,9 +55,8 @@ As an educator, I want to add and manage the students who use the app, so that e
 
 As an educator, I want to add what I'd like the student to explore, so that Lerni bridges toward it from what they love.
 
-- WHEN the educator adds a goal (a name and optional notes) THE SYSTEM SHALL save it on that student's map and include it, with its notes, in the next conversation.
-- WHEN the educator renames or removes an entry (an interest or a goal) THE SYSTEM SHALL change the map at once; the agent stops steering toward a removed entry, and Lerni never adds it back on its own.
-- WHEN the educator uploads notes (pasted, or a .txt, .md, .docx, or .pdf) THE SYSTEM SHALL ask Claude to propose interests (to seed the map) and goals, each labeled, and save only the ones the educator ticks.
+- WHEN the educator tells the educator agent on Maps what they'd like for a supervised student (in words, or with notes attached as .txt, .md, or .docx) THE SYSTEM SHALL propose changes, each labeled (a goal with notes for Lerni, an interest, new notes for a goal, or removing an entry), and change that student's map only with the ones the educator ticks.
+- WHEN the educator removes an entry THE SYSTEM SHALL change the map at once; the agent stops steering toward a removed entry, and Lerni never adds it back on its own.
 
 ### Story: See the map
 
@@ -69,14 +68,14 @@ As an educator, I want to see a supervised student's map, so that I know what th
 
 As an educator, I want to tell the admin what to change in plain words, so that the app improves without me learning anything technical.
 
-- WHEN the educator writes feedback THE SYSTEM SHALL reply with a short summary of what it understood (and at most one clarifying question), and save it when the educator presses Save feedback.
+- WHEN the educator mentions something about the app in the Maps chat THE SYSTEM SHALL propose it as a feedback item, and save it for the admin only when the educator ticks it.
 - WHEN feedback is saved THE SYSTEM SHALL never act on it: no change to the map, the goals, or the app. The admin reads it in the terminal and makes changes by hand.
 
 ### What to watch for in the first sessions
 
 - The student uses the iPad with you beside them. Offer it in one sentence; they may say no or stop at any time.
 - Plan on 5–10 minutes. Finishing is not the goal.
-- Afterward, keep brief private notes, or write them in Feedback: what caught their interest, what confused them, what to change. Keep what happened separate from what you think it means.
+- Afterward, keep brief private notes, or tell the Maps chat (it goes to the admin): what caught their interest, what confused them, what to change. Keep what happened separate from what you think it means.
 
 | Watch for | It shapes |
 |---|---|
@@ -144,6 +143,7 @@ Running the admin tool. Editing app code or files directly.
 - 2026-10-09: In Version 1 the educator approves library cards in the app; the supervised student's first activity is the cars example's car card. Packaged activity files aren't played or approved in the app. (Replaced 2026-10-09 by the interest map.)
 - 2026-10-09: Educator is a permission on a person's independent account, not a shared `educator` sign-in, so the educator signs in once for both learning and planning. The educator passcode is gone; the admin creates the first educator account from the terminal. (Replaces the earlier 2026-10-09 decision about signing in as `educator`.)
 - 2026-10-09: The educator no longer writes plans, cards, or approvals. They choose goals (a name and optional notes, or uploaded notes Claude turns into proposed interests and goals), watch each supervised student's interest map, and give free-text feedback that the agent summarizes for the admin and never acts on. Only educators see a supervised student's map. (Replaces planning, approvals, Sessions, and the allowlist from the earlier decisions.)
+- 2026-10-11: On Maps, one chat with an educator agent replaces Add a goal, Rename or remove, Upload notes, and Feedback; it proposes, and only ticked items change a map or reach the admin (v2.14, [spec 06](../../plans/specs/06-educator-chat.md)). My map keeps its panels for now.
 
 ## Open questions
 

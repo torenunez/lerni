@@ -202,6 +202,20 @@ def rename(m: InterestMap, entry_id: str, name: str) -> Entry:
     return entry
 
 
+def set_notes(m: InterestMap, entry_id: str, notes: str) -> Entry:
+    """A person rewrites a goal's notes for Lerni.
+
+    Raises:
+        MapError: Unknown entry, not a goal, or notes too long.
+    """
+    entry = m.get(entry_id)
+    if entry.kind != "goal":
+        raise MapError("Only goals have notes.")
+    entry.notes = _check_notes(notes)
+    m.edits += 1
+    return entry
+
+
 def remove(m: InterestMap, entry_id: str) -> None:
     """A person removes an entry for good: only its name is kept, so it's never re-added.
 
@@ -222,8 +236,13 @@ def _to_dict(m: InterestMap) -> dict[str, Any]:
 def _from_dict(data: dict[str, Any]) -> InterestMap:
     entries = [Entry(**e) for e in data.get("entries", [])]
     links = [Link(**k) for k in data.get("links", [])]
-    return InterestMap(entries, links, list(data.get("removed", [])),
-                       int(data.get("edits", 0)), int(data.get("next_id", 1)))
+    return InterestMap(
+        entries,
+        links,
+        list(data.get("removed", [])),
+        int(data.get("edits", 0)),
+        int(data.get("next_id", 1)),
+    )
 
 
 class MapStore:
@@ -285,7 +304,8 @@ def parse_tags(data: Any) -> Tags:
     if not isinstance(data, dict):
         return Tags()
     related = tuple(
-        (p[0], p[1]) for p in data.get("related") or []
+        (p[0], p[1])
+        for p in data.get("related") or []
         if isinstance(p, list) and len(p) == 2 and all(isinstance(x, str) for x in p)
     )[:3]
     bridge = data.get("bridge")
@@ -384,7 +404,8 @@ def map_block(m: InterestMap, today: date) -> str:
     bridges = [k for k in m.links if k.kind == "bridge"]
     interests = sorted(
         (e for e in m.entries if e.kind == "interest" and e.days and not faded(e, today)),
-        key=lambda e: (len(e.days), e.days[-1]), reverse=True,  # most days, then most recent
+        key=lambda e: (len(e.days), e.days[-1]),
+        reverse=True,  # most days, then most recent
     )[:5]
     goals = [e for e in m.entries if e.kind == "goal"]
     covered = {g.id: sum(k.b == g.id for k in bridges) + len(g.explained) for g in goals}
@@ -397,8 +418,10 @@ def map_block(m: InterestMap, today: date) -> str:
         lines.append("Goals to bridge toward, one at a time:")
         lines += [f"- {g.name}" + (f" ({g.notes})" if g.notes else "") for g in steer]
     if revisit:
-        lines.append("Explained a while ago; ask a light question first: "
-                     + ", ".join(g.name for g in revisit))
+        lines.append(
+            "Explained a while ago; ask a light question first: "
+            + ", ".join(g.name for g in revisit)
+        )
     recent = bridges[-3:]  # links are in order of recency
     if recent:
         lines.append("Recent bridges: " + "; ".join(f"{names[k.a]} → {names[k.b]}" for k in recent))

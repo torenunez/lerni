@@ -6,7 +6,7 @@ Open tasks by who does the work. The educator and admin tracks run in parallel: 
 
 ### Now: Version 1 MVP
 
-- [ ] Think of 2–3 things you'd like the supervised student to explore (with a note each on what you have in mind). You'll add them on the Maps tab, or upload your notes.
+- [ ] Think of 2–3 things you'd like the supervised student to explore (with a note each on what you have in mind). Tell the chat on Maps (☰ → Maps) about them, or attach your notes with 📎, then tick what to add.
 
 ### Later: Version 1 MVP
 
@@ -21,8 +21,8 @@ Open tasks by who does the work. The educator and admin tracks run in parallel: 
 
 What ships next, in order, one PR each ([how versions work](roadmap.md#versions)):
 
-1. **v2.14: voice that can't speak says so:** if `say` returns empty audio, startup prints `Voice (hold to talk): off` with the reason, instead of sending silence.
-2. **v2.15: production keeps running on its own:** run production and development the same way, as macOS LaunchAgents in the desktop session (start at login, restart after a crash); check `say` works there first. Until then both run in Terminal windows, and production stops if that window or the Mac does.
+1. **v2.15: voice that can't speak says so:** if `say` returns empty audio, startup prints `Voice (hold to talk): off` with the reason, instead of sending silence.
+2. **v2.16: production keeps running on its own:** run production and development the same way, as macOS LaunchAgents in the desktop session (start at login, restart after a crash); check `say` works there first. Until then both run in Terminal windows, and production stops if that window or the Mac does.
 3. **Version 3, remembering:** not planned yet; its first PR writes the plan.
 
 How PRs are split:
@@ -57,6 +57,12 @@ Versions 1 and 2 now need sessions, not code: the educator sets goals, rehearses
 - [ ] Try the voice with the students before deciding whether a hosted voice (Inworld, about $18 a month) is worth it; a hosted service means student audio leaves the house, so it needs the educator's agreement first.
 - [ ] Before anyone outside the family uses the app: files in Gradio's cache (uploads, any voice audio) are reachable by URL to anyone signed in; serve them only to their owner, or keep none.
 - [ ] Before anyone outside the household uses the app: replace the Claude Code adapter with an API-key adapter (`env:ANTHROPIC_API_KEY`).
+
+### Educator chat: later
+
+- [ ] PDFs in the Maps chat (the chat's Claude call takes text only; Upload on My map still reads PDFs).
+- [ ] The same chat on My map, once educators have used it on Maps.
+- [ ] `feedback.summarize` is unused since v2.14 (the chat writes the note); remove it with its test, or use it for chat feedback.
 
 ### Later: Version 3 Remembering
 
