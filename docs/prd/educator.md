@@ -96,7 +96,7 @@ These notes are for the admin and educator, not the app; the in-app text stays s
 
 As an educator, I want to see and delete what the app remembers about a supervised student, so that I control what is kept.
 
-- WHEN the educator removes an entry THE SYSTEM SHALL delete it from Lerni's storage, keeping only its name so it isn't re-added; copies an outside service keeps follow that service's rules.
+- WHEN the educator removes an entry THE SYSTEM SHALL keep it in Removed with its history, so Put back is a true undo; WHEN they press Delete for good THE SYSTEM SHALL delete that history from Lerni's storage, keeping only its name and kind so it isn't re-added; copies an outside service keeps follow that service's rules.
 
 ## Settings (Versions 2, 3, and 5)
 

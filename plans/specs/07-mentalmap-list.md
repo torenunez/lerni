@@ -17,7 +17,7 @@ Approved in conversation on 2026-10-11 (approach A). Builds on the map from [spe
   - for a goal: its notes for Lerni, editable, with **Save**;
   - **Rename**;
   - its **bridges** (interest → goal) and **related** items, each a button that opens that item.
-- **Removed** (closed until tapped): each removed item with **Put back**.
+- **Removed** (closed until tapped): each removed item with **Put back**, and **Delete for good**, which erases its history and keeps only the name and kind (the educator PRD's deletion promise).
 
 It replaces My map's "Add a goal" and "Rename or remove" panels and the word list. Upload notes stays on My MentalMap. On **MentalMaps** the order is: the student picker, the picture strip, the list, then the chat.
 

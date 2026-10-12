@@ -86,7 +86,7 @@ As a student, I want what I talk about to be remembered as interests, so that th
 - WHEN a new conversation starts THE SYSTEM SHALL start from the map: their top interests and the goals.
 - WHEN an independent student opens My MentalMap THE SYSTEM SHALL show their MentalMap as a list of goals (things to practice) and interests they can add, rename, and remove, and Upload notes that Claude turns into proposed interests and goals, saving only the ones they tick.
 - WHEN they tap an item THE SYSTEM SHALL show its strength (strong, growing, faint, or not yet, from the days it came up in the last 30), the facts behind it, and its bridges and related items.
-- WHEN they remove an interest THE SYSTEM SHALL keep it in Removed, where Put back restores it with its history, and Lerni never brings it up; if they do, Lerni acknowledges it briefly and turns to something else they love.
+- WHEN they remove an interest THE SYSTEM SHALL keep it in Removed, where Put back restores it with its history (or Delete for good erases that history), and Lerni never brings it up; if they do, Lerni acknowledges it briefly and turns to something else they love.
 
 ## Version 2: talk with the app
 

@@ -21,6 +21,7 @@ from lerni.student.interests import (
     MapStore,
     add_goal,
     add_interest,
+    delete_for_good,
     details,
     put_back,
     remove,
@@ -60,6 +61,12 @@ def remove_item(maps, students, viewer, requested, entry_id: str) -> str:
 def put_back_item(maps, students, viewer, requested, name: str) -> str:
     """Put a removed item back."""
     return _act(maps, students, viewer, requested, lambda m: put_back(m, name or ""), "Put back.")
+
+
+def delete_item(maps, students, viewer, requested, name: str) -> str:
+    """Delete a removed item's history for good; its name stays so it's never re-added."""
+    return _act(maps, students, viewer, requested, lambda m: delete_for_good(m, name or ""),
+                "Deleted for good.")
 
 
 def rename_item(maps, students, viewer, requested, entry_id: str, name: str) -> str:
@@ -157,11 +164,19 @@ def mental_list(
 
             notes_btn.click(on_notes, [notes_box, requested, version], [status, version], **PRIVATE)
 
-    def back_button(gone: str) -> None:
-        """A removed item's row with Put back."""
+    def back_button(gone: str, has_history: bool) -> None:
+        """A removed item's row: Put back, and Delete for good while it keeps a history."""
         with gr.Row(elem_classes="lerni-item"):
             gr.Markdown(gone, key=f"gone-{gone}")
             back = gr.Button("Put back", size="sm", scale=0, min_width=90, key=f"back-{gone}")
+            if has_history:
+                wipe = gr.Button("Delete for good", size="sm", scale=0, min_width=90,
+                                 variant="stop", key=f"wipe-{gone}")
+
+                def on_wipe(req: Any, v: int, request: gr.Request) -> list[Any]:
+                    return done(run(delete_item, req, gone, request=request), v)
+
+                wipe.click(on_wipe, [requested, version], [status, version], **PRIVATE)
 
         def on_back(req: Any, v: int, request: gr.Request) -> list[Any]:
             return done(run(put_back_item, req, gone, request=request), v)
@@ -221,4 +236,5 @@ def mental_list(
         if m.removed:
             with gr.Accordion(f"Removed ({len(m.removed)})", open=False, key="removed"):
                 for gone in m.removed:
-                    back_button(gone)
+                    info = m.removed_info.get(gone.casefold(), {})
+                    back_button(gone, set(info) - {"kind"} != set())

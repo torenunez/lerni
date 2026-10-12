@@ -66,7 +66,7 @@ class InterestMap:
 
     entries: list[Entry] = field(default_factory=list)
     links: list[Link] = field(default_factory=list)
-    removed: list[str] = field(default_factory=list)  # names a person removed; never re-added
+    removed: list[str] = field(default_factory=list)  # removed by a person; never re-added
     edits: int = 0  # bumped by every person's edit
     next_id: int = 1
     removed_info: dict[str, dict[str, Any]] = field(default_factory=dict)  # for Put back
@@ -220,7 +220,7 @@ def set_notes(m: InterestMap, entry_id: str, notes: str) -> Entry:
 
 
 def remove(m: InterestMap, entry_id: str) -> None:
-    """A person removes an entry for good: only its name is kept, so it's never re-added.
+    """A person removes an entry to Removed, with its history for Put back; never re-added.
 
     Raises:
         MapError: Unknown entry.
@@ -236,6 +236,20 @@ def remove(m: InterestMap, entry_id: str) -> None:
         "mentions": entry.mentions, "explained": entry.explained, "bounces": entry.bounces,
         "links": links,
     }
+    m.edits += 1
+
+
+def delete_for_good(m: InterestMap, name: str) -> None:
+    """A person deletes a removed item's history; only its name and kind stay.
+
+    Raises:
+        MapError: Not in Removed.
+    """
+    found = next((r for r in m.removed if r.casefold() == (name or "").strip().casefold()), None)
+    if found is None:
+        raise MapError("That isn't in Removed any more.")
+    kind = m.removed_info.get(found.casefold(), {}).get("kind", "interest")
+    m.removed_info[found.casefold()] = {"kind": kind}  # the name stays, so it's never re-added
     m.edits += 1
 
 

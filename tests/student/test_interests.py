@@ -13,6 +13,7 @@ from lerni.student.interests import (
     add_goal,
     add_interest,
     apply_tags,
+    delete_for_good,
     details,
     map_block,
     parse_tags,
@@ -165,3 +166,14 @@ def test_the_set_aside_line_survives_a_full_prompt_block():
         add_goal(m, f"Goal number {i}", "x" * 190)
     remove(m, add_interest(m, "sharks").id)
     assert "Set aside by a person: sharks" in map_block(m, TODAY)
+
+
+def test_delete_for_good_keeps_only_the_name_and_kind():
+    m = InterestMap()
+    goal = add_goal(m, "Fractions", "through baking")
+    goal.days = [TODAY.isoformat()]
+    remove(m, goal.id)
+    delete_for_good(m, "fractions")
+    assert m.removed == ["Fractions"] and m.removed_info == {"fractions": {"kind": "goal"}}
+    back = put_back(m, "Fractions")
+    assert (back.kind, back.notes, back.days) == ("goal", "", [])
