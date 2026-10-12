@@ -62,7 +62,7 @@ The student signs in and talks with Lerni by text. Their map grows as they talk;
 As a student, I want to sign in as myself, so that my conversation and map are my own.
 
 - WHEN someone opens the app without being signed in THE SYSTEM SHALL show a standard sign-in form (username and password) that the browser can offer to save.
-- WHEN a supervised student signs in THE SYSTEM SHALL show the conversation, full screen, with Games (coming soon) in the ☰ menu; WHEN an independent student signs in, Ask, My map, and My account.
+- WHEN a supervised student signs in THE SYSTEM SHALL show the conversation, full screen, with Games (coming soon) in the ☰ menu; WHEN an independent student signs in, Ask, My MentalMap, and My account.
 - WHILE someone is signed in THE SYSTEM SHALL show "Signed in as <display name> · <kind>" and Sign out (in the ☰ menu); Sign out signs out this device only.
 - WHEN a username gets 3 or more wrong passwords in a row THE SYSTEM SHALL wait longer before checking each further attempt (up to 30 seconds), without affecting anyone already signed in.
 - WHEN an account is archived or its password reset THE SYSTEM SHALL sign it out on every device at once.
@@ -84,7 +84,9 @@ As a student, I want what I talk about to be remembered as interests, so that th
 
 - WHEN an exchange ends THE SYSTEM SHALL record which interests it was about, any new interest, and any bridge, and the day it came up; interests grow with the days they come up.
 - WHEN a new conversation starts THE SYSTEM SHALL start from the map: their top interests and the goals.
-- WHEN an independent student opens My map THE SYSTEM SHALL show their map and let them add, rename, and remove entries, set their own goals (things to practice), and Upload notes that Claude turns into proposed interests and goals, saving only the ones they tick.
+- WHEN an independent student opens My MentalMap THE SYSTEM SHALL show their MentalMap as a list of goals (things to practice) and interests they can add, rename, and remove, and Upload notes that Claude turns into proposed interests and goals, saving only the ones they tick.
+- WHEN they tap an item THE SYSTEM SHALL show its strength (strong, growing, faint, or not yet, from the days it came up in the last 30), the facts behind it, and its bridges and related items.
+- WHEN they remove an interest THE SYSTEM SHALL keep it in Removed, where Put back restores it with its history, and Lerni never brings it up; if they do, Lerni acknowledges it briefly and turns to something else they love.
 
 ## Version 2: talk with the app
 

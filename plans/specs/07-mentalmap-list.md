@@ -37,12 +37,12 @@ It replaces My map's "Add a goal" and "Rename or remove" panels and the word lis
 
 - **Removed items keep what Put back needs.**
   - `removed` (the names) stays as it is.
-  - A new `removed_info` maps each removed name to its kind and notes.
+  - A new `removed_info` maps each removed name to its kind, notes, days, explained days, and links.
   - Older files have no `removed_info`, so their items come back as interests.
   - No schema change: the field is optional.
 - **`put_back(m, name)`:**
   - takes the name off `removed`;
-  - adds the item again with its kind and notes, and counts as a person's edit;
+  - adds the item again with its kind, notes, and history, plus each link whose other end is still on the map, and counts as a person's edit (a mis-tap undone loses nothing);
   - follows the same rules as adding: name checks and the 60-entry cap.
 - **`strength(entry, today)`,** from the days it came up in the last 30 days:
   - 4 or more → strong;
@@ -55,7 +55,7 @@ It replaces My map's "Add a goal" and "Rename or remove" panels and the word lis
 
 ### Lerni's prompt
 
-- **`map_block` gets one more line,** listing up to 8 removed **interests** (removed goals just stop being steered toward): "Steer away from these; if they bring one up, acknowledge it in a few words and turn to something they love: …".
+- **`map_block` gets one more line,** listing up to 8 removed **interests** as information: "Set aside by a person: …" (removed goals just stop being steered toward). The rule to act on it is in Lerni's fixed rules (`conversation.py`): never bring one up, and if the student does, acknowledge it in a few words and turn to something else they love. (Built that way because the map is never instructions; the first wording, inside the map, was ignored in the eval.)
 - **The 1,500-character cap still holds,** and this line comes before "Recent bridges", so the cut drops bridges first.
 - **The Maps chat agent** (`educator_map_text`) lists removed items too, so it doesn't propose them again.
 
@@ -73,7 +73,7 @@ It replaces My map's "Add a goal" and "Rename or remove" panels and the word lis
   - each reuses `add_goal`, `add_interest`, `remove`, `rename` and `set_notes`, each inside `maps.change`.
 - **Removing asks nothing;** Put back is the undo.
 - **On a phone:** each row is a full-width button with the 🗑 at the right end, and fields use 16px text.
-- **MentalMaps redraws every 30 seconds,** as today, keeping the open item open.
+- **MentalMaps redraws the picture every 30 seconds,** as today; the list redraws after each edit, a chat **Add**, opening the tab, or picking a student, since a timed redraw would wipe a half-typed rename. Each list edit also redraws the picture.
 
 ### Rule 5 still holds
 
@@ -87,7 +87,7 @@ Minimal, per CLAUDE.md rule 4:
   - put back restores a removed goal with its notes;
   - an older file without `removed_info` still loads;
   - `strength` and `details` on a small map.
-- **`test_tagging.py` (or wherever `map_block` is tested):** a removed interest appears as "steer away", and a removed goal doesn't.
+- **`test_tagging.py` (or wherever `map_block` is tested):** a removed interest appears as "set aside", and a removed goal doesn't.
 - **`test_web_roles.py`:**
   - a supervised viewer can't add, remove, or put back;
   - an educator can't edit an independent student's MentalMap.

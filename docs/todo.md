@@ -6,25 +6,28 @@ Open tasks by who does the work. The educator and admin tracks run in parallel: 
 
 ### Now: Version 1 MVP
 
-- [ ] Think of 2–3 things you'd like the supervised student to explore (with a note each on what you have in mind). Tell the chat on Maps (☰ → Maps) about them, or attach your notes with 📎, then tick what to add.
+- [ ] Think of 2–3 things you'd like the supervised student to explore (with a note each on what you have in mind). Add them on MentalMaps (☰ → MentalMaps): type them into the list, or tell the chat, or attach your notes with 📎 and tick what to add.
 
 ### Later: Version 1 MVP
 
-- [ ] Talk with Lerni yourself for a few days and watch your own map; say what's confusing in Feedback or to the admin.
-- [ ] Try the conversation with the supervised-student voice, then sit beside the supervised student for a short first conversation. Keep notes private, or put them in Feedback.
+- [ ] Talk with Lerni yourself for a few days and watch your own MentalMap; tell the admin what's confusing, or mention it in the MentalMaps chat.
+- [ ] Try the conversation with the supervised-student voice, then sit beside the supervised student for a short first conversation. Keep notes private, or mention them in the MentalMaps chat.
 
 ## Admin
 
+### Now
+
+- [ ] Check v2.12–v2.17 on the iPhone and iPad in development, then say go: Claude merges them in order and updates production with one restart.
 - [ ] Turn off extra usage (paid credits) on the Claude account Lerni uses (claude.ai → Settings → Usage), so Lerni can never spend credits; Lerni also rests if a call ever uses them.
-- [ ] After a week of family use: compare each feature's Claude use (Ask, tagger, Upload, Maps chat) and decide whether any can move to a cheaper model.
-- [ ] Optionally delete the old plan files on the home server (`~/.lerni/student/plans/`); nothing reads them since step 10.
+- [ ] Pick Lerni's voice ([admin reference: Voice](reference/admin.md#voice)), try Hold to talk on the iPad, then with the supervised student and an adult nearby (Version 2 is done when their map grows from a spoken conversation).
+- [ ] Optionally delete the old plan files on the home server (`~/.lerni/student/plans/`); nothing reads them any more.
 
 ### Upcoming versions
 
 What ships next, in order, one PR each ([how versions work](roadmap.md#versions)):
 
-1. **v2.17: voice that can't speak says so:** if `say` returns empty audio, startup prints `Voice (hold to talk): off` with the reason, instead of sending silence.
-2. **v2.18: production keeps running on its own:** run production and development the same way, as macOS LaunchAgents in the desktop session (start at login, restart after a crash); check `say` works there first. Until then both run in Terminal windows, and production stops if that window or the Mac does.
+1. **v2.18: voice that can't speak says so:** if `say` returns empty audio, startup prints `Voice (hold to talk): off` with the reason, instead of sending silence.
+2. **v2.19: production keeps running on its own:** run production and development the same way, as macOS LaunchAgents in the desktop session (start at login, restart after a crash); check `say` works there first. Until then both run in Terminal windows, and production stops if that window or the Mac does.
 3. **Version 3, remembering:** not planned yet; its first PR writes the plan.
 
 How PRs are split:
@@ -38,44 +41,36 @@ How PRs are split:
 
 Versions 1 and 2 now need sessions, not code: the educator sets goals, rehearses, and sits beside the supervised student (Educator and Student tasks above and below).
 
-### Ask Lerni: deferred review findings
+### Later
 
-- [ ] After the first supervised sessions, if useful: count redirects per session, and a "flag this reply" button for the adult nearby.
-
-- [ ] Try Ask on the iPad and a phone with the keyboard open; then a VoiceOver and keyboard-only pass.
-- [ ] Maybe: a daily cap per student once others use it.
-- [ ] Before anyone outside the family uses Ask: a short notice of where messages go and that answers can be wrong.
-
-### Interest map: later
-
-- [ ] Small, from the step 9 review: Stop before the first word can be slow and a quick re-ask may say "Still answering"; the two chat panels allow 8 answers at once instead of 4 (share one concurrency id); a cancel can log "Exception ignored"; the new message isn't JSON like earlier turns; when Claude isn't set up the supervised screen greets over a disabled box; the guns redirect offered squirt guns (offer something unrelated).
-- [ ] Small, from the step 8 review: cap how big a .docx may expand when read, and show a friendly message for a malformed one; a file-read error can hide its cause; no server-side check for real names in proposals; "Tick what to add" shows when every idea is already on the map; `lerni feedback done` can lose an entry saved at the same moment and finds entries by position; editing feedback after checking keeps the old summary; Claude pads goal notes with restatements.
-- [ ] Small, from the step 7 review: at a full map a just-added interest can be dropped by the next one; the map block's 1,500-character cut can cut a line mid-word; top interests rank by all-time days rather than the last 30; a faded explained goal can be listed twice in the block; the Maps timer ticks on every page; an unreadable map file shows a Gradio error; `lerni logs` can fail if a purge runs mid-read.
-- [ ] When a map outgrows the picture (more than 15 entries drawn): show more, for example by grouping or a focus on one entry and its links; the list below already has them all.
-
-### Now: Version 2 Voice
-
-- [ ] Pick Lerni's voice ([admin reference: Voice](reference/admin.md#voice)), try Hold to talk on the iPad, then with the supervised student and an adult nearby (step 2 is done when their map grows from a spoken conversation).
+- [ ] After a week of family use: compare each feature's Claude use (Ask, tagger, Upload, MentalMaps chat) and decide whether any can move to a cheaper model.
 - [ ] Try the voice with the students before deciding whether a hosted voice (Inworld, about $18 a month) is worth it; a hosted service means student audio leaves the house, so it needs the educator's agreement first.
-- [ ] Before anyone outside the family uses the app: files in Gradio's cache (uploads, any voice audio) are reachable by URL to anyone signed in; serve them only to their owner, or keep none.
-- [ ] Before anyone outside the household uses the app: replace the Claude Code adapter with an API-key adapter (`env:ANTHROPIC_API_KEY`).
-
-### Educator chat: later
-
-- [ ] PDFs in the Maps chat (the chat's Claude call takes text only; Upload on My map still reads PDFs).
-- [ ] The same chat on My map, once educators have used it on Maps.
+- [ ] A better MentalMap picture: it draws at most 15 entries; show more, for example by grouping or a focus on one entry and its links (the list already has them all).
+- [ ] MentalMaps chat: PDFs (its Claude call takes text only; Upload on My MentalMap still reads PDFs), and the same chat on My MentalMap once educators have used it.
 - [ ] `feedback.summarize` is unused since v2.14 (the chat writes the note); remove it with its test, or use it for chat feedback.
+- [ ] After the first supervised sessions, if useful: count redirects per session, and a "flag this reply" button for the adult nearby.
+- [ ] Try Ask on the iPad and a phone with the keyboard open; then a VoiceOver and keyboard-only pass.
 
 ### Later: Version 3 Remembering
 
 - [ ] Personal personas: Lerni learns what each student likes over time (topics, examples, answer length), starting from the persona for their kind; visible to the student, and to the educator for a supervised student.
-- [ ] Write `plans/release-3-remembering.md`, starting from the map: recall questions about goals the student once explained, tracking the last recall attempt apart from the last time a goal was discussed.
+- [ ] Write the Version 3 plan (`plans/v3.1-remembering.md`), starting from the MentalMap: recall questions about goals the student once explained, tracking the last recall attempt apart from the last time a goal was discussed.
 
-### Accounts: deferred review findings (family scale; harden before anyone else uses it)
+### Before anyone outside the family uses the app
 
-- [ ] Before anyone outside the family uses the app: a flood of sign-ins mustn't stall signed-in pages. Run the password check off the request threads with a small limit.
-- [ ] Small: two educators archiving each other leaves none (recover with `lerni student add`); password hashing runs inside the account write lock; a live session can guess its current password in My account without the sign-in delay; a non-ASCII cookie gives a 500; an archived account is detectable by timing; `/signin` has no Origin check and `/signout` is a GET; no upload size limit; the data folder is created 0755; a password change doesn't sign out other devices.
-- [ ] Tests: the role check on each educator handler, cookie expiry, and a supervised cookie calling an educator event over HTTP.
+- [ ] Replace the Claude Code adapter with an API-key adapter (`env:ANTHROPIC_API_KEY`).
+- [ ] Files in Gradio's cache (uploads, any voice audio) are reachable by URL to anyone signed in; serve them only to their owner, or keep none.
+- [ ] A short notice of where messages go and that answers can be wrong.
+- [ ] A flood of sign-ins mustn't stall signed-in pages: run the password check off the request threads with a small limit.
+- [ ] Maybe a daily cap per student.
+
+### Deferred review findings (small; family scale)
+
+- [ ] **Ask:** Stop before the first word can be slow and a quick re-ask may say "Still answering"; the two chat panels allow 8 answers at once instead of 4 (share one concurrency id); a cancel can log "Exception ignored"; the new message isn't JSON like earlier turns; when Claude isn't set up the supervised screen greets over a disabled box; the guns redirect offered squirt guns (offer something unrelated).
+- [ ] **Upload and feedback:** cap how big a .docx may expand when read, and show a friendly message for a malformed one; a file-read error can hide its cause; no server-side check for real names in proposals; "Tick what to add" shows when every idea is already on the map; `lerni feedback done` can lose an entry saved at the same moment and finds entries by position; editing feedback after checking keeps the old summary; Claude pads goal notes with restatements.
+- [ ] **The map:** at a full map a just-added interest can be dropped by the next one; the map block's 1,500-character cut can cut a line mid-word; top interests rank by all-time days rather than the last 30; a faded explained goal can be listed twice in the block; the MentalMaps timer ticks on every page; an unreadable map file shows a Gradio error; `lerni logs` can fail if a purge runs mid-read.
+- [ ] **Accounts:** two educators archiving each other leaves none (recover with `lerni student add`); password hashing runs inside the account write lock; a live session can guess its current password in My account without the sign-in delay; a non-ASCII cookie gives a 500; an archived account is detectable by timing; `/signin` has no Origin check and `/signout` is a GET; the data folder is created 0755; a password change doesn't sign out other devices.
+- [ ] **Tests:** the role check on each educator handler, cookie expiry, and a supervised cookie calling an educator event over HTTP.
 
 ### Admin tool maintenance
 
@@ -89,5 +84,5 @@ Versions 1 and 2 now need sessions, not code: the educator sets goals, rehearses
 
 ### Later: Version 1 MVP
 
-- [ ] Independent student (the admin first): once step 7 lands, talk with Lerni over a few days on your own device, add a goal, and check the map matches what you talked about; note what's confusing.
+- [ ] Independent student (the admin first): talk with Lerni over a few days on your own device, add a goal on My MentalMap, and check it matches what you talked about; note what's confusing.
 - [ ] Supervised student: try the MVP with the educator beside them. They can say no or stop at any time.

@@ -1,4 +1,4 @@
-"""The map, drawn: an inline SVG picture and the same in words.
+"""The map, drawn: an inline SVG picture (the list is ``mentallist.py``).
 
 Returned as text to a viewer already allowed to see the map; never saved as a
 file (Gradio serves files to anyone signed in). Every name is escaped, and
