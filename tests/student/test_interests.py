@@ -11,6 +11,7 @@ from lerni.student.interests import (
     MapError,
     MapStore,
     add_goal,
+    add_interest,
     apply_tags,
     details,
     map_block,
@@ -134,3 +135,11 @@ def test_strength_and_details():
     apply_tags(m, parse_tags({"about": ["trains"], "bridge": bridge}), "trains", TODAY)
     d = details(m, goal.id, TODAY)
     assert d.bridges == [(trains.id, "trains")] and d.strength == "not yet"
+
+
+def test_a_removed_interest_is_steered_away_from_and_a_removed_goal_is_not():
+    m = InterestMap()
+    remove(m, add_interest(m, "sharks").id)
+    remove(m, add_goal(m, "Fractions").id)
+    block = map_block(m, TODAY)
+    assert "Set aside" in block and "sharks" in block and "Fractions" not in block

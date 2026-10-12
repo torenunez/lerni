@@ -125,7 +125,7 @@ def educator_tab(
             height=360,
         )
         ticks = gr.CheckboxGroup(label="Tick what to add", choices=[], visible=False)
-        add = gr.Button("Add to map", variant="primary", visible=False)
+        add = gr.Button("Add to MentalMap", variant="primary", visible=False)
         status = gr.Markdown()
         with gr.Row(elem_classes="lerni-type"):
             text = gr.Textbox(

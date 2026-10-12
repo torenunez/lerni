@@ -98,3 +98,12 @@ def test_loose_blocks_still_parse_and_odd_items_are_dropped():
            '{"kind": "reword", "name": "trains", "notes": "x"}]}\n```\nAnything after.')
     found = parse_educator_proposals(raw, m)
     assert [(p.kind, p.name, p.notes) for p in found] == [("goal", "clocks", "")]
+
+
+def test_the_educator_agent_sees_removed_items():
+    from lerni.student.educator_agent import educator_map_text
+    from lerni.student.interests import remove
+
+    m = InterestMap()
+    remove(m, add_interest(m, "sharks").id)
+    assert "sharks" in educator_map_text(m)

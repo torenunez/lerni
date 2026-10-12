@@ -79,11 +79,12 @@ def educator_map_text(m: InterestMap) -> str:
     """The whole map for the educator agent: every interest and goal, talked about or not."""
     loves = [e.name for e in m.entries if e.kind == "interest"]
     goals = [e.name + (f" ({e.notes})" if e.notes else "") for e in m.entries if e.kind == "goal"]
-    if not loves and not goals:
+    if not loves and not goals and not m.removed:
         return f"{MAP_HEADER}\n(empty so far)"
     lines = [MAP_HEADER]
     lines += [f"They love: {', '.join(loves)}"] if loves else []
     lines += ["Goals:", *(f"- {g}" for g in goals)] if goals else []
+    lines += [f"Removed (don't propose again): {', '.join(m.removed)}"] if m.removed else []
     return "\n".join(lines)
 
 
