@@ -19,14 +19,14 @@ Approved in conversation on 2026-10-11 (approach A). Builds on the map from [spe
   - its **bridges** (interest → goal) and **related** items, each a button that opens that item.
 - **Removed** (closed until tapped): each removed item with **Put back**, and **Delete for good**, which erases its history and keeps only the name and kind (the educator PRD's deletion promise).
 
-It replaces My map's "Add a goal" and "Rename or remove" panels and the word list. Upload notes stays on My MentalMap. On **MentalMaps** the order is: the student picker, the picture strip, the list, then the chat.
+It replaces My map's "Add a goal" and "Rename or remove" panels and the word list. Upload notes stays on My MentalMap. On **MentalMaps** the order is: the student picker, the picture, the list, then the chat.
 
 ## Decisions
 
 | Question | Decision | Why |
 |---|---|---|
 | Rename | Screens and docs only | No data migration; the code's names stay consistent |
-| Removing an interest | Lerni never raises it, and steers away gently if the student does | What the person removing it wants; the tagger already never re-adds it |
+| Removing an interest | Lerni is told never to raise it (the 8 most recent), and to steer away gently if the student does | What the person removing it wants; the tagger already never re-adds it |
 | Undo | A Removed list with Put back | A mis-tap shouldn't be permanent |
 | Strength | A label plus the facts | Quick to read, with the evidence beside it |
 | Approach | A row per item with `gr.render` | A real list on a phone, and every tap is a normal server event with its role check |
@@ -42,7 +42,7 @@ It replaces My map's "Add a goal" and "Rename or remove" panels and the word lis
   - No schema change: the field is optional.
 - **`put_back(m, name)`:**
   - takes the name off `removed`;
-  - adds the item again with its kind, notes, and history, plus each link whose other end is still on the map, and counts as a person's edit (a mis-tap undone loses nothing);
+  - adds the item again with its kind, notes, and history, keeps its id, and restores each link whose other end is on the map (one whose other end is still removed comes back with it), in date order; it counts as a person's edit;
   - follows the same rules as adding: name checks and the 60-entry cap.
 - **`strength(entry, today)`,** from the days it came up in the last 30 days:
   - 4 or more → strong;
@@ -96,7 +96,6 @@ Minimal, per CLAUDE.md rule 4:
 
 ## Not in this version
 
-- A better picture.
 - Interest notes.
 - Reordering items.
 - Any notice to a supervised student that something was removed (they see no map).

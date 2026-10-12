@@ -105,5 +105,9 @@ def test_the_educator_agent_sees_removed_items():
     from lerni.student.interests import remove
 
     m = InterestMap()
+    from lerni.student.interests import delete_for_good
+
     remove(m, add_interest(m, "sharks").id)
-    assert "sharks" in educator_map_text(m)
+    remove(m, add_interest(m, "Oak Street").id)
+    delete_for_good(m, "Oak Street")  # erased: the agent no longer sees the name
+    assert "sharks" in educator_map_text(m) and "Oak Street" not in educator_map_text(m)

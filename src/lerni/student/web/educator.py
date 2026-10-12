@@ -22,7 +22,7 @@ from lerni.student.signin import SignIn, Viewer
 from lerni.student.students import StudentStore
 from lerni.student.upload import UploadError, extract_upload
 from lerni.student.web.accounts import PRIVATE, NotAllowed, require_educator
-from lerni.student.web.mapdraw import map_svg
+from lerni.student.web.mapdraw import map_svg, owner_key
 from lerni.student.web.maps import REFRESH_SECONDS, map_owner, save_feedback
 from lerni.student.web.mentallist import bump, mental_list
 
@@ -114,11 +114,11 @@ def educator_tab(
     """MentalMaps: pick a supervised student, see and edit their list, and plan it by talking."""
     with gr.Tab("MentalMaps", id="maps", visible=False) as tab:
         who = gr.Dropdown(label="Student", choices=[], value=None)  # filled on load
-        # a strip on a phone; a tap opens the whole picture (nav.js)
-        picture = gr.HTML(elem_classes="lerni-map-strip")
+        picture = gr.HTML(elem_id="lerni-map-maps", elem_classes="lerni-map")
         list_owner, version = gr.State(""), gr.State(0)  # set only after map_owner's check
         # edits go to the student the list shows, never a newer dropdown pick
-        mental_list(signin, students, maps, list_owner, list_owner, version, "Pick a student.")
+        mental_list(signin, students, maps, list_owner, list_owner, version, "lerni-pick-maps",
+                    "Pick a student.")
         chat = gr.Chatbot(
             show_label=False,
             placeholder=EMPTY,
@@ -157,10 +157,10 @@ def educator_tab(
         def draw(requested: str | None, request: gr.Request) -> str:
             viewer = signin.viewer(request.username)  # re-read on every request
             try:
-                m = maps.get(map_owner(students, viewer, requested or ""))
+                who = map_owner(students, viewer, requested or "")
             except NotAllowed:
                 return ""
-            return map_svg(m, date.today())
+            return map_svg(maps.get(who), date.today(), owner_key(who))
 
         def checked_owner(requested: str | None, request: gr.Request) -> str:
             try:  # whose list to draw: only after the check
@@ -272,7 +272,7 @@ def educator_tab(
         attach.upload(on_attach, attach, [held_file, status], **PRIVATE)
         add.click(on_add, [ticks, owner_state, version], [status, ticks, add, picture, version],
                   **PRIVATE)
-        tab.select(draw, who, picture, **PRIVATE)  # redraw on opening
+        tab.select(bump, None, version, **PRIVATE)  # opening redraws the picture and the list
         version.change(draw, who, picture, **PRIVATE)  # a list edit redraws it
         # the picture only: redrawing the list would wipe a half-typed rename
         gr.Timer(REFRESH_SECONDS).tick(draw, who, picture, **PRIVATE)

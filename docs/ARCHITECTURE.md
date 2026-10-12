@@ -99,7 +99,7 @@ If a change would break one of these, stop and ask.
 Every code file, one line each: [code manifest](code-manifest.md).
 
 - `src/lerni/student/`: `students.py` (accounts and passwords), `signin.py` (the signed cookie, who's signed in), `jsonfiles.py` (atomic JSON writes), `conversation.py` (the prompt, in-memory conversations), `personas/` (one starting persona per kind of student), `interests.py` (the map, its rules, and its store), `tagging.py` (the tagger and the map keeper), `logs.py` (7-day conversation logs), `educator_agent.py` (the educator agent), `upload.py` (reading notes, checking and adding proposals), `feedback.py` (educator feedback, summarized, never acted on), `adapters/claude_code.py` (Claude through the Claude Code CLI, including the tagger; prototype).
-- `src/lerni/student/web/`: the Gradio screens: `signin_page.py`, `main.py` (a ☰ menu of sections by role), `ask.py`, `maps.py` (My MentalMap), `educator.py` (MentalMaps), `mapdraw.py` (the inline SVG picture), `mentallist.py` (the MentalMap list), `accounts.py`.
+- `src/lerni/student/web/`: the Gradio screens: `signin_page.py`, `main.py` (a ☰ menu of sections by role), `ask.py`, `maps.py` (My MentalMap), `educator.py` (MentalMaps), `mapdraw.py` (the inline SVG picture: linked items cluster, goals in the middle), `mapview.js` (tap an item to light its links and open it in the list; pinch to zoom), `mentallist.py` (the MentalMap list), `accounts.py`.
 - `src/lerni/cli.py`, `commands/`, `db.py`, `sm2.py`: the admin tool, plus `commands/student.py`, `commands/logs.py`, and `commands/feedback.py` for the student app.
 - `tests/`: pytest, fakes only. `plans/`: build plans and specs.
 

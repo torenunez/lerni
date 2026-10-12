@@ -56,6 +56,7 @@ As an educator, I want to add and manage the students who use the app, so that e
 As an educator, I want to add what I'd like the student to explore, so that Lerni bridges toward it from what they love.
 
 - WHEN the educator tells the educator agent on MentalMaps what they'd like for a supervised student (in words, or with notes attached as .txt, .md, or .docx) THE SYSTEM SHALL propose changes, each labeled (a goal with notes for Lerni, an interest, new notes for a goal, or removing an entry), and change that student's map only with the ones the educator ticks.
+- WHEN the educator taps an item in the MentalMap's picture THE SYSTEM SHALL light up its links and open it in the list.
 - WHEN the educator adds, renames, or removes a goal or an interest in the MentalMap's list THE SYSTEM SHALL change the map at once. A removed entry waits in Removed, where Put back restores it with its history; Lerni never adds it back on its own, stops steering toward a removed goal, and never brings up a removed interest (if the student does, Lerni acknowledges it briefly and turns to something they love).
 
 ### Story: See the map

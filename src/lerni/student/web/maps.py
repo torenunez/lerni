@@ -35,7 +35,7 @@ from lerni.student.web.accounts import (
     require,
     require_educator,
 )
-from lerni.student.web.mapdraw import map_svg
+from lerni.student.web.mapdraw import map_svg, owner_key
 
 REFRESH_SECONDS = 30  # Maps redraws while open, so the educator sees it grow
 
@@ -67,9 +67,11 @@ def supervised_choices(students: StudentStore, viewer: Viewer | None) -> list[tu
 
 
 def _act(maps: MapStore, students: StudentStore, viewer: Viewer | None, requested: str | None,
-         change: Any, done: str) -> str:
+         change: Any, done: str, expected: str | None = None) -> str:
     try:
         owner = map_owner(students, viewer, requested)
+        if expected is not None and owner != expected:  # drawn for another account
+            raise NotAllowed("This page is for another account; reload it.")
         maps.change(owner, change)
     except (NotAllowed, MapError) as exc:
         return f"⚠️ {exc}"
@@ -160,9 +162,9 @@ def map_tab(
     from lerni.student.web.mentallist import bump, mental_list  # it uses this module's checks
 
     with gr.Tab("My MentalMap", id="mymap", visible=False) as tab:
-        picture = gr.HTML()
+        picture = gr.HTML(elem_id="lerni-map-mine", elem_classes="lerni-map")
         owner, version = gr.State(""), gr.State(0)  # set on load, by a checked handler
-        mental_list(signin, students, maps, owner, gr.State(None), version)
+        mental_list(signin, students, maps, owner, gr.State(None), version, "lerni-pick-mine")
         with gr.Accordion("Upload notes", open=False):
             pasted = gr.Textbox(label="Paste notes (any shape)", lines=4, max_length=50_000)
             upload = gr.File(label="Or a file (.txt, .md, .docx, .pdf)", type="filepath",
@@ -181,7 +183,7 @@ def map_tab(
                 who = map_owner(students, viewer, None)
             except NotAllowed:
                 return ["", "", v]
-            return [map_svg(maps.get(who), date.today()), who, bump()]
+            return [map_svg(maps.get(who), date.today(), owner_key(who)), who, bump()]
 
         def on_propose(t: str, path: str | None, request: gr.Request) -> list[Any]:
             viewer = signin.viewer(request.username)
@@ -211,7 +213,7 @@ def map_tab(
                 who = map_owner(students, signin.viewer(request.username), None)
             except NotAllowed:
                 return ""
-            return map_svg(maps.get(who), date.today())
+            return map_svg(maps.get(who), date.today(), owner_key(who))
 
         tab.select(show, version, [picture, owner, version], **PRIVATE)  # redraw on opening
         version.change(picture_now, None, picture, **PRIVATE)  # a list edit redraws it

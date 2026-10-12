@@ -309,3 +309,25 @@ def test_a_pdf_in_the_educator_chat_gets_a_friendly_message(tmp_path):
     chats = EducatorChats(object(), MapStore(tmp_path))  # never called
     with pytest.raises(UploadError, match="PDF"):
         list(educator_send(chats, students, EDUCATOR, "lee", "", "notes.pdf", b"%PDF-1.4"))
+
+
+def test_list_draws_run_one_at_a_time(tmp_path):
+    # regression: two lists drawing at once could take the same block id (DuplicateBlockError)
+    app = build_app(data_root=tmp_path)
+    blocks = next(r.app for r in app.routes if getattr(r, "path", "") == "/app").get_blocks()
+    draws = [f for f in blocks.fns.values() if getattr(f, "renderable", None) is not None]
+    assert len(draws) == 2
+    assert {(f.concurrency_id, f.concurrency_limit) for f in draws} == {("mental-list", 1)}
+
+
+def test_an_edit_only_reaches_the_map_on_screen(tmp_path):
+    # regression: on a shared device, a row drawn for one account removed the next one's e1
+    from lerni.student.interests import MapStore, add_interest
+    from lerni.student.web.mentallist import remove_item
+
+    students, maps = StudentStore(tmp_path), MapStore(tmp_path)
+    students.add("ann", "Ann", Kind.INDEPENDENT, "long enough")
+    maps.change("ann", lambda m: add_interest(m, "sharks"))
+    ann = Viewer("ann", "Ann", Role.INDEPENDENT)
+    assert remove_item(maps, students, ann, None, "e1", expected="sam").startswith("⚠️")
+    assert maps.get("ann").find("sharks") is not None

@@ -3,7 +3,8 @@
 The handlers are plain functions over the server-resolved viewer, so their role
 checks can be tested without a browser; :func:`mental_list` draws the list with
 ``gr.render`` on My MentalMap and MentalMaps. The render itself gets no request,
-so whose map it shows comes from a server-side State that only checked handlers set.
+so whose map it shows comes from a server-side State that only checked handlers set,
+and every edit names that map, so it never lands on another account's.
 """
 
 from __future__ import annotations
@@ -34,19 +35,24 @@ from lerni.student.students import StudentStore
 from lerni.student.web.accounts import PRIVATE, cleared
 from lerni.student.web.maps import _act
 
+# one draw at a time, server-wide: Gradio's block ids aren't safe across parallel draws
+DRAW_QUEUE = {"concurrency_id": "mental-list", "concurrency_limit": 1}
 
-def add_item(maps, students, viewer, requested, kind: str, name: str, notes: str) -> str:
+
+def add_item(
+    maps, students, viewer, requested, kind: str, name: str, notes: str, expected: str | None = None
+) -> str:
     """Add a goal or an interest to a MentalMap this viewer may edit."""
     if kind == "Goal":
-        return _act(
-            maps, students, viewer, requested, lambda m: add_goal(m, name, notes), "Goal added."
-        )
-    return _act(
-        maps, students, viewer, requested, lambda m: add_interest(m, name), "Interest added."
-    )
+        change, done = (lambda m: add_goal(m, name, notes)), "Goal added."
+    else:
+        change, done = (lambda m: add_interest(m, name)), "Interest added."
+    return _act(maps, students, viewer, requested, change, done, expected)
 
 
-def remove_item(maps, students, viewer, requested, entry_id: str) -> str:
+def remove_item(
+    maps, students, viewer, requested, entry_id: str, expected: str | None = None
+) -> str:
     """Remove an item; it waits in Removed, and Lerni steers away from a removed interest."""
     return _act(
         maps,
@@ -55,28 +61,48 @@ def remove_item(maps, students, viewer, requested, entry_id: str) -> str:
         requested,
         lambda m: remove(m, entry_id or ""),
         "Removed. Put it back from Removed any time.",
+        expected,
     )
 
 
-def put_back_item(maps, students, viewer, requested, name: str) -> str:
+def put_back_item(maps, students, viewer, requested, name: str, expected: str | None = None) -> str:
     """Put a removed item back."""
-    return _act(maps, students, viewer, requested, lambda m: put_back(m, name or ""), "Put back.")
+    return _act(
+        maps, students, viewer, requested, lambda m: put_back(m, name or ""), "Put back.", expected
+    )
 
 
-def delete_item(maps, students, viewer, requested, name: str) -> str:
+def delete_item(maps, students, viewer, requested, name: str, expected: str | None = None) -> str:
     """Delete a removed item's history for good; its name stays so it's never re-added."""
-    return _act(maps, students, viewer, requested, lambda m: delete_for_good(m, name or ""),
-                "Deleted for good.")
+    return _act(
+        maps,
+        students,
+        viewer,
+        requested,
+        lambda m: delete_for_good(m, name or ""),
+        "Deleted for good.",
+        expected,
+    )
 
 
-def rename_item(maps, students, viewer, requested, entry_id: str, name: str) -> str:
+def rename_item(
+    maps, students, viewer, requested, entry_id: str, name: str, expected: str | None = None
+) -> str:
     """Rename an item."""
     return _act(
-        maps, students, viewer, requested, lambda m: rename(m, entry_id or "", name), "Renamed."
+        maps,
+        students,
+        viewer,
+        requested,
+        lambda m: rename(m, entry_id or "", name),
+        "Renamed.",
+        expected,
     )
 
 
-def save_notes(maps, students, viewer, requested, entry_id: str, notes: str) -> str:
+def save_notes(
+    maps, students, viewer, requested, entry_id: str, notes: str, expected: str | None = None
+) -> str:
     """Save a goal's notes for Lerni."""
     return _act(
         maps,
@@ -85,6 +111,7 @@ def save_notes(maps, students, viewer, requested, entry_id: str, notes: str) -> 
         requested,
         lambda m: set_notes(m, entry_id or "", notes),
         "Notes saved.",
+        expected,
     )
 
 
@@ -104,6 +131,7 @@ def mental_list(
     owner: gr.State,
     requested: Any,
     version: gr.State,
+    pick_id: str,
     empty: str = "",
 ) -> None:
     """The add form, then 🎯 Goals and 💚 Interests as rows to open, rename, or remove.
@@ -113,9 +141,11 @@ def mental_list(
         requested: What edits ask :func:`map_owner` for: a ``gr.State(None)`` for
             My MentalMap, or on MentalMaps the same server-side owner the list shows.
         version: Bumped by every change, so the list redraws.
+        pick_id: The hidden field the picture writes a tapped item's id to (mapview.js).
         empty: What shows before there's a map to draw.
     """
     opened = gr.State(None)  # the open item's id
+    confirm = gr.State(None)  # the removed name waiting for a second Delete tap
     with gr.Row(elem_classes="lerni-add"):
         kind = gr.Radio(["Goal", "Interest"], value="Goal", show_label=False, scale=0)
         name = gr.Textbox(show_label=False, placeholder="Name", max_length=MAX_NAME, scale=2)
@@ -124,28 +154,37 @@ def mental_list(
         )
         add = gr.Button("Add", variant="primary", scale=0, min_width=70)
     status = gr.Markdown()
+    pick = gr.Textbox(elem_id=pick_id, elem_classes="lerni-hide", container=False)
+    pick_go = gr.Button(elem_id=f"{pick_id}-go", elem_classes="lerni-hide")  # mapview.js presses
 
-    def run(action: Any, req: Any, *args: Any, request: gr.Request) -> str:
-        # every edit re-checks who's asking and whose map it is
-        return action(maps, students, signin.viewer(request.username), req, *args)
+    def run(action: Any, req: Any, who: str, *args: Any, request: gr.Request) -> str:
+        # every edit re-checks who's asking, and that it's the map they're looking at
+        viewer = signin.viewer(request.username)
+        return action(maps, students, viewer, req, *args, expected=who or None)
 
     def done(message: str, v: int) -> list[Any]:
         return [message, bump() if message.startswith("✅") else v]
 
-    def on_add(k: str, n: str, t: str, req: Any, v: int, request: gr.Request) -> list[Any]:
-        message = run(add_item, req, k, n, t, request=request)
+    def on_add(
+        k: str, n: str, t: str, req: Any, who: str, v: int, request: gr.Request
+    ) -> list[Any]:
+        message = run(add_item, req, who, k, n, t, request=request)
         return [message, *cleared(2, message.startswith("✅")), done(message, v)[1]]
 
     owner.change(lambda: None, None, opened, **PRIVATE)  # a new map opens with nothing open
+    pick_go.click(lambda i: i or None, pick, opened, **PRIVATE)  # a tap on the picture
     add.click(
-        on_add, [kind, name, notes, requested, version], [status, name, notes, version], **PRIVATE
+        on_add,
+        [kind, name, notes, requested, owner, version],
+        [status, name, notes, version],
+        **PRIVATE,
     )
 
-    def wire(e_id: str, row: Any, trash: Any, edits: tuple[Any, ...] = ()) -> None:
+    def wire(who: str, e_id: str, row: Any, trash: Any, edits: tuple[Any, ...] = ()) -> None:
         """One item's events; edits are (name box, Rename, notes box, Save) when it's open."""
 
         def on_remove(req: Any, v: int, request: gr.Request) -> list[Any]:
-            return done(run(remove_item, req, e_id, request=request), v)
+            return done(run(remove_item, req, who, e_id, request=request), v)
 
         trash.click(on_remove, [requested, version], [status, version], **PRIVATE)
         row.click(lambda o: None if o == e_id else e_id, opened, opened, **PRIVATE)
@@ -154,37 +193,45 @@ def mental_list(
         name_box, rename_btn, notes_box, notes_btn = edits
 
         def on_rename(new: str, req: Any, v: int, request: gr.Request) -> list[Any]:
-            return done(run(rename_item, req, e_id, new, request=request), v)
+            return done(run(rename_item, req, who, e_id, new, request=request), v)
 
         rename_btn.click(on_rename, [name_box, requested, version], [status, version], **PRIVATE)
         if notes_btn is not None:
 
             def on_notes(text: str, req: Any, v: int, request: gr.Request) -> list[Any]:
-                return done(run(save_notes, req, e_id, text, request=request), v)
+                return done(run(save_notes, req, who, e_id, text, request=request), v)
 
             notes_btn.click(on_notes, [notes_box, requested, version], [status, version], **PRIVATE)
 
-    def back_button(gone: str, has_history: bool) -> None:
-        """A removed item's row: Put back, and Delete for good while it keeps a history."""
+    def back_button(who: str, gone: str, has_history: bool, sure: bool) -> None:
+        """A removed item's row: Put back, and Delete for good (two taps) if it has a history."""
         with gr.Row(elem_classes="lerni-item"):
             gr.Markdown(gone, key=f"gone-{gone}")
             back = gr.Button("Put back", size="sm", scale=0, min_width=90, key=f"back-{gone}")
             if has_history:
-                wipe = gr.Button("Delete for good", size="sm", scale=0, min_width=90,
-                                 variant="stop", key=f"wipe-{gone}")
+                wipe = gr.Button(
+                    "Tap again to delete" if sure else "Delete for good",
+                    size="sm",
+                    scale=0,
+                    min_width=90,
+                    variant="stop",
+                    key=f"wipe-{gone}",
+                )
 
                 def on_wipe(req: Any, v: int, request: gr.Request) -> list[Any]:
-                    return done(run(delete_item, req, gone, request=request), v)
+                    if not sure:
+                        return ["", v, gone]  # ask once more: it can't be undone
+                    return [*done(run(delete_item, req, who, gone, request=request), v), None]
 
-                wipe.click(on_wipe, [requested, version], [status, version], **PRIVATE)
+                wipe.click(on_wipe, [requested, version], [status, version, confirm], **PRIVATE)
 
         def on_back(req: Any, v: int, request: gr.Request) -> list[Any]:
-            return done(run(put_back_item, req, gone, request=request), v)
+            return done(run(put_back_item, req, who, gone, request=request), v)
 
         back.click(on_back, [requested, version], [status, version], **PRIVATE)
 
-    @gr.render(inputs=[owner, version, opened])
-    def draw(who: str, _v: int, open_id: str | None) -> None:
+    @gr.render(inputs=[owner, version, opened, confirm], **DRAW_QUEUE)
+    def draw(who: str, _v: int, open_id: str | None, sure_of: str | None) -> None:
         if not who:
             gr.Markdown(empty)
             return
@@ -198,7 +245,7 @@ def mental_list(
                     row = gr.Button(label, scale=1, key=f"open-{e.id}")
                     trash = gr.Button("🗑", scale=0, min_width=48, key=f"rm-{e.id}")
                 if open_id != e.id:
-                    wire(e.id, row, trash)
+                    wire(who, e.id, row, trash)
                     continue
                 d = details(m, e.id, today)  # the open item: its facts, then edits and links
                 facts = [
@@ -232,9 +279,11 @@ def mental_list(
                                 f"→ {other}", size="sm", key=f"j-{e.id}-{heading}-{other_id}"
                             )
                             jump.click(lambda i=other_id: i, None, opened, **PRIVATE)
-                wire(e.id, row, trash, (name_box, rename_btn, notes_box, notes_btn))
+                wire(who, e.id, row, trash, (name_box, rename_btn, notes_box, notes_btn))
         if m.removed:
-            with gr.Accordion(f"Removed ({len(m.removed)})", open=False, key="removed"):
+            with gr.Accordion(
+                f"Removed ({len(m.removed)})", open=sure_of is not None, key="removed"
+            ):
                 for gone in m.removed:
                     info = m.removed_info.get(gone.casefold(), {})
-                    back_button(gone, set(info) - {"kind"} != set())
+                    back_button(who, gone, set(info) - {"kind"} != set(), sure_of == gone)
