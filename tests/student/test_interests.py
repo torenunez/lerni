@@ -12,10 +12,13 @@ from lerni.student.interests import (
     MapStore,
     add_goal,
     apply_tags,
+    details,
     map_block,
     parse_tags,
+    put_back,
     remove,
     rename,
+    strength,
 )
 
 
@@ -97,3 +100,37 @@ def test_names_must_be_whole_words_the_student_said_and_bounces_hit_the_latest_b
     apply_tags(m, parse_tags({"bridge": {"interest": "pizza", "goal": "Maps"}}), "x", TODAY)
     apply_tags(m, parse_tags({"changed_subject": True}), "dinosaurs!", TODAY)
     assert maps_goal.bounces == ["2026-10-10"] and fractions.bounces == []
+
+
+def test_put_back_restores_a_removed_goal_and_old_files_still_load(tmp_path):
+    m = InterestMap()
+    goal = add_goal(m, "Fractions", "through baking")
+    remove(m, goal.id)
+    back = put_back(m, "fractions")
+    assert (back.kind, back.notes) == ("goal", "through baking") and m.removed == []
+    old = tmp_path / "maps"
+    old.mkdir()
+    (old / "sam.json").write_text('{"schema": 1, "entries": [], "links": [], '
+                                  '"removed": ["sharks"], "edits": 1, "next_id": 2}')
+    assert put_back(MapStore(tmp_path).get("sam"), "sharks").kind == "interest"
+
+
+def test_renaming_onto_a_removed_name_takes_it_off_removed():
+    m = InterestMap()
+    remove(m, add_goal(m, "Sharks").id)
+    rename(m, add_goal(m, "Fish").id, "sharks")
+    assert m.removed == []  # or Lerni would steer away from what's on the map
+
+
+def test_strength_and_details():
+    m = InterestMap()
+    apply_tags(m, parse_tags({"new_interests": ["trains"]}), "trains", TODAY)
+    trains = m.find("trains")
+    assert strength(trains, TODAY) == "faint"
+    trains.days = ["2026-09-20", "2026-09-25", "2026-10-01", TODAY.isoformat()]
+    goal = add_goal(m, "Fractions")
+    assert strength(trains, TODAY) == "strong" and strength(goal, TODAY) == "not yet"
+    bridge = {"interest": "trains", "goal": "Fractions"}
+    apply_tags(m, parse_tags({"about": ["trains"], "bridge": bridge}), "trains", TODAY)
+    d = details(m, goal.id, TODAY)
+    assert d.bridges == [(trains.id, "trains")] and d.strength == "not yet"

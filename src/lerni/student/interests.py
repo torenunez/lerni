@@ -69,6 +69,7 @@ class InterestMap:
     removed: list[str] = field(default_factory=list)  # names a person removed; never re-added
     edits: int = 0  # bumped by every person's edit
     next_id: int = 1
+    removed_info: dict[str, dict[str, str]] = field(default_factory=dict)  # for Put back
 
     def find(self, name: str) -> Entry | None:
         """The entry with this name, ignoring case, or None."""
@@ -144,6 +145,7 @@ def _forget(m: InterestMap, entry_id: str) -> None:
 
 def _unremove(m: InterestMap, name: str) -> None:
     m.removed = [r for r in m.removed if r.casefold() != name.casefold()]
+    m.removed_info.pop(name.casefold(), None)
 
 
 def add_goal(m: InterestMap, name: str, notes: str = "") -> Entry:
@@ -197,6 +199,7 @@ def rename(m: InterestMap, entry_id: str, name: str) -> Entry:
     other = m.find(name)
     if other is not None and other.id != entry_id:
         raise MapError(f"{other.name} is already on the map.")
+    _unremove(m, name)  # a removed name in use again
     entry.name = name
     m.edits += 1
     return entry
@@ -226,7 +229,23 @@ def remove(m: InterestMap, entry_id: str) -> None:
     _forget(m, entry_id)
     if not m.is_removed(entry.name):
         m.removed.append(entry.name)
+    m.removed_info[entry.name.casefold()] = {"kind": entry.kind, "notes": entry.notes}
     m.edits += 1
+
+
+def put_back(m: InterestMap, name: str) -> Entry:
+    """A person puts a removed item back, as the kind it was (older removals: an interest).
+
+    Raises:
+        MapError: Not in Removed, or no room.
+    """
+    found = next((r for r in m.removed if r.casefold() == (name or "").strip().casefold()), None)
+    if found is None:
+        raise MapError("That isn't in Removed any more.")
+    info = m.removed_info.get(found.casefold(), {})
+    if info.get("kind") == "goal":
+        return add_goal(m, found, info.get("notes", ""))
+    return add_interest(m, found)
 
 
 def _to_dict(m: InterestMap) -> dict[str, Any]:
@@ -242,6 +261,7 @@ def _from_dict(data: dict[str, Any]) -> InterestMap:
         list(data.get("removed", [])),
         int(data.get("edits", 0)),
         int(data.get("next_id", 1)),
+        dict(data.get("removed_info", {})),
     )
 
 
@@ -396,6 +416,52 @@ def backed_off(entry: Entry, today: date) -> bool:
     recent = [d for d in entry.bounces if d >= window]
     rest_until = (today - timedelta(days=BACK_OFF_DAYS)).isoformat()
     return len(recent) >= BOUNCES_TO_BACK_OFF and max(recent) > rest_until
+
+
+STRENGTH_LABELS = {"strong": "💪 strong", "growing": "🌱 growing", "faint": "🌫️ faint",
+                   "not yet": "⏳ not yet"}
+
+
+def strength(entry: Entry, today: date) -> str:
+    """How alive an item is, from the days it came up in the last 30."""
+    if not entry.days:
+        return "not yet"
+    cutoff = (today - timedelta(days=FADE_DAYS)).isoformat()
+    recent = sum(d >= cutoff for d in entry.days)
+    return "strong" if recent >= 4 else "growing" if recent >= 2 else "faint"
+
+
+@dataclass(frozen=True)
+class Details:
+    """What tapping an item shows."""
+
+    entry: Entry
+    strength: str
+    days: int
+    last: str  # ISO date, "" if never
+    explained: int
+    resting: bool  # Lerni is giving this goal a rest
+    bridges: list[tuple[str, str]]  # (id, name) at the other end
+    related: list[tuple[str, str]]
+
+
+def details(m: InterestMap, entry_id: str, today: date) -> Details:
+    """The facts about one item.
+
+    Raises:
+        MapError: No such entry.
+    """
+    e = m.get(entry_id)
+    names = {x.id: x.name for x in m.entries}
+
+    def ends(kind: str) -> list[tuple[str, str]]:
+        other = [k.b if k.a == e.id else k.a for k in m.links
+                 if k.kind == kind and e.id in (k.a, k.b)]
+        return [(i, names[i]) for i in dict.fromkeys(other) if i in names]
+
+    return Details(e, strength(e, today), len(e.days), e.days[-1] if e.days else "",
+                   len(e.explained), e.kind == "goal" and backed_off(e, today),
+                   ends("bridge"), ends("related"))
 
 
 def map_block(m: InterestMap, today: date) -> str:
