@@ -96,6 +96,7 @@ As a student, I want to hold one button to talk and let go when I'm done, so tha
 - WHEN Lerni answers THE SYSTEM SHALL speak it aloud a sentence at a time as it's written, with the text visible; Stop silences it.
 - WHEN speech is turned into text, or text into speech, THE SYSTEM SHALL do it on the home server, so no audio leaves the house; any audio kept on the server is deleted within 7 days, like the conversation logs.
 - WHEN voice is unavailable THE SYSTEM SHALL still accept typing.
+- WHEN the student picks Type THE SYSTEM SHALL show the question box instead of the talk button, keep that choice on the device, and still speak the answer.
 
 ## Version 3: a companion that remembers me
 

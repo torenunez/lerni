@@ -66,7 +66,7 @@ def build_main_view(
         if label:  # a development server says so on every page (the same for everyone)
             gr.HTML(f'<div style="background:#6b21a8;color:white;font-weight:700;'
                     f'text-align:center;padding:.3rem;border-radius:8px">{html.escape(label)}</div>')
-        with gr.Row():
+        with gr.Row(elem_classes="lerni-header"):
             header = gr.Markdown()
             # a same-tab button: a Markdown link would open Sign out in a new tab
             gr.Button("Sign out", link="/signout", link_target="_self", size="sm", scale=0)

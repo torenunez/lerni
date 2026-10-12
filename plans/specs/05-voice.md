@@ -4,7 +4,7 @@ Approved in conversation on 2026-10-10 (approach A, refined below). Requirements
 
 ## What each person sees
 
-- **Every student** (supervised and independent), when the speech helpers are running on the home server: one big **Hold to talk** button under the chat, beside the question box. Hold it and speak; let go to send. What Lerni heard appears in the chat as their message and goes to Lerni at once, as if typed. Lerni's answer appears as text, as today, and is spoken a sentence at a time as it's written. With voice on, the screen is just the chat and the button: a tap silences Lerni and a hold interrupts it (changed 2026-10-10; was Stop plus typing).
+- **Every student** (supervised and independent), when the speech helpers are running on the home server: one big **Hold to talk** button under the chat, beside the question box. Hold it and speak; let go to send. What Lerni heard appears in the chat as their message and goes to Lerni at once, as if typed. Lerni's answer appears as text, as today, and is spoken a sentence at a time as it's written. With voice on, the chat fills the screen above a big round button, and a Talk/Type toggle under it swaps in the question box (remembered on the device; answers are spoken either way); a tap silences Lerni and a hold interrupts it (changed 2026-10-11; before, voice hid typing).
 - **When the helpers aren't running:** no talk button; typing only, exactly as in Version 1. If a helper fails during a conversation: "I couldn't hear that. Try again, or type it." (or "…couldn't speak that…"), and the text answer still shows.
 - No setting and no new screen. (The educator PRD's per-student Voice switch waits until someone needs voice off for one student.)
 

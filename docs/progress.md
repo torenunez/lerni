@@ -6,7 +6,7 @@ Record each kind of "done" only when it actually happens, with the date: code bu
 
 ## Current state (2026-10-11, v2.9: Versions 1 and 2 built and on the home server: the conversation, the map, HTTPS, and voice)
 
-- **Built:** the student app's core (student accounts, sign-in, Ask Lerni's conversations, the interest map with its tagger and 7-day logs, and Upload and educator feedback); `lerni serve` with a sign-in page and one app with tabs by role: an independent student's Ask (one ongoing text conversation with Claude, phone first), My map (with Upload), and My account; an educator's Maps (with Upload and Feedback) and Students on top; a supervised student's conversation, full screen, in the supervised voice. The admin tool (`lerni`, with `lerni student`, `lerni logs`, and `lerni feedback`). Hold to talk on both conversation screens, with spoken answers. A [code manifest](code-manifest.md) of every file. Tests: 83 passed.
+- **Built:** the student app's core (student accounts, sign-in, Ask Lerni's conversations, the interest map with its tagger and 7-day logs, and Upload and educator feedback); `lerni serve` with a sign-in page and one app with tabs by role: an independent student's Ask (one ongoing text conversation with Claude, phone first), My map (with Upload), and My account; an educator's Maps (with Upload and Feedback) and Students on top; a supervised student's conversation, full screen, in the supervised voice. The admin tool (`lerni`, with `lerni student`, `lerni logs`, and `lerni feedback`). Hold to talk on both conversation screens, with spoken answers. A [code manifest](code-manifest.md) of every file. Tests: 85 passed.
 - **Designed:** the interest map, goals, the tagger, upload, feedback, and the supervised conversation ([specs/04-interest-map.md](../plans/specs/04-interest-map.md)); approved with PR #12.
 - **Not yet:** any supervised student session.
 
@@ -14,7 +14,9 @@ When something changes, update this section and add a log entry below.
 
 ## Log
 
-### 2026-10-11 (version numbers; voice shipped; v2.9–v2.11)
+### 2026-10-11 (version numbers; voice shipped; v2.9–v2.12)
+
+- v2.12: the conversation screen, redesigned after the student asked to type too and the admin found the button thin and the text small. The chat fills the screen (sized to fit exactly, keyboard up or down), its text is 19px, a big round Hold to talk button sits in the thumb zone, and a Talk/Type toggle swaps in the question box, remembered on each device; answers are spoken in both modes. Checked at phone size in a browser; tests: 85 passed.
 
 - v2.11: with voice on, Lerni's instructions say it hears through speech-to-text and answers aloud; before, asked "can you hear me?", it said it could only read and write. Eval: it now says yes (3 of 3 voice evals pass).
 

@@ -19,10 +19,8 @@
     stop();  // a tap silences Lerni; a hold also asks something new
     document.getElementById(`lerni-hush-${suffix}`)?.click();  // and stops the answer coming
     unlock();
-    // react at once, even while Safari asks for the microphone
-    btn.textContent = '🔴 Listening… let go to send';
-    btn.classList.add('lerni-listening');
-    S.on = true; S.chunks = []; S.t0 = performance.now();
+    // the button turns red only once the microphone hears, so no first words are lost
+    S.on = true; S.live = false; S.chunks = []; S.t0 = Infinity;
     try {
       if (session) session.type = 'play-and-record';
       if (!S.stream) S.stream = await navigator.mediaDevices.getUserMedia({audio: true});
@@ -31,7 +29,15 @@
     S.src = S.ctx.createMediaStreamSource(S.stream);
     S.node = S.ctx.createScriptProcessor(4096, 1, 1);
     S.node.onaudioprocess = ev => {
-      if (S.on) S.chunks.push(new Float32Array(ev.inputBuffer.getChannelData(0)));
+      if (!S.on) return;
+      const buf = ev.inputBuffer.getChannelData(0);
+      if (!S.live) {
+        if (!buf.some(x => x !== 0)) return;  // the microphone is still waking up
+        S.live = true; S.t0 = performance.now();
+        btn.textContent = '🔴\nListening…';  // now it's safe to talk
+        btn.classList.add('lerni-listening');
+      }
+      S.chunks.push(new Float32Array(buf));
     };
     S.src.connect(S.node); S.node.connect(S.ctx.destination);
     // every 1.5 s, send the clip so far for a live preview
@@ -44,7 +50,7 @@
     // release the microphone, so Safari goes back to normal (loud) playback
     if (S.stream) { S.stream.getTracks().forEach(t => t.stop()); S.stream = null; }
     if (session) session.type = 'playback';  // plays even when the device is on silent
-    btn.textContent = '🎤 Hold to talk';
+    btn.textContent = '🎤\nHold to talk';
     btn.classList.remove('lerni-listening');
   }
 
@@ -130,12 +136,55 @@
 
   window.lerniTalk = {play, stop};
 
+  // Talk or Type: switch every dock, and remember it on this device (just the choice)
+  function mode(m) {
+    document.querySelectorAll('.lerni-voice').forEach(d => { d.dataset.mode = m; });
+    document.querySelectorAll('.lerni-mode button').forEach(b => {
+      b.setAttribute('aria-pressed', b.dataset.mode === m);
+    });
+    try { localStorage.setItem('lerni-mode', m); } catch (err) {}  // private mode: not kept
+  }
+  function saved() {
+    try { return localStorage.getItem('lerni-mode') || 'talk'; } catch (err) { return 'talk'; }
+  }
+  document.addEventListener('click', e => {
+    const b = e.target.closest('.lerni-mode button');
+    if (!b) return;
+    mode(b.dataset.mode);
+    if (b.dataset.mode === 'type') b.closest('.lerni-dock')?.querySelector('textarea')?.focus();
+  });
+
+  // size the visible chat so the page fits the screen exactly, keyboard up or down
+  function fit() {
+    const chat = [...document.querySelectorAll('#lerni-ask-chat, #lerni-home-chat')]
+      .find(c => c.offsetParent);
+    if (!chat) return;
+    const screen = window.visualViewport?.height || window.innerHeight;
+    const box = chat.getBoundingClientRect();
+    // the lowest visible control under the chat (the dock, New conversation)
+    const panel = chat.closest('[role="tabpanel"]') || document.body;
+    const low = Math.max(box.bottom, ...[...panel.querySelectorAll('button, textarea')]
+      .filter(el => el.offsetParent).map(el => el.getBoundingClientRect().bottom));
+    const above = box.top + window.scrollY, below = low - box.bottom;
+    const h = Math.max(160, Math.floor(screen - above - below - 8));
+    if (Math.abs(chat.offsetHeight - h) > 2) chat.style.setProperty('height', `${h}px`, 'important');
+  }
+  window.visualViewport?.addEventListener('resize', fit);
+  setInterval(fit, 500);  // also after Talk/Type switches and new messages
+
+  // a typed question: silence the last answer, and let this one play aloud (needs the tap)
+  function typed() { stop(); unlock(); }
+
   // wire each talk button once Gradio draws it (tabs appear after sign-in)
   setInterval(() => {
     for (const suffix of ['ask', 'home']) {
       const btn = document.getElementById(`lerni-talk-${suffix}`);
       if (!btn || btn.dataset.wired) continue;
       btn.dataset.wired = '1';
+      mode(saved());
+      document.getElementById(`lerni-send-${suffix}`)?.addEventListener('pointerdown', typed);
+      document.querySelector(`#lerni-question-${suffix} textarea`)?.addEventListener(
+        'keydown', e => { if (e.key === 'Enter' && !e.shiftKey) typed(); });
       btn.addEventListener('pointerdown', e => start(e, btn, suffix));
       for (const t of ['pointerup', 'pointercancel', 'pointerleave']) {
         btn.addEventListener(t, e => send(e, btn, suffix));
