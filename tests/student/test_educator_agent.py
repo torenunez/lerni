@@ -111,3 +111,19 @@ def test_the_educator_agent_sees_removed_items():
     remove(m, add_interest(m, "Oak Street").id)
     delete_for_good(m, "Oak Street")  # erased: the agent no longer sees the name
     assert "sharks" in educator_map_text(m) and "Oak Street" not in educator_map_text(m)
+
+
+def test_a_ticked_group_proposal_names_a_group_and_puts_kinds_under_it():
+    from lerni.student.educator_agent import apply_educator_proposals, parse_educator_proposals
+    from lerni.student.interests import parents
+
+    m = InterestMap()
+    bull, white = add_interest(m, "bull shark"), add_interest(m, "great white")
+    block = ('```proposals\n{"proposals": [{"kind": "group", "name": "sharks", '
+             '"members": ["bull shark", "great white", "not on the map"]}]}\n```')
+    found = parse_educator_proposals(block, m)
+    assert [p.members for p in found] == [("bull shark", "great white")]
+    assert "sharks" in found[0].label
+    apply_educator_proposals(m, found)
+    sharks = m.find("sharks")
+    assert parents(m, bull.id) == [sharks.id] and parents(m, white.id) == [sharks.id]

@@ -19,16 +19,24 @@ from lerni.student.interests import (
     MAX_NAME,
     MAX_NOTES,
     STRENGTH_LABELS,
+    Entry,
+    InterestMap,
+    MapError,
     MapStore,
     add_goal,
     add_interest,
+    children,
     delete_for_good,
     details,
+    family,
+    group,
+    parents,
     put_back,
     remove,
     rename,
     set_notes,
     strength,
+    ungroup,
 )
 from lerni.student.signin import SignIn
 from lerni.student.students import StudentStore
@@ -115,6 +123,45 @@ def save_notes(
     )
 
 
+def group_item(maps, students, viewer, requested, entry_id: str, group_name: str,
+               expected: str | None = None) -> str:
+    """Put an interest under a group on the same map."""
+    def change(m: InterestMap) -> None:
+        top = m.find(group_name or "")
+        if top is None:
+            raise MapError("Pick a group on the map.")
+        group(m, entry_id or "", top.id)
+
+    return _act(maps, students, viewer, requested, change, "Grouped.", expected)
+
+
+def ungroup_item(maps, students, viewer, requested, entry_id: str, group_id: str,
+                 expected: str | None = None) -> str:
+    """Take an interest out of a group; the tagger won't put it back."""
+    return _act(maps, students, viewer, requested,
+                lambda m: ungroup(m, entry_id or "", group_id or ""), "Taken out.", expected)
+
+
+def _tree(m: InterestMap, items: list[Entry]) -> list[tuple[Entry, int]]:
+    """Items in list order with their depth: each group, then its kinds (under its first group)."""
+    ids, out, seen = {e.id for e in items}, [], set()
+
+    def walk(e: Entry, depth: int) -> None:
+        if e.id in seen:
+            return
+        seen.add(e.id)
+        out.append((e, depth))
+        for kid in (x for x in items if x.id in children(m, e.id)):
+            walk(kid, depth + 1)
+
+    for e in items:  # top-level items first, in the order they were added
+        if not any(p in ids for p in parents(m, e.id)):
+            walk(e, 0)
+    for e in items:
+        walk(e, 0)  # anything left (never expected): still listed
+    return out
+
+
 def bump() -> int:
     """A new list version: always different, so two quick edits both redraw."""
     return time.monotonic_ns()
@@ -180,6 +227,21 @@ def mental_list(
         **PRIVATE,
     )
 
+    def wire_groups(who: str, e_id: str, pick_group: Any, put: Any,
+                    outs: list[tuple[str, Any]]) -> None:
+        """An open interest's Put under, and Not under X for each group it's in."""
+
+        def on_put(name: str, req: Any, v: int, request: gr.Request) -> list[Any]:
+            return done(run(group_item, req, who, e_id, name, request=request), v)
+
+        put.click(on_put, [pick_group, requested, version], [status, version], **PRIVATE)
+        for group_id, btn in outs:
+
+            def on_out(req: Any, v: int, request: gr.Request, g: str = group_id) -> list[Any]:
+                return done(run(ungroup_item, req, who, e_id, g, request=request), v)
+
+            btn.click(on_out, [requested, version], [status, version], **PRIVATE)
+
     def wire(who: str, e_id: str, row: Any, trash: Any, edits: tuple[Any, ...] = ()) -> None:
         """One item's events; edits are (name box, Rename, notes box, Save) when it's open."""
 
@@ -239,9 +301,9 @@ def mental_list(
         for title, kind_ in (("🎯 Goals", "goal"), ("💚 Interests", "interest")):
             items = [e for e in m.entries if e.kind == kind_]
             gr.Markdown(f"**{title}**" + ("" if items else ": none yet"), key=f"h-{kind_}")
-            for e in items:
+            for e, depth in _tree(m, items):
                 with gr.Row(elem_classes="lerni-item"):
-                    label = f"{e.name} · {STRENGTH_LABELS[strength(e, today)]}"
+                    label = "↳ " * depth + f"{e.name} · {STRENGTH_LABELS[strength(e, today, m)]}"
                     row = gr.Button(label, scale=1, key=f"open-{e.id}")
                     trash = gr.Button("🗑", scale=0, min_width=48, key=f"rm-{e.id}")
                 if open_id != e.id:
@@ -251,6 +313,7 @@ def mental_list(
                 facts = [
                     STRENGTH_LABELS[d.strength],
                     f"came up on {_plural(d.days, 'day')}"
+                    + (f" (counting {', '.join(d.through[:3])})" if d.through else "")
                     + (f", last on {d.last}" if d.last else ""),
                 ]
                 if e.kind == "goal":
@@ -271,7 +334,20 @@ def mental_list(
                         e.name, label="Name", max_length=MAX_NAME, key=f"name-{e.id}"
                     )
                     rename_btn = gr.Button("Rename", size="sm", key=f"ren-{e.id}")
-                    for heading, ends in (("Bridges", d.bridges), ("Related", d.related)):
+                    if e.kind == "interest":  # its groups: put it under one, or take it out
+                        mine = {x.id for x in family(m, e)} | set(parents(m, e.id))
+                        options = [x.name for x in m.entries
+                                   if x.kind == "interest" and x.id not in mine]
+                        with gr.Row(key=f"g-{e.id}"):
+                            pick_group = gr.Dropdown(options, value=None, label="Kind of",
+                                                     key=f"gp-{e.id}", scale=2)
+                            put = gr.Button("Put under", size="sm", scale=1, key=f"gu-{e.id}")
+                        outs = [(gid, gr.Button(f"Not under {gname}", size="sm",
+                                                key=f"go-{e.id}-{gid}"))
+                                for gid, gname in d.groups]
+                        wire_groups(who, e.id, pick_group, put, outs)
+                    for heading, ends in (("Kinds", d.kinds), ("Bridges", d.bridges),
+                                          ("Related", d.related)):
                         if ends:
                             gr.Markdown(f"**{heading}**", key=f"{heading}-{e.id}")
                         for other_id, other in ends:  # a tap opens the other end

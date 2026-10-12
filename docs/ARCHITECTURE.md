@@ -45,7 +45,7 @@ flowchart LR
 ```
 
 1. The student sends a question.
-2. The prompt is the persona for their kind, then their map as information (top interests, goals with notes, recent bridges), then the safety rules, always last.
+2. The prompt is the persona for their kind, then their map as information (top interests with a few of their kinds, goals with notes, recent bridges), then the safety rules, always last.
 3. Claude answers, streamed. It follows their curiosity and, every few exchanges, bridges toward one goal.
 4. The answer is shown; the conversation stays in memory.
 5. In the background, a small call gets this exchange, Lerni's previous message, and the map's entries (never the username).
@@ -75,7 +75,7 @@ flowchart LR
 | Data | What it is | Owner | Where |
 |---|---|---|---|
 | Student accounts | Username, display name, kind, password hash, session version, educator flag, archived flag | Educator manages; an independent student changes their own name and password | `~/.lerni/student/students/` (built) |
-| Interest map | Entries (name, interest or goal, notes, days, mentions, explained and bounce dates) and links (related or bridge) | Educators for a supervised student; an independent student for their own | `~/.lerni/student/maps/<username>.json` (built) |
+| Interest map | Entries (name, interest or goal, notes, days, mentions, explained and bounce dates) and links (related, bridge, or kind of; a group's strength counts its kinds' days, worked out on read), plus removed items' history | Educators for a supervised student; an independent student for their own | `~/.lerni/student/maps/<username>.json` (built) |
 | Conversation | The last 20 messages, one ongoing conversation per student | That student | Memory only; gone on New conversation or a server restart (built) |
 | Conversation logs | Each exchange and what the tagger did with it | The admin reads them (`lerni logs`) | `~/.lerni/student/logs/<username>/<date>.jsonl`, deleted after 7 days (built) |
 | Feedback | Date, who, which map, the note the educator ticked | The admin processes it | `~/.lerni/student/feedback.jsonl` (built) |

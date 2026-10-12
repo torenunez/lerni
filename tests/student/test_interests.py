@@ -17,12 +17,16 @@ from lerni.student.interests import (
     check_name,
     delete_for_good,
     details,
+    group,
+    group_days,
     map_block,
+    parents,
     parse_tags,
     put_back,
     remove,
     rename,
     strength,
+    ungroup,
 )
 
 
@@ -228,3 +232,58 @@ def test_two_subject_changes_in_one_day_rest_the_goal():
 
 def test_a_curly_apostrophe_from_a_phone_keyboard_is_accepted():
     assert check_name("mom’s car") == "mom's car"
+
+
+def _interest(m, name, *days):
+    e = m.new_entry(name, "interest")
+    e.days = sorted(days)
+    m.entries.append(e)
+    return e
+
+
+def test_car_and_cars_are_one_name():
+    m = InterestMap()
+    cars = _interest(m, "cars")
+    assert m.find("car") is cars and m.find("Cars") is cars and m.find("ca") is None
+
+
+def test_a_group_counts_each_day_any_kind_came_up_once():
+    m = InterestMap()
+    sharks = _interest(m, "sharks", "2026-10-09")
+    bull = _interest(m, "bull shark", "2026-10-01", "2026-10-03", "2026-10-05")
+    white = _interest(m, "great white", "2026-10-03", "2026-10-08")
+    for kind in ("bull shark", "great white"):
+        apply_tags(m, parse_tags({"kind_of": [[kind, "sharks"]]}), "x", TODAY)
+    days = group_days(m, sharks)
+    assert len(days) == len(set(days)) and set(bull.days) | set(white.days) <= set(days)
+    assert strength(sharks, TODAY, m) == "strong" and strength(bull, TODAY, m) == "growing"
+
+
+def test_the_taggers_groups_follow_the_rules():
+    m = InterestMap()
+    sharks, white = _interest(m, "sharks"), _interest(m, "great white")
+    add_goal(m, "Fractions")
+    tags = {"kind_of": [["great white", "sharks"], ["sharks", "great white"]]}
+    apply_tags(m, parse_tags(tags), "x", TODAY)  # the second would make a loop
+    assert parents(m, white.id) == [sharks.id] and parents(m, sharks.id) == []
+    apply_tags(m, parse_tags({"kind_of": [["sharks", "Fractions"]]}), "x", TODAY)
+    assert parents(m, sharks.id) == []  # never under a goal
+    ungroup(m, white.id, sharks.id)  # a person undoes it
+    apply_tags(m, parse_tags({"kind_of": [["great white", "sharks"]]}), "x", TODAY)
+    assert parents(m, white.id) == []  # and the tagger never adds it back
+    group(m, white.id, sharks.id)  # a person still may
+    assert parents(m, white.id) == [sharks.id]
+
+
+def test_removing_a_group_keeps_its_kinds_and_a_full_map_never_drops_a_group():
+    m = InterestMap()
+    animals, sharks = _interest(m, "animals"), _interest(m, "sharks")
+    white = _interest(m, "great white")
+    group(m, sharks.id, animals.id)
+    group(m, white.id, sharks.id)
+    remove(m, sharks.id)
+    assert parents(m, white.id) == [animals.id]  # one level up
+    while len(m.entries) < MAX_ENTRIES:
+        _interest(m, f"thing {len(m.entries)}", "2026-10-01", "2026-10-02")
+    apply_tags(m, parse_tags({"new_interests": ["kites"]}), "kites", TODAY)
+    assert m.find("animals") is not None  # the quietest entry, but it has a kind under it
