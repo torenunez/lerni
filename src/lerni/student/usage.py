@@ -34,14 +34,17 @@ class Usage:
         self._overage_until: datetime | None = None
         self._lock = threading.Lock()
 
-    def record(self, windows: dict[str, tuple[float, int]], overage: bool) -> None:
+    def record(
+        self, windows: dict[str, tuple[float, int]], overage: bool, now: datetime | None = None
+    ) -> None:
         """Note each window's share used (0–1) and reset time (Unix seconds)."""
+        now = now or datetime.now()
         with self._lock:
             for name, (used, resets_at) in windows.items():
                 self._windows[name] = (used, datetime.fromtimestamp(resets_at))
-            if overage:  # paid credits: stop until the windows reset
-                resets = [at for _, at in self._windows.values() if at > datetime.now()]
-                self._overage_until = max(resets, default=datetime.now() + OVERAGE_PAUSE)
+            if overage:  # paid credits: stop until the full windows reset
+                full = [at for used, at in self._windows.values() if used >= PAUSE_AT and at > now]
+                self._overage_until = max(full, default=now + OVERAGE_PAUSE)
 
     def warning(self, now: datetime | None = None) -> str:
         """A line for educators when a window is getting full; "" otherwise."""

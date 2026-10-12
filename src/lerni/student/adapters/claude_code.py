@@ -57,14 +57,15 @@ def _note_limits(usage: Usage | None, message: Any) -> None:
         return
     info = message.rate_limit_info
     raw = info.raw or {}
-    windows = {
-        name: (float(w["utilization"]), int(w["resetsAt"]))
-        for name, w in (raw.get("unifiedWindows") or {}).items()
-        if w.get("utilization") is not None and w.get("resetsAt")
-    }
+    windows = {}
+    for name, w in (raw.get("unifiedWindows") or {}).items():
+        try:  # an internal CLI field: skip anything odd, never fail the answer
+            windows[name] = (float(w["utilization"]), int(w["resetsAt"]))
+        except (TypeError, ValueError, KeyError, AttributeError):
+            continue
     if info.status == "rejected" and info.rate_limit_type and info.resets_at:
         windows[info.rate_limit_type] = (1.0, info.resets_at)  # this one is full
-    usage.record(windows, overage=bool(raw.get("isUsingOverage")))
+    usage.record(windows, overage=bool(raw.get("isUsingOverage") or raw.get("overageInUse")))
 
 
 def claude_cli_available() -> bool:

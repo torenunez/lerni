@@ -4,15 +4,19 @@ Where things really stand, then a dated log, newest first. Completed work is rec
 
 Record each kind of "done" only when it actually happens, with the date: code built, content approved, app ready, a student session held. Passing tests show code behaves as specified; they don't make anything ready for a student.
 
-## Current state (2026-10-11, v2.9: Versions 1 and 2 built and on the home server: the conversation, the map, HTTPS, and voice)
+## Current state (2026-10-12, v2.17 on the home server: Versions 1 and 2 built: the conversation, MentalMaps, HTTPS, and voice)
 
-- **Built:** the student app's core (student accounts, sign-in, Ask Lerni's conversations, the interest map with its tagger and 7-day logs, and Upload and educator feedback); `lerni serve` with a sign-in page and one app with tabs by role: an independent student's Ask (one ongoing text conversation with Claude, phone first), My map (with Upload), and My account; an educator's Maps (with Upload and Feedback) and Students on top; a supervised student's conversation, full screen, in the supervised voice. The admin tool (`lerni`, with `lerni student`, `lerni logs`, and `lerni feedback`). Hold to talk on both conversation screens, with spoken answers. A [code manifest](code-manifest.md) of every file. Tests: 93 passed.
+- **Built:** the student app's core (student accounts, sign-in, Lerni's conversations, the MentalMap with its tagger and 7-day logs, Upload and educator feedback, and the educator agent); `lerni serve` with a sign-in page and one app with a ☰ menu by role: an independent student's Ask, My MentalMap (an editable list, the picture, and Upload), and My account; an educator's MentalMaps (a student's list and picture, with a chat) and Students on top; a supervised student's conversation, full screen, and Games (coming soon). Hold to talk with spoken answers; a Claude usage warning and rest. The admin tool (`lerni`, with `lerni student`, `lerni logs`, and `lerni feedback`). A [code manifest](code-manifest.md) of every file. Tests: 108 passed.
 - **Designed:** the interest map, goals, the tagger, upload, feedback, and the supervised conversation ([specs/04-interest-map.md](../plans/specs/04-interest-map.md)); approved with PR #12.
 - **Not yet:** any supervised student session.
 
 When something changes, update this section and add a log entry below.
 
 ## Log
+
+### 2026-10-12 (safety fixes; v2.18)
+
+- v2.18: safety fixes. Lerni no longer accepts a file path sent by the browser: mounted inside the server, Gradio skipped its own check, so Upload and the 📎 could have read other files on the home server or stalled it. When a student says they're hurt or unsafe, Lerni says it's glad they told it and to tell their educator or another person they trust right now, without changing the subject (before, it offered something fun). An odd usage report from Claude is skipped instead of failing the answer, and paid extra usage rests Lerni only until the full limit resets. A test that would have failed on its own at 6 pm today now uses the clock. Evals: 6 of 6 supervised cases pass, including the two new ones.
 
 ### 2026-10-11 (version numbers; voice shipped; v2.9–v2.17)
 

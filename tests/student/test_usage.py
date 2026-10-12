@@ -21,5 +21,11 @@ def test_a_high_week_warns_with_the_reset_time_and_a_full_one_pauses_until_then(
 
 def test_paid_overage_pauses_lerni():
     usage = Usage()
-    usage.record({"five_hour": (0.5, SOON), "seven_day": (0.5, LATER)}, overage=True)
+    usage.record({"five_hour": (0.5, SOON), "seven_day": (0.5, LATER)}, overage=True, now=NOW)
     assert usage.paused(NOW) != ""
+
+
+def test_overage_rests_only_until_the_full_window_resets():
+    usage = Usage()
+    usage.record({"five_hour": (1.0, SOON), "seven_day": (0.4, LATER)}, overage=True, now=NOW)
+    assert usage.paused(NOW + timedelta(hours=4)) == ""  # the week isn't full: no week-long rest
