@@ -20,6 +20,7 @@ from lerni.student.interests import MapStore
 from lerni.student.signin import Role, SignIn, Viewer
 from lerni.student.students import StudentStore
 from lerni.student.upload import Uploader
+from lerni.student.usage import Usage
 from lerni.student.voice import Speech
 from lerni.student.web.accounts import account_tab, student_rows, students_tab
 from lerni.student.web.ask import ask_tab, messages
@@ -64,6 +65,7 @@ def build_main_view(
     label: str = "",
     speech: Speech | None = None,
     educator_chats: EducatorChats | None = None,
+    usage: Usage | None = None,
 ) -> gr.Blocks:
     """Build the page; the tabs each viewer sees are set on load."""
     # uploads picked but never sent expire within two hours (checked hourly)
@@ -84,6 +86,15 @@ def build_main_view(
             # a same-tab button: a Markdown link would open Sign out in a new tab
             gr.Button("Sign out", link="/signout", link_target="_self", size="sm")
         gr.HTML('<div class="lerni-backdrop"></div>', padding=False)  # a tap closes the menu
+        notice = gr.Markdown(visible=False, elem_classes="lerni-usage")  # educators only
+
+        def usage_notice(request: gr.Request) -> Any:
+            viewer = signin.viewer(request.username)
+            line = ""
+            if usage is not None and viewer is not None and viewer.educator:
+                line = usage.paused() or usage.warning()
+            return gr.update(value=line, visible=bool(line))
+
         with gr.Tabs() as tabs:
             home, home_chat, _ = ask_tab(signin, conversations, supervised=True, speech=speech)
             with gr.Tab("Games", id="games", visible=False) as games:  # a placeholder for now
@@ -139,6 +150,9 @@ def build_main_view(
              students_table, chat, home_chat, voice, picture, words, entry, who],
             api_visibility="private",
         )
+        blocks.load(usage_notice, None, notice, api_visibility="private")
+        if usage is not None:  # usage changes with each call: check again every minute
+            gr.Timer(60).tick(usage_notice, None, notice, api_visibility="private")
 
         # a menu button opens its section and closes the menu
         for tab, button in nav.items():

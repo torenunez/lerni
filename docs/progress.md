@@ -14,8 +14,9 @@ When something changes, update this section and add a log entry below.
 
 ## Log
 
-### 2026-10-11 (version numbers; voice shipped; v2.9–v2.15)
+### 2026-10-11 (version numbers; voice shipped; v2.9–v2.16)
 
+- v2.16: Claude usage. Every call reports how much of the account's 5-hour and weekly limits is used; educators see a warning at 75% of the week or 80% of the 5-hour window, and Lerni rests at 95% or on any paid extra usage, until the reset, without calling Claude. Measured on 2026-10-11: the weekly limit was at 88%, shared with the admin's own Claude Code use.
 - v2.15: a Games section in the supervised student's ☰ menu, a placeholder that says games are coming soon. Checked at phone size: the menu now lists Lerni and Games, and switching back keeps the conversation.
 - v2.14: on Maps, one chat with an educator agent replaces the four panels (designed in [spec 06](../plans/specs/06-educator-chat.md)). It proposes goals, interests, new notes, removals, and feedback for the admin as a tick list; only ticked items change the map or reach the admin. Checked at phone size: a goal and a feedback item proposed from one message, the goal ticked and added, the feedback unticked and not saved. Found and fixed: the agent first saw only Lerni's map block, which leaves out interests not talked about yet. Evals: 3 of 3 pass. Tests: 93 passed.
 
