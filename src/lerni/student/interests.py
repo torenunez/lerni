@@ -69,7 +69,7 @@ class InterestMap:
     removed: list[str] = field(default_factory=list)  # names a person removed; never re-added
     edits: int = 0  # bumped by every person's edit
     next_id: int = 1
-    removed_info: dict[str, dict[str, str]] = field(default_factory=dict)  # for Put back
+    removed_info: dict[str, dict[str, Any]] = field(default_factory=dict)  # for Put back
 
     def find(self, name: str) -> Entry | None:
         """The entry with this name, ignoring case, or None."""
@@ -226,10 +226,15 @@ def remove(m: InterestMap, entry_id: str) -> None:
         MapError: Unknown entry.
     """
     entry = m.get(entry_id)
+    links = [asdict(k) for k in m.links if entry_id in (k.a, k.b)]
     _forget(m, entry_id)
     if not m.is_removed(entry.name):
         m.removed.append(entry.name)
-    m.removed_info[entry.name.casefold()] = {"kind": entry.kind, "notes": entry.notes}
+    # what Put back restores: its kind, notes, history, and links
+    m.removed_info[entry.name.casefold()] = {
+        "kind": entry.kind, "notes": entry.notes, "id": entry.id, "days": entry.days,
+        "mentions": entry.mentions, "explained": entry.explained, "links": links,
+    }
     m.edits += 1
 
 
@@ -244,8 +249,18 @@ def put_back(m: InterestMap, name: str) -> Entry:
         raise MapError("That isn't in Removed any more.")
     info = m.removed_info.get(found.casefold(), {})
     if info.get("kind") == "goal":
-        return add_goal(m, found, info.get("notes", ""))
-    return add_interest(m, found)
+        entry = add_goal(m, found, info.get("notes", ""))
+    else:
+        entry = add_interest(m, found)
+    entry.days, entry.explained = list(info.get("days", [])), list(info.get("explained", []))
+    entry.mentions = int(info.get("mentions", 0))
+    ids, old = {e.id for e in m.entries}, info.get("id")
+    for k in info.get("links", []):  # links whose other end is still on the map
+        a, b = (entry.id if x == old else x for x in (k["a"], k["b"]))
+        known = any((x.a, x.b, x.kind) == (a, b, k["kind"]) for x in m.links)
+        if a in ids and b in ids and not known:
+            m.links.append(Link(a, b, k["kind"], k["day"]))
+    return entry
 
 
 def _to_dict(m: InterestMap) -> dict[str, Any]:

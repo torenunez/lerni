@@ -60,21 +60,3 @@ def map_svg(m: InterestMap, today: date) -> str:
                      f'font-size="12" fill="#222">{html.escape(e.name)}</text>')
     parts.append("</svg>")
     return "".join(parts)
-
-
-def map_words(m: InterestMap, today: date) -> str:
-    """The same map in words (Markdown), so it reads without colors or sizes."""
-    names = {e.id: e.name for e in m.entries}
-    lines = []
-    for g in (e for e in m.entries if e.kind == "goal"):
-        state = ("not yet" if not g.days else
-                 f"explained on {len(g.explained)} day{'s' * (len(g.explained) > 1)} "
-                 "(Lerni's guess)" if g.explained else "came up")
-        froms = sorted({names[k.a] for k in m.links if k.kind == "bridge" and k.b == g.id})
-        bridge = f", from {', '.join(html.escape(f) for f in froms)}" if froms else ""
-        lines.append(f"- 🎯 **{html.escape(g.name)}**: {state}{bridge}")
-    for e in sorted((e for e in m.entries if e.kind == "interest"), key=lambda e: -len(e.days)):
-        fade = ", not lately" if faded(e, today) else ""
-        lines.append(f"- 💚 {html.escape(e.name)}: {len(e.days)} day"
-                     f"{'s' * (len(e.days) != 1)}{fade}")
-    return "\n".join(lines) or "Nothing yet: talk with Lerni, or add a goal."

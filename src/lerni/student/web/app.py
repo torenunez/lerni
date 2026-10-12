@@ -81,6 +81,11 @@ _CSS = """
 /* Maps: the picture is a strip on a phone until tapped (nav.js) */
 .lerni-map-strip { max-height: 200px; overflow: hidden; cursor: zoom-in; }
 .lerni-map-strip.lerni-open { max-height: none; cursor: zoom-out; }
+/* MentalMap list: full-width rows with the 🗑 at the right; fields at 16px for iPhone */
+.lerni-item { flex-wrap: nowrap !important; gap: 6px !important; align-items: center; }
+.lerni-item button:first-child { justify-content: flex-start; text-align: left; }
+.lerni-add input, .lerni-add textarea, .lerni-detail textarea { font-size: 16px !important; }
+.lerni-detail { padding-left: 12px; border-left: 3px solid #93c5fd; }
 /* Games: a coming-soon placeholder, centered */
 .lerni-soon { text-align: center; padding: 15vh 1rem; }
 .lerni-soon div { font-size: 120px; line-height: 1; }

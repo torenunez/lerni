@@ -143,3 +143,14 @@ def test_a_removed_interest_is_steered_away_from_and_a_removed_goal_is_not():
     remove(m, add_goal(m, "Fractions").id)
     block = map_block(m, TODAY)
     assert "Set aside" in block and "sharks" in block and "Fractions" not in block
+
+
+def test_put_back_keeps_the_days_and_links_a_mis_tap_would_lose():
+    m = InterestMap()
+    goal = add_goal(m, "Fractions")
+    bridge = {"interest": "baking", "goal": "Fractions"}
+    apply_tags(m, parse_tags({"new_interests": ["baking"], "bridge": bridge}), "baking", TODAY)
+    remove(m, m.find("baking").id)
+    back = put_back(m, "baking")
+    assert back.days == [TODAY.isoformat()]
+    assert details(m, goal.id, TODAY).bridges == [(back.id, "baking")]

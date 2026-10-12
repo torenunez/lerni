@@ -114,7 +114,8 @@ def test_each_student_asks_in_their_own_voice():
 
 def test_maps_reach_only_their_owner_or_an_educator_for_a_supervised_student(tmp_path):
     from lerni.student.interests import MapStore
-    from lerni.student.web.maps import add_goal_to, map_owner
+    from lerni.student.web.maps import map_owner
+    from lerni.student.web.mentallist import add_item, put_back_item, remove_item
 
     students, maps = StudentStore(tmp_path), MapStore(tmp_path)
     students.add("lee", "Lee", Kind.SUPERVISED, "1234")
@@ -125,9 +126,16 @@ def test_maps_reach_only_their_owner_or_an_educator_for_a_supervised_student(tmp
                               (Viewer("lee", "Lee", Role.SUPERVISED), None)):
         with pytest.raises(NotAllowed):
             map_owner(students, viewer, requested)
-    assert add_goal_to(maps, students, SAM, "lee", "Fractions", "").startswith("⚠️")
+    assert add_item(maps, students, SAM, "lee", "Goal", "Fractions", "").startswith("⚠️")
+    supervised = Viewer("lee", "Lee", Role.SUPERVISED)
+    assert add_item(maps, students, supervised, None, "Interest", "trains", "").startswith("⚠️")
     assert maps.get("lee").entries == []
-    assert add_goal_to(maps, students, EDUCATOR, "lee", "Fractions", "").startswith("✅")
+    assert add_item(maps, students, EDUCATOR, "lee", "Interest", "sharks", "").startswith("✅")
+    shark = maps.get("lee").find("sharks").id
+    assert remove_item(maps, students, EDUCATOR, "lee", shark).startswith("✅")
+    assert remove_item(maps, students, EDUCATOR, "lee", shark).startswith("⚠️")  # stale id
+    assert put_back_item(maps, students, EDUCATOR, "lee", "sharks").startswith("✅")
+    assert put_back_item(maps, students, EDUCATOR, "lee", "sharks").startswith("⚠️")  # twice
 
 
 def test_cleared_fields_get_their_own_update():
@@ -137,17 +145,6 @@ def test_cleared_fields_get_their_own_update():
 
     first, second = cleared(2, done=True)
     assert first is not second and first["value"] == second["value"] == ""
-
-
-def test_a_redraw_keeps_the_entry_being_renamed():
-    # regression: Maps' 30-second redraw reset the Rename/Remove pick, so Rename failed
-    from lerni.student.interests import InterestMap, add_goal
-    from lerni.student.web.maps import entry_update
-
-    m = InterestMap()
-    goal = add_goal(m, "Fractions")
-    assert entry_update(m, goal.id)["value"] == goal.id
-    assert entry_update(m, "gone")["value"] is None
 
 
 def test_upload_and_feedback_check_who_is_asking(tmp_path):

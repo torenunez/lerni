@@ -25,17 +25,18 @@ from lerni.student.voice import Speech
 from lerni.student.web.accounts import account_tab, student_rows, students_tab
 from lerni.student.web.ask import ask_tab, messages
 from lerni.student.web.educator import educator_tab
-from lerni.student.web.mapdraw import map_svg, map_words
-from lerni.student.web.maps import entry_choices, map_tab, supervised_choices
+from lerni.student.web.mapdraw import map_svg
+from lerni.student.web.maps import map_tab, supervised_choices
 
 # Tab ids in page order. A supervised student gets Home (their conversation,
-# full screen) and Games; independent students get Ask, My map, and My account;
-# educators also get Maps and Students.
+# full screen) and Games; independent students get Ask, My MentalMap, and My account;
+# educators also get MentalMaps and Students.
 _TAB_IDS = ("home", "games", "ask", "mymap", "maps", "students", "account")
 _SUPERVISED_TABS = {"home", "games"}
 _EDUCATOR_TABS = {"maps", "students"}
 _INDEPENDENT_TABS = {"ask", "mymap", "account"}
-_LABELS = {"home": "Lerni", "games": "Games", "ask": "Ask", "mymap": "My map", "maps": "Maps",
+_LABELS = {"home": "Lerni", "games": "Games", "ask": "Ask", "mymap": "My MentalMap",
+           "maps": "MentalMaps",
            "students": "Students", "account": "My account"}  # the menu's names for the tabs
 
 
@@ -101,8 +102,7 @@ def build_main_view(
                 gr.HTML('<div class="lerni-soon"><div aria-hidden="true">🎮</div>'
                         "<p>Games are coming soon!</p></div>")
             ask, chat, voice = ask_tab(signin, conversations, speech=speech)
-            mymap, _, picture, words, entry = map_tab(signin, students, maps, mine=True,
-                                                      uploader=uploader)
+            mymap, picture, owner, version = map_tab(signin, students, maps, uploader)
             maps_tab, who = educator_tab(signin, students, maps, educator_chats, feedback)
             students_tab_, students_table = students_tab(signin, students)
             account = account_tab(signin, students)
@@ -116,11 +116,9 @@ def build_main_view(
             else:
                 name = f"{viewer.display_name} · {viewer.role.value}"
                 name += " · educator" if is_edu else ""
-            own = ["", "", gr.update(choices=[], value=None)]
+            own = ["", "", 0]  # My MentalMap: picture, whose list, its version
             if viewer is not None and "mymap" in shown:
-                m = maps.get(viewer.username)
-                own = [map_svg(m, date.today()), map_words(m, date.today()),
-                       gr.update(choices=entry_choices(m), value=None)]
+                own = [map_svg(maps.get(viewer.username), date.today()), viewer.username, 1]
             opening = opening_tab(viewer)
             return [
                 f"Signed in as **{name}**",
@@ -136,8 +134,8 @@ def build_main_view(
                 messages(conversations, viewer.username)  # the supervised screen's chat
                 if conversations is not None and viewer is not None and "home" in shown else [],
                 gr.update(visible=is_edu, value=False),  # educators can try the supervised voice
-                *own,  # My map: picture, words, entries
-                gr.update(choices=supervised_choices(students, viewer), value=None),  # Maps
+                *own,  # My MentalMap: picture, whose list, its version
+                gr.update(choices=supervised_choices(students, viewer), value=None),  # MentalMaps
             ]
 
         blocks.load(
@@ -147,7 +145,7 @@ def build_main_view(
             # buttons, then the rest
             [header, title, tabs, home, games, ask, mymap, maps_tab, students_tab_, account,
              *nav.values(),
-             students_table, chat, home_chat, voice, picture, words, entry, who],
+             students_table, chat, home_chat, voice, picture, owner, version, who],
             api_visibility="private",
         )
         blocks.load(usage_notice, None, notice, api_visibility="private")
