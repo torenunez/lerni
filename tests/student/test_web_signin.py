@@ -85,3 +85,19 @@ def test_the_app_page_is_never_kept_by_the_browser(client):
     sign_in(client, "sam", "1234")
     page = client.get("/app/")
     assert page.status_code == 200 and "no-store" in page.headers.get("cache-control", "")
+
+
+def test_a_file_path_sent_by_the_browser_is_refused(tmp_path):
+    # mounted (not launched) Gradio skips its path check unless told it has launched
+    from gradio import processing_utils
+    from gradio.context import LocalContext
+    from gradio.exceptions import InvalidPathError
+
+    app = build_app(data_root=tmp_path / "data")
+    blocks = next(r.app for r in app.routes if getattr(r, "path", "") == "/app").get_blocks()
+    secret = tmp_path / "notes.md"
+    secret.write_text("private")
+    LocalContext.blocks.set(blocks)
+    for path in (secret, "/dev/zero"):
+        with pytest.raises(InvalidPathError):
+            processing_utils._check_allowed(path, check_in_upload_folder=True)

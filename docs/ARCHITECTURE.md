@@ -29,7 +29,7 @@ flowchart LR
     server -. "adapter: the admin's Claude account" .-> ai[Claude]
 ```
 
-The app runs on the home network only and is never exposed to the internet. It serves plain HTTP, or HTTPS when `lerni serve` gets `--cert` and `--key` (a certificate made with mkcert and installed once on each device; Version 2), and voice needs HTTPS on the same server, because browsers allow the microphone only over HTTPS ([MDN](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia)).
+The app runs on the home network only and is never exposed to the internet. It serves plain HTTP, or HTTPS when `lerni serve` gets `--cert` and `--key` (a certificate made with mkcert and installed once on each device; Version 2), and voice needs HTTPS on the same server, because browsers allow the microphone only over HTTPS ([MDN](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia)). Speech-to-text (whisper.cpp's `whisper-cli`) and text-to-speech (macOS `say`) run on the home server behind one adapter (`Speech`); what was heard enters the conversation like typing, as text to Claude.
 
 ## How a conversation grows the map
 
@@ -99,7 +99,7 @@ If a change would break one of these, stop and ask.
 Every code file, one line each: [code manifest](code-manifest.md).
 
 - `src/lerni/student/`: `students.py` (accounts and passwords), `signin.py` (the signed cookie, who's signed in), `jsonfiles.py` (atomic JSON writes), `conversation.py` (the prompt, in-memory conversations), `personas/` (one starting persona per kind of student), `interests.py` (the map, its rules, and its store), `tagging.py` (the tagger and the map keeper), `logs.py` (7-day conversation logs), `educator_agent.py` (the educator agent), `upload.py` (reading notes, checking and adding proposals), `feedback.py` (educator feedback, summarized, never acted on), `adapters/claude_code.py` (Claude through the Claude Code CLI, including the tagger; prototype).
-- `src/lerni/student/web/`: the Gradio screens: `signin_page.py`, `main.py` (a ☰ menu of sections by role), `ask.py`, `maps.py` (My MentalMap), `educator.py` (MentalMaps), `mapdraw.py` (the inline SVG picture and the list), `accounts.py`.
+- `src/lerni/student/web/`: the Gradio screens: `signin_page.py`, `main.py` (a ☰ menu of sections by role), `ask.py`, `maps.py` (My MentalMap), `educator.py` (MentalMaps), `mapdraw.py` (the inline SVG picture), `mentallist.py` (the MentalMap list), `accounts.py`.
 - `src/lerni/cli.py`, `commands/`, `db.py`, `sm2.py`: the admin tool, plus `commands/student.py`, `commands/logs.py`, and `commands/feedback.py` for the student app.
 - `tests/`: pytest, fakes only. `plans/`: build plans and specs.
 
@@ -107,7 +107,6 @@ Every code file, one line each: [code manifest](code-manifest.md).
 
 | Piece | Version | Seam to leave room for now |
 |---|---|---|
-| Voice and HTTPS | 2 | Nothing depends on a particular address. Speech-to-text (whisper.cpp's `whisper-cli`) and text-to-speech (macOS `say`) run as commands on the home server behind one adapter (`Speech`: `transcribe`, `speak`); what was heard enters the conversation like typing; audio stays on the home server, in memory or temp files deleted at once. |
 | Remembering preferences, recall | 3 | The map is the memory; preferences and recall build on it. |
 | Suggested goals | 4 | Suggestions are shown for the educator to accept; they never become goals on their own (boundary 1). |
 | Curated or checked content | — | None planned; if ever needed, it arrives as information in the map block, never as a separate path. |

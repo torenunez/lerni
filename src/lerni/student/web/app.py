@@ -215,7 +215,7 @@ def build_app(
         educator_chats=EducatorChats(chat_model, maps, log) if chat_model else None,
         usage=usage,
     )
-    return gr.mount_gradio_app(
+    mounted = gr.mount_gradio_app(
         app,
         view,
         path=APP_PATH,
@@ -225,3 +225,6 @@ def build_app(
         head=_head(speech is not None),
         **_MOUNT_OPTIONS,
     )
+    # Gradio refuses file paths outside its upload folder only once launched; mounted apps never are
+    view.has_launched = True
+    return mounted

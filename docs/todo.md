@@ -17,7 +17,7 @@ Open tasks by who does the work. The educator and admin tracks run in parallel: 
 
 ### Now
 
-- [ ] Check v2.12–v2.17 on the iPhone and iPad in development, then say go: Claude merges them in order and updates production with one restart.
+- [ ] Check v2.17 in production on the iPhone and iPad: the ☰ menu (Lerni and Games on the iPad), My MentalMap and MentalMaps, the usage warning, and Hold to talk.
 - [ ] Turn off extra usage (paid credits) on the Claude account Lerni uses (claude.ai → Settings → Usage), so Lerni can never spend credits; Lerni also rests if a call ever uses them.
 - [ ] Pick Lerni's voice ([admin reference: Voice](reference/admin.md#voice)), try Hold to talk on the iPad, then with the supervised student and an adult nearby (Version 2 is done when their map grows from a spoken conversation).
 - [ ] Optionally delete the old plan files on the home server (`~/.lerni/student/plans/`); nothing reads them any more.
@@ -26,9 +26,12 @@ Open tasks by who does the work. The educator and admin tracks run in parallel: 
 
 What ships next, in order, one PR each ([how versions work](roadmap.md#versions)):
 
-1. **v2.18: voice that can't speak says so:** if `say` returns empty audio, startup prints `Voice (hold to talk): off` with the reason, instead of sending silence.
-2. **v2.19: production keeps running on its own:** run production and development the same way, as macOS LaunchAgents in the desktop session (start at login, restart after a crash); check `say` works there first. Until then both run in Terminal windows, and production stops if that window or the Mac does.
-3. **Version 3, remembering:** not planned yet; its first PR writes the plan.
+1. **v2.18: safety fixes:** no file paths from the browser, hurt or unsafe students taken seriously, sturdier usage checks.
+2. **v2.19: MentalMap fixes:** edits reach only the map on screen (a shared device can't edit another account's map); Delete for good takes the name out of what Claude sees, and only items removed since v2.17 are steered away from; Put back keeps bridges (both ends removed) and their dates, and a full map says "This map is full" instead of pushing out an interest; two subject changes in one day both count toward resting a goal; the list re-checks who's viewing when it redraws and when MentalMaps opens; curly apostrophes from the iPhone keyboard work; Delete for good asks once more. Then fix the specs' "lossless undo" and "one tagger at a time" claims.
+3. **v2.20: a better MentalMap picture:** every item, goals in the middle and each interest near the goal it bridges to, in places that don't move between redraws, sized by the same strength the list shows; tap an item to highlight its links and open it in the list; pinch to zoom. Our own SVG with a little script, nothing loaded from the internet; Cytoscape.js only if this falls short. Starts with a short design.
+4. **v2.21: voice that fails says so:** if `say` returns empty audio, startup prints `Voice (hold to talk): off` with the reason, instead of sending silence; the microphone is released if you let go before Safari asks; recording stops and sends at 30 seconds instead of dropping the end; a microphone failure switches to Type with a short note.
+5. **v2.22: production keeps running on its own:** run production and development the same way, as macOS LaunchAgents in the desktop session (start at login, restart after a crash); check `say` works there first. Until then both run in Terminal windows, and production stops if that window or the Mac does.
+6. **Version 3, remembering:** not planned yet; its first PR writes the plan.
 
 How PRs are split:
 
@@ -43,9 +46,10 @@ Versions 1 and 2 now need sessions, not code: the educator sets goals, rehearses
 
 ### Later
 
+- [ ] Decide how long to keep conversation logs (7 days now; 20 days or longer is under consideration). Longer keeps more of the students' words on disk; it changes CLAUDE.md rule 6 and the PRDs.
+- [ ] In one eval, Lerni began to use the Claude account owner's name in a supervised reply (2026-10-12); find where the CLI gives the model that name and keep it out.
 - [ ] After a week of family use: compare each feature's Claude use (Ask, tagger, Upload, MentalMaps chat) and decide whether any can move to a cheaper model.
 - [ ] Try the voice with the students before deciding whether a hosted voice (Inworld, about $18 a month) is worth it; a hosted service means student audio leaves the house, so it needs the educator's agreement first.
-- [ ] A better MentalMap picture: it draws at most 15 entries; show more, for example by grouping or a focus on one entry and its links (the list already has them all).
 - [ ] MentalMaps chat: PDFs (its Claude call takes text only; Upload on My MentalMap still reads PDFs), and the same chat on My MentalMap once educators have used it.
 - [ ] `feedback.summarize` is unused since v2.14 (the chat writes the note); remove it with its test, or use it for chat feedback.
 - [ ] After the first supervised sessions, if useful: count redirects per session, and a "flag this reply" button for the adult nearby.
@@ -68,8 +72,10 @@ Versions 1 and 2 now need sessions, not code: the educator sets goals, rehearses
 
 - [ ] **Ask:** Stop before the first word can be slow and a quick re-ask may say "Still answering"; the two chat panels allow 8 answers at once instead of 4 (share one concurrency id); a cancel can log "Exception ignored"; the new message isn't JSON like earlier turns; when Claude isn't set up the supervised screen greets over a disabled box; the guns redirect offered squirt guns (offer something unrelated).
 - [ ] **Upload and feedback:** cap how big a .docx may expand when read, and show a friendly message for a malformed one; a file-read error can hide its cause; no server-side check for real names in proposals; "Tick what to add" shows when every idea is already on the map; `lerni feedback done` can lose an entry saved at the same moment and finds entries by position; editing feedback after checking keeps the old summary; Claude pads goal notes with restatements.
-- [ ] **The map:** at a full map a just-added interest can be dropped by the next one; the map block's 1,500-character cut can cut a line mid-word; top interests rank by all-time days rather than the last 30; a faded explained goal can be listed twice in the block; the MentalMaps timer ticks on every page; an unreadable map file shows a Gradio error; `lerni logs` can fail if a purge runs mid-read.
-- [ ] **MentalMap list** (v2.17 review): putting back both ends of a bridge loses the bridge, and restored links count as recent bridges; Put back on a full map pushes out the least-seen interest without saying so; the list doesn't re-check the viewer on a redraw (edits do).
+- [ ] **The map:** the map block's 1,500-character cut can cut a line mid-word; top interests rank by all-time days rather than the last 30; a faded explained goal can be listed twice in the block; the MentalMaps timer ticks on every page; an unreadable map file shows a Gradio error; `lerni logs` can fail if a purge runs mid-read.
+- [ ] **Educator chat:** a proposal names its target, so an old one can change a newer item with the same name; Clear or a new student can be undone by a reply still arriving; 📎 notes are sent again every turn; removals are reported as "Added".
+- [ ] **Tagging:** two quick answers' tags can land out of order, and a subject change counts against the newest bridge rather than the one in the answer before.
+- [ ] **Menu:** the closed drawer is still reachable by keyboard and VoiceOver.
 - [ ] **Accounts:** two educators archiving each other leaves none (recover with `lerni student add`); password hashing runs inside the account write lock; a live session can guess its current password in My account without the sign-in delay; a non-ASCII cookie gives a 500; an archived account is detectable by timing; `/signin` has no Origin check and `/signout` is a GET; the data folder is created 0755; a password change doesn't sign out other devices.
 - [ ] **Tests:** the role check on each educator handler, cookie expiry, and a supervised cookie calling an educator event over HTTP.
 

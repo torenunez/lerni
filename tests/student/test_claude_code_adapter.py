@@ -1,5 +1,7 @@
 """The Claude Code adapters run isolated: no tools, no settings, and no saved transcripts."""
 
+from datetime import datetime, timedelta
+
 import pytest
 
 pytest.importorskip("claude_agent_sdk")
@@ -71,7 +73,6 @@ def test_stop_cancels_the_claude_call():
 
 
 def test_a_paused_lerni_never_calls_claude(monkeypatch):
-    from datetime import datetime, timedelta
 
     import lerni.student.adapters.claude_code as cc
     from lerni.student.conversation import ConversationUnavailable, Turn
@@ -94,10 +95,23 @@ def test_rate_limit_events_update_usage():
     from lerni.student.adapters.claude_code import _note_limits
     from lerni.student.usage import Usage
 
+    soon = int((datetime.now() + timedelta(hours=3)).timestamp())  # never a fixed date
+    later = int((datetime.now() + timedelta(days=1)).timestamp())
     raw = {"status": "allowed_warning", "isUsingOverage": False, "unifiedWindows": {
-        "five_hour": {"utilization": 0.13, "resetsAt": 1791779400},
-        "seven_day": {"utilization": 0.88, "resetsAt": 1791853200}}}
+        "five_hour": {"utilization": 0.13, "resetsAt": soon},
+        "seven_day": {"utilization": 0.88, "resetsAt": later}}}
     usage = Usage()
     _note_limits(usage, RateLimitEvent(
         rate_limit_info=RateLimitInfo(status="allowed_warning", raw=raw), uuid="u", session_id="s"))
     assert "88%" in usage.warning()
+
+
+def test_an_odd_usage_event_is_skipped_not_fatal():
+    from claude_agent_sdk import RateLimitEvent, RateLimitInfo
+
+    from lerni.student.adapters.claude_code import _note_limits
+    from lerni.student.usage import Usage
+
+    raw = {"unifiedWindows": {"five_hour": None, "seven_day": {"utilization": "x"}}}
+    _note_limits(Usage(), RateLimitEvent(
+        rate_limit_info=RateLimitInfo(status="allowed", raw=raw), uuid="u", session_id="s"))
