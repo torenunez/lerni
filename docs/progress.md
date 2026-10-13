@@ -4,9 +4,9 @@ Where things really stand, then a dated log, newest first. Completed work is rec
 
 Record each kind of "done" only when it actually happens, with the date: code built, content approved, app ready, a student session held. Passing tests show code behaves as specified; they don't make anything ready for a student.
 
-## Current state (2026-10-12, v2.17 on the home server: Versions 1 and 2 built: the conversation, MentalMaps, HTTPS, and voice)
+## Current state (2026-10-12, v2.18 on the home server: Versions 1 and 2 built: the conversation, MentalMaps, HTTPS, and voice)
 
-- **Built:** the student app's core (student accounts, sign-in, Lerni's conversations, the MentalMap with its tagger and 7-day logs, Upload and educator feedback, and the educator agent); `lerni serve` with a sign-in page and one app with a ☰ menu by role: an independent student's Ask, My MentalMap (an editable list, the picture, and Upload), and My account; an educator's MentalMaps (a student's list and picture, with a chat) and Students on top; a supervised student's conversation, full screen, and Games (coming soon). Hold to talk with spoken answers; a Claude usage warning and rest. The admin tool (`lerni`, with `lerni student`, `lerni logs`, and `lerni feedback`). A [code manifest](code-manifest.md) of every file. Tests: 121 passed.
+- **Built:** the student app's core (student accounts, sign-in, Lerni's conversations, the MentalMap with its tagger and 7-day logs, Upload and educator feedback, and the educator agent); `lerni serve` with a sign-in page and one app with a ☰ menu by role: an independent student's Ask, My MentalMap (an editable list, the picture, and Upload), and My account; an educator's MentalMaps (a student's list and picture, with a chat) and Students on top; a supervised student's conversation, full screen, and Games (a race for points spent on cartoon cars; educators race too). Hold to talk with spoken answers; a Claude usage warning and rest. The admin tool (`lerni`, with `lerni student`, `lerni logs`, and `lerni feedback`). A [code manifest](code-manifest.md) of every file. Tests: 135 passed.
 - **Designed:** the interest map, goals, the tagger, upload, feedback, and the supervised conversation ([specs/04-interest-map.md](../plans/specs/04-interest-map.md)); approved with PR #12.
 - **Not yet:** any supervised student session.
 
@@ -14,7 +14,9 @@ When something changes, update this section and add a log entry below.
 
 ## Log
 
-### 2026-10-12 (safety fixes, MentalMap fixes and picture, "kind of" groups, a new Version 3; v2.18–v3.0)
+### 2026-10-12 (safety fixes, MentalMap fixes and picture, "kind of" groups, a new Version 3, the race; v2.18–v3.1)
+
+- v3.1: the race, points, and the garage ([plan](../plans/v3.1-race.md)). Games is a race against Zippy and Bolt: 5 questions with three choices, written by Haiku 10 at a time from the student's goals and interests and checked by the server (the page never gets an answer); a right pick boosts your car and slows the bots, and the finish depends only on how many were right. Points (15/10/5 by place plus one per right answer) go to a per-person file, each award once; they buy cartoon cars in a garage; 10 races a day. Educators race too and see a student's points on MentalMaps. Checked at phone size on a throwaway server; the check found a quick Race tap asking Claude twice, and every Fractions question dropped because Claude copied the goal's notes into its name, both fixed with regression tests. Tests: 135 passed; race evals 3 of 3, plus a fourth case added.
 
 - v3.0: Version 3 designed ([spec 09](../plans/specs/09-play-and-points.md), [v3.1 plan](../plans/v3.1-race.md)). The race: 5 tap questions against two bots, written by Haiku 10 at a time from the student's goals and checked by the server; the finish depends only on how many were right. Points: 15/10/5 by place plus 1 per right answer, 3 or 1 for answers in Chat (up to 30 a day), 10 races a day; eight cartoon cars from free to 400.
 

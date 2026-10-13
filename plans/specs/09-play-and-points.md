@@ -99,7 +99,7 @@ At about 3 races a day plus a few Chat answers, the first new car comes on day 1
   - the choices aren't 3 different, non-empty strings;
   - the answer index is out of range;
   - the goal isn't on the map (when the map has goals).
-- **Then it shuffles the choices**, so the right one isn't always first. If fewer than 5 survive, it asks again once; then: "The track needs a minute. Try again soon."
+- **Then it shuffles the choices**, so the right one isn't always first, and a race takes turns across the goals. A goal's notes, if Claude copies them into `goal`, are ignored when matching. If fewer than 5 survive, it asks again once; then: "The track needs a minute. Try again soon."
 - **Writing ahead:** the next set is written in the background when Games opens, and after each race. A set is kept in memory for the day only.
 
 ### Points (`points.py`)
