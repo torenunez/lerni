@@ -28,13 +28,12 @@ Open tasks by who does the work. The educator and admin tracks run in parallel: 
 
 What ships next, in order, one PR each ([how versions work](roadmap.md#versions)):
 
-1. **v2.21: Version 3 becomes Play and points:** the roadmap, PRDs, and this list (docs only).
-2. **v3.0: the race, points, and conversation answers, designed:** spec 09 and the plan: point values, car prices, the daily cap, how the race moves, and the garage's cartoon cars.
-3. **v3.1: the race in Games:** a MathGas-style race against two silly bots, 5 multiple-choice questions Claude writes from the student's goals and interests (the server keeps the answers); a right pick boosts your car and slows a bot, a wrong one slows yours and shows why; your place earns points, once per race. A points store per student (ids and numbers only), a ⭐ total in the header, and a garage of cartoon SVG cars bought with points and kept for good. Games for supervised students and educators.
-4. **v3.2: points in the conversation, and Ask becomes Chat:** the tagger judges the student's answer to Lerni's last question (right, a real try, or nothing) and the server adds points, once per exchange, up to a daily cap; "⭐ +3" shows by the total; no multiple choice in the conversation.
-5. **v3.3: voice that fails says so:** if `say` returns empty audio, startup prints `Voice (hold to talk): off` with the reason, instead of sending silence; the microphone is released if you let go before Safari asks; recording stops and sends at 30 seconds instead of dropping the end; a microphone failure switches to Type with a short note.
-6. **v3.4: production keeps running on its own:** run production and development the same way, as macOS LaunchAgents in the desktop session (start at login, restart after a crash); check `say` works there first. Until then both run in Terminal windows, and production stops if that window or the Mac does.
-7. **Version 4, remembering:** Bridge Trip (a trip along their map with recall stops) is its front door; its first PR writes the plan.
+1. **v3.0: the race, points, and conversation answers, designed:** [spec 09](../plans/specs/09-play-and-points.md) and the [v3.1 plan](../plans/v3.1-race.md) (docs only).
+2. **v3.1: the race in Games:** a MathGas-style race against two silly bots, 5 multiple-choice questions Claude writes from the student's goals and interests (the server keeps the answers); a right pick boosts your car and slows a bot, a wrong one slows yours and shows why; your place earns points, once per race. A points store per student (ids and numbers only), a ⭐ total in the header, and a garage of cartoon SVG cars bought with points and kept for good. Games for supervised students and educators.
+3. **v3.2: points in the conversation, and Ask becomes Chat:** the tagger judges the student's answer to Lerni's last question (right, a real try, or nothing) and the server adds points, once per exchange, up to a daily cap; "⭐ +3" shows by the total; no multiple choice in the conversation.
+4. **v3.3: voice that fails says so:** if `say` returns empty audio, startup prints `Voice (hold to talk): off` with the reason, instead of sending silence; the microphone is released if you let go before Safari asks; recording stops and sends at 30 seconds instead of dropping the end; a microphone failure switches to Type with a short note.
+5. **v3.4: production keeps running on its own:** run production and development the same way, as macOS LaunchAgents in the desktop session (start at login, restart after a crash); check `say` works there first. Until then both run in Terminal windows, and production stops if that window or the Mac does.
+6. **Version 4, remembering:** Bridge Trip (a trip along their map with recall stops) is its front door; its first PR writes the plan.
 
 How PRs are split:
 

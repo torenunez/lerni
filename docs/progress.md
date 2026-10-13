@@ -14,7 +14,9 @@ When something changes, update this section and add a log entry below.
 
 ## Log
 
-### 2026-10-12 (safety fixes, MentalMap fixes and picture, "kind of" groups, a new Version 3; v2.18–v2.21)
+### 2026-10-12 (safety fixes, MentalMap fixes and picture, "kind of" groups, a new Version 3; v2.18–v3.0)
+
+- v3.0: Version 3 designed ([spec 09](../plans/specs/09-play-and-points.md), [v3.1 plan](../plans/v3.1-race.md)). The race: 5 tap questions against two bots, written by Haiku 10 at a time from the student's goals and checked by the server; the finish depends only on how many were right. Points: 15/10/5 by place plus 1 per right answer, 3 or 1 for answers in Chat (up to 30 a day), 10 races a day; eight cartoon cars from free to 400.
 
 - v2.21: Version 3 becomes Play and points (docs only). The admin saw the student answer Lerni's goal questions with random emojis and chose an incentive: a MathGas-style car race in Games answered by multiple choice, plus points for real answers in the conversation (judged by the tagger), all spent on cars in a garage. It replaces the student PRD's "No scores, no failing" (points are never taken away for a wrong answer, never compared between students, and kept apart from the map). Remembering, suggested goals, and without an educator move to Versions 4–6; Pit stop and a private real-car pack wait in the to-do.
 
