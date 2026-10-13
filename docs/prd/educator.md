@@ -65,6 +65,7 @@ As an educator, I want to see a supervised student's map, so that I know what th
 
 - WHEN the educator opens MentalMaps and picks a supervised student THE SYSTEM SHALL draw their map: interests in green, sized by the days they come up; goals in coral, outlined until they come up and sized by the days the student explained them back (Lerni's guess), and bridges as dashed lines.
 - WHEN the educator taps an item in the list THE SYSTEM SHALL show its strength (strong, growing, faint, or not yet, from the days it came up in the last 30), the facts behind it, and its bridges and related items, each a tap away.
+- WHEN an interest is a kind of another (a Great White is a kind of shark) THE SYSTEM SHALL list it under that group and count the group's strength from the days any of its kinds came up, each day once; the tagger may group names already on the map, and the educator can put an item under a group, take it out (it stays out), or tick a group the MentalMaps chat proposes.
 
 ### Story: Give feedback
 
@@ -147,6 +148,7 @@ Running the admin tool. Editing app code or files directly.
 - 2026-10-09: The educator no longer writes plans, cards, or approvals. They choose goals (a name and optional notes, or uploaded notes Claude turns into proposed interests and goals), watch each supervised student's interest map, and give free-text feedback that the agent summarizes for the admin and never acts on. Only educators see a supervised student's map. (Replaces planning, approvals, Sessions, and the allowlist from the earlier decisions.)
 - 2026-10-11: On Maps, one chat with an educator agent replaces Add a goal, Rename or remove, Upload notes, and Feedback; it proposes, and only ticked items change a map or reach the admin (v2.14, [spec 06](../../plans/specs/06-educator-chat.md)). My map keeps its panels for now.
 - 2026-10-11: The map is a **MentalMap** on screen (code and data keep `map`). Each MentalMap is an editable list: removing an interest steers Lerni away from it, Put back undoes a removal, and tapping an item shows its strength and bridges (v2.17, [spec 07](../../plans/specs/07-mentalmap-list.md)).
+- 2026-10-12: Interests can be grouped ("kind of"): a group's strength counts each day any of its kinds came up, so a specific shark never outgrows sharks. The tagger's groups count at once and a person can undo one; new group names come only from a person. Goals aren't grouped yet, and nothing rolls up into a mastery score.
 
 ## Open questions
 

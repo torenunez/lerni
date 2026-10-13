@@ -18,8 +18,17 @@
   function focus(wrap, id) {
     const svg = wrap.querySelector('svg');
     const near = new Set(id ? [id] : []);
+    // a group lights up its whole family: follow kind-of lines down
+    const down = id ? [id] : [];
+    while (down.length) {
+      const top = down.pop();
+      svg.querySelectorAll(`line[data-k="kind_of"][data-b="${top}"]`).forEach(l => {
+        if (!near.has(l.dataset.a)) { near.add(l.dataset.a); down.push(l.dataset.a); }
+      });
+    }
     svg.querySelectorAll('line').forEach(l => {
-      const on = id && (l.dataset.a === id || l.dataset.b === id);
+      const on = id && (l.dataset.a === id || l.dataset.b === id
+        || (l.dataset.k === 'kind_of' && near.has(l.dataset.a) && near.has(l.dataset.b)));
       l.classList.toggle('lerni-near', !!on);
       if (on) { near.add(l.dataset.a); near.add(l.dataset.b); }
     });

@@ -87,7 +87,7 @@ Each adds one cue on the map or one habit for the agent, and no new screens ([le
 - **Culturally responsive, their words:** interests are named the way the student says them ("monster trucks", not "vehicles"); the server checks the name appears in what they said.
 - **Zone of proximal development, back off:** after two bounces from the same goal within 7 days, the agent leaves it alone for 3 days and then tries from a different interest. That respects their engagement; it doesn't mean the goal was too hard.
 
-Left out of the map to keep it minimal: stepping-stone ideas between an interest and a goal, and hierarchies ("is a", "part of"). The agent can still use stepping stones in conversation.
+Left out of the map to keep it minimal: stepping-stone ideas between an interest and a goal, and "part of" links. ("Kind of" groups came in v2.20: [spec 08](08-kind-of.md).) The agent can still use stepping stones in conversation.
 
 ## Supervised students
 

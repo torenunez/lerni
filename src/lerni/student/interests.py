@@ -53,11 +53,13 @@ class Entry:
 
 @dataclass
 class Link:
-    """Two entries that came up together (``related``) or a bridge from an interest to a goal."""
+    """Two entries that came up together (``related``), a bridge from an interest to a goal,
+    or a specific interest under a general one (``kind_of``)."""
 
     a: str
     b: str
-    kind: Literal["related", "bridge"]
+    # kind_of: a is a kind of b; not_kind_of: a person undid that, so the tagger leaves it
+    kind: Literal["related", "bridge", "kind_of", "not_kind_of"]
     day: str
 
 
@@ -73,9 +75,12 @@ class InterestMap:
     removed_info: dict[str, dict[str, Any]] = field(default_factory=dict)  # for Put back
 
     def find(self, name: str) -> Entry | None:
-        """The entry with this name, ignoring case, or None."""
+        """The entry with this name, ignoring case, or None; "car" finds "cars" and back."""
         key = name.strip().casefold()
-        return next((e for e in self.entries if e.name.casefold() == key), None)
+        exact = next((e for e in self.entries if e.name.casefold() == key), None)
+        if exact is not None or not key:
+            return exact
+        return next((e for e in self.entries if _plural_of(e.name.casefold(), key)), None)
 
     def get(self, entry_id: str) -> Entry:
         """The entry with this id.
@@ -97,6 +102,11 @@ class InterestMap:
     def is_removed(self, name: str) -> bool:
         """Whether a person removed this name."""
         return name.casefold() in {r.casefold() for r in self.removed}
+
+
+def _plural_of(a: str, b: str) -> bool:
+    """Whether one name is the other plus "s" or "es" (cars, buses)."""
+    return a in (b + "s", b + "es") or b in (a + "s", a + "es")
 
 
 def check_name(name: str) -> str:
@@ -142,9 +152,10 @@ def make_room(m: InterestMap) -> bool:
     """
     if len(m.entries) < MAX_ENTRIES:
         return True
-    interests = [e for e in m.entries if e.kind == "interest"]
+    groups = {k.b for k in m.links if k.kind == "kind_of"}
+    interests = [e for e in m.entries if e.kind == "interest" and e.id not in groups]
     if not interests:
-        return False
+        return False  # only goals and groups left: a group with kinds is never dropped
     # fewest days first, then the longest ago
     drop = min(interests, key=lambda e: (len(e.days), e.days[-1] if e.days else ""))
     _forget(m, drop.id)
@@ -240,6 +251,11 @@ def remove(m: InterestMap, entry_id: str) -> None:
     """
     entry = m.get(entry_id)
     links = [asdict(k) for k in m.links if entry_id in (k.a, k.b)]
+    day = date.today().isoformat()
+    for kind in children(m, entry_id):  # its kinds stay, one level up
+        for up in parents(m, entry_id):
+            if not _group_error(m, kind, up):
+                _link(m, kind, up, "kind_of", day)
     _forget(m, entry_id)
     if not m.is_removed(entry.name):
         m.removed.append(entry.name)
@@ -365,6 +381,7 @@ class Tags:
     explained: str | None = None
     changed_subject: bool = False
     skip: str | None = None  # "excluded", "personal", or "scary": add nothing
+    kind_of: tuple[tuple[str, str], ...] = ()  # (specific, general), both on the map
 
 
 def _names(value: Any, limit: int) -> tuple[str, ...]:
@@ -375,11 +392,14 @@ def parse_tags(data: Any) -> Tags:
     """The tagger's answer as :class:`Tags`; unknown fields and bad shapes are dropped."""
     if not isinstance(data, dict):
         return Tags()
-    related = tuple(
-        (p[0], p[1])
-        for p in data.get("related") or []
-        if isinstance(p, list) and len(p) == 2 and all(isinstance(x, str) for x in p)
-    )[:3]
+    def pairs(key: str, limit: int) -> tuple[tuple[str, str], ...]:
+        return tuple(
+            (p[0], p[1])
+            for p in data.get(key) or []
+            if isinstance(p, list) and len(p) == 2 and all(isinstance(x, str) for x in p)
+        )[:limit]
+
+    related = pairs("related", 3)
     bridge = data.get("bridge")
     pair = (bridge.get("interest"), bridge.get("goal")) if isinstance(bridge, dict) else None
     explained, skip = data.get("explained"), data.get("skip")
@@ -391,6 +411,7 @@ def parse_tags(data: Any) -> Tags:
         explained=explained if isinstance(explained, str) else None,
         changed_subject=data.get("changed_subject") is True,
         skip=skip if isinstance(skip, str) and skip else None,
+        kind_of=pairs("kind_of", 2),
     )
 
 
@@ -400,7 +421,7 @@ def _seen(entry: Entry, day: str) -> None:
     entry.mentions += 1
 
 
-def _link(m: InterestMap, a: str, b: str, kind: Literal["related", "bridge"], day: str) -> None:
+def _link(m: InterestMap, a: str, b: str, kind: Any, day: str) -> None:
     # the list is in order of recency: an existing link moves to the end
     m.links = [k for k in m.links if not (k.kind == kind and {k.a, k.b} == {a, b})]
     m.links.append(Link(a, b, kind, day))
@@ -445,6 +466,10 @@ def apply_tags(m: InterestMap, tags: Tags, student_text: str, today: date) -> No
         ei, eg = m.find(tags.bridge[0]), m.find(tags.bridge[1])
         if ei is not None and eg is not None and ei.kind == "interest" and eg.kind == "goal":
             _link(m, ei.id, eg.id, "bridge", day)
+    for a, b in tags.kind_of:  # only between names on the map, and never one a person undid
+        ea, eb = m.find(a), m.find(b)
+        if ea is not None and eb is not None and not _group_error(m, ea.id, eb.id, tagger=True):
+            _link(m, ea.id, eb.id, "kind_of", day)
     if tags.explained and (g := m.find(tags.explained)) is not None and g.kind == "goal":
         if day not in g.explained:
             g.explained.append(day)
@@ -454,10 +479,11 @@ def apply_tags(m: InterestMap, tags: Tags, student_text: str, today: date) -> No
             m.get(bridges[-1].b).bounces.append(day)  # each one counts, even on the same day
 
 
-def faded(entry: Entry, today: date) -> bool:
-    """Not discussed in 30 days (an entry that never came up isn't faded)."""
+def faded(entry: Entry, today: date, m: InterestMap | None = None) -> bool:
+    """Not discussed in 30 days, counting its kinds when ``m`` is given (never-seen isn't faded)."""
+    days = group_days(m, entry) if m is not None else entry.days
     cutoff = (today - timedelta(days=FADE_DAYS)).isoformat()
-    return bool(entry.days) and entry.days[-1] < cutoff
+    return bool(days) and days[-1] < cutoff
 
 
 def backed_off(entry: Entry, today: date) -> bool:
@@ -468,16 +494,97 @@ def backed_off(entry: Entry, today: date) -> bool:
     return len(recent) >= BOUNCES_TO_BACK_OFF and max(recent) > rest_until
 
 
+MAX_GROUPS, MAX_LEVELS = 2, 3  # groups per item; levels in a chain (animals › sharks › bull shark)
+
+
+def parents(m: InterestMap, entry_id: str) -> list[str]:
+    """The ids of the groups this item is a kind of."""
+    return [k.b for k in m.links if k.kind == "kind_of" and k.a == entry_id]
+
+
+def children(m: InterestMap, entry_id: str) -> list[str]:
+    """The ids of the kinds directly under this item."""
+    return [k.a for k in m.links if k.kind == "kind_of" and k.b == entry_id]
+
+
+def family(m: InterestMap, entry: Entry) -> list[Entry]:
+    """The item and everything under it, each once (an item may be in two groups)."""
+    seen, todo = {entry.id}, [entry.id]
+    while todo:
+        for kid in children(m, todo.pop()):
+            if kid not in seen:
+                seen.add(kid)
+                todo.append(kid)
+    return [e for e in m.entries if e.id in seen]
+
+
+def group_days(m: InterestMap, entry: Entry) -> list[str]:
+    """The days the item or any kind under it came up, each day once."""
+    return sorted({d for e in family(m, entry) for d in e.days})
+
+
+def _levels(m: InterestMap, entry_id: str, step: Callable[[InterestMap, str], list[str]]) -> int:
+    """The longest chain from this item, following ``parents`` or ``children``."""
+    return 1 + max((_levels(m, i, step) for i in step(m, entry_id)), default=0)
+
+
+def _group_error(m: InterestMap, kind_id: str, group_id: str, tagger: bool = False) -> str:
+    """Why ``kind_id`` can't go under ``group_id``; "" if it can."""
+    try:
+        kind, grp = m.get(kind_id), m.get(group_id)
+    except MapError as exc:
+        return str(exc)
+    if kind.kind != "interest" or grp.kind != "interest":
+        return "Only interests go in groups."
+    if kind_id == group_id or group_id in parents(m, kind_id):
+        return f"{kind.name} is already under {grp.name}."
+    if len(parents(m, kind_id)) >= MAX_GROUPS:
+        return f"{kind.name} is already in {MAX_GROUPS} groups."
+    if grp in family(m, kind):
+        return f"{grp.name} is already under {kind.name}."  # a loop
+    if _levels(m, group_id, parents) + _levels(m, kind_id, children) > MAX_LEVELS:
+        return f"Groups go at most {MAX_LEVELS} levels deep."
+    undone = any(k.kind == "not_kind_of" and (k.a, k.b) == (kind_id, group_id) for k in m.links)
+    return "A person took it out of that group." if tagger and undone else ""
+
+
+def group(m: InterestMap, kind_id: str, group_id: str) -> None:
+    """A person puts an interest under a group.
+
+    Raises:
+        MapError: Unknown entries, goals, a loop, or too many groups or levels.
+    """
+    if error := _group_error(m, kind_id, group_id):
+        raise MapError(error)
+    m.links = [k for k in m.links if (k.kind, k.a, k.b) != ("not_kind_of", kind_id, group_id)]
+    _link(m, kind_id, group_id, "kind_of", date.today().isoformat())
+    m.edits += 1
+
+
+def ungroup(m: InterestMap, kind_id: str, group_id: str) -> None:
+    """A person takes an interest out of a group; the tagger won't put it back.
+
+    Raises:
+        MapError: It isn't in that group.
+    """
+    if group_id not in parents(m, kind_id):
+        raise MapError("That isn't in that group any more.")
+    m.links = [k for k in m.links if (k.kind, k.a, k.b) != ("kind_of", kind_id, group_id)]
+    _link(m, kind_id, group_id, "not_kind_of", date.today().isoformat())
+    m.edits += 1
+
+
 STRENGTH_LABELS = {"strong": "💪 strong", "growing": "🌱 growing", "faint": "🌫️ faint",
                    "not yet": "⏳ not yet"}
 
 
-def strength(entry: Entry, today: date) -> str:
-    """How alive an item is, from the days it came up in the last 30."""
-    if not entry.days:
+def strength(entry: Entry, today: date, m: InterestMap | None = None) -> str:
+    """How alive an item is, from the days it (or, given ``m``, any of its kinds) came up in 30."""
+    days = group_days(m, entry) if m is not None else entry.days
+    if not days:
         return "not yet"
     cutoff = (today - timedelta(days=FADE_DAYS)).isoformat()
-    recent = sum(d >= cutoff for d in entry.days)
+    recent = sum(d >= cutoff for d in days)
     return "strong" if recent >= 4 else "growing" if recent >= 2 else "faint"
 
 
@@ -493,6 +600,10 @@ class Details:
     resting: bool  # Lerni is giving this goal a rest
     bridges: list[tuple[str, str]]  # (id, name) at the other end
     related: list[tuple[str, str]]
+    groups: list[tuple[str, str]] = field(default_factory=list)  # what it's a kind of
+    kinds: list[tuple[str, str]] = field(default_factory=list)  # what's under it
+    through: list[str] = field(default_factory=list)  # kinds whose days count here
+    own_days: int = 0
 
 
 def details(m: InterestMap, entry_id: str, today: date) -> Details:
@@ -509,20 +620,32 @@ def details(m: InterestMap, entry_id: str, today: date) -> Details:
                  if k.kind == kind and e.id in (k.a, k.b)]
         return [(i, names[i]) for i in dict.fromkeys(other) if i in names]
 
-    return Details(e, strength(e, today), len(e.days), e.days[-1] if e.days else "",
+    days = group_days(m, e)
+    under = [x for x in family(m, e) if x.id != e.id and x.days]
+    return Details(e, strength(e, today, m), len(days), days[-1] if days else "",
                    len(e.explained), e.kind == "goal" and backed_off(e, today),
-                   ends("bridge"), ends("related"))
+                   ends("bridge"), ends("related"),
+                   [(i, names[i]) for i in parents(m, e.id) if i in names],
+                   [(i, names[i]) for i in children(m, e.id) if i in names],
+                   [x.name for x in under], len(e.days))
 
 
 def map_block(m: InterestMap, today: date) -> str:
     """The map for the prompt, as information, at most 1,500 characters; "" if empty."""
     names = {e.id: e.name for e in m.entries}
     bridges = [k for k in m.links if k.kind == "bridge"]
-    interests = sorted(
-        (e for e in m.entries if e.kind == "interest" and e.days and not faded(e, today)),
-        key=lambda e: (len(e.days), e.days[-1]),
-        reverse=True,  # most days, then most recent
-    )[:5]
+    tops = [e for e in m.entries
+            if e.kind == "interest" and not parents(m, e.id) and group_days(m, e)
+            and not faded(e, today, m)]
+    # most days counting their kinds, then most recent
+    interests = sorted(tops, key=lambda e: (len(group_days(m, e)), group_days(m, e)[-1]),
+                       reverse=True)[:5]
+
+    def loved(e: Entry) -> str:
+        kinds = sorted((x for x in family(m, e) if x.id != e.id and x.days),
+                       key=lambda x: x.days[-1], reverse=True)[:2]  # the most recent two
+        return e.name + (f" ({', '.join(x.name for x in kinds)})" if kinds else "")
+
     goals = [e for e in m.entries if e.kind == "goal"]
     covered = {g.id: sum(k.b == g.id for k in bridges) + len(g.explained) for g in goals}
     steer = sorted((g for g in goals if not backed_off(g, today)), key=lambda g: covered[g.id])[:8]
@@ -535,7 +658,7 @@ def map_block(m: InterestMap, today: date) -> str:
     if avoid:  # first, so the 1,500-character cut never drops it
         lines.append(STEER_AWAY + ", ".join(avoid))
     if interests:
-        lines.append("They love: " + ", ".join(e.name for e in interests))
+        lines.append("They love: " + "; ".join(loved(e) for e in interests))
     if steer:
         lines.append("Goals to bridge toward, one at a time:")
         lines += [f"- {g.name}" + (f" ({g.notes})" if g.notes else "") for g in steer]

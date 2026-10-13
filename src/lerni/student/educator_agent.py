@@ -17,12 +17,16 @@ from lerni.student.conversation import MAX_TURNS, ChatModel, Turn
 from lerni.student.interests import (
     MAP_HEADER,
     MAX_NOTES,
+    Entry,
     InterestMap,
     MapError,
     MapStore,
     add_goal,
     add_interest,
     check_name,
+    family,
+    group,
+    parents,
     remove,
     set_notes,
 )
@@ -30,8 +34,8 @@ from lerni.student.logs import ConversationLog
 
 MARKER = "```proposals"
 MAX_EDU_PROPOSALS = 8
-Kind = Literal["goal", "interest", "reword", "remove", "feedback"]
-KINDS = ("goal", "interest", "reword", "remove", "feedback")
+Kind = Literal["goal", "interest", "reword", "remove", "group", "feedback"]
+KINDS = ("goal", "interest", "reword", "remove", "group", "feedback")
 _ON_MAP = ("reword", "remove")  # kinds that name an entry already on the map
 
 # Rules the persona file can't change, kept in code like the student rules.
@@ -43,7 +47,9 @@ Always:
 {{"proposals": [{{"kind": "goal", "name": "fractions", "notes": "through baking"}}]}}
 ```
 - kinds: goal (name, notes for Lerni), interest (name), reword (an existing goal's name, \
-new notes), remove (an existing entry's name), feedback (notes: about the app, for the admin).
+new notes), remove (an existing entry's name), group (name: a general interest, on the map \
+or new; members: interests on the map that are kinds of it, like "great white" under \
+"sharks"), feedback (notes: about the app, for the admin).
 - Up to {MAX_EDU_PROPOSALS} proposals, only what the educator said or the notes support.
 - Names: up to 40 characters; letters, digits, spaces, hyphens, apostrophes. Notes: up to \
 {MAX_NOTES} characters.
@@ -61,23 +67,29 @@ class EducatorProposal:
     kind: Kind
     name: str = ""
     notes: str = ""
+    members: tuple[str, ...] = ()  # group: the kinds going under it
 
     @property
     def label(self) -> str:
         """How it's shown to tick."""
-        icon = {"goal": "🎯", "interest": "💚", "reword": "✏️", "remove": "🗑️", "feedback": "📨"}[
-            self.kind
-        ]
+        icon = {"goal": "🎯", "interest": "💚", "reword": "✏️", "remove": "🗑️", "group": "🧺",
+                "feedback": "📨"}[self.kind]
         if self.kind == "feedback":
             return f"{icon} For the admin: {self.notes}"
         if self.kind == "remove":
             return f"{icon} Remove {self.name}"
+        if self.kind == "group":
+            return f"{icon} Under {self.name}: {', '.join(self.members)}"
         return f"{icon} {self.name}" + (f": {self.notes}" if self.notes else "")
 
 
 def educator_map_text(m: InterestMap) -> str:
     """The whole map for the educator agent: every interest and goal, talked about or not."""
-    loves = [e.name for e in m.entries if e.kind == "interest"]
+    def tree(e: Entry) -> str:  # a group with its kinds, so the agent can see what's grouped
+        kinds = [x.name for x in family(m, e) if x.id != e.id]
+        return e.name + (f" (kinds: {', '.join(kinds)})" if kinds else "")
+
+    loves = [tree(e) for e in m.entries if e.kind == "interest" and not parents(m, e.id)]
     goals = [e.name + (f" ({e.notes})" if e.notes else "") for e in m.entries if e.kind == "goal"]
     if not loves and not goals and not m.removed:
         return f"{MAP_HEADER}\n(empty so far)"
@@ -156,11 +168,21 @@ def parse_educator_proposals(raw_block: str, m: InterestMap) -> list[EducatorPro
                 continue  # only goals have notes
         elif not notes:
             continue
+        members: tuple[str, ...] = ()
+        if kind == "group":  # only interests already on the map can go under it
+            raw_members = raw.get("members") if isinstance(raw.get("members"), list) else []
+            on_map = (m.find(str(x)) for x in raw_members)
+            members = tuple(dict.fromkeys(e.name for e in on_map
+                                          if e is not None and e.kind == "interest"
+                                          and e.name.casefold() != name.casefold()))
+            if not members:
+                continue
         key = (kind, name.casefold() or notes)
         if key in seen:
             continue
         seen.add(key)
-        found.append(EducatorProposal(kind, name, notes if kind != "interest" else ""))
+        keep_notes = notes if kind not in ("interest", "group") else ""
+        found.append(EducatorProposal(kind, name, keep_notes, members))
     return found[:MAX_EDU_PROPOSALS]
 
 
@@ -179,6 +201,12 @@ def apply_educator_proposals(
                 add_goal(m, p.name, p.notes)
             elif p.kind == "interest":
                 add_interest(m, p.name)
+            elif p.kind == "group":  # a person's tick names the group
+                top = m.find(p.name) or add_interest(m, p.name)
+                for member in p.members:
+                    kind = m.find(member)
+                    if kind is not None and top.id not in parents(m, kind.id):
+                        group(m, kind.id, top.id)
             elif p.kind in _ON_MAP:
                 entry = m.find(p.name)
                 if entry is None:

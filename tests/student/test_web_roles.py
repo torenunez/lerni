@@ -331,3 +331,17 @@ def test_an_edit_only_reaches_the_map_on_screen(tmp_path):
     ann = Viewer("ann", "Ann", Role.INDEPENDENT)
     assert remove_item(maps, students, ann, None, "e1", expected="sam").startswith("⚠️")
     assert maps.get("ann").find("sharks") is not None
+
+
+def test_putting_an_item_in_a_group_checks_the_map_on_screen(tmp_path):
+    from lerni.student.interests import MapStore, add_interest, parents
+    from lerni.student.web.mentallist import group_item, ungroup_item
+
+    students, maps = StudentStore(tmp_path), MapStore(tmp_path)
+    students.add("ann", "Ann", Kind.INDEPENDENT, "long enough")
+    maps.change("ann", lambda m: [add_interest(m, "sharks"), add_interest(m, "great white")])
+    ann = Viewer("ann", "Ann", Role.INDEPENDENT)
+    assert group_item(maps, students, ann, None, "e2", "sharks", expected="sam").startswith("⚠️")
+    assert group_item(maps, students, ann, None, "e2", "sharks", expected="ann").startswith("✅")
+    assert parents(maps.get("ann"), "e2") == ["e1"]
+    assert ungroup_item(maps, students, ann, None, "e2", "e1", expected="ann").startswith("✅")

@@ -8,7 +8,7 @@ Uses the admin's Claude account. Add one case for each mismatch seen in `lerni l
 from datetime import date
 
 from lerni.student.adapters.claude_code import ClaudeCodeTagger
-from lerni.student.interests import InterestMap, add_goal, apply_tags, parse_tags
+from lerni.student.interests import InterestMap, add_goal, apply_tags, parents, parse_tags
 from lerni.student.tagging import TAGGER_SYSTEM, tagger_input
 
 TODAY = date.today()
@@ -40,6 +40,20 @@ def main() -> None:
     m = run(InterestMap(), "", "My friend Jake lives on Maple Street, we play soccer there",
             "Soccer is fun! What position do you play?")
     results.append(("personal skipped", m.entries == []))
+    m = InterestMap()
+    m.entries.append(m.new_entry("sharks", "interest"))
+    m = run(m, "", "I saw a great white shark at the aquarium! It was huge!",
+            "Great whites are the biggest predatory fish. What did it do?")
+    white, sharks = m.find("great white shark") or m.find("great white"), m.find("sharks")
+    ok = white is not None and parents(m, white.id) == [sharks.id]
+    results.append(("great white is a kind of sharks", ok))
+
+    m = InterestMap()
+    for name in ("cars", "engines"):
+        m.entries.append(m.new_entry(name, "interest"))
+    m = run(m, "", "How do car engines work?",
+            "An engine burns fuel to push pistons that turn the wheels. Want to see how?")
+    results.append(("an engine is part of a car, not a kind", not parents(m, m.find("engines").id)))
     for name, ok in results:
         print("PASS" if ok else "FAIL", name)
 
