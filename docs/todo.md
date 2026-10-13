@@ -8,6 +8,8 @@ Open tasks by who does the work. The educator and admin tracks run in parallel: 
 
 - [ ] Think of 2–3 things you'd like the supervised student to explore (with a note each on what you have in mind). Add them on MentalMaps (☰ → MentalMaps): type them into the list, or tell the chat, or attach your notes with 📎 and tick what to add.
 
+- [ ] Before the first race (v3.1): check the goals on MentalMaps are what you'd like the race to practice, since its questions come from them; then sit with the supervised student for their first race.
+
 ### Later: Version 1 MVP
 
 - [ ] Talk with Lerni yourself for a few days and watch your own MentalMap; tell the admin what's confusing, or mention it in the MentalMaps chat.
@@ -17,7 +19,7 @@ Open tasks by who does the work. The educator and admin tracks run in parallel: 
 
 ### Now
 
-- [ ] Check v2.17 in production on the iPhone and iPad: the ☰ menu (Lerni and Games on the iPad), My MentalMap and MentalMaps, the usage warning, and Hold to talk.
+- [ ] Say when to update production from v2.18 to v2.20 (it fixes the list that can come up blank on MentalMaps); then check on the iPhone and iPad: the ☰ menu, both MentalMap screens (tap and pinch the picture), the usage warning, and Hold to talk.
 - [ ] Turn off extra usage (paid credits) on the Claude account Lerni uses (claude.ai → Settings → Usage), so Lerni can never spend credits; Lerni also rests if a call ever uses them.
 - [ ] Pick Lerni's voice ([admin reference: Voice](reference/admin.md#voice)), try Hold to talk on the iPad, then with the supervised student and an adult nearby (Version 2 is done when their map grows from a spoken conversation).
 - [ ] Optionally delete the old plan files on the home server (`~/.lerni/student/plans/`); nothing reads them any more.
@@ -26,11 +28,13 @@ Open tasks by who does the work. The educator and admin tracks run in parallel: 
 
 What ships next, in order, one PR each ([how versions work](roadmap.md#versions)):
 
-1. **v2.19: MentalMap fixes and a picture you can tap:** the two lists never draw at once (a blank list on production); edits reach only the map on screen (a shared device can't edit another account's map); Delete for good takes the name out of what Claude sees, and only items removed since v2.17 are steered away from; Put back keeps bridges (both ends removed) and their dates, and a full map says "This map is full" instead of pushing out an interest; two subject changes in one day both count toward resting a goal; MentalMaps redraws its list when opened; curly apostrophes from the iPhone keyboard work; Delete for good asks once more; Lerni never uses the account's name or email. The picture: every item, linked ones clustered and goals in the middle, in places that don't move between redraws, sized by the list's strength; tap an item to light its links and open it in the list; pinch to zoom.
-2. **v2.20: "kind of" groups** ([spec 08](../plans/specs/08-kind-of.md)): a Great White is a kind of shark, so "sharks" grows from every kind of shark (each day once); the tagger groups names already on the map, people put items under groups or take them out ("Not under X", remembered), and the MentalMaps chat proposes groups to tick; "car" finds "cars".
-3. **v2.21: voice that fails says so:** if `say` returns empty audio, startup prints `Voice (hold to talk): off` with the reason, instead of sending silence; the microphone is released if you let go before Safari asks; recording stops and sends at 30 seconds instead of dropping the end; a microphone failure switches to Type with a short note.
-4. **v2.22: production keeps running on its own:** run production and development the same way, as macOS LaunchAgents in the desktop session (start at login, restart after a crash); check `say` works there first. Until then both run in Terminal windows, and production stops if that window or the Mac does.
-5. **Version 3, remembering:** not planned yet; its first PR writes the plan.
+1. **v2.21: Version 3 becomes Play and points:** the roadmap, PRDs, and this list (docs only).
+2. **v3.0: the race, points, and conversation answers, designed:** spec 09 and the plan: point values, car prices, the daily cap, how the race moves, and the garage's cartoon cars.
+3. **v3.1: the race in Games:** a MathGas-style race against two silly bots, 5 multiple-choice questions Claude writes from the student's goals and interests (the server keeps the answers); a right pick boosts your car and slows a bot, a wrong one slows yours and shows why; your place earns points, once per race. A points store per student (ids and numbers only), a ⭐ total in the header, and a garage of cartoon SVG cars bought with points and kept for good. Games for supervised students and educators.
+4. **v3.2: points in the conversation, and Ask becomes Chat:** the tagger judges the student's answer to Lerni's last question (right, a real try, or nothing) and the server adds points, once per exchange, up to a daily cap; "⭐ +3" shows by the total; no multiple choice in the conversation.
+5. **v3.3: voice that fails says so:** if `say` returns empty audio, startup prints `Voice (hold to talk): off` with the reason, instead of sending silence; the microphone is released if you let go before Safari asks; recording stops and sends at 30 seconds instead of dropping the end; a microphone failure switches to Type with a short note.
+6. **v3.4: production keeps running on its own:** run production and development the same way, as macOS LaunchAgents in the desktop session (start at login, restart after a crash); check `say` works there first. Until then both run in Terminal windows, and production stops if that window or the Mac does.
+7. **Version 4, remembering:** Bridge Trip (a trip along their map with recall stops) is its front door; its first PR writes the plan.
 
 How PRs are split:
 
@@ -41,12 +45,11 @@ How PRs are split:
 - **The shipped version stays in use:** each PR says in a Deploying section whether it's safe to put on the home server while the family uses it, how, and the caveats ([admin reference](reference/admin.md#updating-the-home-server)).
 - **When a PR merges:** tag `main` with its version, delete its row, and add a dated entry to [progress](progress.md). Work found along the way gets a new row or a task below, not a bigger PR.
 
-Versions 1 and 2 now need sessions, not code: the educator sets goals, rehearses, and sits beside the supervised student (Educator and Student tasks above and below).
+Versions 1 and 2 also need sessions, not code: the educator sets goals, rehearses, and sits beside the supervised student (Educator and Student tasks above and below).
 
 ### Later
 
 - [ ] Decide how long to keep conversation logs (7 days now; 20 days or longer is under consideration). Longer keeps more of the students' words on disk; it changes CLAUDE.md rule 6 and the PRDs.
-- [ ] In one eval, Lerni began to use the Claude account owner's name in a supervised reply (2026-10-12); find where the CLI gives the model that name and keep it out.
 - [ ] After a week of family use: compare each feature's Claude use (Ask, tagger, Upload, MentalMaps chat) and decide whether any can move to a cheaper model.
 - [ ] Try the voice with the students before deciding whether a hosted voice (Inworld, about $18 a month) is worth it; a hosted service means student audio leaves the house, so it needs the educator's agreement first.
 - [ ] MentalMaps chat: PDFs (its Claude call takes text only; Upload on My MentalMap still reads PDFs), and the same chat on My MentalMap once educators have used it.
@@ -54,10 +57,18 @@ Versions 1 and 2 now need sessions, not code: the educator sets goals, rehearses
 - [ ] After the first supervised sessions, if useful: count redirects per session, and a "flag this reply" button for the adult nearby.
 - [ ] Try Ask on the iPad and a phone with the keyboard open; then a VoiceOver and keyboard-only pass.
 
-### Later: Version 3 Remembering
+### Later: Version 3 Play and points
+
+- [ ] Pit stop: fill a toy car's fuel gauge with quarters, then the same amount with eighths (fixed math, no Claude calls); the educator sketches the scene first.
+- [ ] A private real-car pack: the admin picks licensed side-profile photos of the student's favorite cars (Wikimedia, Unsplash, Pexels); Claude removes backgrounds, aligns them, blurs badges, and lists them with prices in a private garage file on the home server (never in the repo), with credits.
+- [ ] An educator "reset points", and Games for independent students.
+- [ ] Other games: Beat builder (rhythm and fractions), Recipe mixer (ratios), Build and balance.
+- [ ] Two weeks after v3.2: are Lerni's questions getting real answers, or are points just being hunted? Tune the points, or stop.
+
+### Later: Version 4 Remembering
 
 - [ ] Personal personas: Lerni learns what each student likes over time (topics, examples, answer length), starting from the persona for their kind; visible to the student, and to the educator for a supervised student.
-- [ ] Write the Version 3 plan (`plans/v3.1-remembering.md`), starting from the MentalMap: recall questions about goals the student once explained, tracking the last recall attempt apart from the last time a goal was discussed.
+- [ ] Write the Version 4 plan (`plans/v4.1-remembering.md`), starting from the MentalMap: recall questions about goals the student once explained, tracking the last recall attempt apart from the last time a goal was discussed.
 
 ### Before anyone outside the family uses the app
 
@@ -93,3 +104,7 @@ Versions 1 and 2 now need sessions, not code: the educator sets goals, rehearses
 
 - [ ] Independent student (the admin first): talk with Lerni over a few days on your own device, add a goal on My MentalMap, and check it matches what you talked about; note what's confusing.
 - [ ] Supervised student: try the MVP with the educator beside them. They can say no or stop at any time.
+
+### Later: Version 3 Play and points
+
+- [ ] Supervised student: a first race with the educator beside them, then answer Lerni's questions in the conversation for points; buy a car.

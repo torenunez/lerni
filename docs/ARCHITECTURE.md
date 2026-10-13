@@ -107,7 +107,8 @@ Every code file, one line each: [code manifest](code-manifest.md).
 
 | Piece | Version | Seam to leave room for now |
 |---|---|---|
-| Remembering preferences, recall | 3 | The map is the memory; preferences and recall build on it. |
-| Suggested goals | 4 | Suggestions are shown for the educator to accept; they never become goals on their own (boundary 1). |
+| Play and points | 3 | A points store per student (each award and spend applied once by its id; ids and numbers only, no text); the race runs on the server, which keeps the answers and sends the page only the choices; conversation answers are judged by the tagger, never by the conversation model; points stay apart from the map. |
+| Remembering preferences, recall | 4 | The map is the memory; preferences and recall build on it. |
+| Suggested goals | 5 | Suggestions are shown for the educator to accept; they never become goals on their own (boundary 1). |
 | Curated or checked content | — | None planned; if ever needed, it arrives as information in the map block, never as a separate path. |
-| Without an educator present | 5 | Needs a safety review first: checked replies for supervised students and consent for sensitive subjects. |
+| Without an educator present | 6 | Needs a safety review first: checked replies for supervised students and consent for sensitive subjects. |

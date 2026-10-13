@@ -21,9 +21,10 @@ Both kinds share the same conversation and map, and the experience is simple and
 |---|---|
 | 1 | A text conversation about what they love that gently bridges to goals, and grows their interest map |
 | 2 | A conversation they can hold by voice: one button, held to talk |
-| 3 | A companion that remembers what they like and checks they still remember earlier ideas |
-| 4 | New goals suggested from their map, for the educator to accept |
-| 5 | Conversation without an educator present |
+| 3 | Play and points: a car race answered by multiple choice, and points from it and from answering in the conversation, spent on cars |
+| 4 | A companion that remembers what they like and checks they still remember earlier ideas |
+| 5 | New goals suggested from their map, for the educator to accept |
+| 6 | Conversation without an educator present |
 
 ## What makes it engaging
 
@@ -32,7 +33,7 @@ Both kinds share the same conversation and map, and the experience is simple and
 - **They do the thinking.** Narrowing follow-up questions ("top speed or acceleration?") invite them to go deeper, and now and then the agent asks them to explain a goal back in their own words.
 - **It comes back to things.** Ideas from a while ago come up again, and a goal is reached again from a different interest.
 - **It's short.** Brief replies; they can stop any time, and finishing is not the goal.
-- **No scores, no failing.**
+- **Points, never failing.** From Version 3 they earn points and spend them on cars. A wrong answer never takes points away and is never called a failure; there's no comparison with other students, and points are separate from their map.
 
 ## Guarantees
 
@@ -100,15 +101,41 @@ As a student, I want to hold one button to talk and let go when I'm done, so tha
 - WHEN voice is unavailable THE SYSTEM SHALL still accept typing.
 - WHEN the student picks Type THE SYSTEM SHALL show the question box instead of the talk button, keep that choice on the device, and still speak the answer.
 
-## Version 3: a companion that remembers me
+## Version 3: play and points
 
-The companion learns what each student likes (how they like to be talked to, which examples land) and, after a gap, asks one quick recall question about an earlier idea from their map. Stories to be written when Version 3 starts.
+The student doesn't always take Lerni's questions seriously; points give them a reason to. Design: spec 09 (written in v3.0).
 
-## Version 4: new goals from the map
+### Story: Race to win points
 
-The agent suggests goals that connect to what the student already loves; the educator accepts or declines each. Stories to be written after Version 3.
+As a student, I want to race my car by answering questions, so that I can win points for a cooler car.
 
-## Version 5: conversation without an educator present
+- WHEN the student opens Games and starts a race THE SYSTEM SHALL show their car and two silly bots, and 5 questions from their goals and interests, each with 3 choices to tap (no typing, no chat).
+- WHEN they pick the right answer THE SYSTEM SHALL boost their car and slow a bot; WHEN they pick another THE SYSTEM SHALL slow their car and show the right answer with a short why.
+- WHEN the race ends THE SYSTEM SHALL award points by their place, once per race, and offer Race again.
+
+### Story: Points for good answers in the conversation
+
+As a student, I want to earn points when I really answer Lerni's questions, so that answering is worth it.
+
+- WHEN the student answers Lerni's question correctly in the conversation THE SYSTEM SHALL add points, and fewer for a real try in their own words; nothing for emojis or a change of subject. The conversation stays a conversation: no multiple choice there.
+- WHEN points are added THE SYSTEM SHALL show them by the ⭐ total, once per answer, up to a daily cap.
+
+### Story: Spend points on cars
+
+As a student, I want to spend my points on cars in the garage, so that I can race the car I like.
+
+- WHEN the student has enough points and taps Buy THE SYSTEM SHALL take the price off their points, once, and keep that car for them for good.
+- WHEN they pick a car they own THE SYSTEM SHALL race with it.
+
+## Version 4: a companion that remembers me
+
+The companion learns what each student likes (how they like to be talked to, which examples land) and, after a gap, asks one quick recall question about an earlier idea from their map; a race-like trip along their map (Bridge Trip) is its front door. Stories to be written when Version 4 starts.
+
+## Version 5: new goals from the map
+
+The agent suggests goals that connect to what the student already loves; the educator accepts or declines each. Stories to be written after Version 4.
+
+## Version 6: conversation without an educator present
 
 ### Story: Talk about my interests for as long as I like
 
@@ -151,8 +178,9 @@ Public access and a native iPad app.
 - 2026-10-10: Voice audio may stay on the home server for up to 7 days, like the conversation logs; Version 2 keeps whatever is easiest (it doesn't save audio on purpose). (Replaces "audio is held in memory only and never saved".)
 - 2026-10-10: Lerni speaks with the home server's own voice (macOS `say`) and hears with whisper.cpp's `whisper-cli`, both run as commands, so there's nothing to install for the voice and no helper program to keep running; Kokoro or a hosted voice can replace them behind the same adapter. While the button is held, what's heard so far shows below it. Only spoken questions are answered aloud. With voice on, both conversation screens are just the chat and the button (a tap stops Lerni); typing shows only when voice is off. (Replaces "local Whisper and Kokoro, as separate helper programs".)
 - 2026-10-10: Files Gradio keeps in its cache on the home server (an upload before it's read, any voice audio) can be reached by URL by anyone signed in. Accepted for the household: at most three people signed in, each with their own account. Revisit before anyone outside the family uses the app.
+- 2026-10-12: Play and points become Version 3 (the admin's decision, after seeing the student answer Lerni's questions with random emojis). A car race answered by multiple choice, MathGas style (a wrong pick slows your car), and answers in the conversation, judged by the tagger, earn points spent on cars in a garage. This replaces "No scores, no failing": points are never taken away for a wrong answer, never compared between students, and kept apart from the map. Later versions move up one (remembering is now 4, suggested goals 5, without an educator 6); decisions above keep their old numbers.
 
 ## Open questions
 
-- [NEEDS CLARIFICATION] (Version 3) Should a supervised student see their own map, as a way to feel progress? (Version 1: educators only.)
-- [NEEDS CLARIFICATION] (Version 5) How does a consent request reach the educator, and how long does the student wait?
+- [NEEDS CLARIFICATION] (Version 4) Should a supervised student see their own map, as a way to feel progress? (Version 1: educators only.)
+- [NEEDS CLARIFICATION] (Version 6) How does a consent request reach the educator, and how long does the student wait?
