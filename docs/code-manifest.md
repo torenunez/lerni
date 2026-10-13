@@ -25,7 +25,7 @@ What every code file does, in the order a request flows through it. When you add
 | `src/lerni/student/web/games.py` | Games for supervised students and educators: race two silly bots by tapping one of three answers (the page sends the race id, question number, and button, never seeing the answer), then the garage (buy with points, drive what you own). Plain handlers over the server-resolved viewer; the educator's read of a student's points goes through `map_owner`. |
 | `src/lerni/student/web/race.js` | The race in the browser: each car glides from its last place to its new one when the track is redrawn (it jumps with reduced motion). |
 | `src/lerni/student/web/maps.py` | My MentalMap (MentalMaps is `educator.py`), plus the shared checks: the picture, the list (`mentallist.py`), Upload notes (Claude proposes, the person ticks; the file is deleted at once), and saving feedback; the username a page asks for is checked against the viewer (MentalMaps shows only supervised students). |
-| `src/lerni/student/web/mentallist.py` | A MentalMap as a list, on My MentalMap and MentalMaps: add a goal or an interest; tap an item for its strength, facts, notes, Rename, and its bridges and related items; 🗑 removes it to Removed, where Put back restores it and Delete for good erases its history. Every edit re-checks the viewer and whose map it is. |
+| `src/lerni/student/web/mentallist.py` | A MentalMap as a list, on My MentalMap and MentalMaps: add a goal or an interest; tap an item for its strength, facts, notes, Rename, its group (Kind of, Not under X), and its kinds, bridges, and related items; 🗑 removes it to Removed, where Put back restores it and Delete for good erases its history. Every edit re-checks the viewer and whose map it is. |
 | `src/lerni/student/web/mapdraw.py` | Draws a map as inline SVG: every entry, linked ones clustered and goals in the middle, from a seeded layout so a redraw never moves anything; sized by the list's strength, color-blind-safe green and coral, dashed bridges, every name escaped. |
 | `src/lerni/student/web/mapview.js` | The picture in the browser: tap an item to light up its links and open it in the list; pinch (or Ctrl and scroll) to zoom, drag once zoomed, Reset view; keeps zoom and the tapped item across redraws. |
 | `src/lerni/student/web/accounts.py` | The Students tab (add, reset password, archive) and an independent student's My account (name, and password with the current one); handlers take the server-resolved viewer and refuse other roles. |
@@ -92,11 +92,11 @@ What every code file does, in the order a request flows through it. When you add
 
 | File | What it does |
 |---|---|
-| `scripts/eval_tagger.py` | Tagger evals: three real cases (an interest and a dislike, a bridge, a personal detail), run by hand with the admin's Claude account. |
+| `scripts/eval_tagger.py` | Tagger evals: five real cases (an interest and a dislike, a bridge, a personal detail, a kind of a group, a part that isn't a kind), run by hand with the admin's Claude account. |
 | `scripts/eval_educator.py` | Educator agent evals: three real cases (a goal explained in words becomes a goal, a real name never lands in a proposal, app feedback stays feedback). |
 | `scripts/eval_voice.py` | Voice evals: two real cases (a spoken sentence comes back word for word; a spoken question gets a short supervised answer), run by hand. |
 | `scripts/eval_upload.py` | Upload evals: two real cases (an educator's notes with a made-up name, a person's own notes), run by hand. |
-| `scripts/eval_supervised.py` | Supervised voice evals: four real cases (short and simple, a scary question, an excluded subject, a removed interest steered away from), run by hand. |
+| `scripts/eval_supervised.py` | Supervised voice evals: seven real cases (short and simple, a scary question, an excluded subject, someone hurting them, wanting to hurt themselves, never using the account's name, a removed interest steered away from), run by hand. |
 | `scripts/eval_race.py` | Race question evals: real Claude calls, run by hand: a race's worth of good questions, each practicing a goal on the map, both goals coming up, and nothing set aside. |
 
 ## Tests

@@ -4,7 +4,7 @@ Approved in conversation on 2026-10-12. Requirements: [student PRD, Version 3](.
 
 **Why.** The supervised student answers Lerni's goal questions with random emojis. Points they can spend on cars give those questions a reason, from two places: a race in Games and real answers in Chat. Points never go down for a wrong answer, are never compared between students, and stay apart from the map.
 
-**Ships as:** v3.1 (the race, points, and the garage) and v3.2 (points in Chat, and Ask renamed Chat).
+**Ships as:** v3.1 (the race, points, and the garage) and v3.3 (points in Chat, and Ask renamed Chat).
 
 ## What people see
 
@@ -25,11 +25,11 @@ Approved in conversation on 2026-10-12. Requirements: [student PRD, Version 3](.
 - **Starting a race** waits a few seconds while Claude writes the questions ("Pumping the tires…"). The next race's questions are written ahead, so Race again is quick.
 - **Limits:**
   - After 10 races in a day: "The track is closed for today 🌙 Come back tomorrow."
-  - While Lerni is resting (usage limits): "The track is resting until Mon 6:00 pm."
+  - While Lerni is resting (usage limits): "Lerni is resting until Mon 6:00 pm."
   - Earlier points and cars stay either way.
-- **The header** shows ⭐ points on every screen for a student who has any.
+- **The header** shows ⭐ points on every screen for a player (supervised students and educators).
 
-### Chat (v3.2; Ask is renamed Chat)
+### Chat (v3.3; Ask is renamed Chat)
 
 - Chat stays a conversation, typed or spoken, with no multiple choice.
 - When the student really answers Lerni's question, "⭐ +3" (a right answer) or "⭐ +1" (a real try in their own words) appears by their points a few seconds later. Emojis, "idk", or a new subject earn nothing, and nothing says "wrong".
@@ -45,7 +45,7 @@ Approved in conversation on 2026-10-12. Requirements: [student PRD, Version 3](.
 | What | Value |
 |---|---|
 | Race | 5 questions, 3 choices each |
-| Race points | 1st 15, 2nd 10, 3rd 5, plus 1 per right answer (6 to 20) |
+| Race points | 1st 15, 2nd 10, 3rd 5, plus 1 per right answer (5 to 20) |
 | Chat points | 3 for a right answer, 1 for a real try; at most 30 a day |
 | Races a day | 10 per person |
 | Cars and prices | starter hatchback 0, rally car 30, muscle car 60, race truck 100, supercar 150, hypercar 220, formula racer 300, rocket car 400 |
@@ -123,7 +123,7 @@ At about 3 races a day plus a few Chat answers, the first new car comes on day 1
   - the same side-on view facing right, the same scale, wheels on one line;
   - each in its own color;
   - drawn in code, so no licenses, no trademarks, nothing fetched.
-- **A private file,** `<data>/garage.json` (never in the repo), may add cars later with prices and photos in `<data>/cars/`. This is the real-car pack, after v3.2.
+- **A private file,** `<data>/garage.json` (never in the repo), may add cars later with prices and photos in `<data>/cars/`. This is the real-car pack, after v3.3.
 
 ### The screen (`web/games.py`, `web/race.js`)
 
@@ -136,7 +136,7 @@ At about 3 races a day plus a few Chat answers, the first new car comes on day 1
   - Nothing relies on color alone.
 - **Rendering:** the race card and garage are ordinary components, not `gr.render`, so the draw queue isn't involved.
 
-### Chat points (v3.2, `tagging.py`)
+### Chat points (v3.3, `tagging.py`)
 
 - **The tagger gets one more field, `answered`:**
   - `right`: Lerni's previous message asked a question and the student answered it correctly;
@@ -182,7 +182,7 @@ At about 3 races a day plus a few Chat answers, the first new car comes on day 1
   - questions practice the map's goals;
   - each has 3 distinct choices with the right one among them;
   - a supervised set stays clear of a set-aside interest.
-- **`test_tagging.py`** (v3.2): `answered` awards once per exchange and respects the cap.
+- **`test_tagging.py`** (v3.3): `answered` awards once per exchange and respects the cap.
 - **Phone size** (iPhone and iPad):
   - a race to the end, Race again, buying and driving a car;
   - the 10-race limit;

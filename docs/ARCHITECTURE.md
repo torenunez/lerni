@@ -4,7 +4,7 @@ How Lerni works: what runs where, how a conversation grows a student's interest 
 
 ## Bird's-eye view
 
-**Built (Version 1, steps 1–10):** everyone signs in at `/signin` to one app at `/app/`.
+**Built (Versions 1–2, and Version 3's race):** everyone signs in at `/signin` to one app at `/app/`.
 
 - **Independent students** (educators included) have **Ask**, one ongoing text conversation with Claude. After each exchange, a small background call (the tagger) updates their **interest map**: interests (sized by the days they come up), links, and bridges. They see it on **My MentalMap**, a picture and an editable list of goals and interests (removing an interest steers Lerni away from it), and can **Upload** notes that Claude turns into proposed interests and goals to tick. Each exchange is kept 7 days in logs the admin reads (`lerni logs`).
 - **Educators** also have **MentalMaps**, where they edit a supervised student's list and plan by chatting with an educator agent (it proposes; only what they tick changes the map or reaches the admin as **feedback**, `lerni feedback`), and **Students**.
@@ -108,7 +108,7 @@ Every code file, one line each: [code manifest](code-manifest.md).
 
 | Piece | Version | Seam to leave room for now |
 |---|---|---|
-| Points for conversation answers | 3 (v3.2) | Judged by the tagger, never by the conversation model; each exchange awards once. |
+| Points for conversation answers | 3 (v3.3) | Judged by the tagger, never by the conversation model; each exchange awards once. |
 | Remembering preferences, recall | 4 | The map is the memory; preferences and recall build on it. |
 | Suggested goals | 5 | Suggestions are shown for the educator to accept; they never become goals on their own (boundary 1). |
 | Curated or checked content | — | None planned; if ever needed, it arrives as information in the map block, never as a separate path. |

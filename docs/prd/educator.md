@@ -63,7 +63,7 @@ As an educator, I want to add what I'd like the student to explore, so that Lern
 
 As an educator, I want to see a supervised student's map, so that I know what they love and whether my goals are landing.
 
-- WHEN the educator opens MentalMaps and picks a supervised student THE SYSTEM SHALL draw their map: interests in green, sized by the days they come up; goals in coral, outlined until they come up and sized by the days the student explained them back (Lerni's guess), and bridges as dashed lines.
+- WHEN the educator opens MentalMaps and picks a supervised student THE SYSTEM SHALL draw their map: interests in green and goals in coral, each sized by its strength (a group counts its kinds), goals outlined until they come up, linked items drawn together, and bridges as dashed lines.
 - WHEN the educator taps an item in the list THE SYSTEM SHALL show its strength (strong, growing, faint, or not yet, from the days it came up in the last 30), the facts behind it, and its bridges and related items, each a tap away.
 - WHEN an interest is a kind of another (a Great White is a kind of shark) THE SYSTEM SHALL list it under that group and count the group's strength from the days any of its kinds came up, each day once; the tagger may group names already on the map, and the educator can put an item under a group, take it out (it stays out), or tick a group the MentalMaps chat proposes.
 
