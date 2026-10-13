@@ -137,6 +137,7 @@ class Race:
     bots: list[float] = field(default_factory=lambda: [0.0 for _ in BOTS])
     answered: int = 0
     right: int = 0
+    boost: float = 1.0  # the car's gas boost (garage.boost)
 
     @property
     def done(self) -> bool:
@@ -154,9 +155,9 @@ class Turn:
     slowed: str  # the bot named as slowed down ("" on a wrong answer)
 
 
-def new_race(questions: list[Question]) -> Race:
-    """A race over these questions, everyone at the start line."""
-    return Race(list(questions))
+def new_race(questions: list[Question], boost: float = 1.0) -> Race:
+    """A race over these questions, everyone at the start line, in a car with this gas boost."""
+    return Race(list(questions), boost=boost)
 
 
 def answer(race: Race, number: int, choice: int) -> Turn | None:
@@ -167,7 +168,7 @@ def answer(race: Race, number: int, choice: int) -> Turn | None:
     right = choice == q.answer
     ahead = [i for i, pos in enumerate(race.bots) if pos >= race.me] or [0]
     named = BOTS[max(ahead, key=lambda i: -race.bots[i])][0] if right else ""  # the nearest ahead
-    race.me += STEP_RIGHT if right else STEP_WRONG
+    race.me += STEP_RIGHT * race.boost if right else STEP_WRONG
     for i, (_, step) in enumerate(BOTS):
         race.bots[i] += step - (SLOW if right else 0)  # a right answer slows both bots
     race.answered += 1
@@ -272,8 +273,9 @@ class RaceDesk:
 
         threading.Thread(target=work, daemon=True).start()
 
-    def start(self, username: str, supervised: bool, today: date | None = None) -> Race:
-        """A new race (any race in progress is dropped).
+    def start(self, username: str, supervised: bool, today: date | None = None,
+              boost: float = 1.0) -> Race:
+        """A new race (any race in progress is dropped) in a car with this gas ``boost``.
 
         Raises:
             PointsError: Today's races are used up (Claude isn't asked).
@@ -297,7 +299,7 @@ class RaceDesk:
             held = spread(held + self._write(username, supervised, day))  # waits for Claude
         questions, rest = held[:QUESTIONS_PER_RACE], held[QUESTIONS_PER_RACE:]
         self.points.start_race(username, day)
-        race = new_race(questions)
+        race = new_race(questions, boost)
         with self._lock:
             self._sets[username] = (day.isoformat(), rest)
             self._races[username] = race

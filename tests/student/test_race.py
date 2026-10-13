@@ -168,3 +168,14 @@ def test_quick_second_taps_never_answer_unseen_or_start_a_second_race(tmp_path):
     assert desk.pick("sam", race.id, 1, 0)[1] is None
     now[0] += 1.0
     assert desk.pick("sam", race.id, 1, 0)[1] is not None
+
+
+def test_a_faster_car_turns_three_right_into_a_win_but_one_right_never_places():
+    def finish_with(boost, right):
+        race = new_race([Q] * QUESTIONS_PER_RACE, boost=boost)
+        for n in range(QUESTIONS_PER_RACE):
+            answer(race, n, 0 if n < right else 1)
+        return place(race)
+
+    assert [finish_with(1.4, r) for r in (3, 2, 1)] == [1, 2, 3]
+    assert [finish_with(1.0, r) for r in (3, 2)] == [2, 3]  # the starter, as before
