@@ -97,6 +97,7 @@ What every code file does, in the order a request flows through it. When you add
 | `scripts/eval_voice.py` | Voice evals: two real cases (a spoken sentence comes back word for word; a spoken question gets a short supervised answer), run by hand. |
 | `scripts/eval_upload.py` | Upload evals: two real cases (an educator's notes with a made-up name, a person's own notes), run by hand. |
 | `scripts/eval_supervised.py` | Supervised voice evals: four real cases (short and simple, a scary question, an excluded subject, a removed interest steered away from), run by hand. |
+| `scripts/eval_race.py` | Race question evals: real Claude calls, run by hand: a race's worth of good questions, each practicing a goal on the map, both goals coming up, and nothing set aside. |
 
 ## Tests
 
