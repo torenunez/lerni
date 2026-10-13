@@ -25,8 +25,8 @@ Each stage needs evidence from the one before.
 | Setting | Default | Effect | From version |
 |---|---|---|---|
 | Voice | Off | When on, the student can hold the talk button | 2 |
-| Remembering preferences | On | When off, the companion keeps no preferences beyond the map | 3 |
-| Without me present | Off | When on, the supervised student may talk with Lerni without an educator beside them | 5 |
+| Remembering preferences | On | When off, the companion keeps no preferences beyond the map | 4 |
+| Without me present | Off | When on, the supervised student may talk with Lerni without an educator beside them | 6 |
 
 Settings never change on their own, and each takes effect at once. The starting exclusion list (violence, weapons, sexual content, self-harm, drugs) is built into the supervised rules.
 
@@ -92,7 +92,13 @@ As an educator, I want to tell the admin what to change in plain words, so that 
 
 These notes are for the admin and educator, not the app; the in-app text stays short (CLAUDE.md rule 9).
 
-## Version 3: remembering
+## Version 3: play and points
+
+- WHEN the educator opens Games THE SYSTEM SHALL let them race too, to rehearse; their points are their own.
+- WHEN the educator picks a supervised student on MentalMaps THE SYSTEM SHALL show that student's points and cars.
+- Race questions come from the student's goals and interests, so the goals on MentalMaps are what the race practices. Whether Lerni's questions now get real answers instead of emojis is noted privately.
+
+## Version 4: remembering
 
 ### Story: See and delete what's remembered
 
@@ -100,7 +106,7 @@ As an educator, I want to see and delete what the app remembers about a supervis
 
 - WHEN the educator removes an entry THE SYSTEM SHALL keep it in Removed with its history, so Put back is a true undo; WHEN they press Delete for good THE SYSTEM SHALL delete that history from Lerni's storage, keeping only its name and kind so it isn't re-added; copies an outside service keeps follow that service's rules.
 
-## Settings (Versions 2, 3, and 5)
+## Settings (Versions 2, 4, and 6)
 
 ### Story: Change a setting
 
@@ -108,11 +114,11 @@ As an educator, I want to turn voice, remembering, and conversation without me o
 
 - WHEN the educator changes a setting THE SYSTEM SHALL apply it at once and keep it until the educator changes it again.
 
-## Version 4: accept suggested goals
+## Version 5: accept suggested goals
 
 - WHEN the agent suggests a goal from the map THE SYSTEM SHALL show it on MentalMaps for the educator to accept or decline.
 
-## Version 5: occasional monitoring
+## Version 6: occasional monitoring
 
 ### Story: Consent to a sensitive subject
 
@@ -149,7 +155,8 @@ Running the admin tool. Editing app code or files directly.
 - 2026-10-11: On Maps, one chat with an educator agent replaces Add a goal, Rename or remove, Upload notes, and Feedback; it proposes, and only ticked items change a map or reach the admin (v2.14, [spec 06](../../plans/specs/06-educator-chat.md)). My map keeps its panels for now.
 - 2026-10-11: The map is a **MentalMap** on screen (code and data keep `map`). Each MentalMap is an editable list: removing an interest steers Lerni away from it, Put back undoes a removal, and tapping an item shows its strength and bridges (v2.17, [spec 07](../../plans/specs/07-mentalmap-list.md)).
 - 2026-10-12: Interests can be grouped ("kind of"): a group's strength counts each day any of its kinds came up, so a specific shark never outgrows sharks. The tagger's groups count at once and a person can undo one; new group names come only from a person. Goals aren't grouped yet, and nothing rolls up into a mastery score.
+- 2026-10-12: Play and points are Version 3: a race in Games and answers in the conversation earn a student points to spend on cars; the educator can race to rehearse and sees a supervised student's points. Later versions move up one.
 
 ## Open questions
 
-- [NEEDS CLARIFICATION] (Version 4) What evidence shows the agent's suggested goals are good enough to move from accepting each one to occasional monitoring?
+- [NEEDS CLARIFICATION] (Version 5) What evidence shows the agent's suggested goals are good enough to move from accepting each one to occasional monitoring?

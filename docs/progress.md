@@ -14,7 +14,9 @@ When something changes, update this section and add a log entry below.
 
 ## Log
 
-### 2026-10-12 (safety fixes, MentalMap fixes and picture, "kind of" groups; v2.18–v2.20)
+### 2026-10-12 (safety fixes, MentalMap fixes and picture, "kind of" groups, a new Version 3; v2.18–v2.21)
+
+- v2.21: Version 3 becomes Play and points (docs only). The admin saw the student answer Lerni's goal questions with random emojis and chose an incentive: a MathGas-style car race in Games answered by multiple choice, plus points for real answers in the conversation (judged by the tagger), all spent on cars in a garage. It replaces the student PRD's "No scores, no failing" (points are never taken away for a wrong answer, never compared between students, and kept apart from the map). Remembering, suggested goals, and without an educator move to Versions 4–6; Pit stop and a private real-car pack wait in the to-do.
 
 - v2.20: "kind of" groups ([spec 08](../plans/specs/08-kind-of.md)). On the student's real map, *cars* sat beside seven specific cars and *sharks* beside five specific sharks, each counted alone. Now a link says a Great White is a kind of sharks, and a group's strength counts the days any of its kinds came up, each day once, so a kind never outgrows its group (it changes spec 04's "no hierarchies" decision; two outside design reviews shaped it). The tagger groups names already on the map (its links count at once; a person's "Not under X" is remembered); new group names come only from a person, in the list or by ticking a MentalMaps chat proposal; "car" finds "cars". The picture keeps each family close on short dark lines, and a tap on a group lights up all of it. Tried on the student's real map, read only, with sample groups in memory: since every car came up on one day, *cars* stays faint until another day, by design. Tests: 121 passed; tagger evals 5 of 5.
 
