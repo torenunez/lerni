@@ -387,12 +387,12 @@ def test_a_real_car_is_bought_at_its_star_price_and_old_cartoon_cars_stay(tmp_pa
     (tmp_path / "cars").mkdir()
     (tmp_path / "cars" / "quick.webp").write_bytes(b"RIFF")
     (tmp_path / "garage.json").write_text(json.dumps({"cars": [
-        {"id": "quick", "name": "Quick", "usd": 91_700, "zero_to_60": 3.4,
+        {"id": "quick", "name": "Quick", "usd": 100_000, "zero_to_60": 3.5,
          "picture": "quick.webp"}]}))
     garage, points = Garage(tmp_path), PointsStore(tmp_path)
     lee = Viewer("lee", "Lee", Role.SUPERVISED)
     points.award("lee", "race-1", "race", 70)
     points.buy("lee", "rally", 30)  # bought in v3.1, before real cars
     assert garage_tap(points, garage, lee, "quick").startswith("🎉")
-    assert points.get("lee").balance == 70 - 30 - 37
+    assert points.get("lee").balance == 70 - 30 - 40
     assert [c.id for c in garage.sold(points.get("lee").cars)] == ["starter", "quick", "rally"]

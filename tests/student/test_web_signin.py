@@ -111,7 +111,7 @@ def test_car_pictures_are_only_for_someone_signed_in_and_only_garage_ids(tmp_pat
     (tmp_path / "cars" / "quick.webp").write_bytes(b"RIFF....WEBP")
     (tmp_path / "private.txt").write_text("never served")
     (tmp_path / "garage.json").write_text(json.dumps({"cars": [
-        {"id": "quick", "name": "Quick", "usd": 91_700, "zero_to_60": 3.4,
+        {"id": "quick", "name": "Quick", "usd": 100_000, "zero_to_60": 3.5,
          "picture": "quick.webp"}]}))
     client = TestClient(build_app(data_root=tmp_path), follow_redirects=False)
     assert client.get("/cars/quick").status_code in (302, 303, 401)  # signed out

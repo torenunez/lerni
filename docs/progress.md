@@ -16,7 +16,7 @@ When something changes, update this section and add a log entry below.
 
 ### 2026-10-13 (docs, real cars in the garage; v3.2–v3.3)
 
-- v3.3: real cars in the garage. The admin's picture of five sports cars was cut out on the home server with Apple's Vision (`scripts/lift_car.swift`) and saved, with each car's stats, in a private garage file that never goes in the repo. Prices are $2,500 a ⭐ (37 to 1,840), and a car's 0–60 sets its gas boost (×1.08 to ×1.4): a fast car turns 3 right answers into a win, but 1 right still finishes 3rd. Only the cartoon starter is still sold; cartoon cars already bought stay. Pictures are served only to someone signed in, and only for a garage id. Checked at phone size on a throwaway server. Tests: 141 passed.
+- v3.3: real cars in the garage. The admin's picture of five sports cars was cut out on the home server with Apple's Vision (`scripts/lift_car.swift`) and saved, with each car's stats, in a private garage file that never goes in the repo. Prices are $2,500 a ⭐, and a car's 0–60 sets its gas boost (up to ×1.4): a fast car turns 3 right answers into a win, but 1 right still finishes 3rd. Only the cartoon starter is still sold; cartoon cars already bought stay. Pictures are served only to someone signed in, and only for a garage id. Checked at phone size on a throwaway server. Tests: 141 passed.
 
 - v3.2: docs brought up to date with v2.19–v3.1 (README, CLAUDE.md, ARCHITECTURE, progress, to-do, spec 09, the educator PRD's picture, the code manifest). Points in Chat moves to v3.3.
 

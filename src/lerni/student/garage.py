@@ -176,6 +176,7 @@ class Garage:
                 and usd > 0
                 and c.zero_to_60 > 0
                 and c.id not in _BY_ID
+                and c.id not in {x.id for x in cars}  # no repeats
                 and (self.folder / picture).is_file()
             ):
                 cars.append(c)

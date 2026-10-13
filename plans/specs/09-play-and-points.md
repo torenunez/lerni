@@ -51,7 +51,7 @@ Approved in conversation on 2026-10-12. Requirements: [student PRD, Version 3](.
 | Cars and prices | the starter free; real cars at 1 ⭐ per $2,500 (v3.3; until then 8 cartoon cars, 30 to 400) |
 | Gas boost | √(4.0 s ÷ 0–60), ×1.0 to ×1.4 |
 
-At about 50 ⭐ a day, a $90,000 car comes on day 1 and a $4.6 million one after about five or six weeks.
+At about 50 ⭐ a day, a $100,000 car comes on day 1 and a $5 million one after about six weeks.
 
 ## How it works
 
@@ -123,7 +123,7 @@ At about 50 ⭐ a day, a $90,000 car comes on day 1 and a $4.6 million one after
 
 - **Cartoon cars in the repo,** drawn in code (the same side view facing right, same scale, wheels on one line; no licenses, nothing fetched). Since v3.3 only the free starter is sold; a cartoon car someone already bought stays theirs to drive. The bots stay cartoon.
 - **Real cars in a private garage file** (v3.3), `<data>/garage.json`, never in the repo: each car's id, name, price in dollars, 0–60 seconds, engine, power, drive, an optional note ("Limited to 250 cars"), and a picture in `<data>/cars/`.
-  - **Price in ⭐:** dollars ÷ 2,500, rounded (a $91,700 car is 37 ⭐; a $4.6 million one, 1,840).
+  - **Price in ⭐:** dollars ÷ 2,500, rounded (a $100,000 car is 40 ⭐; a $5 million one, 2,000).
   - **Pictures:** side profiles facing right with the background lifted off by Apple's Vision on the home server (`scripts/lift_car.swift`), saved as WebP about 600 px wide. They're served only to someone signed in, from a route that knows only the garage's ids.
   - A broken or missing file leaves the cartoon garage; nothing else stops.
 
