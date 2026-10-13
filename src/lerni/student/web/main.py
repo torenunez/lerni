@@ -25,7 +25,7 @@ from lerni.student.voice import Speech
 from lerni.student.web.accounts import account_tab, student_rows, students_tab
 from lerni.student.web.ask import ask_tab, messages
 from lerni.student.web.educator import educator_tab
-from lerni.student.web.mapdraw import map_svg
+from lerni.student.web.mapdraw import map_svg, owner_key
 from lerni.student.web.maps import map_tab, supervised_choices
 
 # Tab ids in page order. A supervised student gets Home (their conversation,
@@ -118,7 +118,8 @@ def build_main_view(
                 name += " · educator" if is_edu else ""
             own = ["", "", 0]  # My MentalMap: picture, whose list, its version
             if viewer is not None and "mymap" in shown:
-                own = [map_svg(maps.get(viewer.username), date.today()), viewer.username, 1]
+                me = viewer.username
+                own = [map_svg(maps.get(me), date.today(), owner_key(me)), me, 1]
             opening = opening_tab(viewer)
             return [
                 f"Signed in as **{name}**",

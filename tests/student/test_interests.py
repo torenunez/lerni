@@ -13,6 +13,8 @@ from lerni.student.interests import (
     add_goal,
     add_interest,
     apply_tags,
+    backed_off,
+    check_name,
     delete_for_good,
     details,
     map_block,
@@ -177,3 +179,52 @@ def test_delete_for_good_keeps_only_the_name_and_kind():
     assert m.removed == ["Fractions"] and m.removed_info == {"fractions": {"kind": "goal"}}
     back = put_back(m, "Fractions")
     assert (back.kind, back.notes, back.days) == ("goal", "", [])
+
+
+def test_putting_back_both_ends_of_a_bridge_keeps_the_bridge_and_its_ids():
+    m = InterestMap()
+    goal = add_goal(m, "Fractions")
+    apply_tags(m, parse_tags({"new_interests": ["cars"], "bridge": {"interest": "cars",
+               "goal": "Fractions"}}), "cars", TODAY)
+    cars = m.find("cars")
+    remove(m, cars.id)
+    remove(m, goal.id)
+    put_back(m, "cars")
+    put_back(m, "Fractions")
+    assert {e.id for e in m.entries} == {goal.id, cars.id}  # regression: ids changed
+    assert details(m, goal.id, TODAY).bridges == [(cars.id, "cars")]  # regression: bridge lost
+
+
+def test_a_person_adding_to_a_full_map_is_refused_and_nothing_is_pushed_out():
+    m = InterestMap()
+    remove(m, add_interest(m, "sharks").id)
+    for i in range(MAX_ENTRIES):
+        add_interest(m, f"Thing {i}")
+    for edit in (lambda: put_back(m, "sharks"), lambda: add_interest(m, "One more")):
+        with pytest.raises(MapError, match="full"):
+            edit()
+    assert len(m.entries) == MAX_ENTRIES and m.removed == ["sharks"]
+
+
+def test_only_removals_with_history_are_set_aside_in_the_prompt():
+    m = InterestMap(removed=["Fractions"])  # removed before v2.17: no history kept
+    remove(m, add_interest(m, "sharks").id)
+    remove(m, add_interest(m, "Oak Street").id)
+    delete_for_good(m, "Oak Street")  # erased: Claude no longer sees the name
+    block = map_block(m, TODAY)
+    assert "sharks" in block and "Fractions" not in block and "Oak Street" not in block
+
+
+def test_two_subject_changes_in_one_day_rest_the_goal():
+    m = InterestMap()
+    goal = add_goal(m, "Fractions")
+    m.entries.append(m.new_entry("cars", "interest"))
+    for _ in range(2):
+        apply_tags(m, parse_tags({"bridge": {"interest": "cars", "goal": "Fractions"}}), "x",
+                   TODAY)
+        apply_tags(m, parse_tags({"changed_subject": True}), "dinosaurs!", TODAY)
+    assert backed_off(goal, TODAY)  # regression: same-day bounces counted once
+
+
+def test_a_curly_apostrophe_from_a_phone_keyboard_is_accepted():
+    assert check_name("mom’s car") == "mom's car"

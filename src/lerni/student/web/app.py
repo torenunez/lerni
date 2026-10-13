@@ -78,9 +78,6 @@ _CSS = """
 /* the chat fills the screen above the dock (talk.js sizes it exactly) */
 #lerni-ask-chat, #lerni-home-chat { height: calc(100dvh - 330px) !important;
   min-height: 160px; }
-/* Maps: the picture is a strip on a phone until tapped (nav.js) */
-.lerni-map-strip { max-height: 200px; overflow: hidden; cursor: zoom-in; }
-.lerni-map-strip.lerni-open { max-height: none; cursor: zoom-out; }
 /* MentalMap list: full-width rows with the 🗑 at the right; fields at 16px for iPhone */
 .lerni-item { flex-wrap: nowrap !important; gap: 6px !important; align-items: center; }
 .lerni-item button:first-child { justify-content: flex-start; text-align: left; }
@@ -103,6 +100,12 @@ _CSS = """
   font-weight: 600; }
 /* Hold to talk: a big round button for the thumb, red and pulsing while held */
 .lerni-hide { display: none !important; }
+/* MentalMap pictures (mapview.js): a tapped item lights up its links; the rest fades */
+.lerni-map .lerni-node { cursor: pointer; }
+.lerni-map svg.lerni-focus .lerni-node:not(.lerni-near) { opacity: 0.15; }
+.lerni-map svg.lerni-focus line:not(.lerni-near) { opacity: 0.1; }
+.lerni-map .lerni-picked circle { stroke: #222; stroke-width: 4; }
+.lerni-map-reset { font-size: 13px; padding: 4px 10px; border-radius: 6px; margin-top: 4px; }
 .lerni-talk { width: 120px !important; height: 120px !important; min-width: 0 !important;
   flex: none !important; border-radius: 50% !important; font-size: 17px !important;
   white-space: pre-line; line-height: 1.3; background: var(--button-primary-background-fill)
@@ -128,10 +131,10 @@ _MOUNT_OPTIONS = {
 
 
 def _head(speech: bool) -> str:
-    """The page's scripts, inlined so it loads nothing else: the menu, and Hold to talk."""
+    """The page's scripts, inlined so it loads nothing else: menu, map taps, Hold to talk."""
     from importlib.resources import files
 
-    names = ["nav.js", "talk.js"] if speech else ["nav.js"]
+    names = ["nav.js", "mapview.js", "talk.js"] if speech else ["nav.js", "mapview.js"]
     return "".join(f"<script>{files('lerni.student.web').joinpath(n).read_text()}</script>"
                    for n in names)
 

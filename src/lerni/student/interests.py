@@ -10,6 +10,7 @@ from __future__ import annotations
 import json
 import re
 import threading
+import unicodedata
 from collections.abc import Callable
 from dataclasses import asdict, dataclass, field
 from datetime import date, timedelta
@@ -108,10 +109,22 @@ def check_name(name: str) -> str:
         >>> check_name("  monster   trucks ")
         'monster trucks'
     """
-    name = " ".join((name or "").split())
+    name = " ".join(_plain(name or "").split())
     if not name or len(name) > MAX_NAME or not NAME_RE.fullmatch(name):
         raise MapError(f"Use up to {MAX_NAME} letters, digits, spaces, hyphens, or apostrophes.")
     return name
+
+
+def _plain(text: str) -> str:
+    """Phone keyboards type curly apostrophes; names use the straight one."""
+    return unicodedata.normalize("NFC", text).replace("\u2019", "'").replace("\u2018", "'")
+
+
+def full(m: InterestMap) -> MapError | None:
+    """The error for a person adding to a full map, or None (a person's add never drops one)."""
+    if len(m.entries) < MAX_ENTRIES:
+        return None
+    return MapError("This map is full; remove something first.")
 
 
 def _check_notes(notes: str) -> str:
@@ -163,8 +176,8 @@ def add_goal(m: InterestMap, name: str, notes: str = "") -> Entry:
         existing.kind, existing.notes = "goal", notes  # keeps its days
         entry = existing
     else:
-        if not make_room(m):
-            raise MapError("This map is full; remove something first.")
+        if error := full(m):
+            raise error
         entry = m.new_entry(name, "goal", notes)
         m.entries.append(entry)
     m.edits += 1
@@ -180,9 +193,9 @@ def add_interest(m: InterestMap, name: str) -> Entry:
     name = check_name(name)
     if (existing := m.find(name)) is not None:
         raise MapError(f"{existing.name} is already on the map.")
+    if error := full(m):
+        raise error
     _unremove(m, name)  # a person may bring back what they removed
-    if not make_room(m):
-        raise MapError("This map is full; remove something first.")
     entry = m.new_entry(name, "interest")
     m.entries.append(entry)
     m.edits += 1
@@ -267,14 +280,22 @@ def put_back(m: InterestMap, name: str) -> Entry:
         entry = add_goal(m, found, info.get("notes", ""))
     else:
         entry = add_interest(m, found)
+    old = info.get("id")
+    if old and old not in {e.id for e in m.entries}:
+        entry.id = old  # ids are never reused, so links removed with it still point here
     entry.days, entry.explained = list(info.get("days", [])), list(info.get("explained", []))
     entry.mentions, entry.bounces = int(info.get("mentions", 0)), list(info.get("bounces", []))
-    ids, old = {e.id for e in m.entries}, info.get("id")
-    for k in info.get("links", []):  # links whose other end is still on the map
-        a, b = (entry.id if x == old else x for x in (k["a"], k["b"]))
-        known = any((x.a, x.b, x.kind) == (a, b, k["kind"]) for x in m.links)
-        if a in ids and b in ids and not known:
-            m.links.append(Link(a, b, k["kind"], k["day"]))
+    ids = {e.id for e in m.entries}
+    waiting = {i["id"]: i for i in m.removed_info.values() if "id" in i}  # still in Removed
+    for k in info.get("links", []):
+        known = any((x.a, x.b, x.kind) == (k["a"], k["b"], k["kind"]) for x in m.links)
+        other = k["b"] if k["a"] == entry.id else k["a"]
+        if other in waiting and k not in waiting[other]["links"]:
+            waiting[other]["links"].append(k)  # it comes back when the other end does
+        elif k["a"] in ids and k["b"] in ids and not known:
+            # back in its place by date, so an old bridge doesn't count as the latest
+            at = next((i for i, x in enumerate(m.links) if x.day > k["day"]), len(m.links))
+            m.links.insert(at, Link(k["a"], k["b"], k["kind"], k["day"]))
     return entry
 
 
@@ -398,7 +419,7 @@ def apply_tags(m: InterestMap, tags: Tags, student_text: str, today: date) -> No
     """
     if tags.skip:
         return  # excluded, personal, or scary: nothing is recorded
-    day, said = today.isoformat(), " ".join(student_text.casefold().split())
+    day, said = today.isoformat(), " ".join(_plain(student_text).casefold().split())
     touched: dict[str, Entry] = {}
     for name in tags.about:
         if (e := m.find(name)) is not None:
@@ -430,9 +451,7 @@ def apply_tags(m: InterestMap, tags: Tags, student_text: str, today: date) -> No
     if tags.changed_subject:
         bridges = [k for k in m.links if k.kind == "bridge"]
         if bridges:  # the bounce is from the most recent bridge's goal (links are in order)
-            g = m.get(bridges[-1].b)
-            if day not in g.bounces:
-                g.bounces.append(day)
+            m.get(bridges[-1].b).bounces.append(day)  # each one counts, even on the same day
 
 
 def faded(entry: Entry, today: date) -> bool:
@@ -509,8 +528,10 @@ def map_block(m: InterestMap, today: date) -> str:
     steer = sorted((g for g in goals if not backed_off(g, today)), key=lambda g: covered[g.id])[:8]
     revisit = [g for g in goals if g.explained and faded(g, today)]
     lines = [MAP_HEADER]
-    avoid = [r for r in m.removed  # removed interests (older removals count as interests)
-             if m.removed_info.get(r.casefold(), {}).get("kind", "interest") == "interest"][-8:]
+    # removed interests with their history: not older removals, nor ones deleted for good
+    avoid = [r for r in m.removed
+             if m.removed_info.get(r.casefold(), {}).get("kind") == "interest"
+             and "id" in m.removed_info[r.casefold()]][-8:]
     if avoid:  # first, so the 1,500-character cut never drops it
         lines.append(STEER_AWAY + ", ".join(avoid))
     if interests:

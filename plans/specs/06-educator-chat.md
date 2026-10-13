@@ -6,7 +6,7 @@ Approved in conversation on 2026-10-11 (approach A). Requirements: [educator PRD
 
 On **Maps**, for one student at a time:
 
-- **Top:** the student picker and their map picture. On a phone it's a strip about 200px tall that a tap expands.
+- **Top:** the student picker and their map picture. Since v2.19 the whole picture shows, and a tap on an item opens it in the list.
 - **Middle:** a chat with the **educator agent** about that student. Switching students starts a fresh chat.
 - **Under the agent's latest reply:** its proposals as a **tick list**, and **Add to map**. Feedback items save to the admin's list instead of the map.
 - **Bottom:** the message box with 📎 (notes as .txt, .md, or .docx; a PDF gets "paste its text", since the chat's Claude call takes text only) and Send.
