@@ -1,7 +1,7 @@
 """Claude through the Claude Code CLI on the home server (prototype only).
 
-Three uses: Ask Lerni's conversation, tagging each exchange for the interest
-map, and proposing map entries from uploaded notes.
+Four uses: Ask Lerni's conversation, tagging each exchange for the interest
+map, proposing map entries from uploaded notes, and writing race questions.
 
 Uses the Claude account the CLI is logged into, so there's no API key to
 store. Before anyone outside the household uses the app, replace this with an
@@ -31,6 +31,7 @@ from claude_agent_sdk import (
 )
 
 from lerni.student.conversation import ConversationUnavailable, Turn
+from lerni.student.race import QUIZ_SCHEMA, RaceUnavailable
 from lerni.student.tagging import TAG_SCHEMA
 from lerni.student.upload import UPLOAD_SCHEMA, UploaderUnavailable, UploadSource
 from lerni.student.usage import Usage
@@ -40,6 +41,7 @@ TIMEOUT_SECONDS = 120
 CHAT_TIMEOUT_SECONDS = 60
 DEFAULT_TAGGER_MODEL = "claude-haiku-5-5"  # small and fast: it runs after every answer
 TAG_TIMEOUT_SECONDS = 30
+QUIZ_TIMEOUT_SECONDS = 60
 
 
 def _isolated() -> dict[str, Any]:
@@ -185,6 +187,49 @@ class ClaudeCodeTagger:
                     result = message
         if result is None or result.is_error or not isinstance(result.structured_output, dict):
             raise RuntimeError("no tags")  # never the text
+        return result.structured_output
+
+
+class ClaudeCodeQuizzer:
+    """Write a set of race questions as structured JSON, with one isolated call."""
+
+    def __init__(self, model: str = DEFAULT_TAGGER_MODEL, usage: Usage | None = None) -> None:
+        self.model, self.usage = model, usage
+
+    def options(self, system: str, workdir: str) -> Any:
+        """No tools, a turn for the JSON answer, nothing kept."""
+        return ClaudeAgentOptions(
+            system_prompt=system,
+            model=self.model,
+            tools=[],
+            cwd=workdir,
+            max_turns=2,
+            output_format={"type": "json_schema", "schema": QUIZ_SCHEMA},
+            **_isolated(),
+        )
+
+    def write(self, system: str, prompt: str) -> dict[str, Any]:
+        """Return the questions as JSON.
+
+        Raises:
+            RaceUnavailable: Lerni is resting, or no usable answer in time.
+        """
+        if self.usage is not None and (resting := self.usage.paused()):
+            raise RaceUnavailable(resting)
+        try:
+            return asyncio.run(asyncio.wait_for(self._write(system, prompt), QUIZ_TIMEOUT_SECONDS))
+        except Exception as exc:  # never echo the map in errors
+            raise RaceUnavailable("The track needs a minute. Try again soon.") from exc
+
+    async def _write(self, system: str, prompt: str) -> dict[str, Any]:
+        with tempfile.TemporaryDirectory(prefix="lerni-race-") as workdir:
+            result: ResultMessage | None = None
+            async for message in query(prompt=prompt, options=self.options(system, workdir)):
+                _note_limits(self.usage, message)
+                if isinstance(message, ResultMessage):
+                    result = message
+        if result is None or result.is_error or not isinstance(result.structured_output, dict):
+            raise RuntimeError("no questions")
         return result.structured_output
 
 

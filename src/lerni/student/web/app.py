@@ -24,6 +24,8 @@ from lerni.student.educator_agent import EducatorChats
 from lerni.student.feedback import FeedbackStore  # noqa: E402
 from lerni.student.interests import MapStore  # noqa: E402
 from lerni.student.logs import ConversationLog  # noqa: E402
+from lerni.student.points import PointsStore  # noqa: E402
+from lerni.student.race import Quizzer, RaceDesk  # noqa: E402
 from lerni.student.signin import SignIn, cookie_name, load_secret  # noqa: E402
 from lerni.student.students import StudentStore, default_data_dir  # noqa: E402
 from lerni.student.tagging import MapKeeper, Tagger  # noqa: E402
@@ -134,7 +136,7 @@ def _head(speech: bool) -> str:
     """The page's scripts, inlined so it loads nothing else: menu, map taps, Hold to talk."""
     from importlib.resources import files
 
-    names = ["nav.js", "mapview.js", "talk.js"] if speech else ["nav.js", "mapview.js"]
+    names = ["nav.js", "mapview.js", "race.js"] + (["talk.js"] if speech else [])
     return "".join(f"<script>{files('lerni.student.web').joinpath(n).read_text()}</script>"
                    for n in names)
 
@@ -154,6 +156,7 @@ def build_app(
     version: str = "",
     speech: Speech | None = None,
     usage: Usage | None = None,
+    quizzer: Quizzer | None = None,
 ) -> FastAPI:
     """Build the server: the sign-in page and the app at ``/app/``.
 
@@ -168,6 +171,7 @@ def build_app(
         version: Which code is running, shown small on the sign-in page.
         speech: Speech to text and back for Hold to talk; ``None`` turns it off.
         usage: Claude usage, for the educators' warning; ``None`` shows none.
+        quizzer: Claude behind an adapter for race questions; ``None`` turns races off.
     """
     root = data_root or default_data_dir()
     students = StudentStore(root)
@@ -197,6 +201,8 @@ def build_app(
         return viewer.username if viewer else None
 
     maps, log = MapStore(root), ConversationLog(root)
+    points = PointsStore(root)
+    races = RaceDesk(quizzer, maps, points) if quizzer is not None else None
     log.purge()  # at startup; then once a day as exchanges are logged
     keeper = MapKeeper(maps, tagger, log)
     conversations = (
@@ -217,6 +223,8 @@ def build_app(
         speech=speech,
         educator_chats=EducatorChats(chat_model, maps, log) if chat_model else None,
         usage=usage,
+        points=points,
+        races=races,
     )
     mounted = gr.mount_gradio_app(
         app,

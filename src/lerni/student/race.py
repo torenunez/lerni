@@ -9,12 +9,14 @@ luck. Nothing here changes the MentalMap.
 from __future__ import annotations
 
 import random
+import threading
 import uuid
 from dataclasses import dataclass, field
 from datetime import date
-from typing import Any
+from typing import Any, Protocol
 
-from lerni.student.interests import InterestMap, faded, family, group_days, parents
+from lerni.student.interests import InterestMap, MapStore, faded, family, group_days, parents
+from lerni.student.points import PointsStore
 
 QUESTIONS_PER_RACE = 5
 SET_SIZE = 10  # questions per Claude call: two races' worth
@@ -184,3 +186,112 @@ def public(race: Race) -> dict[str, Any]:
     q = race.questions[race.answered]
     return {"race": race.id, "number": race.answered, "question": q.question,
             "choices": list(q.choices)}
+
+
+NOT_READY = "The track needs a minute. Try again soon."
+
+
+class RaceUnavailable(Exception):
+    """No race now: Claude is resting, didn't answer, or wrote too few good questions."""
+
+
+class Quizzer(Protocol):
+    """Anything that writes race questions (Claude, or a fake)."""
+
+    def write(self, system: str, prompt: str) -> dict[str, Any]: ...
+
+
+class RaceDesk:
+    """Today's questions per person, written ahead, and each person's race in progress."""
+
+    def __init__(self, quizzer: Quizzer, maps: MapStore, points: PointsStore) -> None:
+        self.quizzer, self.maps, self.points = quizzer, maps, points
+        self._sets: dict[str, tuple[str, list[Question]]] = {}  # username: (day, questions)
+        self._races: dict[str, Race] = {}
+        self._busy: set[str] = set()  # writing ahead right now
+        self._lock = threading.Lock()
+
+    def _write(self, username: str, supervised: bool, today: date) -> list[Question]:
+        m = self.maps.get(username)
+        for _ in range(2):  # one more try if too few questions pass the checks
+            try:
+                raw = self.quizzer.write(QUIZ_SYSTEM, quiz_input(m, today, supervised))
+            except RaceUnavailable:
+                raise
+            except Exception as exc:  # never show what went wrong inside
+                raise RaceUnavailable(NOT_READY) from exc
+            kept = check_questions(raw, m)
+            if len(kept) >= QUESTIONS_PER_RACE:
+                return kept
+        raise RaceUnavailable(NOT_READY)
+
+    def _held(self, username: str, today: date) -> list[Question]:
+        day, held = self._sets.get(username, ("", []))
+        return held if day == today.isoformat() else []  # a new day starts fresh
+
+    def prefill(self, username: str, supervised: bool) -> None:
+        """Write the next questions in the background if fewer than a race are held."""
+        today = date.today()
+        with self._lock:
+            if len(self._held(username, today)) >= QUESTIONS_PER_RACE or username in self._busy:
+                return
+            self._busy.add(username)
+
+        def work() -> None:
+            try:
+                fresh = self._write(username, supervised, today)
+                with self._lock:
+                    self._sets[username] = (today.isoformat(), self._held(username, today) + fresh)
+            except RaceUnavailable:
+                pass  # Race will try again and say why
+            finally:
+                with self._lock:
+                    self._busy.discard(username)
+
+        threading.Thread(target=work, daemon=True).start()
+
+    def start(self, username: str, supervised: bool, today: date | None = None) -> Race:
+        """A new race (any race in progress is dropped).
+
+        Raises:
+            PointsError: Today's races are used up (Claude isn't asked).
+            RaceUnavailable: No questions now (the race isn't counted).
+        """
+        day = today or date.today()
+        if self.points.races_left(username, day) <= 0:
+            self.points.start_race(username, day)  # raises the "closed for today" line
+        with self._lock:
+            held = self._held(username, day)
+        if len(held) < QUESTIONS_PER_RACE:
+            held = held + self._write(username, supervised, day)  # waits for Claude
+        questions, rest = held[:QUESTIONS_PER_RACE], held[QUESTIONS_PER_RACE:]
+        self.points.start_race(username, day)
+        race = new_race(questions)
+        with self._lock:
+            self._sets[username] = (day.isoformat(), rest)
+            self._races[username] = race
+        self.prefill(username, supervised)  # the next race starts quickly
+        return race
+
+    def pick(self, username: str, race_id: str, number: int,
+             choice: int) -> tuple[Race | None, Turn | None, int]:
+        """Answer a question in this person's race; stale or repeat taps change nothing."""
+        with self._lock:
+            race = self._races.get(username)
+            if race is None or race.id != race_id:
+                return race, None, 0
+            turn = answer(race, number, choice)
+        awarded = 0
+        if turn is not None and race.done:
+            awarded = self.points.award(username, race.id, "race", race_points(race))
+        return race, turn, awarded
+
+    def current(self, username: str) -> Race | None:
+        """The race in progress, if any."""
+        with self._lock:
+            return self._races.get(username)
+
+    def drop(self, username: str) -> None:
+        """Leaving Games drops a race in progress: no points."""
+        with self._lock:
+            self._races.pop(username, None)

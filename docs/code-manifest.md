@@ -34,6 +34,9 @@ What every code file does, in the order a request flows through it. When you add
 | File | What it does |
 |---|---|
 | `src/lerni/student/interests.py` | Interest maps: entries (interests and goals), links, the rules for people's edits (add a goal or an interest, names, the 60-entry cap, remove, Put back with its history, and Delete for good) and for the tagger's observations, "kind of" groups (at most 2 per item, no loops, 3 levels; a group counts each day any kind came up) and "car" finding "cars", each item's strength and details, the map block for the prompt (removed interests listed as set aside; groups with their recent kinds), and `MapStore` (one JSON file per student, one change at a time). |
+| `src/lerni/student/points.py` | Points: one JSON file per person (ids and numbers only); each award or purchase applies once by its id, Chat stops at 30 a day, buying a car never goes below zero, and 10 races a day. |
+| `src/lerni/student/garage.py` | The garage: eight cartoon cars drawn as SVG in code (same side view and scale), each with a price; one for the track and a small one for the list. |
+| `src/lerni/student/race.py` | The race: Haiku's question instructions and schema, the input from a student's map, checks that drop bad or off-map questions and shuffle choices, fixed race rules (the finish depends only on how many were right), and `RaceDesk` (today's questions written ahead, one race per person, points at the finish). |
 | `src/lerni/student/tagging.py` | The tagger's instructions and schema, and `MapKeeper`: tags each exchange in the background, applies it under the map's lock unless a person changed the map or the conversation was cleared, and logs it. |
 | `src/lerni/student/logs.py` | Conversation logs: each exchange and what the tagger did, one file per student per day, deleted after 7 days; the only place message text is saved. |
 | `src/lerni/student/usage.py` | Claude usage: the latest share used of each limit and when it resets; a warning line for educators at 75% of the week or 80% of the 5-hour window, and a pause at 95% or on any paid extra usage. |
@@ -104,6 +107,9 @@ Minimal on purpose: one happy path per module, plus a test for each safety guara
 | `tests/student/test_tagging.py` | An exchange grows the map and is logged (a stopped one isn't tagged); a late result never undoes a person or a new conversation; logs older than 7 days are deleted. |
 | `tests/student/test_usage.py` | A high week warns with its reset time, a full one pauses Lerni until then, and paid extra usage pauses it. |
 | `tests/student/test_mapdraw.py` | The map picture escapes names, draws every entry, and draws the same map the same way each time. |
+| `tests/student/test_points.py` | Points: an award counts once and Chat stops at its cap; buying charges once and never below zero; only owned cars drive; ten races a day. |
+| `tests/student/test_garage.py` | The garage: eight cars, cheapest first, the starter free, each drawn. |
+| `tests/student/test_race.py` | The race: places depend only on how many were right; repeat and stale taps are ignored and the page never sees the answer; bad, off-map, or set-aside questions are dropped; points once at the finish; no questions means no race used; the day's limit stops before asking Claude. |
 | `tests/student/test_educator_agent.py` | The educator agent: hidden proposals block (even split across pieces), checked proposals, only ticked ones applied, a stale one skipped, a ticked group puts kinds under it, one model call per message. |
 | `tests/student/test_voice.py` | Answers are spoken a clean sentence at a time; bad clips are refused before transcribing; a failed voice keeps the text. |
 | `tests/student/test_mac_speech.py` | The speech adapter runs whisper-cli and say, and leaves no clip behind. |

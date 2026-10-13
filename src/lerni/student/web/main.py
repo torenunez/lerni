@@ -17,6 +17,8 @@ from lerni.student.conversation import Conversations
 from lerni.student.educator_agent import EducatorChats
 from lerni.student.feedback import FeedbackStore
 from lerni.student.interests import MapStore
+from lerni.student.points import PointsStore
+from lerni.student.race import RaceDesk
 from lerni.student.signin import Role, SignIn, Viewer
 from lerni.student.students import StudentStore
 from lerni.student.upload import Uploader
@@ -67,6 +69,8 @@ def build_main_view(
     speech: Speech | None = None,
     educator_chats: EducatorChats | None = None,
     usage: Usage | None = None,
+    points: PointsStore | None = None,
+    races: RaceDesk | None = None,
 ) -> gr.Blocks:
     """Build the page; the tabs each viewer sees are set on load."""
     # uploads picked but never sent expire within two hours (checked hourly)
