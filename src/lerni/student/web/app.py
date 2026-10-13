@@ -102,6 +102,11 @@ _CSS = """
   font-weight: 600; }
 /* Hold to talk: a big round button for the thumb, red and pulsing while held */
 .lerni-hide { display: none !important; }
+/* Games: the ⭐ in the header, big answer buttons, and a track that doesn't sprawl */
+.lerni-stars p { font-size: 16px; margin: 0; white-space: nowrap; }
+.lerni-question p { font-size: 18px; }
+.lerni-choice { min-height: 56px !important; font-size: 18px !important; }
+#lerni-track svg { max-width: 560px; display: block; margin: 0 auto; }
 /* MentalMap pictures (mapview.js): a tapped item lights up its links; the rest fades */
 .lerni-map .lerni-node { cursor: pointer; }
 .lerni-map svg.lerni-focus .lerni-node:not(.lerni-near) { opacity: 0.15; }

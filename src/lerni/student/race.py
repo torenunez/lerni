@@ -49,8 +49,10 @@ QUIZ_SYSTEM = f"""\
 You write {SET_SIZE} multiple-choice questions for a car race in Lerni, a learning companion.
 Return only the JSON asked for.
 - Each question practices one goal from the list, set in one of their interests \
-(acceleration with race cars); "goal" is that goal's name exactly. With no goals, ask how \
-things in their interests work, never dates or numbers to memorize.
+(acceleration with race cars); "goal" is that goal's name exactly, without its notes. \
+With no goals, ask how things in their interests work, never dates or numbers to memorize. \
+Spread the questions \
+evenly across the goals.
 - One right answer and two wrong ones that someone might believe; "why" says in one short \
 line why the right one is right.
 - Short questions (under {MAX_QUESTION} characters) and short choices (under {MAX_CHOICE}).
@@ -97,7 +99,7 @@ def _plain(value: Any) -> str:
 def check_questions(raw: Any, m: InterestMap, rng: random.Random | None = None) -> list[Question]:
     """Keep only well-formed questions about the map's goals; shuffle their choices."""
     rng = rng or random.Random()
-    goals = {e.name.casefold() for e in m.entries if e.kind == "goal"}
+    goals = {e.name.casefold(): e.name for e in m.entries if e.kind == "goal"}
     avoid = [r.casefold() for r in m.removed]
     items = raw.get("questions") if isinstance(raw, dict) else None
     kept: list[Question] = []
@@ -105,7 +107,7 @@ def check_questions(raw: Any, m: InterestMap, rng: random.Random | None = None) 
         if not isinstance(item, dict):
             continue
         q, why = _plain(item.get("question")), _plain(item.get("why"))
-        goal = _plain(item.get("goal"))
+        goal = _plain(item.get("goal")).split(" (")[0]  # Claude may copy the notes too
         choices = [_plain(c) for c in item.get("choices") or []]
         right = item.get("answer")
         text = " ".join([q, *choices]).casefold()
@@ -118,7 +120,8 @@ def check_questions(raw: Any, m: InterestMap, rng: random.Random | None = None) 
             continue
         answer_text = choices[right]
         rng.shuffle(choices)  # the right one isn't always first
-        kept.append(Question(goal, q, (choices[0], choices[1], choices[2]),
+        named = goals.get(goal.casefold(), goal)  # the map's spelling
+        kept.append(Question(named, q, (choices[0], choices[1], choices[2]),
                              choices.index(answer_text), why))
     return kept
 
@@ -189,6 +192,17 @@ def public(race: Race) -> dict[str, Any]:
 
 
 NOT_READY = "The track needs a minute. Try again soon."
+QUIZ_WAIT_SECONDS = 70  # how long a race waits for questions already being written
+
+
+def spread(questions: list[Question]) -> list[Question]:
+    """Take turns across the goals, so a race isn't five questions about one of them."""
+    by_goal: dict[str, list[Question]] = {}
+    for q in questions:
+        by_goal.setdefault(q.goal.casefold(), []).append(q)
+    turns = list(by_goal.values())
+    return [q for round_ in range(max(map(len, turns), default=0))
+            for queue in turns if round_ < len(queue) for q in [queue[round_]]]
 
 
 class RaceUnavailable(Exception):
@@ -208,7 +222,7 @@ class RaceDesk:
         self.quizzer, self.maps, self.points = quizzer, maps, points
         self._sets: dict[str, tuple[str, list[Question]]] = {}  # username: (day, questions)
         self._races: dict[str, Race] = {}
-        self._busy: set[str] = set()  # writing ahead right now
+        self._busy: dict[str, threading.Event] = {}  # writing ahead now; set when done
         self._lock = threading.Lock()
 
     def _write(self, username: str, supervised: bool, today: date) -> list[Question]:
@@ -235,18 +249,20 @@ class RaceDesk:
         with self._lock:
             if len(self._held(username, today)) >= QUESTIONS_PER_RACE or username in self._busy:
                 return
-            self._busy.add(username)
+            done = self._busy[username] = threading.Event()
 
         def work() -> None:
             try:
                 fresh = self._write(username, supervised, today)
                 with self._lock:
-                    self._sets[username] = (today.isoformat(), self._held(username, today) + fresh)
+                    held = self._held(username, today) + fresh
+                    self._sets[username] = (today.isoformat(), spread(held))
             except RaceUnavailable:
                 pass  # Race will try again and say why
             finally:
                 with self._lock:
-                    self._busy.discard(username)
+                    self._busy.pop(username, None)
+                done.set()
 
         threading.Thread(target=work, daemon=True).start()
 
@@ -261,9 +277,13 @@ class RaceDesk:
         if self.points.races_left(username, day) <= 0:
             self.points.start_race(username, day)  # raises the "closed for today" line
         with self._lock:
+            writing = self._busy.get(username)
+        if writing is not None:  # opening Games already asked: wait for that, not a second call
+            writing.wait(QUIZ_WAIT_SECONDS)
+        with self._lock:
             held = self._held(username, day)
         if len(held) < QUESTIONS_PER_RACE:
-            held = held + self._write(username, supervised, day)  # waits for Claude
+            held = spread(held + self._write(username, supervised, day))  # waits for Claude
         questions, rest = held[:QUESTIONS_PER_RACE], held[QUESTIONS_PER_RACE:]
         self.points.start_race(username, day)
         race = new_race(questions)

@@ -119,3 +119,36 @@ def test_the_day_limit_stops_before_asking_claude(tmp_path):
     with pytest.raises(PointsError):
         desk.start("sam", supervised=True, today=TODAY)
     assert quizzer.calls == 0
+
+
+class SlowQuizzer(FakeQuizzer):
+    """Takes a moment, like Claude, and writes five questions per goal."""
+
+    def write(self, system, prompt):
+        import time
+
+        self.calls += 1
+        time.sleep(0.3)
+        item = {"question": "Half of 8 laps?", "choices": ["4", "2", "6"], "answer": 0,
+                "why": "Half means 2 equal parts."}
+        return {"questions": [{**item, "goal": "Fractions"}] * 5
+                + [{**item, "goal": "Acceleration"}] * 5}
+
+
+def test_a_race_waits_for_questions_being_written_and_mixes_the_goals(tmp_path):
+    quizzer = SlowQuizzer()
+    desk, _ = desk_for(tmp_path, quizzer)
+    desk.maps.change("sam", lambda m: add_goal(m, "Acceleration"))
+    desk.prefill("sam", supervised=True)  # opening Games starts writing
+    race = desk.start("sam", supervised=True)  # a quick tap on Race
+    assert quizzer.calls == 1  # regression: the tap asked Claude a second time
+    assert {q.goal for q in race.questions} == {"Fractions", "Acceleration"}  # not five of one
+
+
+def test_a_goal_named_with_its_notes_still_counts():
+    m = InterestMap()
+    add_goal(m, "Fractions", "halves and quarters")
+    item = {"goal": "Fractions (halves and quarters)", "question": "Half of 8 laps?",
+            "choices": ["4", "2", "6"], "answer": 0, "why": "Half means 2 equal parts."}
+    kept = check_questions({"questions": [item]}, m)  # regression: every one was dropped
+    assert [q.goal for q in kept] == ["Fractions"]

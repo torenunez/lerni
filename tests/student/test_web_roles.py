@@ -60,7 +60,7 @@ def test_each_role_opens_on_a_tab_it_can_see():
     from lerni.student.web.main import opening_tab, visible_tabs
 
     lee = Viewer("lee", "Lee", Role.SUPERVISED)
-    assert visible_tabs(EDUCATOR) == ("ask", "mymap", "maps", "students", "account")
+    assert visible_tabs(EDUCATOR) == ("games", "ask", "mymap", "maps", "students", "account")
     assert visible_tabs(lee) == ("home", "games")
     assert visible_tabs(SAM) == ("ask", "mymap", "account")
     assert (opening_tab(EDUCATOR), opening_tab(lee), opening_tab(SAM)) == ("ask", "home", "ask")
@@ -345,3 +345,19 @@ def test_putting_an_item_in_a_group_checks_the_map_on_screen(tmp_path):
     assert group_item(maps, students, ann, None, "e2", "sharks", expected="ann").startswith("✅")
     assert parents(maps.get("ann"), "e2") == ["e1"]
     assert ungroup_item(maps, students, ann, None, "e2", "e1", expected="ann").startswith("✅")
+
+
+def test_games_are_for_players_and_each_player_spends_only_their_own_points(tmp_path):
+    from lerni.student.points import PointsStore
+    from lerni.student.web.games import garage_tap, require_player, student_points
+
+    students, points = StudentStore(tmp_path), PointsStore(tmp_path)
+    students.add("lee", "Lee", Kind.SUPERVISED, "1234")
+    lee = Viewer("lee", "Lee", Role.SUPERVISED)
+    with pytest.raises(NotAllowed):
+        require_player(SAM)  # independent, not an educator: no Games yet
+    points.award("lee", "race-1", "race", 40)
+    assert garage_tap(points, lee, "rally").startswith("🎉")
+    assert points.get("lee").balance == 10 and points.get("alba").balance == 0
+    assert "⭐ 10" in student_points(points, students, EDUCATOR, "lee")
+    assert student_points(points, students, SAM, "lee") == ""  # only an educator reads them

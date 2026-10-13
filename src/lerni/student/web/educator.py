@@ -18,10 +18,12 @@ from lerni.student.conversation import MAX_MESSAGE, ConversationUnavailable
 from lerni.student.educator_agent import EducatorChats, apply_educator_proposals
 from lerni.student.feedback import FeedbackStore
 from lerni.student.interests import MapStore
+from lerni.student.points import PointsStore
 from lerni.student.signin import SignIn, Viewer
 from lerni.student.students import StudentStore
 from lerni.student.upload import UploadError, extract_upload
 from lerni.student.web.accounts import PRIVATE, NotAllowed, require_educator
+from lerni.student.web.games import student_points
 from lerni.student.web.mapdraw import map_svg, owner_key
 from lerni.student.web.maps import REFRESH_SECONDS, map_owner, save_feedback
 from lerni.student.web.mentallist import bump, mental_list
@@ -110,10 +112,12 @@ def educator_tab(
     maps: MapStore,
     chats: EducatorChats | None,
     feedback: FeedbackStore | None,
+    points: PointsStore | None = None,
 ) -> tuple[gr.Tab, gr.Dropdown]:
     """MentalMaps: pick a supervised student, see and edit their list, and plan it by talking."""
     with gr.Tab("MentalMaps", id="maps", visible=False) as tab:
         who = gr.Dropdown(label="Student", choices=[], value=None)  # filled on load
+        points_line = gr.Markdown()  # their ⭐ and cars
         picture = gr.HTML(elem_id="lerni-map-maps", elem_classes="lerni-map")
         list_owner, version = gr.State(""), gr.State(0)  # set only after map_owner's check
         # edits go to the student the list shows, never a newer dropdown pick
@@ -177,8 +181,9 @@ def educator_tab(
             if path:
                 Path(path).unlink(missing_ok=True)  # notes attached for the last student
             hidden = gr.update(choices=[], value=[], visible=False)
+            stars = student_points(points, students, viewer, requested) if points else ""
             return [draw(requested, request), checked_owner(requested, request), bump(), [], hidden,
-                    gr.update(visible=False), "", "", None]
+                    gr.update(visible=False), "", "", None, stars]
 
         def on_attach(path: str | None) -> list[Any]:
             return [path, f"📎 {Path(path).name}, sent with your next message" if path else ""]
@@ -265,7 +270,8 @@ def educator_tab(
         who.change(
             on_pick,
             [who, owner_state, held_file, version],
-            [picture, list_owner, version, chat, ticks, add, status, owner_state, held_file],
+            [picture, list_owner, version, chat, ticks, add, status, owner_state, held_file,
+             points_line],
             cancels=[sending],
             **PRIVATE,
         )
