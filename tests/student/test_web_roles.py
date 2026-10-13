@@ -361,3 +361,14 @@ def test_games_are_for_players_and_each_player_spends_only_their_own_points(tmp_
     assert points.get("lee").balance == 10 and points.get("alba").balance == 0
     assert "⭐ 10" in student_points(points, students, EDUCATOR, "lee")
     assert student_points(points, students, SAM, "lee") == ""  # only an educator reads them
+
+
+def test_a_tap_on_a_race_that_ended_offers_a_new_one():
+    from lerni.student.race import Question, new_race
+    from lerni.student.web.games import after_tap
+
+    q = Question("Fractions", "Half of 8?", ("4", "2", "6"), 0, "Half means 2 equal parts.")
+    race = new_race([q] * 5)
+    assert after_tap(race, (race.id, 0), None) is None  # a repeat tap: nothing changes
+    shown, line = after_tap(None, ("gone", 2), None)  # regression: the card went dead
+    assert shown is None and "Tap Race" in line

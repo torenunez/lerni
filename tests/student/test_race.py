@@ -92,6 +92,8 @@ def desk_for(tmp_path, quizzer):
 
 def test_a_race_awards_once_at_the_finish_and_ignores_stale_taps(tmp_path):
     desk, points = desk_for(tmp_path, FakeQuizzer())
+    ticks = iter(range(0, 1000, 10))
+    desk.clock = lambda: float(next(ticks))  # a student reads each question first
     race = desk.start("sam", supervised=True, today=TODAY)
     for n in range(QUESTIONS_PER_RACE):
         q = race.questions[n]
@@ -152,3 +154,17 @@ def test_a_goal_named_with_its_notes_still_counts():
             "choices": ["4", "2", "6"], "answer": 0, "why": "Half means 2 equal parts."}
     kept = check_questions({"questions": [item]}, m)  # regression: every one was dropped
     assert [q.goal for q in kept] == ["Fractions"]
+
+
+def test_quick_second_taps_never_answer_unseen_or_start_a_second_race(tmp_path):
+    now = [100.0]
+    desk, points = desk_for(tmp_path, FakeQuizzer())
+    desk.clock = lambda: now[0]
+    race = desk.start("sam", supervised=True, today=TODAY)
+    assert desk.start("sam", supervised=True, today=TODAY) is race  # regression: a second tap
+    assert points.races_left("sam", TODAY) == RACES_PER_DAY - 1  # counted once
+    assert desk.pick("sam", race.id, 0, 0)[1] is not None
+    # regression: a second button 0.2 s later answered question 2 unseen
+    assert desk.pick("sam", race.id, 1, 0)[1] is None
+    now[0] += 1.0
+    assert desk.pick("sam", race.id, 1, 0)[1] is not None

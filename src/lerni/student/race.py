@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import random
 import threading
+import time
 import uuid
 from dataclasses import dataclass, field
 from datetime import date
@@ -193,6 +194,8 @@ def public(race: Race) -> dict[str, Any]:
 
 NOT_READY = "The track needs a minute. Try again soon."
 QUIZ_WAIT_SECONDS = 70  # how long a race waits for questions already being written
+TAP_GAP_SECONDS = 0.8  # a second answer this soon is a double tap, not a reading of the next one
+RESTART_GAP_SECONDS = 5.0  # a second Race tap this soon returns the race just started
 
 
 def spread(questions: list[Question]) -> list[Question]:
@@ -223,6 +226,9 @@ class RaceDesk:
         self._sets: dict[str, tuple[str, list[Question]]] = {}  # username: (day, questions)
         self._races: dict[str, Race] = {}
         self._busy: dict[str, threading.Event] = {}  # writing ahead now; set when done
+        self._started: dict[str, float] = {}  # when each person's race began
+        self._last_tap: dict[str, float] = {}  # when they last answered
+        self.clock = time.monotonic  # tests may replace it
         self._lock = threading.Lock()
 
     def _write(self, username: str, supervised: bool, today: date) -> list[Question]:
@@ -274,6 +280,11 @@ class RaceDesk:
             RaceUnavailable: No questions now (the race isn't counted).
         """
         day = today or date.today()
+        with self._lock:  # more taps on Race while it started: the same race, counted once
+            current = self._races.get(username)
+            if (current is not None and current.answered == 0
+                    and self.clock() - self._started.get(username, -1e9) < RESTART_GAP_SECONDS):
+                return current
         if self.points.races_left(username, day) <= 0:
             self.points.start_race(username, day)  # raises the "closed for today" line
         with self._lock:
@@ -290,6 +301,7 @@ class RaceDesk:
         with self._lock:
             self._sets[username] = (day.isoformat(), rest)
             self._races[username] = race
+            self._started[username] = self.clock()
         self.prefill(username, supervised)  # the next race starts quickly
         return race
 
@@ -300,7 +312,11 @@ class RaceDesk:
             race = self._races.get(username)
             if race is None or race.id != race_id:
                 return race, None, 0
+            if self.clock() - self._last_tap.get(username, -1e9) < TAP_GAP_SECONDS:
+                return race, None, 0  # a double tap: never an answer to a question not seen
             turn = answer(race, number, choice)
+            if turn is not None:
+                self._last_tap[username] = self.clock()
         awarded = 0
         if turn is not None and race.done:
             awarded = self.points.award(username, race.id, "race", race_points(race))

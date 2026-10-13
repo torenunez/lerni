@@ -117,6 +117,16 @@ def track_svg(race: Race | None, car_id: str) -> str:
     return "".join(parts) + "</svg>"
 
 
+def after_tap(race: Race | None, ref: tuple[str, int], turn: Turn | None,
+              awarded: int = 0) -> tuple[Race | None, str] | None:
+    """What an answer tap shows: the race and a line, or None when nothing changes (a repeat)."""
+    if turn is not None:
+        return race, _feedback(race, turn, awarded) if race else ""
+    if race is None or race.id != ref[0]:  # a restart or another screen ended it
+        return None, "That race ended. Tap Race! 🏁"
+    return None
+
+
 def _feedback(race: Race, turn: Turn, awarded: int) -> str:
     line = (f"Right answer: boost! {turn.slowed} slowed down 💨" if turn.right
             else f"Not this time: it's **{turn.answer}**. {turn.why}")
@@ -209,9 +219,10 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
             if desk is None or viewer is None:
                 return screen(viewer, None, "")
             race, turn, awarded = pick(desk, viewer, ref[0], ref[1], i)
-            if turn is None:
-                return [gr.update() for _ in outputs]  # a repeat or stale tap: nothing changes
-            return screen(viewer, race, _feedback(race, turn, awarded))
+            shown = after_tap(race, ref, turn, awarded)
+            if shown is None:
+                return [gr.update() for _ in outputs]  # a repeat tap: nothing changes
+            return screen(viewer, *shown)
         return handler
 
     def on_garage(car_id: str) -> Callable[..., list[Any]]:
@@ -223,7 +234,9 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
         return handler
 
     tab.select(on_open, None, outputs, **PRIVATE)
-    go.click(lambda: "Pumping the tires… 🛞", None, note, **PRIVATE).then(
+    # Race hides while questions are written, so extra taps can't start more races
+    go.click(lambda: ["Pumping the tires… 🛞", gr.update(visible=False)], None, [note, go],
+             **PRIVATE).then(
         on_go, None, outputs, **PRIVATE)
     for i, button in enumerate(choices):
         button.click(on_choice(i), shown, outputs, **PRIVATE)
