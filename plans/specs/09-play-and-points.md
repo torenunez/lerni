@@ -1,0 +1,189 @@
+# Play and points: a race, a garage, and points for real answers (Version 3)
+
+Approved in conversation on 2026-10-12. Requirements: [student PRD, Version 3](../../docs/prd/student.md#version-3-play-and-points) and [educator PRD](../../docs/prd/educator.md#version-3-play-and-points). Builds on the map ([spec 04](04-interest-map.md), [spec 08](08-kind-of.md)).
+
+**Why.** The supervised student answers Lerni's goal questions with random emojis. Points they can spend on cars give those questions a reason, from two places: a race in Games and real answers in Chat. Points never go down for a wrong answer, are never compared between students, and stay apart from the map.
+
+**Ships as:** v3.1 (the race, points, and the garage) and v3.2 (points in Chat, and Ask renamed Chat).
+
+## What people see
+
+### Games (supervised students and educators)
+
+- **Top:** their ⭐ points and the car they're driving; **Race** and **Garage**.
+- **The race:**
+  - Their car and two silly bots (Zippy and Bolt) on a three-lane track, with a finish flag.
+  - A question card under it: "Question 3 of 5", the question, and **three big buttons**. No typing and no chat in a race.
+  - A right pick: their car leaps ahead and the bot in front slows ("Right answer: boost! Zippy slowed down 💨").
+  - Another pick: a small step, the right answer, and a one-line why ("It's acceleration: speeding up").
+  - Cars glide to their new places after each answer; nothing moves on a clock.
+  - After the fifth answer: "You finished 2nd! ⭐ +13", then **Race again** or **Garage**.
+- **The garage:** 8 cartoon cars, each with its price.
+  - Owned cars say **Drive**.
+  - Others say **Buy** when there are enough points, or "13 more ⭐".
+  - Buying asks nothing more: it takes the price off their points, and the car is theirs for good.
+- **Starting a race** waits a few seconds while Claude writes the questions ("Pumping the tires…"). The next race's questions are written ahead, so Race again is quick.
+- **Limits:**
+  - After 10 races in a day: "The track is closed for today 🌙 Come back tomorrow."
+  - While Lerni is resting (usage limits): "The track is resting until Mon 6:00 pm."
+  - Earlier points and cars stay either way.
+- **The header** shows ⭐ points on every screen for a student who has any.
+
+### Chat (v3.2; Ask is renamed Chat)
+
+- Chat stays a conversation, typed or spoken, with no multiple choice.
+- When the student really answers Lerni's question, "⭐ +3" (a right answer) or "⭐ +1" (a real try in their own words) appears by their points a few seconds later. Emojis, "idk", or a new subject earn nothing, and nothing says "wrong".
+- Lerni knows good answers earn ⭐ and may say so ("⭐ for whoever figures out…"). It never decides the points.
+
+### MentalMaps (educators)
+
+- Under the student picker: the student's ⭐ points and their cars.
+- The educator's own races earn the educator's own points.
+
+## Numbers (tuned after trying)
+
+| What | Value |
+|---|---|
+| Race | 5 questions, 3 choices each |
+| Race points | 1st 15, 2nd 10, 3rd 5, plus 1 per right answer (6 to 20) |
+| Chat points | 3 for a right answer, 1 for a real try; at most 30 a day |
+| Races a day | 10 per person |
+| Cars and prices | starter hatchback 0, rally car 30, muscle car 60, race truck 100, supercar 150, hypercar 220, formula racer 300, rocket car 400 |
+
+At about 3 races a day plus a few Chat answers, the first new car comes on day 1 and the last after about three weeks.
+
+## How it works
+
+### Race rules (`race.py`, no screens)
+
+- **A race is server state:** an id, 5 checked questions with their answers, the three positions, and how many have been answered.
+  - It lives in memory, per person; one race at a time.
+  - The page gets only the question and the three choices, never the answer.
+  - A tap sends the choice; the server checks it and moves the cars.
+- **Movement is fixed per answer, with no randomness and no clock.**
+  - Right: the student moves a big step, and both bots move a little less that turn (the message names the one in front as slowed).
+  - Wrong: the student moves a small step.
+  - Bots move at their own steady speeds.
+  - So the finish depends only on how many were right, not their order. **The constants are tuned so that:**
+    - 4 or 5 right wins;
+    - 3 right finishes 2nd;
+    - 2 or fewer finish 3rd.
+  - A test pins those outcomes.
+- **The place after the fifth answer sets the points.** The award id is the race id, so a double tap, a refresh, or a late repeat never awards twice.
+- **Leaving mid-race** (another tab, or signing out) drops it: no points, and it still counts toward the day's 10.
+
+### Questions (one Claude call per 2 races)
+
+- **Model:** a new adapter method, like the tagger's: the small model (Haiku) with structured output, no tools, isolated, and the same usage pause.
+- **One call writes 10 questions:** two races' worth.
+- **Input:**
+  - the student's goals and their notes;
+  - their top interests, group-aware ([spec 08](08-kind-of.md));
+  - the set-aside line;
+  - which voice they have (supervised or independent).
+  - No conversation text.
+- **Instructions (kept in code):**
+  - each question practices one goal, set in an interest ("acceleration with race cars");
+  - one right answer and two plausible wrong ones, plus a one-line why;
+  - short, kind words;
+  - never excluded subjects (violence, weapons, sexual content, self-harm, drugs), anything set aside, a real name, or a trick.
+  - With no goals: questions about their interests (how things work), never trivia that needs a date or a number to memorize.
+- **Schema:** `questions`, a list of objects, each with:
+  - `goal`;
+  - `question`;
+  - `choices` (3 strings);
+  - `answer` (0, 1 or 2);
+  - `why`.
+- **The server checks every question.** It drops one if:
+  - the question is over 140 characters, or a choice over 40, or the why over 120;
+  - the choices aren't 3 different, non-empty strings;
+  - the answer index is out of range;
+  - the goal isn't on the map (when the map has goals).
+- **Then it shuffles the choices**, so the right one isn't always first. If fewer than 5 survive, it asks again once; then: "The track needs a minute. Try again soon."
+- **Writing ahead:** the next set is written in the background when Games opens, and after each race. A set is kept in memory for the day only.
+
+### Points (`points.py`)
+
+- **One JSON file per person,** `<data>/points/<user>.json`, written atomically under a per-person lock, like maps:
+  - `balance`;
+  - `cars` (owned ids) and `car` (driving);
+  - `awards` (id, source `race`, `chat` or `buy`, amount (negative for a purchase), day): ids and numbers only, no text, kept 90 days for de-duplication;
+  - `races` (today's date and count).
+- **Calls:**
+  - `award(user, award_id, source, amount)`: applies once per id. A Chat award is held to the day's cap.
+  - `buy(user, car_id)`: only if the car exists, isn't owned, and the balance covers it. The award id is `buy-<car>`, so a double tap charges once.
+  - `drive(user, car_id)`: only an owned car.
+  - `start_race(user)`: refuses after 10 today.
+- **Every handler** resolves the signed-in viewer on the server. A student acts only on their own points; an educator only reads a supervised student's.
+- **Points never touch the MentalMap,** and the map never reads points.
+
+### The garage (`garage.py`)
+
+- **8 cars,** each with an id, a name, a price, and an SVG drawing:
+  - the same side-on view facing right, the same scale, wheels on one line;
+  - each in its own color;
+  - drawn in code, so no licenses, no trademarks, nothing fetched.
+- **A private file,** `<data>/garage.json` (never in the repo), may add cars later with prices and photos in `<data>/cars/`. This is the real-car pack, after v3.2.
+
+### The screen (`web/games.py`, `web/race.js`)
+
+- **The Games tab replaces the placeholder,** for supervised students and educators.
+- **The track is server-drawn SVG,** like the map picture.
+  - `race.js` slides each car from its old place to its new one when the picture is redrawn (the same restore-on-redraw pattern as `mapview.js`).
+  - With reduced motion it jumps.
+- **Buttons are at least 48 px tall,** with the choice as the label, so a screen reader reads question and choices in order.
+  - The track has a text label ("You're 2nd").
+  - Nothing relies on color alone.
+- **Rendering:** the race card and garage are ordinary components, not `gr.render`, so the draw queue isn't involved.
+
+### Chat points (v3.2, `tagging.py`)
+
+- **The tagger gets one more field, `answered`:**
+  - `right`: Lerni's previous message asked a question and the student answered it correctly;
+  - `tried`: a real attempt in their own words;
+  - empty: anything else.
+- **Each exchange gets an id;** that is the award id.
+- **The award is applied even if the map update is stale** (a person edited the map meanwhile), but not after New conversation.
+- **The ⭐ total refreshes** with a short timer that runs for a few seconds after each answer, then stops.
+- **One line in Lerni's fixed rules:** good answers earn ⭐; Lerni never promises or counts points.
+
+## Rules that still hold
+
+- Only people set goals; nothing here changes the map.
+- Conversation text stays only in the 7-day logs: points files hold ids and numbers; race questions live in memory for the day.
+- The supervised safety rules apply to race questions, and the disclosure rule still comes first in Chat.
+- No point is ever taken away for a wrong answer, and no screen compares one student with another.
+
+## Not in this version
+
+- Voice in the race ("🔊 Read it to me").
+- Pit stop.
+- The real-car pack.
+- An educator "reset points".
+- Games for independent students.
+- Difficulty settings.
+- Bridge Trip (Version 4).
+
+## Testing (minimal, per rule 4)
+
+- **`test_points.py`:**
+  - an award applies once;
+  - Chat is held to its cap;
+  - a buy charges once and never below zero;
+  - drive only an owned car.
+- **`test_race.py`:**
+  - the place outcomes above for 5, 4, 3 and 2 right answers;
+  - bad questions are dropped;
+  - the page's view never includes the answer.
+- **`test_web_roles.py`:**
+  - a viewer can't buy or race for someone else;
+  - a supervised viewer can't read another student's points.
+- **`scripts/eval_race.py`** (real calls, by hand), 3 cases:
+  - questions practice the map's goals;
+  - each has 3 distinct choices with the right one among them;
+  - a supervised set stays clear of a set-aside interest.
+- **`test_tagging.py`** (v3.2): `answered` awards once per exchange and respects the cap.
+- **Phone size** (iPhone and iPad):
+  - a race to the end, Race again, buying and driving a car;
+  - the 10-race limit;
+  - an educator with both MentalMap lists right after a restart (rule 9).
