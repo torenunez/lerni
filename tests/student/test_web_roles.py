@@ -348,19 +348,22 @@ def test_putting_an_item_in_a_group_checks_the_map_on_screen(tmp_path):
 
 
 def test_games_are_for_players_and_each_player_spends_only_their_own_points(tmp_path):
+    from lerni.student.garage import Garage
     from lerni.student.points import PointsStore
     from lerni.student.web.games import garage_tap, require_player, student_points
 
-    students, points = StudentStore(tmp_path), PointsStore(tmp_path)
+    students, points, garage = StudentStore(tmp_path), PointsStore(tmp_path), Garage(tmp_path)
     students.add("lee", "Lee", Kind.SUPERVISED, "1234")
     lee = Viewer("lee", "Lee", Role.SUPERVISED)
     with pytest.raises(NotAllowed):
         require_player(SAM)  # independent, not an educator: no Games yet
+    assert garage_tap(points, garage, None, "starter").startswith("⚠️")  # signed out
     points.award("lee", "race-1", "race", 40)
-    assert garage_tap(points, lee, "rally").startswith("🎉")
+    points.buy("lee", "rally", 30)
+    assert garage_tap(points, garage, lee, "rally").startswith("Driving")
     assert points.get("lee").balance == 10 and points.get("alba").balance == 0
-    assert "⭐ 10" in student_points(points, students, EDUCATOR, "lee")
-    assert student_points(points, students, SAM, "lee") == ""  # only an educator reads them
+    assert "⭐ 10" in student_points(points, garage, students, EDUCATOR, "lee")
+    assert student_points(points, garage, students, SAM, "lee") == ""  # only an educator reads them
 
 
 def test_a_tap_on_a_race_that_ended_offers_a_new_one():
@@ -372,3 +375,24 @@ def test_a_tap_on_a_race_that_ended_offers_a_new_one():
     assert after_tap(race, (race.id, 0), None) is None  # a repeat tap: nothing changes
     shown, line = after_tap(None, ("gone", 2), None)  # regression: the card went dead
     assert shown is None and "Tap Race" in line
+
+
+def test_a_real_car_is_bought_at_its_star_price_and_old_cartoon_cars_stay(tmp_path):
+    import json
+
+    from lerni.student.garage import Garage
+    from lerni.student.points import PointsStore
+    from lerni.student.web.games import garage_tap
+
+    (tmp_path / "cars").mkdir()
+    (tmp_path / "cars" / "quick.webp").write_bytes(b"RIFF")
+    (tmp_path / "garage.json").write_text(json.dumps({"cars": [
+        {"id": "quick", "name": "Quick", "usd": 91_700, "zero_to_60": 3.4,
+         "picture": "quick.webp"}]}))
+    garage, points = Garage(tmp_path), PointsStore(tmp_path)
+    lee = Viewer("lee", "Lee", Role.SUPERVISED)
+    points.award("lee", "race-1", "race", 70)
+    points.buy("lee", "rally", 30)  # bought in v3.1, before real cars
+    assert garage_tap(points, garage, lee, "quick").startswith("🎉")
+    assert points.get("lee").balance == 70 - 30 - 37
+    assert [c.id for c in garage.sold(points.get("lee").cars)] == ["starter", "quick", "rally"]

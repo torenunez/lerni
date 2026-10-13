@@ -17,11 +17,12 @@ os.environ["GRADIO_ANALYTICS_ENABLED"] = "False"
 
 import gradio as gr  # noqa: E402
 from fastapi import FastAPI, Request  # noqa: E402
-from fastapi.responses import PlainTextResponse  # noqa: E402
+from fastapi.responses import FileResponse, PlainTextResponse, RedirectResponse  # noqa: E402
 
 from lerni.student.conversation import ChatModel, Conversations  # noqa: E402
 from lerni.student.educator_agent import EducatorChats
 from lerni.student.feedback import FeedbackStore  # noqa: E402
+from lerni.student.garage import Garage  # noqa: E402
 from lerni.student.interests import MapStore  # noqa: E402
 from lerni.student.logs import ConversationLog  # noqa: E402
 from lerni.student.points import PointsStore  # noqa: E402
@@ -106,6 +107,8 @@ _CSS = """
 .lerni-stars p { font-size: 16px; margin: 0; white-space: nowrap; }
 .lerni-question p { font-size: 18px; }
 .lerni-choice { min-height: 56px !important; font-size: 18px !important; }
+.lerni-card { display: flex; flex-direction: column; gap: 2px; font-size: 14px; }
+.lerni-card img { max-width: 150px; height: auto; }
 #lerni-track svg { max-width: 560px; display: block; margin: 0 auto; }
 /* MentalMap pictures (mapview.js): a tapped item lights up its links; the rest fades */
 .lerni-map .lerni-node { cursor: pointer; }
@@ -206,7 +209,18 @@ def build_app(
         return viewer.username if viewer else None
 
     maps, log = MapStore(root), ConversationLog(root)
-    points = PointsStore(root)
+    points, garage = PointsStore(root), Garage(root)
+
+    @app.get("/cars/{car_id}")
+    def car_picture(car_id: str, request: Request) -> Any:
+        # a picture only for someone signed in, and only for a car in the garage
+        if current_user(request) is None:
+            return RedirectResponse("/signin", status_code=303)
+        path = garage.picture(car_id)
+        if path is None or not path.is_file():
+            return PlainTextResponse("Not found.", status_code=404)
+        return FileResponse(path, headers={"Cache-Control": "private, max-age=86400"})
+
     races = RaceDesk(quizzer, maps, points) if quizzer is not None else None
     log.purge()  # at startup; then once a day as exchanges are logged
     keeper = MapKeeper(maps, tagger, log)
@@ -230,6 +244,7 @@ def build_app(
         usage=usage,
         points=points,
         races=races,
+        garage=garage,
     )
     mounted = gr.mount_gradio_app(
         app,

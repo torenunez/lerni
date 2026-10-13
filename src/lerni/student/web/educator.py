@@ -17,6 +17,7 @@ import gradio as gr
 from lerni.student.conversation import MAX_MESSAGE, ConversationUnavailable
 from lerni.student.educator_agent import EducatorChats, apply_educator_proposals
 from lerni.student.feedback import FeedbackStore
+from lerni.student.garage import Garage
 from lerni.student.interests import MapStore
 from lerni.student.points import PointsStore
 from lerni.student.signin import SignIn, Viewer
@@ -113,6 +114,7 @@ def educator_tab(
     chats: EducatorChats | None,
     feedback: FeedbackStore | None,
     points: PointsStore | None = None,
+    garage: Garage | None = None,
 ) -> tuple[gr.Tab, gr.Dropdown]:
     """MentalMaps: pick a supervised student, see and edit their list, and plan it by talking."""
     with gr.Tab("MentalMaps", id="maps", visible=False) as tab:
@@ -181,7 +183,8 @@ def educator_tab(
             if path:
                 Path(path).unlink(missing_ok=True)  # notes attached for the last student
             hidden = gr.update(choices=[], value=[], visible=False)
-            stars = student_points(points, students, viewer, requested) if points else ""
+            stars = (student_points(points, garage or Garage(), students, viewer, requested)
+                     if points else "")
             return [draw(requested, request), checked_owner(requested, request), bump(), [], hidden,
                     gr.update(visible=False), "", "", None, stars]
 

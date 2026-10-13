@@ -13,7 +13,7 @@ from typing import Any
 
 import gradio as gr
 
-from lerni.student.garage import CARS, car, car_card_svg, car_svg
+from lerni.student.garage import Car, Garage, boost, car_card_svg, car_svg
 from lerni.student.points import STARTER, PointsError, PointsStore
 from lerni.student.race import (
     BOTS,
@@ -53,11 +53,11 @@ def stars(points: PointsStore, viewer: Viewer | None) -> str:
         return ""
 
 
-def start_race(desk: RaceDesk, viewer: Viewer | None) -> tuple[Race | None, str]:
-    """A new race, or why there can't be one."""
+def start_race(desk: RaceDesk, viewer: Viewer | None, gas: float = 1.0) -> tuple[Race | None, str]:
+    """A new race in a car with this gas boost, or why there can't be one."""
     try:
         v = require_player(viewer)
-        return desk.start(v.username, supervised=v.role is Role.SUPERVISED), ""
+        return desk.start(v.username, supervised=v.role is Role.SUPERVISED, boost=gas), ""
     except (NotAllowed, PointsError, RaceUnavailable) as exc:
         return None, str(exc)
 
@@ -68,11 +68,14 @@ def pick(desk: RaceDesk, viewer: Viewer | None, race_id: str, number: int,
     return desk.pick(require_player(viewer).username, race_id, number, choice)
 
 
-def garage_tap(points: PointsStore, viewer: Viewer | None, car_id: str) -> str:
+def garage_tap(points: PointsStore, garage: Garage, viewer: Viewer | None, car_id: str) -> str:
     """Drive a car they own, or buy it and drive it."""
     try:
-        v, c = require_player(viewer), car(car_id)
-        if car_id not in points.get(v.username).cars:
+        v, c = require_player(viewer), garage.car(car_id)
+        owned = points.get(v.username).cars
+        if c not in garage.sold(owned):
+            return "⚠️ That car isn't sold here."
+        if car_id not in owned:
             points.buy(v.username, car_id, c.price)
             points.drive(v.username, car_id)
             return f"🎉 The {c.name} is yours!"
@@ -84,18 +87,19 @@ def garage_tap(points: PointsStore, viewer: Viewer | None, car_id: str) -> str:
         return "⚠️ No such car."
 
 
-def student_points(points: PointsStore, students: StudentStore, viewer: Viewer | None,
-                   requested: str | None) -> str:
+def student_points(points: PointsStore, garage: Garage, students: StudentStore,
+                   viewer: Viewer | None, requested: str | None) -> str:
     """A supervised student's points and cars, for their educator on MentalMaps."""
     try:
         p = points.get(map_owner(students, viewer, requested or ""))
     except NotAllowed:
         return ""
-    names = ", ".join(car(c).name for c in p.cars if c in {x.id for x in CARS})
+    known = {c.id: c.name for c in garage.cars}
+    names = ", ".join(known[c] for c in p.cars if c in known)
     return f"⭐ {p.balance} · cars: {names}"
 
 
-def track_svg(race: Race | None, car_id: str) -> str:
+def track_svg(race: Race | None, car_id: str, garage: Garage) -> str:
     """The track: the student's car and two bots, placed by how far each has come."""
 
     def x(pos: float) -> float:
@@ -111,10 +115,22 @@ def track_svg(race: Race | None, car_id: str) -> str:
              f'<rect x="{END + 58}" y="0" width="6" height="130" fill="#444441"/>']  # finish line
     for label, y in zip(("You", *(name for name, _ in BOTS)), LANES, strict=True):
         parts.append(f'<text x="4" y="{y + 26}" font-size="10" fill="#085041">{label}</text>')
-    parts.append(car_svg(car_id, x(me), LANES[0], "me"))
+    parts.append(garage.svg(car_id, x(me), LANES[0], "me"))
     for (name, _), (look, color), pos, y in zip(BOTS, BOT_LOOKS, bots, LANES[1:], strict=True):
         parts.append(car_svg(look, x(pos), y, name, color))
     return "".join(parts) + "</svg>"
+
+
+def card_html(c: Car) -> str:
+    """One garage card: the picture, the name, the facts, and the price."""
+    pic = (f'<img src="/cars/{c.id}" alt="{html.escape(c.name)}" width="150">' if c.picture
+           else car_card_svg(c.id))
+    facts = [f for f in (c.engine, f"{c.power_hp:,} hp" if c.power_hp else "", c.drive,
+                         f"0–60 in {c.zero_to_60:g} s" if c.zero_to_60 else "", c.note) if f]
+    price = f"⭐ {c.price:,}" + (f" (${c.usd:,})" if c.usd else "")
+    gas = f" · gas ×{boost(c):.2f}" if boost(c) > 1 else ""
+    return (f'<div class="lerni-card">{pic}<b>{html.escape(c.name)}</b>'
+            f'<span>{html.escape(" · ".join(facts))}</span><span>{price}{gas}</span></div>')
 
 
 def after_tap(race: Race | None, ref: tuple[str, int], turn: Turn | None,
@@ -136,7 +152,8 @@ def _feedback(race: Race, turn: Turn, awarded: int) -> str:
 
 
 def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
-              header_stars: gr.Markdown) -> tuple[gr.Tab, Callable[..., list[Any]], list[Any]]:
+              header_stars: gr.Markdown,
+              garage: Garage) -> tuple[gr.Tab, Callable[..., list[Any]], list[Any]]:
     """The Games tab: the race, then the garage.
 
     Returns:
@@ -150,18 +167,20 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
         go = gr.Button("Race!", variant="primary", elem_classes="lerni-go")
         shown = gr.State(("", 0))  # the race id and question number on screen
         with gr.Accordion("Garage", open=False):
-            garage = {}
-            for c in CARS:  # the cars never change, so they're built once
-                with gr.Row(elem_classes="lerni-item"):
-                    gr.HTML(f"{car_card_svg(c.id)} {html.escape(c.name)}", padding=False)
-                    garage[c.id] = gr.Button(size="sm", scale=0, min_width=120)
+            rows, buttons = [], {}
+            for c in garage.cars:  # read once at startup; each player sees what's sold to them
+                with gr.Row(elem_classes="lerni-item", visible=False) as row:
+                    gr.HTML(card_html(c), padding=False)
+                    buttons[c.id] = gr.Button(size="sm", scale=0, min_width=120)
+                rows.append(row)
 
-    outputs = [header_stars, track, question, *choices, note, go, shown, *garage.values()]
+    outputs = [header_stars, track, question, *choices, note, go, shown, *buttons.values(), *rows]
 
     def garage_labels(viewer: Viewer | None) -> list[Any]:
         p = points.get(viewer.username) if viewer else None
+        sold = garage.sold(p.cars if p else [])
         labels = []
-        for c in CARS:
+        for c in garage.cars:
             if p is None:
                 labels.append(gr.update(value=f"⭐ {c.price}"))
             elif c.id == p.car:
@@ -171,8 +190,8 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
             elif p.balance >= c.price:
                 labels.append(gr.update(value=f"Buy · ⭐ {c.price}"))
             else:
-                labels.append(gr.update(value=f"{c.price - p.balance} more ⭐"))
-        return labels
+                labels.append(gr.update(value=f"{c.price - p.balance:,} more ⭐"))
+        return labels + [gr.update(visible=c in sold) for c in garage.cars]  # buttons, then rows
 
     def screen(viewer: Viewer | None, race: Race | None, line: str) -> list[Any]:
         """Every output, in order."""
@@ -186,8 +205,8 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
             ask = f"Question {view['number'] + 1} of {QUESTIONS_PER_RACE}\n\n**{view['question']}**"
             buttons = [gr.update(visible=True, value=c) for c in view["choices"]]
             go_update, ref = gr.update(visible=False), (race.id, race.answered)
-        return [stars(points, viewer), track_svg(race, driving), ask, *buttons, line, go_update,
-                ref, *garage_labels(viewer)]
+        return [stars(points, viewer), track_svg(race, driving, garage), ask, *buttons, line,
+                go_update, ref, *garage_labels(viewer)]
 
     def viewer_of(request: gr.Request) -> Viewer | None:
         viewer = signin.viewer(request.username)  # re-read on every request
@@ -210,7 +229,11 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
         viewer = viewer_of(request)
         if desk is None:
             return screen(viewer, None, NO_CLAUDE)
-        race, message = start_race(desk, viewer)
+        try:  # the driven car's gas; a car gone from the garage file drives like the starter
+            gas = boost(garage.car(points.get(viewer.username).car)) if viewer else 1.0
+        except KeyError:
+            gas = 1.0
+        race, message = start_race(desk, viewer, gas)
         return screen(viewer, race, message)
 
     def on_choice(i: int) -> Callable[..., list[Any]]:
@@ -228,7 +251,7 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
     def on_garage(car_id: str) -> Callable[..., list[Any]]:
         def handler(request: gr.Request) -> list[Any]:
             viewer = viewer_of(request)
-            message = garage_tap(points, viewer, car_id)
+            message = garage_tap(points, garage, viewer, car_id)
             race = desk.current(viewer.username) if desk is not None and viewer else None
             return screen(viewer, race, message)
         return handler
@@ -240,6 +263,6 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
         on_go, None, outputs, **PRIVATE)
     for i, button in enumerate(choices):
         button.click(on_choice(i), shown, outputs, **PRIVATE)
-    for car_id, button in garage.items():
+    for car_id, button in buttons.items():
         button.click(on_garage(car_id), None, outputs, **PRIVATE)
     return tab, refresh, outputs
