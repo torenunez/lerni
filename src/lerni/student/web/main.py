@@ -17,6 +17,8 @@ from lerni.student.conversation import Conversations
 from lerni.student.educator_agent import EducatorChats
 from lerni.student.feedback import FeedbackStore
 from lerni.student.interests import MapStore
+from lerni.student.points import PointsStore
+from lerni.student.race import RaceDesk
 from lerni.student.signin import Role, SignIn, Viewer
 from lerni.student.students import StudentStore
 from lerni.student.upload import Uploader
@@ -25,15 +27,16 @@ from lerni.student.voice import Speech
 from lerni.student.web.accounts import account_tab, student_rows, students_tab
 from lerni.student.web.ask import ask_tab, messages
 from lerni.student.web.educator import educator_tab
+from lerni.student.web.games import games_tab
 from lerni.student.web.mapdraw import map_svg, owner_key
 from lerni.student.web.maps import map_tab, supervised_choices
 
 # Tab ids in page order. A supervised student gets Home (their conversation,
 # full screen) and Games; independent students get Ask, My MentalMap, and My account;
-# educators also get MentalMaps and Students.
+# educators also get MentalMaps, Students, and Games.
 _TAB_IDS = ("home", "games", "ask", "mymap", "maps", "students", "account")
 _SUPERVISED_TABS = {"home", "games"}
-_EDUCATOR_TABS = {"maps", "students"}
+_EDUCATOR_TABS = {"maps", "students", "games"}
 _INDEPENDENT_TABS = {"ask", "mymap", "account"}
 _LABELS = {"home": "Lerni", "games": "Games", "ask": "Ask", "mymap": "My MentalMap",
            "maps": "MentalMaps",
@@ -67,6 +70,8 @@ def build_main_view(
     speech: Speech | None = None,
     educator_chats: EducatorChats | None = None,
     usage: Usage | None = None,
+    points: PointsStore | None = None,
+    races: RaceDesk | None = None,
 ) -> gr.Blocks:
     """Build the page; the tabs each viewer sees are set on load."""
     # uploads picked but never sent expire within two hours (checked hourly)
@@ -79,6 +84,7 @@ def build_main_view(
             gr.HTML('<button type="button" class="lerni-menu-btn" aria-label="Menu"'
                     ' aria-expanded="false">☰</button>', padding=False)
             title = gr.Markdown(elem_classes="lerni-title")
+            stars = gr.Markdown(elem_classes="lerni-stars")  # a player's ⭐ (games.py)
         # the menu: who's signed in, a button per section they can see, and Sign out
         with gr.Column(elem_id="lerni-drawer"):
             header = gr.Markdown()
@@ -98,12 +104,16 @@ def build_main_view(
 
         with gr.Tabs() as tabs:
             home, home_chat, _ = ask_tab(signin, conversations, supervised=True, speech=speech)
-            with gr.Tab("Games", id="games", visible=False) as games:  # a placeholder for now
-                gr.HTML('<div class="lerni-soon"><div aria-hidden="true">🎮</div>'
-                        "<p>Games are coming soon!</p></div>")
+            if points is not None:
+                games, games_refresh, games_outputs = games_tab(signin, races, points, stars)
+            else:  # built without a points store (tests): the old placeholder
+                with gr.Tab("Games", id="games", visible=False) as games:
+                    gr.HTML('<div class="lerni-soon"><div aria-hidden="true">🎮</div>'
+                            "<p>Games are coming soon!</p></div>")
+                games_refresh, games_outputs = None, []
             ask, chat, voice = ask_tab(signin, conversations, speech=speech)
             mymap, picture, owner, version = map_tab(signin, students, maps, uploader)
-            maps_tab, who = educator_tab(signin, students, maps, educator_chats, feedback)
+            maps_tab, who = educator_tab(signin, students, maps, educator_chats, feedback, points)
             students_tab_, students_table = students_tab(signin, students)
             account = account_tab(signin, students)
 
@@ -149,6 +159,8 @@ def build_main_view(
              students_table, chat, home_chat, voice, picture, owner, version, who],
             api_visibility="private",
         )
+        if games_refresh is not None:  # the ⭐, the track, and the garage on page load
+            blocks.load(games_refresh, None, games_outputs, api_visibility="private")
         blocks.load(usage_notice, None, notice, api_visibility="private")
         if usage is not None:  # usage changes with each call: check again every minute
             gr.Timer(60).tick(usage_notice, None, notice, api_visibility="private")

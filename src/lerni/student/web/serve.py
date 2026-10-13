@@ -36,6 +36,19 @@ def _claude_tagger(usage: Any = None) -> Any:
     return ClaudeCodeTagger(model=os.environ.get(TAGGER_ENV, DEFAULT_TAGGER_MODEL), usage=usage)
 
 
+def _claude_quizzer(usage: Any = None) -> Any:
+    """Return the Claude Code race-question writer if the CLI is installed, else ``None``."""
+    from lerni.student.adapters.claude_code import (
+        DEFAULT_TAGGER_MODEL,
+        ClaudeCodeQuizzer,
+        claude_cli_available,
+    )
+
+    if not claude_cli_available():
+        return None
+    return ClaudeCodeQuizzer(model=os.environ.get(TAGGER_ENV, DEFAULT_TAGGER_MODEL), usage=usage)
+
+
 def _claude_uploader(usage: Any = None) -> Any:
     """Return the Claude Code uploader if the CLI is installed, else ``None``."""
     from lerni.student.adapters.claude_code import (
@@ -127,6 +140,7 @@ def serve(
         chat_model=chat,
         tagger=tagger,
         uploader=_claude_uploader(usage),
+        quizzer=_claude_quizzer(usage),
         label=label,
         version=version,
         speech=speech,

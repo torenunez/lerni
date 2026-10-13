@@ -8,7 +8,7 @@ How Lerni works: what runs where, how a conversation grows a student's interest 
 
 - **Independent students** (educators included) have **Ask**, one ongoing text conversation with Claude. After each exchange, a small background call (the tagger) updates their **interest map**: interests (sized by the days they come up), links, and bridges. They see it on **My MentalMap**, a picture and an editable list of goals and interests (removing an interest steers Lerni away from it), and can **Upload** notes that Claude turns into proposed interests and goals to tick. Each exchange is kept 7 days in logs the admin reads (`lerni logs`).
 - **Educators** also have **MentalMaps**, where they edit a supervised student's list and plan by chatting with an educator agent (it proposes; only what they tick changes the map or reaches the admin as **feedback**, `lerni feedback`), and **Students**.
-- **Supervised students** see the conversation, full screen (and Games, coming soon), in the supervised voice, with an adult nearby (a household rule). Their map grows on the educator's MentalMaps.
+- **Supervised students** see the conversation, full screen, and **Games**: a race against two bots answered by multiple choice, for points they spend on cartoon cars (educators can race too, and see a student's points on MentalMaps). They talk in the supervised voice, with an adult nearby (a household rule). Their map grows on the educator's MentalMaps.
 
 
 It assumes one household, a few students, one map per student. Students use an iPad or any browser on the home network. The admin tool (`lerni` in a terminal) is separate: the admin's own learning tool with its own data, plus `lerni student`, `lerni logs`, and `lerni feedback`.
@@ -79,6 +79,7 @@ flowchart LR
 | Conversation | The last 20 messages, one ongoing conversation per student | That student | Memory only; gone on New conversation or a server restart (built) |
 | Conversation logs | Each exchange and what the tagger did with it | The admin reads them (`lerni logs`) | `~/.lerni/student/logs/<username>/<date>.jsonl`, deleted after 7 days (built) |
 | Feedback | Date, who, which map, the note the educator ticked | The admin processes it | `~/.lerni/student/feedback.jsonl` (built) |
+| Points | Balance, cars, today's races, and recent award ids (ids and numbers only) | The player; an educator reads a supervised student's | `~/.lerni/student/points/<username>.json` |
 | Sign-in | The signing secret; wrong-password delays | The app | `~/.lerni/student/secret.key`; delays in memory (built) |
 | Admin data | The admin's own questions, concepts, and reviews | Admin | SQLite at `~/.lerni/lerni.db` (built) |
 
@@ -98,8 +99,8 @@ If a change would break one of these, stop and ask.
 
 Every code file, one line each: [code manifest](code-manifest.md).
 
-- `src/lerni/student/`: `students.py` (accounts and passwords), `signin.py` (the signed cookie, who's signed in), `jsonfiles.py` (atomic JSON writes), `conversation.py` (the prompt, in-memory conversations), `personas/` (one starting persona per kind of student), `interests.py` (the map, its rules, and its store), `tagging.py` (the tagger and the map keeper), `logs.py` (7-day conversation logs), `educator_agent.py` (the educator agent), `upload.py` (reading notes, checking and adding proposals), `feedback.py` (educator feedback, summarized, never acted on), `adapters/claude_code.py` (Claude through the Claude Code CLI, including the tagger; prototype).
-- `src/lerni/student/web/`: the Gradio screens: `signin_page.py`, `main.py` (a ☰ menu of sections by role), `ask.py`, `maps.py` (My MentalMap), `educator.py` (MentalMaps), `mapdraw.py` (the inline SVG picture: linked items cluster, goals in the middle), `mapview.js` (tap an item to light its links and open it in the list; pinch to zoom), `mentallist.py` (the MentalMap list), `accounts.py`.
+- `src/lerni/student/`: `students.py` (accounts and passwords), `signin.py` (the signed cookie, who's signed in), `jsonfiles.py` (atomic JSON writes), `conversation.py` (the prompt, in-memory conversations), `personas/` (one starting persona per kind of student), `interests.py` (the map, its rules, and its store), `tagging.py` (the tagger and the map keeper), `logs.py` (7-day conversation logs), `educator_agent.py` (the educator agent), `upload.py` (reading notes, checking and adding proposals), `points.py` (points and cars, each award once), `garage.py` (the cartoon cars), `race.py` (race questions, rules, and the race desk), `feedback.py` (educator feedback, summarized, never acted on), `adapters/claude_code.py` (Claude through the Claude Code CLI, including the tagger; prototype).
+- `src/lerni/student/web/`: the Gradio screens: `signin_page.py`, `main.py` (a ☰ menu of sections by role), `ask.py`, `maps.py` (My MentalMap), `educator.py` (MentalMaps), `mapdraw.py` (the inline SVG picture: linked items cluster, goals in the middle), `mapview.js` (tap an item to light its links and open it in the list; pinch to zoom), `mentallist.py` (the MentalMap list), `games.py` and `race.js` (Games: the race and the garage), `accounts.py`.
 - `src/lerni/cli.py`, `commands/`, `db.py`, `sm2.py`: the admin tool, plus `commands/student.py`, `commands/logs.py`, and `commands/feedback.py` for the student app.
 - `tests/`: pytest, fakes only. `plans/`: build plans and specs.
 
@@ -107,7 +108,7 @@ Every code file, one line each: [code manifest](code-manifest.md).
 
 | Piece | Version | Seam to leave room for now |
 |---|---|---|
-| Play and points | 3 | A points store per student (each award and spend applied once by its id; ids and numbers only, no text); the race runs on the server, which keeps the answers and sends the page only the choices; conversation answers are judged by the tagger, never by the conversation model; points stay apart from the map. |
+| Points for conversation answers | 3 (v3.2) | Judged by the tagger, never by the conversation model; each exchange awards once. |
 | Remembering preferences, recall | 4 | The map is the memory; preferences and recall build on it. |
 | Suggested goals | 5 | Suggestions are shown for the educator to accept; they never become goals on their own (boundary 1). |
 | Curated or checked content | — | None planned; if ever needed, it arrives as information in the map block, never as a separate path. |

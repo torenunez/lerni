@@ -82,6 +82,7 @@ lerni serve                                 # binds 0.0.0.0:7860
 - It never touches the admin tool's database.
 - **Claude** (Ask, the map's tagger, Upload, and the MentalMaps chat) turns on when the `claude` CLI is installed and logged in on this computer; it uses that Claude account, so there's no API key. `LERNI_CLAUDE_MODEL` picks the answering and upload model (default `claude-sonnet-5-5`), `LERNI_TAGGER_MODEL` the tagger's (default `claude-haiku-5-5`). Startup prints whether it's on.
 - **Claude usage:** Lerni shares the account's limits with the admin's own Claude use. Educators see a warning at 75% of the weekly limit or 80% of the 5-hour one, with the reset time; at 95%, or if a call ever uses paid extra usage, Lerni rests until the reset. Turn off extra usage on the Claude account too, so Lerni can never spend credits.
+- **Points and Games:** each player's points, cars, and today's races are in `~/.lerni/student/points/<username>.json` (ids and numbers only). To give or take points, stop the server, edit `balance`, and start it again. A race writes its questions with the small model, about five short calls a day per player; 10 races a day.
 - `lerni logs [USERNAME]` shows the last 7 days of conversations and what the tagger did; `lerni feedback` lists educators' feedback (`--summary` groups it, `done N` closes one).
 - Evals (real Claude calls, run by hand when instructions or models change): `scripts/eval_tagger.py`, `scripts/eval_upload.py`, `scripts/eval_supervised.py`, `scripts/eval_voice.py`, `scripts/eval_educator.py`.
 

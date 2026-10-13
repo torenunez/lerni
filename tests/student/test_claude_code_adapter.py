@@ -115,3 +115,16 @@ def test_an_odd_usage_event_is_skipped_not_fatal():
     raw = {"unifiedWindows": {"five_hour": None, "seven_day": {"utilization": "x"}}}
     _note_limits(Usage(), RateLimitEvent(
         rate_limit_info=RateLimitInfo(status="allowed", raw=raw), uuid="u", session_id="s"))
+
+
+def test_a_resting_quizzer_never_calls_claude(monkeypatch):
+    from lerni.student.adapters import claude_code
+    from lerni.student.race import RaceUnavailable
+    from lerni.student.usage import Usage
+
+    usage = Usage()
+    later = int((datetime.now() + timedelta(days=1)).timestamp())
+    usage.record({"seven_day": (0.97, later)}, overage=False)
+    monkeypatch.setattr(claude_code, "query", lambda **_: (_ for _ in ()).throw(AssertionError()))
+    with pytest.raises(RaceUnavailable, match="resting"):
+        claude_code.ClaudeCodeQuizzer(usage=usage).write("Write.", "Goals: none yet.")

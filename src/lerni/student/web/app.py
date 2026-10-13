@@ -24,6 +24,8 @@ from lerni.student.educator_agent import EducatorChats
 from lerni.student.feedback import FeedbackStore  # noqa: E402
 from lerni.student.interests import MapStore  # noqa: E402
 from lerni.student.logs import ConversationLog  # noqa: E402
+from lerni.student.points import PointsStore  # noqa: E402
+from lerni.student.race import Quizzer, RaceDesk  # noqa: E402
 from lerni.student.signin import SignIn, cookie_name, load_secret  # noqa: E402
 from lerni.student.students import StudentStore, default_data_dir  # noqa: E402
 from lerni.student.tagging import MapKeeper, Tagger  # noqa: E402
@@ -100,6 +102,11 @@ _CSS = """
   font-weight: 600; }
 /* Hold to talk: a big round button for the thumb, red and pulsing while held */
 .lerni-hide { display: none !important; }
+/* Games: the ⭐ in the header, big answer buttons, and a track that doesn't sprawl */
+.lerni-stars p { font-size: 16px; margin: 0; white-space: nowrap; }
+.lerni-question p { font-size: 18px; }
+.lerni-choice { min-height: 56px !important; font-size: 18px !important; }
+#lerni-track svg { max-width: 560px; display: block; margin: 0 auto; }
 /* MentalMap pictures (mapview.js): a tapped item lights up its links; the rest fades */
 .lerni-map .lerni-node { cursor: pointer; }
 .lerni-map svg.lerni-focus .lerni-node:not(.lerni-near) { opacity: 0.15; }
@@ -134,7 +141,7 @@ def _head(speech: bool) -> str:
     """The page's scripts, inlined so it loads nothing else: menu, map taps, Hold to talk."""
     from importlib.resources import files
 
-    names = ["nav.js", "mapview.js", "talk.js"] if speech else ["nav.js", "mapview.js"]
+    names = ["nav.js", "mapview.js", "race.js"] + (["talk.js"] if speech else [])
     return "".join(f"<script>{files('lerni.student.web').joinpath(n).read_text()}</script>"
                    for n in names)
 
@@ -154,6 +161,7 @@ def build_app(
     version: str = "",
     speech: Speech | None = None,
     usage: Usage | None = None,
+    quizzer: Quizzer | None = None,
 ) -> FastAPI:
     """Build the server: the sign-in page and the app at ``/app/``.
 
@@ -168,6 +176,7 @@ def build_app(
         version: Which code is running, shown small on the sign-in page.
         speech: Speech to text and back for Hold to talk; ``None`` turns it off.
         usage: Claude usage, for the educators' warning; ``None`` shows none.
+        quizzer: Claude behind an adapter for race questions; ``None`` turns races off.
     """
     root = data_root or default_data_dir()
     students = StudentStore(root)
@@ -197,6 +206,8 @@ def build_app(
         return viewer.username if viewer else None
 
     maps, log = MapStore(root), ConversationLog(root)
+    points = PointsStore(root)
+    races = RaceDesk(quizzer, maps, points) if quizzer is not None else None
     log.purge()  # at startup; then once a day as exchanges are logged
     keeper = MapKeeper(maps, tagger, log)
     conversations = (
@@ -217,6 +228,8 @@ def build_app(
         speech=speech,
         educator_chats=EducatorChats(chat_model, maps, log) if chat_model else None,
         usage=usage,
+        points=points,
+        races=races,
     )
     mounted = gr.mount_gradio_app(
         app,
