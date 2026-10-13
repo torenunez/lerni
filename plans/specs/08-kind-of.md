@@ -39,7 +39,7 @@ Approved in conversation on 2026-10-12, after two outside design reviews. Builds
 
 ### What Lerni sees
 
-- "They love" lists top-level groups by group days, each with up to 2 of its most recent kinds: "sharks (bull shark, great white), cars (LaFerrari)". Within the 1,500-character cap; the set-aside line still comes first.
+- "They love" lists top-level groups by group days, each with up to 2 of its most recent kinds: "sharks (bull shark, great white), cars (race car)". Within the 1,500-character cap; the set-aside line still comes first.
 
 ## Not in this version
 

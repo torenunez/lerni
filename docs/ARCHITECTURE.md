@@ -80,6 +80,7 @@ flowchart LR
 | Conversation logs | Each exchange and what the tagger did with it | The admin reads them (`lerni logs`) | `~/.lerni/student/logs/<username>/<date>.jsonl`, deleted after 7 days (built) |
 | Feedback | Date, who, which map, the note the educator ticked | The admin processes it | `~/.lerni/student/feedback.jsonl` (built) |
 | Points | Balance, cars, today's races, and recent award ids (ids and numbers only) | The player; an educator reads a supervised student's | `~/.lerni/student/points/<username>.json` |
+| Garage | Real cars: names, prices, stats, and cut-out pictures | The admin, by hand; players see them in Games (pictures only when signed in) | `~/.lerni/student/garage.json` and `cars/` (private: never in the repo) |
 | Sign-in | The signing secret; wrong-password delays | The app | `~/.lerni/student/secret.key`; delays in memory (built) |
 | Admin data | The admin's own questions, concepts, and reviews | Admin | SQLite at `~/.lerni/lerni.db` (built) |
 
@@ -108,7 +109,7 @@ Every code file, one line each: [code manifest](code-manifest.md).
 
 | Piece | Version | Seam to leave room for now |
 |---|---|---|
-| Points for conversation answers | 3 (v3.3) | Judged by the tagger, never by the conversation model; each exchange awards once. |
+| Points for conversation answers | 3 (v3.4) | Judged by the tagger, never by the conversation model; each exchange awards once. |
 | Remembering preferences, recall | 4 | The map is the memory; preferences and recall build on it. |
 | Suggested goals | 5 | Suggestions are shown for the educator to accept; they never become goals on their own (boundary 1). |
 | Curated or checked content | — | None planned; if ever needed, it arrives as information in the map block, never as a separate path. |

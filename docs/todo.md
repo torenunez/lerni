@@ -28,9 +28,9 @@ Open tasks by who does the work. The educator and admin tracks run in parallel: 
 
 What ships next, in order, one PR each ([how versions work](roadmap.md#versions)):
 
-1. **v3.3: points in the conversation, and Ask becomes Chat:** the tagger judges the student's answer to Lerni's last question (right, a real try, or nothing) and the server adds points, once per exchange, up to a daily cap; "⭐ +3" shows by the total; no multiple choice in the conversation.
-2. **v3.4: voice that fails says so:** a transcript that ends mid-letter (an accented character cut short) no longer crashes the clip (read whisper's output with `errors="replace"`; seen in production 2026-10-13); if `say` returns empty audio, startup prints `Voice (hold to talk): off` with the reason, instead of sending silence; the microphone is released if you let go before Safari asks; recording stops and sends at 30 seconds instead of dropping the end; a microphone failure switches to Type with a short note.
-3. **v3.5: production keeps running on its own:** run production and development the same way, as macOS LaunchAgents in the desktop session (start at login, restart after a crash); check `say` works there first. Until then both run in Terminal windows, and production stops if that window or the Mac does.
+1. **v3.4: points in the conversation, and Ask becomes Chat:** the tagger judges the student's answer to Lerni's last question (right, a real try, or nothing) and the server adds points, once per exchange, up to a daily cap; "⭐ +3" shows by the total; no multiple choice in the conversation.
+2. **v3.5: voice that fails says so:** a transcript that ends mid-letter (an accented character cut short) no longer crashes the clip (read whisper's output with `errors="replace"`; seen in production 2026-10-13); if `say` returns empty audio, startup prints `Voice (hold to talk): off` with the reason, instead of sending silence; the microphone is released if you let go before Safari asks; recording stops and sends at 30 seconds instead of dropping the end; a microphone failure switches to Type with a short note.
+3. **v3.6: production keeps running on its own:** run production and development the same way, as macOS LaunchAgents in the desktop session (start at login, restart after a crash); check `say` works there first. Until then both run in Terminal windows, and production stops if that window or the Mac does.
 4. **Version 4, remembering:** Bridge Trip (a trip along their map with recall stops) is its front door; its first PR writes the plan.
 
 How PRs are split:
@@ -57,10 +57,9 @@ Versions 1 and 2 also need sessions, not code: the educator sets goals, rehearse
 ### Later: Version 3 Play and points
 
 - [ ] Pit stop: fill a toy car's fuel gauge with quarters, then the same amount with eighths (fixed math, no Claude calls); the educator sketches the scene first.
-- [ ] A private real-car pack: the admin picks licensed side-profile photos of the student's favorite cars (Wikimedia, Unsplash, Pexels); Claude removes backgrounds, aligns them, blurs badges, and lists them with prices in a private garage file on the home server (never in the repo), with credits.
 - [ ] An educator "reset points", and Games for independent students.
 - [ ] Other games: Beat builder (rhythm and fractions), Recipe mixer (ratios), Build and balance.
-- [ ] Two weeks after v3.3: are Lerni's questions getting real answers, or are points just being hunted? Tune the points, or stop.
+- [ ] Two weeks after v3.4: are Lerni's questions getting real answers, or are points just being hunted? Tune the points, or stop.
 
 ### Later: Version 4 Remembering
 
