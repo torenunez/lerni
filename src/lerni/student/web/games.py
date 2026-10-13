@@ -126,7 +126,7 @@ def card_html(c: Car) -> str:
     pic = (f'<img src="/cars/{c.id}" alt="{html.escape(c.name)}" width="150">' if c.picture
            else car_card_svg(c.id))
     facts = [f for f in (c.engine, f"{c.power_hp:,} hp" if c.power_hp else "", c.drive,
-                         f"0–60 in {c.zero_to_60:g} s" if c.zero_to_60 else "", c.note) if f]
+                         f"0–60 in {c.zero_to_60:.1f} s" if c.zero_to_60 else "", c.note) if f]
     price = f"⭐ {c.price:,}" + (f" (${c.usd:,})" if c.usd else "")
     gas = f" · gas ×{boost(c):.2f}" if boost(c) > 1 else ""
     return (f'<div class="lerni-card">{pic}<b>{html.escape(c.name)}</b>'

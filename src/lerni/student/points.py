@@ -118,7 +118,7 @@ class PointsStore:
             if car_id in p.cars:
                 raise PointsError("That car is already yours.")
             if p.balance < price:
-                raise PointsError(f"{price - p.balance} more ⭐ for that one.")
+                raise PointsError(f"{price - p.balance:,} more ⭐ for that one.")
             _record(p, f"buy-{car_id}", "buy", -price, today or date.today())
             p.balance -= price
             p.cars.append(car_id)
