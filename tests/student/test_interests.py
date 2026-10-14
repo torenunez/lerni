@@ -20,11 +20,13 @@ from lerni.student.interests import (
     group,
     group_days,
     map_block,
+    mentions_set_aside,
     parents,
     parse_tags,
     put_back,
     remove,
     rename,
+    same_name,
     strength,
     ungroup,
 )
@@ -287,3 +289,14 @@ def test_removing_a_group_keeps_its_kinds_and_a_full_map_never_drops_a_group():
         _interest(m, f"thing {len(m.entries)}", "2026-10-01", "2026-10-02")
     apply_tags(m, parse_tags({"new_interests": ["kites"]}), "kites", TODAY)
     assert m.find("animals") is not None  # the quietest entry, but it has a kind under it
+
+
+def test_a_removed_name_blocks_its_plural_and_short_names_dont_match():
+    # regression: removing "guns" didn't stop the tagger adding "gun"
+    m = InterestMap()
+    remove(m, _interest(m, "guns").id)
+    apply_tags(m, parse_tags({"new_interests": ["gun"]}), "I like my gun", date(2026, 10, 14))
+    assert m.find("gun") is None and m.is_removed("Gun")
+    assert same_name("bus", "buses") and not same_name("pi", "pies")
+    assert mentions_set_aside(m, "Why do guns go bang?")
+    assert not mentions_set_aside(m, "A gunner's mate")  # whole words only

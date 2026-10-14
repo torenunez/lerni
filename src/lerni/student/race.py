@@ -16,7 +16,15 @@ from dataclasses import dataclass, field
 from datetime import date
 from typing import Any, Protocol
 
-from lerni.student.interests import InterestMap, MapStore, faded, family, group_days, parents
+from lerni.student.interests import (
+    InterestMap,
+    MapStore,
+    faded,
+    family,
+    group_days,
+    mentions_set_aside,
+    parents,
+)
 from lerni.student.points import PointsStore
 
 QUESTIONS_PER_RACE = 5
@@ -88,8 +96,10 @@ def quiz_input(m: InterestMap, today: date, supervised: bool) -> str:
     lines = ["Voice: simple, everyday words." if supervised else "Voice: clear and friendly."]
     lines += ["Goals:", *(f"- {g}" for g in goals)] if goals else ["Goals: none yet."]
     lines += ["Interests: " + "; ".join(loved(e) for e in tops[:8])] if tops else []
-    if m.removed:
-        lines.append("Set aside, never use: " + ", ".join(m.removed[-8:]))
+    # as Chat: only removals with history; a name deleted for good is blocked here, never sent
+    aside = [r for r in m.removed if "id" in m.removed_info.get(r.casefold(), {})][-8:]
+    if aside:
+        lines.append("Set aside, never use: " + ", ".join(aside))
     return "\n".join(lines)
 
 
@@ -101,7 +111,6 @@ def check_questions(raw: Any, m: InterestMap, rng: random.Random | None = None) 
     """Keep only well-formed questions about the map's goals; shuffle their choices."""
     rng = rng or random.Random()
     goals = {e.name.casefold(): e.name for e in m.entries if e.kind == "goal"}
-    avoid = [r.casefold() for r in m.removed]
     items = raw.get("questions") if isinstance(raw, dict) else None
     kept: list[Question] = []
     for item in items if isinstance(items, list) else []:
@@ -111,20 +120,27 @@ def check_questions(raw: Any, m: InterestMap, rng: random.Random | None = None) 
         goal = _plain(item.get("goal")).split(" (")[0]  # Claude may copy the notes too
         choices = [_plain(c) for c in item.get("choices") or []]
         right = item.get("answer")
-        text = " ".join([q, *choices]).casefold()
         if (not q or len(q) > MAX_QUESTION or not why or len(why) > MAX_WHY
                 or len(choices) != 3 or any(not c or len(c) > MAX_CHOICE for c in choices)
                 or len({c.casefold() for c in choices}) != 3
                 or not isinstance(right, int) or isinstance(right, bool) or right not in (0, 1, 2)
-                or (goals and goal.casefold() not in goals)
-                or any(a in text for a in avoid)):  # never something set aside
+                or (goals and goal.casefold() not in goals)):
             continue
         answer_text = choices[right]
         rng.shuffle(choices)  # the right one isn't always first
         named = goals.get(goal.casefold(), goal)  # the map's spelling
-        kept.append(Question(named, q, (choices[0], choices[1], choices[2]),
-                             choices.index(answer_text), why))
+        question = Question(named, q, (choices[0], choices[1], choices[2]),
+                            choices.index(answer_text), why)
+        if fits(question, m):
+            kept.append(question)
     return kept
+
+
+def fits(q: Question, m: InterestMap) -> bool:
+    """Whether a question may still race on this map: its goal is there, nothing set aside."""
+    goals = {e.name.casefold() for e in m.entries if e.kind == "goal"}
+    shown = " ".join([q.question, *q.choices, q.why])  # everything the student can see
+    return (not goals or q.goal.casefold() in goals) and not mentions_set_aside(m, shown)
 
 
 @dataclass

@@ -80,7 +80,7 @@ class InterestMap:
         exact = next((e for e in self.entries if e.name.casefold() == key), None)
         if exact is not None or not key:
             return exact
-        return next((e for e in self.entries if _plural_of(e.name.casefold(), key)), None)
+        return next((e for e in self.entries if same_name(e.name, key)), None)
 
     def get(self, entry_id: str) -> Entry:
         """The entry with this id.
@@ -100,13 +100,31 @@ class InterestMap:
         return entry
 
     def is_removed(self, name: str) -> bool:
-        """Whether a person removed this name."""
-        return name.casefold() in {r.casefold() for r in self.removed}
+        """Whether a person removed this name, or its singular or plural."""
+        return any(same_name(r, name) for r in self.removed)
 
 
-def _plural_of(a: str, b: str) -> bool:
-    """Whether one name is the other plus "s" or "es" (cars, buses)."""
-    return a in (b + "s", b + "es") or b in (a + "s", a + "es")
+def same_name(a: str, b: str) -> bool:
+    """Whether two names are one, ignoring case and a plural "s" or "es" (car, cars, buses)."""
+    a, b = a.strip().casefold(), b.strip().casefold()
+    if a == b:
+        return True
+    short, long = sorted((a, b), key=len)
+    return len(short) >= 3 and long in (short + "s", short + "es")  # never "pi" and "pies"
+
+
+def mentions_set_aside(m: InterestMap, text: str) -> bool:
+    """Whether ``text`` names anything removed from the map, as whole words, plurals included."""
+    folded = text.casefold()
+    for name in m.removed:
+        n = re.escape(name.strip().casefold())
+        if re.search(rf"(?<!\w){n}(?:e?s)?(?!\w)", folded):
+            return True
+        singles = [n[:-2]] if n.endswith("es") else []
+        singles += [n[:-1]] if n.endswith("s") else []
+        if any(len(s) >= 3 and re.search(rf"(?<!\w){s}(?!\w)", folded) for s in singles):
+            return True  # "guns" set aside: "gun" too
+    return False
 
 
 def check_name(name: str) -> str:
@@ -168,8 +186,10 @@ def _forget(m: InterestMap, entry_id: str) -> None:
 
 
 def _unremove(m: InterestMap, name: str) -> None:
-    m.removed = [r for r in m.removed if r.casefold() != name.casefold()]
-    m.removed_info.pop(name.casefold(), None)
+    back = [r for r in m.removed if same_name(r, name)]  # "shark" brings back "sharks" too
+    m.removed = [r for r in m.removed if r not in back]
+    for r in back:
+        m.removed_info.pop(r.casefold(), None)
 
 
 def add_goal(m: InterestMap, name: str, notes: str = "") -> Entry:
@@ -257,7 +277,7 @@ def remove(m: InterestMap, entry_id: str) -> None:
             if not _group_error(m, kind, up):
                 _link(m, kind, up, "kind_of", day)
     _forget(m, entry_id)
-    if not m.is_removed(entry.name):
+    if entry.name.casefold() not in {r.casefold() for r in m.removed}:  # exact, for Put back
         m.removed.append(entry.name)
     # what Put back restores: its kind, notes, history, and links
     m.removed_info[entry.name.casefold()] = {

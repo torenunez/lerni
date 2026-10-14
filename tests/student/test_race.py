@@ -179,3 +179,17 @@ def test_a_faster_car_turns_three_right_into_a_win_but_one_right_never_places():
 
     assert [finish_with(1.4, r) for r in (3, 2, 1)] == [1, 2, 3]
     assert [finish_with(1.0, r) for r in (3, 2)] == [2, 3]  # the starter, as before
+
+
+def test_set_aside_matches_whole_words_and_the_why_too():
+    # regression: "car" dropped a question about cards; a set-aside name slipped in through "why"
+    m = InterestMap()
+    add_goal(m, "Fractions")
+    remove(m, add_interest(m, "great white").id)
+    remove(m, add_interest(m, "car").id)
+    good = {"goal": "Fractions", "question": "Half of 8 cards?", "choices": ["4", "2", "6"],
+            "answer": 0, "why": "Half means 2 equal parts."}
+    raw = {"questions": [good, {**good, "why": "Like 2 cars in 4."},
+                         {**good, "question": "Half of a Great White's 8 fins?"}]}
+    kept = check_questions(raw, m, random.Random(1))
+    assert [q.question for q in kept] == ["Half of 8 cards?"]
