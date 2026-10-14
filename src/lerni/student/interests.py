@@ -344,10 +344,13 @@ def _from_dict(data: dict[str, Any]) -> InterestMap:
     ids = {e.id for e in entries}
     links = [Link(**k) for k in data.get("links", [])]
     links = [k for k in links if k.a in ids and k.b in ids]  # heals a map an older bug broke
+    # older code could keep "Fractions" set aside beside a goal "Fraction": it's on the map
+    removed = [r for r in data.get("removed", [])
+               if not any(same_name(r, e.name) for e in entries)]
     return InterestMap(
         entries,
         links,
-        list(data.get("removed", [])),
+        removed,
         int(data.get("edits", 0)),
         int(data.get("next_id", 1)),
         dict(data.get("removed_info", {})),

@@ -236,3 +236,19 @@ def test_two_race_taps_at_once_start_one_race(tmp_path):
         t.join()
     assert races[0] is races[1] and quizzer.calls == 1
     assert points.races_left("sam") == RACES_PER_DAY - 1
+
+
+def test_opening_games_while_a_race_starts_asks_claude_once(tmp_path):
+    # regression: a second device opening Games during a start wrote a set nobody could use
+    import threading
+
+    quizzer = SlowQuizzer()
+    desk, _ = desk_for(tmp_path, quizzer)
+    desk.maps.change("sam", lambda m: add_goal(m, "Acceleration"))  # all ten questions count
+    tap = threading.Thread(target=lambda: desk.start("sam", supervised=True))
+    tap.start()
+    time.sleep(0.1)  # the start is waiting on Claude
+    desk.prefill("sam", supervised=True)
+    tap.join()
+    time.sleep(0.4)
+    assert quizzer.calls == 1

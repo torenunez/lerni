@@ -342,3 +342,14 @@ def test_a_group_made_a_goal_hands_its_kinds_up():
     group(m, white.id, sharks.id)
     add_goal(m, "sharks")
     assert parents(m, white.id) == [fish.id] and parents(m, sharks.id) == []
+
+
+def test_an_old_map_with_a_name_both_on_it_and_set_aside_loads_with_it_on(tmp_path):
+    # regression: "Fraction" as a goal beside a removed "Fractions" blocked every race question
+    store = MapStore(tmp_path)
+    store.change("sam", lambda m: add_goal(m, "Fraction"))
+    path = tmp_path / "maps" / "sam.json"
+    data = json.loads(path.read_text())
+    data["removed"] = ["Fractions"]  # older code kept both
+    path.write_text(json.dumps(data))
+    assert store.get("sam").removed == []

@@ -320,7 +320,17 @@ class RaceDesk:
                 before = {id(q) for q in self._held(username, day)}
                 held = [q for q in self._held(username, day) if fits(q, m)]  # set aside since
             if len(held) < QUESTIONS_PER_RACE:
-                held = spread(held + self._write(username, supervised, day))  # waits for Claude
+                with self._lock:  # so opening Games meanwhile waits rather than writes too
+                    mine = None if username in self._busy else threading.Event()
+                    if mine is not None:
+                        self._busy[username] = mine
+                try:
+                    held = spread(held + self._write(username, supervised, day))  # waits for Claude
+                finally:
+                    if mine is not None:
+                        with self._lock:
+                            self._busy.pop(username, None)
+                        mine.set()
             questions, rest = held[:QUESTIONS_PER_RACE], held[QUESTIONS_PER_RACE:]
             self.points.start_race(username, day)
             race = new_race(questions, boost)
