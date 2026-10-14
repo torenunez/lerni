@@ -28,9 +28,9 @@ Open tasks by who does the work. The educator and admin tracks run in parallel: 
 
 What ships next, in order, one PR each ([how versions work](roadmap.md#versions)):
 
-1. **v3.3: points in the conversation, and Ask becomes Chat:** the tagger judges the student's answer to Lerni's last question (right, a real try, or nothing) and the server adds points, once per exchange, up to a daily cap; "⭐ +3" shows by the total; no multiple choice in the conversation.
-2. **v3.4: voice that fails says so:** a transcript that ends mid-letter (an accented character cut short) no longer crashes the clip (read whisper's output with `errors="replace"`; seen in production 2026-10-13); if `say` returns empty audio, startup prints `Voice (hold to talk): off` with the reason, instead of sending silence; the microphone is released if you let go before Safari asks; recording stops and sends at 30 seconds instead of dropping the end; a microphone failure switches to Type with a short note.
-3. **v3.5: production keeps running on its own:** run production and development the same way, as macOS LaunchAgents in the desktop session (start at login, restart after a crash); check `say` works there first. Until then both run in Terminal windows, and production stops if that window or the Mac does.
+1. **v3.4: points in the conversation, and Ask becomes Chat:** the tagger judges the student's answer to Lerni's last question (right, a real try, or nothing) and the server adds points, once per exchange, up to a daily cap; "⭐ +3" shows by the total; no multiple choice in the conversation.
+2. **v3.5: voice that fails says so:** a transcript that ends mid-letter (an accented character cut short) no longer crashes the clip (read whisper's output with `errors="replace"`; seen in production 2026-10-13); if `say` returns empty audio, startup prints `Voice (hold to talk): off` with the reason, instead of sending silence; the microphone is released if you let go before Safari asks; recording stops and sends at 30 seconds instead of dropping the end; a microphone failure switches to Type with a short note.
+3. **v3.6: production keeps running on its own:** run production and development the same way, as macOS LaunchAgents in the desktop session (start at login, restart after a crash); check `say` works there first. Until then both run in Terminal windows, and production stops if that window or the Mac does.
 4. **Version 4, remembering:** Bridge Trip (a trip along their map with recall stops) is its front door; its first PR writes the plan.
 
 How PRs are split:
@@ -57,10 +57,9 @@ Versions 1 and 2 also need sessions, not code: the educator sets goals, rehearse
 ### Later: Version 3 Play and points
 
 - [ ] Pit stop: fill a toy car's fuel gauge with quarters, then the same amount with eighths (fixed math, no Claude calls); the educator sketches the scene first.
-- [ ] A private real-car pack: the admin picks licensed side-profile photos of the student's favorite cars (Wikimedia, Unsplash, Pexels); Claude removes backgrounds, aligns them, blurs badges, and lists them with prices in a private garage file on the home server (never in the repo), with credits.
 - [ ] An educator "reset points", and Games for independent students.
 - [ ] Other games: Beat builder (rhythm and fractions), Recipe mixer (ratios), Build and balance.
-- [ ] Two weeks after v3.3: are Lerni's questions getting real answers, or are points just being hunted? Tune the points, or stop.
+- [ ] Two weeks after v3.4: are Lerni's questions getting real answers, or are points just being hunted? Tune the points, or stop.
 
 ### Later: Version 4 Remembering
 
@@ -83,7 +82,7 @@ Versions 1 and 2 also need sessions, not code: the educator sets goals, rehearse
 - [ ] **Educator chat:** a proposal names its target, so an old one can change a newer item with the same name; Clear or a new student can be undone by a reply still arriving; 📎 notes are sent again every turn; removals are reported as "Added".
 - [ ] **Tagging:** two quick answers' tags can land out of order, and a subject change counts against the newest bridge rather than the one in the answer before.
 - [ ] **MentalMap list:** a redraw trusts the owner set by the last checked handler and doesn't re-check the viewer (every edit does).
-- [ ] **Games:** an educator's race uses their own map, so they can't rehearse a student's questions; in dark mode the MentalMap picture's labels are hard to read; a start that waits on a slow write can run a second one; when the student leads, the slowed bot named may be behind; one player's question wait queues others' Race taps (shared concurrency); the MentalMaps points line refreshes only on picking a student; `eval_race.py` checks only after the server's filter.
+- [ ] **Games:** an educator's race uses their own map, so they can't rehearse a student's questions; in dark mode the MentalMap picture's labels are hard to read; a start that waits on a slow write can run a second one; when the student leads, the slowed bot named may be behind; one player's question wait queues others' Race taps (shared concurrency); the MentalMaps points line refreshes only on picking a student; `eval_race.py` checks only after the server's filter. Garage file: a typed `Infinity` or a huge number stops the server starting (catch OverflowError); switching cars mid-race shows the new car at the old boost; the Buy button shows ⭐ without a thousands comma; one route-test path is rewritten by the test client.
 - [ ] **Menu:** the closed drawer is still reachable by keyboard and VoiceOver.
 - [ ] **Accounts:** two educators archiving each other leaves none (recover with `lerni student add`); password hashing runs inside the account write lock; a live session can guess its current password in My account without the sign-in delay; a non-ASCII cookie gives a 500; an archived account is detectable by timing; `/signin` has no Origin check and `/signout` is a GET; the data folder is created 0755; a password change doesn't sign out other devices.
 - [ ] **Tests:** the role check on each educator handler, cookie expiry, and a supervised cookie calling an educator event over HTTP.

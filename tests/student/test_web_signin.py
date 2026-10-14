@@ -101,3 +101,21 @@ def test_a_file_path_sent_by_the_browser_is_refused(tmp_path):
     for path in (secret, "/dev/zero"):
         with pytest.raises(InvalidPathError):
             processing_utils._check_allowed(path, check_in_upload_folder=True)
+
+
+def test_car_pictures_are_only_for_someone_signed_in_and_only_garage_ids(tmp_path):
+    import json
+
+    StudentStore(tmp_path).add("sam", "Sam", Kind.SUPERVISED, "1234")
+    (tmp_path / "cars").mkdir()
+    (tmp_path / "cars" / "quick.webp").write_bytes(b"RIFF....WEBP")
+    (tmp_path / "private.txt").write_text("never served")
+    (tmp_path / "garage.json").write_text(json.dumps({"cars": [
+        {"id": "quick", "name": "Quick", "usd": 100_000, "zero_to_60": 3.5,
+         "picture": "quick.webp"}]}))
+    client = TestClient(build_app(data_root=tmp_path), follow_redirects=False)
+    assert client.get("/cars/quick").status_code in (302, 303, 401)  # signed out
+    sign_in(client, "sam", "1234")
+    assert client.get("/cars/quick").content == b"RIFF....WEBP"
+    for bad in ("/cars/../private.txt", "/cars/..%2Fprivate.txt", "/cars/starter", "/cars/nope"):
+        assert client.get(bad).status_code == 404

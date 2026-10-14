@@ -6,7 +6,7 @@ Record each kind of "done" only when it actually happens, with the date: code bu
 
 ## Current state (2026-10-13, v3.1 on the home server: Versions 1 and 2 built: the conversation, MentalMaps, HTTPS, and voice; Version 3's race)
 
-- **Built:** the student app's core (student accounts, sign-in, Lerni's conversations, the MentalMap with its tagger and 7-day logs, Upload and educator feedback, and the educator agent); `lerni serve` with a sign-in page and one app with a ☰ menu by role: an independent student's Ask, My MentalMap (an editable list, the picture, and Upload), and My account; an educator's MentalMaps (a student's list and picture, with a chat) and Students on top; a supervised student's conversation, full screen, and Games (a race for points spent on cartoon cars; educators race too). Hold to talk with spoken answers; a Claude usage warning and rest. The admin tool (`lerni`, with `lerni student`, `lerni logs`, and `lerni feedback`). A [code manifest](code-manifest.md) of every file. Tests: 137 passed.
+- **Built:** the student app's core (student accounts, sign-in, Lerni's conversations, the MentalMap with its tagger and 7-day logs, Upload and educator feedback, and the educator agent); `lerni serve` with a sign-in page and one app with a ☰ menu by role: an independent student's Ask, My MentalMap (an editable list, the picture, and Upload), and My account; an educator's MentalMaps (a student's list and picture, with a chat) and Students on top; a supervised student's conversation, full screen, and Games (a race for points spent on cartoon cars; educators race too). Hold to talk with spoken answers; a Claude usage warning and rest. The admin tool (`lerni`, with `lerni student`, `lerni logs`, and `lerni feedback`). A [code manifest](code-manifest.md) of every file. Tests: 141 passed.
 - **Designed:** the interest map, goals, the tagger, upload, feedback, and the supervised conversation ([specs/04-interest-map.md](../plans/specs/04-interest-map.md)); approved with PR #12.
 - **Not yet:** any supervised student session.
 
@@ -14,7 +14,9 @@ When something changes, update this section and add a log entry below.
 
 ## Log
 
-### 2026-10-13 (docs; v3.2)
+### 2026-10-13 (docs, real cars in the garage; v3.2–v3.3)
+
+- v3.3: real cars in the garage. The admin's picture of five sports cars was cut out on the home server with Apple's Vision (`scripts/lift_car.swift`) and saved, with each car's stats, in a private garage file that never goes in the repo. Prices are $2,500 a ⭐, and a car's 0–60 sets its gas boost (up to ×1.4): a fast car turns 3 right answers into a win, but 1 right still finishes 3rd. Only the cartoon starter is still sold; cartoon cars already bought stay. Pictures are served only to someone signed in, and only for a garage id. Checked at phone size on a throwaway server. Tests: 141 passed.
 
 - v3.2: docs brought up to date with v2.19–v3.1 (README, CLAUDE.md, ARCHITECTURE, progress, to-do, spec 09, the educator PRD's picture, the code manifest). Points in Chat moves to v3.3.
 

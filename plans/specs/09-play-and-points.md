@@ -4,7 +4,7 @@ Approved in conversation on 2026-10-12. Requirements: [student PRD, Version 3](.
 
 **Why.** The supervised student answers Lerni's goal questions with random emojis. Points they can spend on cars give those questions a reason, from two places: a race in Games and real answers in Chat. Points never go down for a wrong answer, are never compared between students, and stay apart from the map.
 
-**Ships as:** v3.1 (the race, points, and the garage) and v3.3 (points in Chat, and Ask renamed Chat).
+**Ships as:** v3.1 (the race, points, and the garage), v3.3 (real cars in the garage), and v3.4 (points in Chat, and Ask renamed Chat).
 
 ## What people see
 
@@ -18,7 +18,7 @@ Approved in conversation on 2026-10-12. Requirements: [student PRD, Version 3](.
   - Another pick: a small step, the right answer, and a one-line why ("It's acceleration: speeding up").
   - Cars glide to their new places after each answer; nothing moves on a clock.
   - After the fifth answer: "You finished 2nd! ⭐ +13", then **Race again** or **Garage**.
-- **The garage:** 8 cartoon cars, each with its price.
+- **The garage:** the free cartoon starter, then real cars from a private garage file (v3.3), cheapest first. Each card shows the car's picture, its engine, power, drive, and 0–60 time, its price in dollars and in ⭐, and its gas boost.
   - Owned cars say **Drive**.
   - Others say **Buy** when there are enough points, or "13 more ⭐".
   - Buying asks nothing more: it takes the price off their points, and the car is theirs for good.
@@ -29,7 +29,7 @@ Approved in conversation on 2026-10-12. Requirements: [student PRD, Version 3](.
   - Earlier points and cars stay either way.
 - **The header** shows ⭐ points on every screen for a player (supervised students and educators).
 
-### Chat (v3.3; Ask is renamed Chat)
+### Chat (v3.4; Ask is renamed Chat)
 
 - Chat stays a conversation, typed or spoken, with no multiple choice.
 - When the student really answers Lerni's question, "⭐ +3" (a right answer) or "⭐ +1" (a real try in their own words) appears by their points a few seconds later. Emojis, "idk", or a new subject earn nothing, and nothing says "wrong".
@@ -48,9 +48,10 @@ Approved in conversation on 2026-10-12. Requirements: [student PRD, Version 3](.
 | Race points | 1st 15, 2nd 10, 3rd 5, plus 1 per right answer (5 to 20) |
 | Chat points | 3 for a right answer, 1 for a real try; at most 30 a day |
 | Races a day | 10 per person |
-| Cars and prices | starter hatchback 0, rally car 30, muscle car 60, race truck 100, supercar 150, hypercar 220, formula racer 300, rocket car 400 |
+| Cars and prices | the starter free; real cars at 1 ⭐ per $2,500 (v3.3; until then 8 cartoon cars, 30 to 400) |
+| Gas boost | √(4.0 s ÷ 0–60), ×1.0 to ×1.4 |
 
-At about 3 races a day plus a few Chat answers, the first new car comes on day 1 and the last after about three weeks.
+At about 50 ⭐ a day, a $100,000 car comes on day 1 and a $5 million one after about six weeks.
 
 ## How it works
 
@@ -61,13 +62,14 @@ At about 3 races a day plus a few Chat answers, the first new car comes on day 1
   - The page gets only the question and the three choices, never the answer.
   - A tap sends the choice; the server checks it and moves the cars.
 - **Movement is fixed per answer, with no randomness and no clock.**
-  - Right: the student moves a big step, and both bots move a little less that turn (the message names the one in front as slowed).
+  - Right: the student moves a big step times their car's **gas boost**, and both bots move a little less that turn (the message names the one in front as slowed).
   - Wrong: the student moves a small step.
   - Bots move at their own steady speeds.
-  - So the finish depends only on how many were right, not their order. **The constants are tuned so that:**
+  - So the finish depends only on how many were right and the car, not the order. **With the starter (boost ×1.0) the constants are tuned so that:**
     - 4 or 5 right wins;
     - 3 right finishes 2nd;
     - 2 or fewer finish 3rd.
+  - **The gas boost** comes from the car's 0–60 time: √(4.0 s ÷ its 0–60), from ×1.0 (the starter, or 4.0 s and slower) to at most ×1.4. A faster car turns 3 right answers into a win and 2 into 2nd, but 1 right never wins: the questions still matter.
   - A test pins those outcomes.
 - **The place after the fifth answer sets the points.** The award id is the race id, so a double tap, a refresh, or a late repeat never awards twice.
 - **Leaving mid-race** (another tab, or signing out) drops it: no points, and it still counts toward the day's 10.
@@ -119,11 +121,11 @@ At about 3 races a day plus a few Chat answers, the first new car comes on day 1
 
 ### The garage (`garage.py`)
 
-- **8 cars,** each with an id, a name, a price, and an SVG drawing:
-  - the same side-on view facing right, the same scale, wheels on one line;
-  - each in its own color;
-  - drawn in code, so no licenses, no trademarks, nothing fetched.
-- **A private file,** `<data>/garage.json` (never in the repo), may add cars later with prices and photos in `<data>/cars/`. This is the real-car pack, after v3.3.
+- **Cartoon cars in the repo,** drawn in code (the same side view facing right, same scale, wheels on one line; no licenses, nothing fetched). Since v3.3 only the free starter is sold; a cartoon car someone already bought stays theirs to drive. The bots stay cartoon.
+- **Real cars in a private garage file** (v3.3), `<data>/garage.json`, never in the repo: each car's id, name, price in dollars, 0–60 seconds, engine, power, drive, an optional note ("Limited to 250 cars"), and a picture in `<data>/cars/`.
+  - **Price in ⭐:** dollars ÷ 2,500, rounded (a $100,000 car is 40 ⭐; a $5 million one, 2,000).
+  - **Pictures:** side profiles facing right with the background lifted off by Apple's Vision on the home server (`scripts/lift_car.swift`), saved as WebP about 600 px wide. They're served only to someone signed in, from a route that knows only the garage's ids.
+  - A broken or missing file leaves the cartoon garage; nothing else stops.
 
 ### The screen (`web/games.py`, `web/race.js`)
 
@@ -136,7 +138,7 @@ At about 3 races a day plus a few Chat answers, the first new car comes on day 1
   - Nothing relies on color alone.
 - **Rendering:** the race card and garage are ordinary components, not `gr.render`, so the draw queue isn't involved.
 
-### Chat points (v3.3, `tagging.py`)
+### Chat points (v3.4, `tagging.py`)
 
 - **The tagger gets one more field, `answered`:**
   - `right`: Lerni's previous message asked a question and the student answered it correctly;
@@ -182,7 +184,8 @@ At about 3 races a day plus a few Chat answers, the first new car comes on day 1
   - questions practice the map's goals;
   - each has 3 distinct choices with the right one among them;
   - a supervised set stays clear of a set-aside interest.
-- **`test_tagging.py`** (v3.3): `answered` awards once per exchange and respects the cap.
+- **v3.3:** `test_garage.py`: the private file loads with prices at $2,500 a ⭐ and boosts from ×1.0 to ×1.4, and a broken file leaves the cartoon garage; `test_race.py`: at ×1.4, 3 right wins, 2 right is 2nd, 1 right is 3rd; the picture route refuses someone signed out and an id not in the garage.
+- **`test_tagging.py`** (v3.4): `answered` awards once per exchange and respects the cap.
 - **Phone size** (iPhone and iPad):
   - a race to the end, Race again, buying and driving a car;
   - the 10-race limit;

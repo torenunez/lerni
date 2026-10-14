@@ -16,6 +16,7 @@ import gradio as gr
 from lerni.student.conversation import Conversations
 from lerni.student.educator_agent import EducatorChats
 from lerni.student.feedback import FeedbackStore
+from lerni.student.garage import Garage
 from lerni.student.interests import MapStore
 from lerni.student.points import PointsStore
 from lerni.student.race import RaceDesk
@@ -72,6 +73,7 @@ def build_main_view(
     usage: Usage | None = None,
     points: PointsStore | None = None,
     races: RaceDesk | None = None,
+    garage: Garage | None = None,
 ) -> gr.Blocks:
     """Build the page; the tabs each viewer sees are set on load."""
     # uploads picked but never sent expire within two hours (checked hourly)
@@ -105,7 +107,8 @@ def build_main_view(
         with gr.Tabs() as tabs:
             home, home_chat, _ = ask_tab(signin, conversations, supervised=True, speech=speech)
             if points is not None:
-                games, games_refresh, games_outputs = games_tab(signin, races, points, stars)
+                games, games_refresh, games_outputs = games_tab(signin, races, points, stars,
+                                                                garage or Garage())
             else:  # built without a points store (tests): the old placeholder
                 with gr.Tab("Games", id="games", visible=False) as games:
                     gr.HTML('<div class="lerni-soon"><div aria-hidden="true">🎮</div>'
@@ -113,7 +116,8 @@ def build_main_view(
                 games_refresh, games_outputs = None, []
             ask, chat, voice = ask_tab(signin, conversations, speech=speech)
             mymap, picture, owner, version = map_tab(signin, students, maps, uploader)
-            maps_tab, who = educator_tab(signin, students, maps, educator_chats, feedback, points)
+            maps_tab, who = educator_tab(signin, students, maps, educator_chats, feedback, points,
+                                         garage or Garage())
             students_tab_, students_table = students_tab(signin, students)
             account = account_tab(signin, students)
 
