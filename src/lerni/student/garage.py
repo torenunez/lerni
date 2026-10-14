@@ -163,7 +163,8 @@ def next_goal(cars: Sequence[Car], owned: Collection[str], balance: int) -> tupl
         return wanted[-1], f"You can get the {wanted[-1].name} now!"
     goal = later[0]
     races = math.ceil((goal.price - balance) / STARS_PER_RACE)
-    return goal, f"{goal.name} · ⭐ {balance:,} / {goal.price:,} · about {races} races"
+    plural = "" if races == 1 else "s"
+    return goal, f"{goal.name} · ⭐ {balance:,} / {goal.price:,} · about {races} race{plural}"
 
 
 class Garage:

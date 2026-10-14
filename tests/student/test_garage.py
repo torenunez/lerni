@@ -94,3 +94,4 @@ def test_cards_say_speed_in_bolts_price_in_family_cars_and_the_next_car_to_save_
     assert next_goal(sold, ["starter"], 0)[1] == "Slow · ⭐ 0 / 40 · about 4 races"
     assert next_goal(sold, ["starter"], 50)[1] == "Fast · ⭐ 50 / 400 · about 27 races"
     assert next_goal(sold, ["starter"], 500)[1] == "You can get the Fast now!"
+    assert next_goal(sold, ["starter"], 30)[1].endswith("about 1 race")  # regression: "1 races"
