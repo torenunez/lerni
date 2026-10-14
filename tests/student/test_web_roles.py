@@ -439,3 +439,21 @@ def test_a_fast_car_reaches_the_finish_only_on_the_fifth_answer_in_the_car_it_st
     assert my_x() < END  # regression: a ×1.4 car stopped at the line after 4 right
     answer(race, 4, 0)
     assert my_x() == END
+
+
+def test_a_car_out_of_reach_shows_only_its_picture_name_and_price(tmp_path):
+    import json
+
+    from lerni.student.garage import Garage
+    from lerni.student.web.games import card_html
+
+    (tmp_path / "cars").mkdir()
+    (tmp_path / "cars" / "a.webp").write_bytes(b"RIFF")
+    (tmp_path / "garage.json").write_text(json.dumps({"cars": [
+        {"id": "a", "name": "Quick", "usd": 100_000, "zero_to_60": 3.5, "engine": "V8",
+         "picture": "a.webp"}]}))
+    quick = Garage(tmp_path).car("a")
+    locked, open_ = card_html(quick, locked=True), card_html(quick)
+    assert "Quick" in locked and "$100,000" in locked and "family car" in locked
+    assert "⚡" not in locked and "Car facts" not in locked  # earned by saving up
+    assert "⚡" in open_ and "Car facts" in open_ and "V8" in open_

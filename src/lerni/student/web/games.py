@@ -150,8 +150,11 @@ def _zap(c: Car) -> str:
     return f'<span class="lerni-zap" aria-label="speed {bolts(c)} of 5">{"⚡" * bolts(c)}</span>'
 
 
-def card_html(c: Car, owned: bool = False) -> str:
-    """One tile: the picture, the name, ⚡, the price while it's for sale, and Car facts."""
+def card_html(c: Car, owned: bool = False, locked: bool = False) -> str:
+    """One tile: the picture, the name, ⚡, the price while it's for sale, and Car facts.
+
+    A car they can't afford yet (``locked``) shows only its picture, name, and price.
+    """
     price = ""
     if not owned and c.usd:
         price = (f'<span class="lerni-usd">${c.usd:,}</span>'
@@ -166,6 +169,8 @@ def card_html(c: Car, owned: bool = False) -> str:
     facts.append("More ⚡ moves your car farther with each right answer.")
     details = ("<details><summary>Car facts</summary>"
                + "".join(f"<div>{html.escape(f)}</div>" for f in facts) + "</details>")
+    if locked:  # ⚡ and the facts are earned by saving up
+        return f'<div class="lerni-card">{_picture(c)}<b>{html.escape(c.name)}</b>{price}</div>'
     return (f'<div class="lerni-card">{_picture(c)}<b>{html.escape(c.name)}</b>{_zap(c)}'
             f"{price}{details}</div>")
 
@@ -221,10 +226,16 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
     Returns:
         The tab, a refresh for page load (no Claude call), and the components it fills.
     """
-    def tile(c: Car, owned: bool) -> tuple[gr.Column, gr.Button]:
+    def tile(c: Car) -> tuple[gr.Column, gr.Button]:
         with gr.Column(elem_classes="lerni-tile", min_width=0, visible=False) as col:
-            gr.HTML(card_html(c, owned), padding=False)
+            gr.HTML(card_html(c, owned=True), padding=False)
             return col, gr.Button(elem_classes="lerni-buy")
+
+    def shop_tile(c: Car) -> tuple[gr.Column, gr.HTML, gr.HTML, gr.Button]:
+        with gr.Column(elem_classes="lerni-tile", min_width=0, visible=False) as col:
+            full = gr.HTML(card_html(c), padding=False)
+            locked = gr.HTML(card_html(c, locked=True), padding=False, visible=False)
+            return col, full, locked, gr.Button(elem_classes="lerni-buy")
 
     with gr.Tab("Games", id="games", visible=False) as tab:
         hero = gr.HTML(elem_id="lerni-hero")  # your car and the next goal, when not racing
@@ -237,14 +248,14 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
         # tiles are built once at startup, one per car in each list; each player sees theirs
         mine_title = gr.Markdown("### 🅿️ My cars")
         with gr.Row(elem_classes="lerni-tiles"):
-            mine = {c.id: tile(c, owned=True) for c in garage.cars}
+            mine = {c.id: tile(c) for c in garage.cars}
         gr.Markdown("### 🛒 Showroom")
         with gr.Row(elem_classes="lerni-tiles"):
-            shop = {c.id: tile(c, owned=False) for c in garage.cars}
+            shop = {c.id: shop_tile(c) for c in garage.cars}
 
     outputs = [header_stars, hero, track, question, *choices, note, go, shown, mine_title,
                *(x for pair in mine.values() for x in pair),
-               *(x for pair in shop.values() for x in pair)]
+               *(x for parts in shop.values() for x in parts)]
 
     def garage_updates(p: Points | None) -> list[Any]:
         """The My cars title, then each car's tile and button in both lists."""
@@ -258,14 +269,14 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
                 ups += [gr.update(visible=True), gr.update(value="Driving", interactive=False)]
             else:
                 ups += [gr.update(visible=True), gr.update(value="Drive", interactive=True)]
-        for c in garage.cars:  # Showroom
+        for c in garage.cars:  # Showroom: tile, full card, locked card, button
             if p is None or c not in sold or c in owned:
-                ups += [gr.update(visible=False), gr.update()]
+                ups += [gr.update(visible=False), gr.update(), gr.update(), gr.update()]
             elif p.balance >= c.price:
-                ups += [gr.update(visible=True),
+                ups += [gr.update(visible=True), gr.update(visible=True), gr.update(visible=False),
                         gr.update(value=f"Buy · {c.price:,} ⭐", interactive=True)]
             else:
-                ups += [gr.update(visible=True),
+                ups += [gr.update(visible=True), gr.update(visible=False), gr.update(visible=True),
                         gr.update(value=f"{c.price - p.balance:,} more ⭐", interactive=False)]
         return ups
 
@@ -344,6 +355,7 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
         on_go, None, outputs, concurrency_limit=MAX_AT_ONCE, **PRIVATE)  # side by side
     for i, button in enumerate(choices):
         button.click(on_choice(i), shown, outputs, concurrency_limit=MAX_AT_ONCE, **PRIVATE)
-    for car_id, (_, button) in [*mine.items(), *shop.items()]:
+    for car_id, button in [*((i, t[-1]) for i, t in mine.items()),
+                           *((i, t[-1]) for i, t in shop.items())]:
         button.click(on_garage(car_id), None, outputs, concurrency_limit=MAX_AT_ONCE, **PRIVATE)
     return tab, refresh, outputs
