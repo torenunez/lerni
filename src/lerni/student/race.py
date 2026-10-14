@@ -243,6 +243,7 @@ class RaceDesk:
         self._sets: dict[str, tuple[str, list[Question]]] = {}  # username: (day, questions)
         self._races: dict[str, Race] = {}
         self._busy: dict[str, threading.Event] = {}  # writing ahead now; set when done
+        self._starting: dict[str, threading.Lock] = {}  # each person's starts, one at a time
         self._started: dict[str, float] = {}  # when each person's race began
         self._last_tap: dict[str, float] = {}  # when they last answered
         self.clock = time.monotonic  # tests may replace it
@@ -272,6 +273,8 @@ class RaceDesk:
         with self._lock:
             if len(self._held(username, today)) >= QUESTIONS_PER_RACE or username in self._busy:
                 return
+            if self.points.races_left(username, today) <= 0:
+                return  # no race left today to use them
             done = self._busy[username] = threading.Event()
 
         def work() -> None:
@@ -298,28 +301,34 @@ class RaceDesk:
             RaceUnavailable: No questions now (the race isn't counted).
         """
         day = today or date.today()
-        with self._lock:  # more taps on Race while it started: the same race, counted once
-            current = self._races.get(username)
-            if (current is not None and current.answered == 0
-                    and self.clock() - self._started.get(username, -1e9) < RESTART_GAP_SECONDS):
-                return current
-        if self.points.races_left(username, day) <= 0:
-            self.points.start_race(username, day)  # raises the "closed for today" line
         with self._lock:
-            writing = self._busy.get(username)
-        if writing is not None:  # opening Games already asked: wait for that, not a second call
-            writing.wait(QUIZ_WAIT_SECONDS)
-        with self._lock:
-            held = self._held(username, day)
-        if len(held) < QUESTIONS_PER_RACE:
-            held = spread(held + self._write(username, supervised, day))  # waits for Claude
-        questions, rest = held[:QUESTIONS_PER_RACE], held[QUESTIONS_PER_RACE:]
-        self.points.start_race(username, day)
-        race = new_race(questions, boost)
-        with self._lock:
-            self._sets[username] = (day.isoformat(), rest)
-            self._races[username] = race
-            self._started[username] = self.clock()
+            gate = self._starting.setdefault(username, threading.Lock())
+        with gate:  # a second tap waits here, then gets the race the first one started
+            with self._lock:  # more taps on Race while it started: the same race, counted once
+                current = self._races.get(username)
+                if (current is not None and current.answered == 0
+                        and self.clock() - self._started.get(username, -1e9) < RESTART_GAP_SECONDS):
+                    return current
+            if self.points.races_left(username, day) <= 0:
+                self.points.start_race(username, day)  # raises the "closed for today" line
+            with self._lock:
+                writing = self._busy.get(username)
+            if writing is not None:  # opening Games already asked: wait for that, not a second call
+                writing.wait(QUIZ_WAIT_SECONDS)
+            m = self.maps.get(username)
+            with self._lock:
+                before = {id(q) for q in self._held(username, day)}
+                held = [q for q in self._held(username, day) if fits(q, m)]  # set aside since
+            if len(held) < QUESTIONS_PER_RACE:
+                held = spread(held + self._write(username, supervised, day))  # waits for Claude
+            questions, rest = held[:QUESTIONS_PER_RACE], held[QUESTIONS_PER_RACE:]
+            self.points.start_race(username, day)
+            race = new_race(questions, boost)
+            with self._lock:
+                later = [q for q in self._held(username, day) if id(q) not in before]  # meanwhile
+                self._sets[username] = (day.isoformat(), spread(rest + later))
+                self._races[username] = race
+                self._started[username] = self.clock()
         self.prefill(username, supervised)  # the next race starts quickly
         return race
 
