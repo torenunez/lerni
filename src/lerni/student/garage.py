@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import math
 import re
+from collections.abc import Collection, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -132,6 +133,37 @@ def boost(c: Car) -> float:
     if c.zero_to_60 <= 0:
         return 1.0  # cartoon cars
     return min(MAX_BOOST, max(1.0, math.sqrt(BASE_0_60 / c.zero_to_60)))
+
+
+FAMILY_CAR_USD = 50_000  # about what a new family car costs
+STARS_PER_RACE = 13  # about what a race earns, for "about N races"
+
+
+def bolts(c: Car) -> int:
+    """How fast a car feels, as 1 to 5 ⚡, from its gas boost."""
+    return 1 + round((boost(c) - 1) / (MAX_BOOST - 1) * 4)
+
+
+def family_cars(usd: int) -> str:
+    """A price anyone can picture; "" for a car with no price in dollars."""
+    if usd <= 0:
+        return ""
+    if usd < FAMILY_CAR_USD * 1.5:
+        return "about the price of a family car"
+    return f"as much as {round(usd / FAMILY_CAR_USD):,} family cars 🚗"
+
+
+def next_goal(cars: Sequence[Car], owned: Collection[str], balance: int) -> tuple[Car | None, str]:
+    """The car to save for next, and the line that says how far off it is."""
+    wanted = sorted((c for c in cars if c.id not in owned), key=lambda c: c.price)
+    if not wanted:
+        return None, "Every car is yours! 🏆"
+    later = [c for c in wanted if c.price > balance]
+    if not later:
+        return wanted[-1], f"You can get the {wanted[-1].name} now!"
+    goal = later[0]
+    races = math.ceil((goal.price - balance) / STARS_PER_RACE)
+    return goal, f"{goal.name} · ⭐ {balance:,} / {goal.price:,} · about {races} races"
 
 
 class Garage:
