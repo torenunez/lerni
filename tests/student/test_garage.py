@@ -53,3 +53,20 @@ def test_a_repeated_id_in_the_garage_file_is_skipped(tmp_path):
     (tmp_path / "garage.json").write_text(json.dumps({"cars": [car, {**car, "name": "Copy"}]}))
     ids = [c.id for c in Garage(tmp_path).cars]
     assert len(ids) == len(set(ids))  # regression: a copied entry misaligned every button
+
+
+def test_a_huge_or_endless_number_skips_that_car_only_and_prices_round_to_tens(tmp_path):
+    import json
+
+    from lerni.student.garage import Garage
+
+    # regression: one car priced at infinity stopped the server starting
+    (tmp_path / "cars").mkdir()
+    (tmp_path / "cars" / "a.webp").write_bytes(b"RIFF")
+    car = {"id": "a", "name": "A", "usd": 91_700, "zero_to_60": 3.5, "picture": "a.webp"}
+    text = json.dumps({"cars": [car, {**car, "id": "b", "usd": 1e400},
+                                {**car, "id": "c", "zero_to_60": float("inf")},
+                                {**car, "id": "d", "usd": 5_000}]})
+    (tmp_path / "garage.json").write_text(text)
+    garage = Garage(tmp_path)
+    assert [(c.id, c.price) for c in garage.cars if c.picture] == [("d", 10), ("a", 40)]

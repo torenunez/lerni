@@ -16,7 +16,7 @@ Approved in conversation on 2026-10-12, after two outside design reviews. Builds
 ### Data (`interests.py`), no schema change
 
 - A link of kind **`kind_of`** runs from the specific item to the general one (Great White → sharks): every one of these is one of those. "Part of" (engine → car) is not a kind.
-- **Rules, in code:** both ends are interests; at most **2 groups** per item; no loops; at most 3 levels; never a removed name; never a link a person undid.
+- **Rules, in code, for every change (Put back and an interest made a goal included):** both ends are interests; at most **2 groups** per item; no loops; at most 3 levels; never a removed name; never a link a person undid.
 - **Undone links** are kept as `not_kind_of` links (drawn nowhere), so the tagger never adds them back and old code still loads the file. A person may still put the item under that group.
 - **`find` treats "car" and "cars" as one name** (an `s` or `es` ending), for lookups only.
 

@@ -18,6 +18,7 @@ from lerni.student.points import STARTER, PointsError, PointsStore
 from lerni.student.race import (
     BOTS,
     FINISH,
+    NOT_READY,
     QUESTIONS_PER_RACE,
     Race,
     RaceDesk,
@@ -29,6 +30,7 @@ from lerni.student.race import (
 from lerni.student.signin import Role, SignIn, Viewer
 from lerni.student.students import StudentStore
 from lerni.student.web.accounts import PRIVATE, NotAllowed
+from lerni.student.web.ask import MAX_AT_ONCE
 from lerni.student.web.maps import map_owner
 
 LANES = (12, 55, 98)  # the student's lane, then Zippy's and Bolt's
@@ -60,6 +62,8 @@ def start_race(desk: RaceDesk, viewer: Viewer | None, gas: float = 1.0) -> tuple
         return desk.start(v.username, supervised=v.role is Role.SUPERVISED, boost=gas), ""
     except (NotAllowed, PointsError, RaceUnavailable) as exc:
         return None, str(exc)
+    except Exception:  # never stuck on "Pumping the tires"
+        return None, NOT_READY
 
 
 def pick(desk: RaceDesk, viewer: Viewer | None, race_id: str, number: int,
@@ -260,9 +264,9 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
     # Race hides while questions are written, so extra taps can't start more races
     go.click(lambda: ["Pumping the tires… 🛞", gr.update(visible=False)], None, [note, go],
              **PRIVATE).then(
-        on_go, None, outputs, **PRIVATE)
+        on_go, None, outputs, concurrency_limit=MAX_AT_ONCE, **PRIVATE)  # side by side
     for i, button in enumerate(choices):
-        button.click(on_choice(i), shown, outputs, **PRIVATE)
+        button.click(on_choice(i), shown, outputs, concurrency_limit=MAX_AT_ONCE, **PRIVATE)
     for car_id, button in buttons.items():
-        button.click(on_garage(car_id), None, outputs, **PRIVATE)
+        button.click(on_garage(car_id), None, outputs, concurrency_limit=MAX_AT_ONCE, **PRIVATE)
     return tab, refresh, outputs

@@ -1,6 +1,7 @@
 """Race rules: the finish depends only on how many were right; bad questions never race."""
 
 import random
+import time
 from datetime import date
 
 import pytest
@@ -72,15 +73,16 @@ def test_bad_or_off_map_questions_are_dropped_and_shuffling_keeps_the_right_answ
 class FakeQuizzer:
     """Returns ten good questions, or something useless, and counts its calls."""
 
-    def __init__(self, good: bool = True, fail: bool = False):
-        self.good, self.fail, self.calls = good, fail, 0
+    def __init__(self, good: bool = True, fail: bool = False,
+                 why: str = "Half means 2 equal parts."):
+        self.good, self.fail, self.why, self.calls = good, fail, why, 0
 
     def write(self, system, prompt):
         self.calls += 1
         if self.fail:
             raise RaceUnavailable("Lerni is resting until Mon 6:00 pm. 😴")
         item = {"goal": "Fractions", "question": "Half of 8 laps?", "choices": ["4", "2", "6"],
-                "answer": 0, "why": "Half means 2 equal parts."}
+                "answer": 0, "why": self.why}
         return {"questions": [item] * 10 if self.good else [{"goal": "x"}]}
 
 
@@ -179,3 +181,74 @@ def test_a_faster_car_turns_three_right_into_a_win_but_one_right_never_places():
 
     assert [finish_with(1.4, r) for r in (3, 2, 1)] == [1, 2, 3]
     assert [finish_with(1.0, r) for r in (3, 2)] == [2, 3]  # the starter, as before
+
+
+def test_set_aside_matches_whole_words_and_the_why_too():
+    # regression: "car" dropped a question about cards; a set-aside name slipped in through "why"
+    m = InterestMap()
+    add_goal(m, "Fractions")
+    remove(m, add_interest(m, "great white").id)
+    remove(m, add_interest(m, "car").id)
+    good = {"goal": "Fractions", "question": "Half of 8 cards?", "choices": ["4", "2", "6"],
+            "answer": 0, "why": "Half means 2 equal parts."}
+    raw = {"questions": [good, {**good, "why": "Like 2 cars in 4."},
+                         {**good, "question": "Half of a Great White's 8 fins?"}]}
+    kept = check_questions(raw, m, random.Random(1))
+    assert [q.question for q in kept] == ["Half of 8 cards?"]
+
+
+def test_no_questions_are_written_once_the_days_races_are_used(tmp_path):
+    # regression: opening Games at the limit still asked Claude
+    quizzer = FakeQuizzer()
+    desk, points = desk_for(tmp_path, quizzer)
+    for _ in range(RACES_PER_DAY):
+        points.start_race("sam")
+    desk.prefill("sam", supervised=True)
+    time.sleep(0.2)  # prefill writes in the background
+    assert quizzer.calls == 0
+
+
+def test_a_question_written_before_a_set_aside_never_races(tmp_path):
+    # regression: a shark question written ahead raced after "sharks" was set aside
+    quizzer = FakeQuizzer(why="Like 4 sharks in 8.")
+    desk, _ = desk_for(tmp_path, quizzer)
+    desk.maps.change("sam", lambda m: add_interest(m, "sharks"))
+    desk.start("sam", supervised=True)  # ten written, five held
+    desk.maps.change("sam", lambda m: remove(m, m.find("sharks").id))
+    desk.drop("sam")
+    quizzer.why = "Half means 2 equal parts."
+    race = desk.start("sam", supervised=True)
+    assert all("shark" not in q.why for q in race.questions) and quizzer.calls == 2
+
+
+def test_two_race_taps_at_once_start_one_race(tmp_path):
+    # regression: two starts at once both asked Claude and both counted
+    import threading
+
+    quizzer = SlowQuizzer()
+    desk, points = desk_for(tmp_path, quizzer)
+    races = []
+    taps = [threading.Thread(target=lambda: races.append(desk.start("sam", supervised=True)))
+            for _ in range(2)]
+    for t in taps:
+        t.start()
+    for t in taps:
+        t.join()
+    assert races[0] is races[1] and quizzer.calls == 1
+    assert points.races_left("sam") == RACES_PER_DAY - 1
+
+
+def test_opening_games_while_a_race_starts_asks_claude_once(tmp_path):
+    # regression: a second device opening Games during a start wrote a set nobody could use
+    import threading
+
+    quizzer = SlowQuizzer()
+    desk, _ = desk_for(tmp_path, quizzer)
+    desk.maps.change("sam", lambda m: add_goal(m, "Acceleration"))  # all ten questions count
+    tap = threading.Thread(target=lambda: desk.start("sam", supervised=True))
+    tap.start()
+    time.sleep(0.1)  # the start is waiting on Claude
+    desk.prefill("sam", supervised=True)
+    tap.join()
+    time.sleep(0.4)
+    assert quizzer.calls == 1

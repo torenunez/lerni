@@ -80,7 +80,7 @@ class InterestMap:
         exact = next((e for e in self.entries if e.name.casefold() == key), None)
         if exact is not None or not key:
             return exact
-        return next((e for e in self.entries if _plural_of(e.name.casefold(), key)), None)
+        return next((e for e in self.entries if same_name(e.name, key)), None)
 
     def get(self, entry_id: str) -> Entry:
         """The entry with this id.
@@ -100,13 +100,31 @@ class InterestMap:
         return entry
 
     def is_removed(self, name: str) -> bool:
-        """Whether a person removed this name."""
-        return name.casefold() in {r.casefold() for r in self.removed}
+        """Whether a person removed this name, or its singular or plural."""
+        return any(same_name(r, name) for r in self.removed)
 
 
-def _plural_of(a: str, b: str) -> bool:
-    """Whether one name is the other plus "s" or "es" (cars, buses)."""
-    return a in (b + "s", b + "es") or b in (a + "s", a + "es")
+def same_name(a: str, b: str) -> bool:
+    """Whether two names are one, ignoring case and a plural "s" or "es" (car, cars, buses)."""
+    a, b = a.strip().casefold(), b.strip().casefold()
+    if a == b:
+        return True
+    short, long = sorted((a, b), key=len)
+    return len(short) >= 3 and long in (short + "s", short + "es")  # never "pi" and "pies"
+
+
+def mentions_set_aside(m: InterestMap, text: str) -> bool:
+    """Whether ``text`` names anything removed from the map, as whole words, plurals included."""
+    folded = text.casefold()
+    for name in m.removed:
+        n = re.escape(name.strip().casefold())
+        if re.search(rf"(?<!\w){n}(?:e?s)?(?!\w)", folded):
+            return True
+        singles = [n[:-2]] if n.endswith("es") else []
+        singles += [n[:-1]] if n.endswith("s") else []
+        if any(len(s) >= 3 and re.search(rf"(?<!\w){s}(?!\w)", folded) for s in singles):
+            return True  # "guns" set aside: "gun" too
+    return False
 
 
 def check_name(name: str) -> str:
@@ -168,8 +186,10 @@ def _forget(m: InterestMap, entry_id: str) -> None:
 
 
 def _unremove(m: InterestMap, name: str) -> None:
-    m.removed = [r for r in m.removed if r.casefold() != name.casefold()]
-    m.removed_info.pop(name.casefold(), None)
+    back = [r for r in m.removed if same_name(r, name)]  # "shark" brings back "sharks" too
+    m.removed = [r for r in m.removed if r not in back]
+    for r in back:
+        m.removed_info.pop(r.casefold(), None)
 
 
 def add_goal(m: InterestMap, name: str, notes: str = "") -> Entry:
@@ -184,6 +204,7 @@ def add_goal(m: InterestMap, name: str, notes: str = "") -> Entry:
         raise MapError(f"{existing.name} is already a goal.")
     _unremove(m, name)  # a person may bring back what they removed
     if existing is not None:
+        _lift_kinds(m, existing.id)  # only interests go in groups
         existing.kind, existing.notes = "goal", notes  # keeps its days
         entry = existing
     else:
@@ -251,13 +272,9 @@ def remove(m: InterestMap, entry_id: str) -> None:
     """
     entry = m.get(entry_id)
     links = [asdict(k) for k in m.links if entry_id in (k.a, k.b)]
-    day = date.today().isoformat()
-    for kind in children(m, entry_id):  # its kinds stay, one level up
-        for up in parents(m, entry_id):
-            if not _group_error(m, kind, up):
-                _link(m, kind, up, "kind_of", day)
+    _lift_kinds(m, entry_id)  # its kinds stay, one level up
     _forget(m, entry_id)
-    if not m.is_removed(entry.name):
+    if entry.name.casefold() not in {r.casefold() for r in m.removed}:  # exact, for Put back
         m.removed.append(entry.name)
     # what Put back restores: its kind, notes, history, and links
     m.removed_info[entry.name.casefold()] = {
@@ -291,6 +308,8 @@ def put_back(m: InterestMap, name: str) -> Entry:
     found = next((r for r in m.removed if r.casefold() == (name or "").strip().casefold()), None)
     if found is None:
         raise MapError("That isn't in Removed any more.")
+    if (there := m.find(found)) is not None:  # e.g. "fraction" came back while "fractions" was away
+        raise MapError(f"{there.name} is already on the map.")
     info = m.removed_info.get(found.casefold(), {})
     if info.get("kind") == "goal":
         entry = add_goal(m, found, info.get("notes", ""))
@@ -308,7 +327,8 @@ def put_back(m: InterestMap, name: str) -> Entry:
         other = k["b"] if k["a"] == entry.id else k["a"]
         if other in waiting and k not in waiting[other]["links"]:
             waiting[other]["links"].append(k)  # it comes back when the other end does
-        elif k["a"] in ids and k["b"] in ids and not known:
+        elif (k["a"] in ids and k["b"] in ids and not known
+              and not (k["kind"] == "kind_of" and _group_error(m, k["a"], k["b"]))):  # rules hold
             # back in its place by date, so an old bridge doesn't count as the latest
             at = next((i for i, x in enumerate(m.links) if x.day > k["day"]), len(m.links))
             m.links.insert(at, Link(k["a"], k["b"], k["kind"], k["day"]))
@@ -321,11 +341,16 @@ def _to_dict(m: InterestMap) -> dict[str, Any]:
 
 def _from_dict(data: dict[str, Any]) -> InterestMap:
     entries = [Entry(**e) for e in data.get("entries", [])]
+    ids = {e.id for e in entries}
     links = [Link(**k) for k in data.get("links", [])]
+    links = [k for k in links if k.a in ids and k.b in ids]  # heals a map an older bug broke
+    # older code could keep "Fractions" set aside beside a goal "Fraction": it's on the map
+    removed = [r for r in data.get("removed", [])
+               if not any(same_name(r, e.name) for e in entries)]
     return InterestMap(
         entries,
         links,
-        list(data.get("removed", [])),
+        removed,
         int(data.get("edits", 0)),
         int(data.get("next_id", 1)),
         dict(data.get("removed_info", {})),
@@ -523,9 +548,26 @@ def group_days(m: InterestMap, entry: Entry) -> list[str]:
     return sorted({d for e in family(m, entry) for d in e.days})
 
 
-def _levels(m: InterestMap, entry_id: str, step: Callable[[InterestMap, str], list[str]]) -> int:
+def _levels(m: InterestMap, entry_id: str, step: Callable[[InterestMap, str], list[str]],
+            seen: frozenset[str] = frozenset()) -> int:
     """The longest chain from this item, following ``parents`` or ``children``."""
-    return 1 + max((_levels(m, i, step) for i in step(m, entry_id)), default=0)
+    if entry_id in seen:
+        return 0  # a stored loop never recurses forever
+    return 1 + max((_levels(m, i, step, seen | {entry_id}) for i in step(m, entry_id)),
+                   default=0)
+
+
+def _lift_kinds(m: InterestMap, entry_id: str) -> None:
+    """Take an item out of every group; its kinds move up to its groups, where the rules allow."""
+    kinds, ups = children(m, entry_id), parents(m, entry_id)
+    # first, so its own place doesn't count against the 2-group limit
+    m.links = [k for k in m.links
+               if not (k.kind in ("kind_of", "not_kind_of") and entry_id in (k.a, k.b))]
+    day = date.today().isoformat()
+    for kind in kinds:
+        for up in ups:
+            if not _group_error(m, kind, up):
+                _link(m, kind, up, "kind_of", day)
 
 
 def _group_error(m: InterestMap, kind_id: str, group_id: str, tagger: bool = False) -> str:

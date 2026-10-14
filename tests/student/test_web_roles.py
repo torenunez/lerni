@@ -396,3 +396,23 @@ def test_a_real_car_is_bought_at_its_star_price_and_old_cartoon_cars_stay(tmp_pa
     assert garage_tap(points, garage, lee, "quick").startswith("🎉")
     assert points.get("lee").balance == 70 - 30 - 40
     assert [c.id for c in garage.sold(points.get("lee").cars)] == ["starter", "quick", "rally"]
+
+
+def test_games_never_queue_one_player_behind_another_and_an_odd_error_brings_race_back(tmp_path):
+    from lerni.student.race import NOT_READY
+    from lerni.student.web.ask import MAX_AT_ONCE
+    from lerni.student.web.games import start_race
+
+    # regression: one player's slow start held up every Race and answer tap in the house
+    app = build_app(data_root=tmp_path)
+    blocks = next(r.app for r in app.routes if getattr(r, "path", "") == "/app").get_blocks()
+    games = [f for f in blocks.fns.values() if f.name in ("on_go", "handler")
+             and f.fn and f.fn.__qualname__.startswith("games_tab")]
+    assert games and {f.concurrency_limit for f in games} == {MAX_AT_ONCE}
+
+    class Broken:
+        def start(self, *args, **kwargs):
+            raise OSError("disk")
+
+    lee = Viewer("lee", "Lee", Role.SUPERVISED)
+    assert start_race(Broken(), lee) == (None, NOT_READY)  # regression: Race never came back
