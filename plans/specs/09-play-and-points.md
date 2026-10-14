@@ -10,17 +10,18 @@ Approved in conversation on 2026-10-12. Requirements: [student PRD, Version 3](.
 
 ### Games (supervised students and educators)
 
-- **Top:** their ⭐ points and the car they're driving; **Race** and **Garage**.
+- **Top (v3.5):** the car they're driving, big, with its ⚡ and the next car to save for ("Next car: … · ⭐ 280 / 400 · about 10 races" over a bar); then **Race!**. While a race runs, the track takes its place.
 - **The race:**
   - Their car and two silly bots (Zippy and Bolt) on a three-lane track, with a finish flag.
   - A question card under it: "Question 3 of 5", the question, and **three big buttons**. No typing and no chat in a race.
   - A right pick: their car leaps ahead and the bot in front slows ("Right answer: boost! Zippy slowed down 💨").
   - Another pick: a small step, the right answer, and a one-line why ("It's acceleration: speeding up").
   - Cars glide to their new places after each answer; nothing moves on a clock.
-  - After the fifth answer: "You finished 2nd! ⭐ +13", then **Race again** or **Garage**.
-- **The garage:** the free cartoon starter, then real cars from a private garage file (v3.3), cheapest first. Each card shows the car's picture, its engine, power, drive, and 0–60 time, its price in dollars and in ⭐, and its gas boost.
-  - Owned cars say **Drive**.
-  - Others say **Buy** when there are enough points, or "13 more ⭐".
+  - After the fifth answer: "You finished 2nd! ⭐ +13", the next car to save for, then **Race again**.
+- **The garage (v3.5):** always open below Race!, as tiles (2 across on a phone): **My cars**, then the **Showroom**, cheapest first. No decimals on screen.
+  - A tile: the picture, the name, speed as ⚡ to ⚡⚡⚡⚡⚡, and, for sale, the dollar price with a comparison ("as much as 92 family cars 🚗"). **Car facts** (closed) holds the engine, power, drive, 0–60 time, and the $ to ⭐ maths.
+  - A car they can't afford yet shows only its picture, name, and price; its ⚡ and facts come once it's in reach.
+  - Owned cars say **Drive**; others **Buy · 140 ⭐**, or "60 more ⭐" (not tappable).
   - Buying asks nothing more: it takes the price off their points, and the car is theirs for good.
 - **Starting a race** waits a few seconds while Claude writes the questions ("Pumping the tires…"). The next race's questions are written ahead, so Race again is quick.
 - **Limits:**
@@ -49,7 +50,9 @@ Approved in conversation on 2026-10-12. Requirements: [student PRD, Version 3](.
 | Chat points | 3 for a right answer, 1 for a real try; at most 30 a day |
 | Races a day | 10 per person |
 | Cars and prices | the starter free; real cars at 1 ⭐ per $2,500, rounded to tens (v3.3; until then 8 cartoon cars, 30 to 400) |
-| Gas boost | √(4.0 s ÷ 0–60), ×1.0 to ×1.4 |
+| Gas boost | √(4.0 s ÷ 0–60), ×1.0 to ×1.4; shown as ⚡ 1–5 |
+| Family car | $50,000, for the price comparison |
+| A race, for "about N races" | 13 ⭐ |
 
 At about 50 ⭐ a day, a $100,000 car comes on day 1 and a $5 million one after about six weeks.
 
@@ -136,7 +139,8 @@ At about 50 ⭐ a day, a $100,000 car comes on day 1 and a $5 million one after 
 - **Buttons are at least 48 px tall,** with the choice as the label, so a screen reader reads question and choices in order.
   - The track has a text label ("You're 2nd").
   - Nothing relies on color alone.
-- **Rendering:** the race card and garage are ordinary components, not `gr.render`, so the draw queue isn't involved.
+- **Rendering:** the race card and garage are ordinary components, not `gr.render`, so the draw queue isn't involved: each car has a tile in both lists, built once, shown by ownership.
+- **The track** is scaled to the car's perfect run, so nobody reaches the finish line before the fifth answer, and a race keeps the car it started in.
 
 ### Chat points (v3.6, `tagging.py`)
 
