@@ -121,6 +121,8 @@ def car_card_svg(car_id: str) -> str:
 
 
 PRICE_PER_STAR = 2500  # dollars per ⭐
+PRICE_STEP = 10  # prices round to tens of ⭐
+MAX_USD = 1_000_000_000  # no real car costs more
 BASE_0_60, MAX_BOOST = 4.0, 1.4  # a 4-second car gets no boost; none gets more than ×1.4
 _ID = re.compile(r"^[a-z0-9-]{1,40}$")
 _PICTURE = re.compile(r"^[a-z0-9-]{1,40}\.(webp|png)$")
@@ -157,7 +159,7 @@ class Garage:
                 c = Car(
                     str(item["id"]),
                     str(item["name"]),
-                    round(usd / PRICE_PER_STAR),
+                    max(PRICE_STEP, round(usd / PRICE_PER_STAR / PRICE_STEP) * PRICE_STEP),
                     "#000",
                     "",
                     usd,
@@ -168,13 +170,13 @@ class Garage:
                     str(item.get("note", "")),
                     picture,
                 )
-            except (KeyError, TypeError, ValueError):
+            except (KeyError, TypeError, ValueError, OverflowError):
                 continue  # a bad entry is skipped alone
             if (
                 _ID.fullmatch(c.id)
                 and _PICTURE.fullmatch(picture)
-                and usd > 0
-                and c.zero_to_60 > 0
+                and 0 < usd <= MAX_USD
+                and 0 < c.zero_to_60 and math.isfinite(c.zero_to_60)
                 and c.id not in _BY_ID
                 and c.id not in {x.id for x in cars}  # no repeats
                 and (self.folder / picture).is_file()

@@ -192,7 +192,7 @@ def mental_list(
         empty: What shows before there's a map to draw.
     """
     opened = gr.State(None)  # the open item's id
-    confirm = gr.State(None)  # the removed name waiting for a second Delete tap
+    confirm = gr.State(None)  # (map owner, removed name) waiting for a second Delete tap
     with gr.Row(elem_classes="lerni-add"):
         kind = gr.Radio(["Goal", "Interest"], value="Goal", show_label=False, scale=0)
         name = gr.Textbox(show_label=False, placeholder="Name", max_length=MAX_NAME, scale=2)
@@ -218,7 +218,8 @@ def mental_list(
         message = run(add_item, req, who, k, n, t, request=request)
         return [message, *cleared(2, message.startswith("✅")), done(message, v)[1]]
 
-    owner.change(lambda: None, None, opened, **PRIVATE)  # a new map opens with nothing open
+    # a new map opens with nothing open and no Delete waiting for its second tap
+    owner.change(lambda: (None, None), None, [opened, confirm], **PRIVATE)
     pick_go.click(lambda i: i or None, pick, opened, **PRIVATE)  # a tap on the picture
     add.click(
         on_add,
@@ -282,7 +283,7 @@ def mental_list(
 
                 def on_wipe(req: Any, v: int, request: gr.Request) -> list[Any]:
                     if not sure:
-                        return ["", v, gone]  # ask once more: it can't be undone
+                        return ["", v, (who, gone)]  # ask once more: it can't be undone
                     return [*done(run(delete_item, req, who, gone, request=request), v), None]
 
                 wipe.click(on_wipe, [requested, version], [status, version, confirm], **PRIVATE)
@@ -293,7 +294,7 @@ def mental_list(
         back.click(on_back, [requested, version], [status, version], **PRIVATE)
 
     @gr.render(inputs=[owner, version, opened, confirm], **DRAW_QUEUE)
-    def draw(who: str, _v: int, open_id: str | None, sure_of: str | None) -> None:
+    def draw(who: str, _v: int, open_id: str | None, sure_of: tuple[str, str] | None) -> None:
         if not who:
             gr.Markdown(empty)
             return
@@ -362,4 +363,4 @@ def mental_list(
             ):
                 for gone in m.removed:
                     info = m.removed_info.get(gone.casefold(), {})
-                    back_button(who, gone, set(info) - {"kind"} != set(), sure_of == gone)
+                    back_button(who, gone, set(info) - {"kind"} != set(), sure_of == (who, gone))
