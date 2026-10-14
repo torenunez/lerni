@@ -107,8 +107,23 @@ _CSS = """
 .lerni-stars p { font-size: 16px; margin: 0; white-space: nowrap; }
 .lerni-question p { font-size: 18px; }
 .lerni-choice { min-height: 56px !important; font-size: 18px !important; }
-.lerni-card { display: flex; flex-direction: column; gap: 2px; font-size: 14px; }
-.lerni-card img { max-width: 150px; height: auto; }
+/* the garage: your car big at the top, then tiles, 2 across on a phone */
+#lerni-hero { text-align: center; font-size: 18px; }
+.lerni-hero-car img, .lerni-hero-car svg { width: 100%; max-width: 480px; height: auto; }
+.lerni-hero-name { font-size: 22px; }
+.lerni-goal { margin: 8px auto 0; max-width: 480px; font-size: 16px; }
+.lerni-bar { height: 12px; margin-top: 6px; border-radius: 6px;
+  background: var(--border-color-primary); overflow: hidden; }
+.lerni-bar span { display: block; height: 100%; background: #EF9F27; }
+.lerni-tiles { display: grid !important; gap: 10px !important;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+.lerni-tile { border: 1px solid var(--border-color-primary); border-radius: 12px;
+  padding: 8px !important; justify-content: space-between !important; }
+.lerni-card { display: flex; flex-direction: column; gap: 2px; font-size: 16px; }
+.lerni-card img, .lerni-card svg { width: 100%; height: auto; }
+.lerni-usd { font-size: 20px; font-weight: 700; }
+.lerni-like, .lerni-card details { font-size: 14px; }
+.lerni-buy { min-height: 48px !important; font-size: 16px !important; }
 #lerni-track svg { max-width: 560px; display: block; margin: 0 auto; }
 /* MentalMap pictures (mapview.js): a tapped item lights up its links; the rest fades */
 .lerni-map .lerni-node { cursor: pointer; }

@@ -15,6 +15,11 @@
                 {duration: 600, easing: 'ease-out'});
   }
   new MutationObserver(records => {
+    const note = document.getElementById('lerni-note');  // results and purchases are announced
+    if (note && !note.hasAttribute('role')) {
+      note.setAttribute('role', 'status');
+      note.setAttribute('aria-live', 'polite');
+    }
     const cars = new Set();
     for (const r of records) {
       if (r.type === 'attributes' && r.target.matches?.('#lerni-track .lerni-racer')) cars.add(r.target);

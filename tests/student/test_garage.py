@@ -1,5 +1,7 @@
 """The garage: eight cars, cheapest first, the starter free, each drawn."""
 
+import json
+
 from lerni.student.garage import CARS, car, car_card_svg, car_svg
 
 
@@ -70,3 +72,26 @@ def test_a_huge_or_endless_number_skips_that_car_only_and_prices_round_to_tens(t
     (tmp_path / "garage.json").write_text(text)
     garage = Garage(tmp_path)
     assert [(c.id, c.price) for c in garage.cars if c.picture] == [("d", 10), ("a", 40)]
+
+
+def test_cards_say_speed_in_bolts_price_in_family_cars_and_the_next_car_to_save_for(tmp_path):
+    from lerni.student.garage import Garage, bolts, family_cars, next_goal
+
+    garage = Garage(tmp_path)  # no file: the cartoon garage
+    assert bolts(garage.car("starter")) == 1
+    assert family_cars(0) == "" and family_cars(60_000) == "about the price of a family car"
+    assert family_cars(4_600_000) == "as much as 92 family cars 🚗"
+    car, line = next_goal(garage.sold(["starter"]), ["starter"], 0)
+    assert car is None and line == "Every car is yours! 🏆"  # only the starter is sold
+    (tmp_path / "cars").mkdir()
+    (tmp_path / "cars" / "a.webp").write_bytes(b"RIFF")
+    fast = {"id": "fast", "name": "Fast", "usd": 1_000_000, "zero_to_60": 2.0, "picture": "a.webp"}
+    slow = {**fast, "id": "slow", "name": "Slow", "usd": 100_000, "zero_to_60": 3.5}
+    (tmp_path / "garage.json").write_text(json.dumps({"cars": [fast, slow]}))
+    garage = Garage(tmp_path)
+    assert (bolts(garage.car("slow")), bolts(garage.car("fast"))) == (2, 5)
+    sold = garage.sold(["starter"])
+    assert next_goal(sold, ["starter"], 0)[1] == "Slow · ⭐ 0 / 40 · about 4 races"
+    assert next_goal(sold, ["starter"], 50)[1] == "Fast · ⭐ 50 / 400 · about 27 races"
+    assert next_goal(sold, ["starter"], 500)[1] == "You can get the Fast now!"
+    assert next_goal(sold, ["starter"], 30)[1].endswith("about 1 race")  # regression: "1 races"

@@ -416,3 +416,44 @@ def test_games_never_queue_one_player_behind_another_and_an_odd_error_brings_rac
 
     lee = Viewer("lee", "Lee", Role.SUPERVISED)
     assert start_race(Broken(), lee) == (None, NOT_READY)  # regression: Race never came back
+
+
+def test_a_fast_car_reaches_the_finish_only_on_the_fifth_answer_in_the_car_it_started_in(tmp_path):
+    import re
+
+    from lerni.student.garage import Garage
+    from lerni.student.race import QUESTIONS_PER_RACE, Question, answer, new_race
+    from lerni.student.web.games import END, track_svg
+
+    q = Question("Fractions", "Half of 8?", ("4", "2", "6"), 0, "Half means 2 equal parts.")
+    race = new_race([q] * QUESTIONS_PER_RACE, boost=1.4, car="rally")
+    garage = Garage(tmp_path)
+
+    def my_x() -> float:
+        svg = track_svg(race, "starter", garage)  # they've switched to the starter meanwhile
+        assert 'data-car="rally"' in svg  # regression: the track showed the new car mid-race
+        return float(re.search(r'data-lane="me" data-x="(\d+)"', svg).group(1))
+
+    for n in range(4):
+        answer(race, n, 0)
+    assert my_x() < END  # regression: a ×1.4 car stopped at the line after 4 right
+    answer(race, 4, 0)
+    assert my_x() == END
+
+
+def test_a_car_out_of_reach_shows_only_its_picture_name_and_price(tmp_path):
+    import json
+
+    from lerni.student.garage import Garage
+    from lerni.student.web.games import card_html
+
+    (tmp_path / "cars").mkdir()
+    (tmp_path / "cars" / "a.webp").write_bytes(b"RIFF")
+    (tmp_path / "garage.json").write_text(json.dumps({"cars": [
+        {"id": "a", "name": "Quick", "usd": 100_000, "zero_to_60": 3.5, "engine": "V8",
+         "picture": "a.webp"}]}))
+    quick = Garage(tmp_path).car("a")
+    locked, open_ = card_html(quick, locked=True), card_html(quick)
+    assert "Quick" in locked and "$100,000" in locked and "family car" in locked
+    assert "⚡" not in locked and "Car facts" not in locked  # earned by saving up
+    assert "⚡" in open_ and "Car facts" in open_ and "V8" in open_

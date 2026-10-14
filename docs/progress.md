@@ -6,13 +6,17 @@ Record each kind of "done" only when it actually happens, with the date: code bu
 
 ## Current state (2026-10-14, v3.3 on the home server: Versions 1 and 2 built: the conversation, MentalMaps, HTTPS, and voice; Version 3's race)
 
-- **Built:** the student app's core (student accounts, sign-in, Lerni's conversations, the MentalMap with its tagger and 7-day logs, Upload and educator feedback, and the educator agent); `lerni serve` with a sign-in page and one app with a ☰ menu by role: an independent student's Ask, My MentalMap (an editable list, the picture, and Upload), and My account; an educator's MentalMaps (a student's list and picture, with a chat) and Students on top; a supervised student's conversation, full screen, and Games (a race for points spent on cartoon cars; educators race too). Hold to talk with spoken answers; a Claude usage warning and rest. The admin tool (`lerni`, with `lerni student`, `lerni logs`, and `lerni feedback`). A [code manifest](code-manifest.md) of every file. Tests: 154 passed.
+- **Built:** the student app's core (student accounts, sign-in, Lerni's conversations, the MentalMap with its tagger and 7-day logs, Upload and educator feedback, and the educator agent); `lerni serve` with a sign-in page and one app with a ☰ menu by role: an independent student's Ask, My MentalMap (an editable list, the picture, and Upload), and My account; an educator's MentalMaps (a student's list and picture, with a chat) and Students on top; a supervised student's conversation, full screen, and Games (a race for points spent on cartoon cars; educators race too). Hold to talk with spoken answers; a Claude usage warning and rest. The admin tool (`lerni`, with `lerni student`, `lerni logs`, and `lerni feedback`). A [code manifest](code-manifest.md) of every file. Tests: 157 passed.
 - **Designed:** the interest map, goals, the tagger, upload, feedback, and the supervised conversation ([specs/04-interest-map.md](../plans/specs/04-interest-map.md)); approved with PR #12.
 - **Not yet:** any supervised student session.
 
 When something changes, update this section and add a log entry below.
 
 ## Log
+
+### 2026-10-14 (the garage up front; v3.5 built)
+
+- v3.5: the garage up front, after the admin found it too hidden and its numbers too complicated. Games opens on the car they drive, big, with the next car to save for and how many races away; My cars and the Showroom sit open below as tiles. Speed is ⚡ to ⚡⚡⚡⚡⚡ (no decimals on screen); a price reads in dollars and family cars; a car out of reach shows only its picture, name, and price; the technical facts sit under Car facts. A fast car now reaches the finish only on the fifth answer, and a race keeps the car it started in. Checked at phone and iPad size, light and dark, on a throwaway server. Tests: 157 passed.
 
 ### 2026-10-14 (map and race fixes; v3.4 built)
 
