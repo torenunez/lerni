@@ -48,7 +48,7 @@ Approved in conversation on 2026-10-12. Requirements: [student PRD, Version 3](.
 | Race points | 1st 15, 2nd 10, 3rd 5, plus 1 per right answer (5 to 20) |
 | Chat points | 3 for a right answer, 1 for a real try; at most 30 a day |
 | Races a day | 10 per person |
-| Cars and prices | the starter free; real cars at 1 ⭐ per $2,500 (v3.3; until then 8 cartoon cars, 30 to 400) |
+| Cars and prices | the starter free; real cars at 1 ⭐ per $2,500, rounded to tens (v3.3; until then 8 cartoon cars, 30 to 400) |
 | Gas boost | √(4.0 s ÷ 0–60), ×1.0 to ×1.4 |
 
 At about 50 ⭐ a day, a $100,000 car comes on day 1 and a $5 million one after about six weeks.
@@ -96,13 +96,13 @@ At about 50 ⭐ a day, a $100,000 car comes on day 1 and a $5 million one after 
   - `choices` (3 strings);
   - `answer` (0, 1 or 2);
   - `why`.
-- **The server checks every question.** It drops one if:
+- **The server checks the shape of every question** (not whether its answer is right). It drops one if:
   - the question is over 140 characters, or a choice over 40, or the why over 120;
   - the choices aren't 3 different, non-empty strings;
   - the answer index is out of range;
   - the goal isn't on the map (when the map has goals).
 - **Then it shuffles the choices**, so the right one isn't always first, and a race takes turns across the goals. A goal's notes, if Claude copies them into `goal`, are ignored when matching. If fewer than 5 survive, it asks again once; then: "The track needs a minute. Try again soon."
-- **Writing ahead:** the next set is written in the background when Games opens, and after each race. A set is kept in memory for the day only.
+- **Writing ahead:** the next set is written in the background when Games opens, and after each race, but not once the day's races are used. A set is kept in memory for the day only, and checked against the map again when a race starts, so a goal or set-aside changed since still counts.
 
 ### Points (`points.py`)
 
@@ -123,7 +123,7 @@ At about 50 ⭐ a day, a $100,000 car comes on day 1 and a $5 million one after 
 
 - **Cartoon cars in the repo,** drawn in code (the same side view facing right, same scale, wheels on one line; no licenses, nothing fetched). Since v3.3 only the free starter is sold; a cartoon car someone already bought stays theirs to drive. The bots stay cartoon.
 - **Real cars in a private garage file** (v3.3), `<data>/garage.json`, never in the repo: each car's id, name, price in dollars, 0–60 seconds, engine, power, drive, an optional note ("Limited to 250 cars"), and a picture in `<data>/cars/`.
-  - **Price in ⭐:** dollars ÷ 2,500, rounded (a $100,000 car is 40 ⭐; a $5 million one, 2,000).
+  - **Price in ⭐:** dollars ÷ 2,500, rounded to the nearest 10, at least 10 (a $100,000 car is 40 ⭐; a $5 million one, 2,000).
   - **Pictures:** side profiles facing right with the background lifted off by Apple's Vision on the home server (`scripts/lift_car.swift`), saved as WebP about 600 px wide. They're served only to someone signed in, from a route that knows only the garage's ids.
   - A broken or missing file leaves the cartoon garage; nothing else stops.
 
@@ -160,7 +160,6 @@ At about 50 ⭐ a day, a $100,000 car comes on day 1 and a $5 million one after 
 
 - Voice in the race ("🔊 Read it to me").
 - Pit stop.
-- The real-car pack.
 - An educator "reset points".
 - Games for independent students.
 - Difficulty settings.

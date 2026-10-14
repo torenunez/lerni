@@ -1,8 +1,7 @@
-"""The garage: cartoon cars drawn in code, each with a price in points (spec 09).
+"""The garage: cartoon cars drawn in code, and real cars from a private file (spec 09).
 
 Every car faces right at the same scale with its wheels on one line, so any car
-can race in any lane. No images, licenses, or downloads. A private garage file
-for real cars comes later.
+can race in any lane. Real cars' pictures and facts live only on the home server.
 """
 
 from __future__ import annotations
