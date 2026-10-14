@@ -416,3 +416,26 @@ def test_games_never_queue_one_player_behind_another_and_an_odd_error_brings_rac
 
     lee = Viewer("lee", "Lee", Role.SUPERVISED)
     assert start_race(Broken(), lee) == (None, NOT_READY)  # regression: Race never came back
+
+
+def test_a_fast_car_reaches_the_finish_only_on_the_fifth_answer_in_the_car_it_started_in(tmp_path):
+    import re
+
+    from lerni.student.garage import Garage
+    from lerni.student.race import QUESTIONS_PER_RACE, Question, answer, new_race
+    from lerni.student.web.games import END, track_svg
+
+    q = Question("Fractions", "Half of 8?", ("4", "2", "6"), 0, "Half means 2 equal parts.")
+    race = new_race([q] * QUESTIONS_PER_RACE, boost=1.4, car="rally")
+    garage = Garage(tmp_path)
+
+    def my_x() -> float:
+        svg = track_svg(race, "starter", garage)  # they've switched to the starter meanwhile
+        assert 'data-car="rally"' in svg  # regression: the track showed the new car mid-race
+        return float(re.search(r'data-lane="me" data-x="(\d+)"', svg).group(1))
+
+    for n in range(4):
+        answer(race, n, 0)
+    assert my_x() < END  # regression: a ×1.4 car stopped at the line after 4 right
+    answer(race, 4, 0)
+    assert my_x() == END

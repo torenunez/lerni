@@ -17,9 +17,9 @@ from lerni.student.garage import Car, Garage, boost, car_card_svg, car_svg
 from lerni.student.points import STARTER, PointsError, PointsStore
 from lerni.student.race import (
     BOTS,
-    FINISH,
     NOT_READY,
     QUESTIONS_PER_RACE,
+    STEP_RIGHT,
     Race,
     RaceDesk,
     RaceUnavailable,
@@ -55,11 +55,13 @@ def stars(points: PointsStore, viewer: Viewer | None) -> str:
         return ""
 
 
-def start_race(desk: RaceDesk, viewer: Viewer | None, gas: float = 1.0) -> tuple[Race | None, str]:
-    """A new race in a car with this gas boost, or why there can't be one."""
+def start_race(desk: RaceDesk, viewer: Viewer | None, gas: float = 1.0,
+               car: str = "") -> tuple[Race | None, str]:
+    """A new race in this car with its gas boost, or why there can't be one."""
     try:
         v = require_player(viewer)
-        return desk.start(v.username, supervised=v.role is Role.SUPERVISED, boost=gas), ""
+        return desk.start(v.username, supervised=v.role is Role.SUPERVISED, boost=gas,
+                          car=car), ""
     except (NotAllowed, PointsError, RaceUnavailable) as exc:
         return None, str(exc)
     except Exception:  # never stuck on "Pumping the tires"
@@ -106,13 +108,18 @@ def student_points(points: PointsStore, garage: Garage, students: StudentStore,
 def track_svg(race: Race | None, car_id: str, garage: Garage) -> str:
     """The track: the student's car and two bots, placed by how far each has come."""
 
-    def x(pos: float) -> float:
-        return START + min(pos, FINISH) / FINISH * (END - START)
+    full = QUESTIONS_PER_RACE * STEP_RIGHT * (race.boost if race else 1.0)  # 5 right in this car
+
+    def x(pos: float) -> float:  # nothing reaches the line before the fifth answer
+        return START + min(pos, full) / full * (END - START)
+
+    car_id = (race.car or car_id) if race else car_id  # the car it started in
 
     me, bots = (race.me, race.bots) if race else (0.0, [0.0 for _ in BOTS])
     where = f"You're {ORDINAL[place(race)]}" if race and race.answered else "At the start line"
     parts = [f'<svg viewBox="0 0 320 130" width="100%" role="img" aria-label="{where}" '
-             f'data-race="{html.escape(race.id if race else "")}">',
+             f'data-race="{html.escape(race.id if race else "")}" '
+             f'data-car="{html.escape(car_id)}">',
              '<rect width="320" height="130" rx="8" fill="#E1F5EE"/>',
              '<line x1="0" y1="43" x2="320" y2="43" stroke="#9FE1CB" stroke-dasharray="6 6"/>',
              '<line x1="0" y1="86" x2="320" y2="86" stroke="#9FE1CB" stroke-dasharray="6 6"/>',
@@ -233,11 +240,12 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
         viewer = viewer_of(request)
         if desk is None:
             return screen(viewer, None, NO_CLAUDE)
+        driving = points.get(viewer.username).car if viewer else STARTER
         try:  # the driven car's gas; a car gone from the garage file drives like the starter
-            gas = boost(garage.car(points.get(viewer.username).car)) if viewer else 1.0
+            gas = boost(garage.car(driving))
         except KeyError:
             gas = 1.0
-        race, message = start_race(desk, viewer, gas)
+        race, message = start_race(desk, viewer, gas, driving)
         return screen(viewer, race, message)
 
     def on_choice(i: int) -> Callable[..., list[Any]]:

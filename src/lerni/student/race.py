@@ -2,8 +2,8 @@
 and a race against two silly bots that moves by fixed rules (spec 09).
 
 The page gets the question and its three choices, never the answer. Where the
-cars end up depends only on how many answers were right, never on a clock or
-luck. Nothing here changes the MentalMap.
+cars end up depends on how many answers were right and the car's gas, never on a
+clock or luck. Nothing here changes the MentalMap.
 """
 
 from __future__ import annotations
@@ -32,7 +32,6 @@ SET_SIZE = 10  # questions per Claude call: two races' worth
 STEP_RIGHT, STEP_WRONG = 2.2, 0.7  # how far the student moves
 BOTS = (("Zippy", 1.9), ("Bolt", 1.6))  # each bot's name and steady step
 SLOW = 0.4  # each bot moves this much less on a turn the student gets right
-FINISH = 11.0  # the finish line, past everyone's last place
 PLACE_POINTS = {1: 15, 2: 10, 3: 5}
 MAX_QUESTION, MAX_CHOICE, MAX_WHY = 140, 40, 120
 
@@ -154,6 +153,7 @@ class Race:
     answered: int = 0
     right: int = 0
     boost: float = 1.0  # the car's gas boost (garage.boost)
+    car: str = ""  # the car it started in
 
     @property
     def done(self) -> bool:
@@ -171,9 +171,9 @@ class Turn:
     slowed: str  # the bot named as slowed down ("" on a wrong answer)
 
 
-def new_race(questions: list[Question], boost: float = 1.0) -> Race:
-    """A race over these questions, everyone at the start line, in a car with this gas boost."""
-    return Race(list(questions), boost=boost)
+def new_race(questions: list[Question], boost: float = 1.0, car: str = "") -> Race:
+    """A race over these questions, everyone at the start line, in this car with its gas boost."""
+    return Race(list(questions), boost=boost, car=car)
 
 
 def answer(race: Race, number: int, choice: int) -> Turn | None:
@@ -293,7 +293,7 @@ class RaceDesk:
         threading.Thread(target=work, daemon=True).start()
 
     def start(self, username: str, supervised: bool, today: date | None = None,
-              boost: float = 1.0) -> Race:
+              boost: float = 1.0, car: str = "") -> Race:
         """A new race (any race in progress is dropped) in a car with this gas ``boost``.
 
         Raises:
@@ -333,7 +333,7 @@ class RaceDesk:
                         mine.set()
             questions, rest = held[:QUESTIONS_PER_RACE], held[QUESTIONS_PER_RACE:]
             self.points.start_race(username, day)
-            race = new_race(questions, boost)
+            race = new_race(questions, boost, car)
             with self._lock:
                 later = [q for q in self._held(username, day) if id(q) not in before]  # meanwhile
                 self._sets[username] = (day.isoformat(), spread(rest + later))
