@@ -19,7 +19,8 @@ Open tasks by who does the work. The educator and admin tracks run in parallel: 
 
 ### Now
 
-- [ ] Check v3.1 on the iPhone and iPad (both on the same Wi-Fi as the Mac): the race and garage in Games, both MentalMap screens, and Hold to talk.
+- [ ] Check v3.3 on the iPhone and iPad (both on the same Wi-Fi as the Mac): the race and garage in Games, both MentalMap screens, and Hold to talk.
+- [ ] Add 2–3 real cars between about 300 and 1,200 ⭐ to the private garage file, so there's always a next car within a week or two (today it jumps from 243 to 1,840).
 - [ ] Turn off extra usage (paid credits) on the Claude account Lerni uses (claude.ai → Settings → Usage), so Lerni can never spend credits; Lerni also rests if a call ever uses them.
 - [ ] Pick Lerni's voice ([admin reference: Voice](reference/admin.md#voice)), try Hold to talk on the iPad, then with the supervised student and an adult nearby (Version 2 is done when their map grows from a spoken conversation).
 - [ ] Optionally delete the old plan files on the home server (`~/.lerni/student/plans/`); nothing reads them any more.
@@ -28,10 +29,19 @@ Open tasks by who does the work. The educator and admin tracks run in parallel: 
 
 What ships next, in order, one PR each ([how versions work](roadmap.md#versions)):
 
-1. **v3.4: points in the conversation, and Ask becomes Chat:** the tagger judges the student's answer to Lerni's last question (right, a real try, or nothing) and the server adds points, once per exchange, up to a daily cap; "⭐ +3" shows by the total; no multiple choice in the conversation.
-2. **v3.5: voice that fails says so:** a transcript that ends mid-letter (an accented character cut short) no longer crashes the clip (read whisper's output with `errors="replace"`; seen in production 2026-10-13); if `say` returns empty audio, startup prints `Voice (hold to talk): off` with the reason, instead of sending silence; the microphone is released if you let go before Safari asks; recording stops and sends at 30 seconds instead of dropping the end; a microphone failure switches to Type with a short note.
-3. **v3.6: production keeps running on its own:** run production and development the same way, as macOS LaunchAgents in the desktop session (start at login, restart after a crash); check `say` works there first. Until then both run in Terminal windows, and production stops if that window or the Mac does.
-4. **Version 4, remembering:** Bridge Trip (a trip along their map with recall stops) is its front door; its first PR writes the plan.
+1. **v3.4: map and race fixes:**
+   - **Put back:** matches the exact name only, and checks the group rules (no loops, at most 2 groups and 3 levels); the prompt and the tagger skip a link whose end is missing, and grouping has a loop guard.
+   - **Goal from a group:** turning an interest into a goal moves its kinds up, as removing it does.
+   - **Set-aside:** removed names match plurals ("guns" blocks "gun"); race questions match whole words and check the "why" too; held questions are checked again against the map when a race starts.
+   - **Race starts:** one start in flight per person; the Games buttons get the conversation's concurrency limit, so one player's wait doesn't hold up others; no questions written ahead once the day's races are used; an unexpected error brings Race! back.
+   - **Delete for good:** the second tap resets when the student changes.
+   - **Garage file:** a huge or infinite number skips that car instead of stopping the server.
+   - **Docs:** the garage.py docstring, ARCHITECTURE's "cartoon cars", spec 09's "Not in this version".
+2. **v3.5: the garage up front:** Games opens on the car you're driving, big, with a next-goal bar (the cheapest car you can't afford yet: "31 / 135 ⭐") and Race!; the race runs in place; **My cars** and **Showroom** sit open below, as tiles with 48 px buttons and no "⭐ 0". Each card: the picture, the name, ⚡ to ⚡⚡⚡⚡⚡ for speed (from 0–60; no "gas ×1.29"), and the dollar price with a family-car comparison ("$4,600,000 · as much as 92 family cars 🚗"); engine, power, drive, 0–60 and the $ to ⭐ maths under "Car facts". The track fits every car to the finish (a ×1.4 car no longer stops at the line after 4 right), so faster cars visibly go farther; Car facts says what changes your place. Prices round to at least 1 ⭐; Buy labels get thousands commas; the answer and purchase lines are announced to screen readers; the car is fixed when a race starts.
+3. **v3.6: points in the conversation, and Ask becomes Chat:** the tagger judges the student's answer to Lerni's last question (right, a real try, or nothing) and the server adds points, once per exchange, up to a daily cap; "⭐ +3" shows by the total; no multiple choice in the conversation.
+4. **v3.7: voice that fails says so:** a transcript that ends mid-letter (an accented character cut short) no longer crashes the clip (read whisper's output with `errors="replace"`; seen in production 2026-10-13); if `say` returns empty audio, startup prints `Voice (hold to talk): off` with the reason, instead of sending silence; the microphone is released if you let go before Safari asks; recording stops and sends at 30 seconds instead of dropping the end; a microphone failure switches to Type with a short note.
+5. **v3.8: production keeps running on its own:** run production and development the same way, as macOS LaunchAgents in the desktop session (start at login, restart after a crash); check `say` works there first. Until then both run in Terminal windows, and production stops if that window or the Mac does.
+6. **Version 4, remembering:** Bridge Trip (a trip along their map with recall stops) is its front door; its first PR writes the plan.
 
 How PRs are split:
 
@@ -59,7 +69,10 @@ Versions 1 and 2 also need sessions, not code: the educator sets goals, rehearse
 - [ ] Pit stop: fill a toy car's fuel gauge with quarters, then the same amount with eighths (fixed math, no Claude calls); the educator sketches the scene first.
 - [ ] An educator "reset points", and Games for independent students.
 - [ ] Other games: Beat builder (rhythm and fractions), Recipe mixer (ratios), Build and balance.
-- [ ] Two weeks after v3.4: are Lerni's questions getting real answers, or are points just being hunted? Tune the points, or stop.
+- [ ] Check Claude's answer keys: add answer-correctness cases to `eval_race.py` (it checks only questions that survived the filter), then maybe a cheap second pass where Haiku answers its own questions and the server drops disagreements; later a "this question seems wrong" button that doesn't use up a race.
+- [ ] After a wrong answer, keep the answered question on screen with its why, then **Next**, instead of showing the why under the next question.
+- [ ] Garage extras: read-aloud 🔊 on cards; a short "here are your keys" moment on buying (reduced motion respected); paint and a number plate bought with ⭐; shark, rocket or dinosaur bodies for students who aren't into cars; an educator preview of a student's race questions.
+- [ ] Two weeks after v3.6: are Lerni's questions getting real answers, or are points just being hunted? Tune the points, or stop.
 
 ### Later: Version 4 Remembering
 
@@ -82,7 +95,9 @@ Versions 1 and 2 also need sessions, not code: the educator sets goals, rehearse
 - [ ] **Educator chat:** a proposal names its target, so an old one can change a newer item with the same name; Clear or a new student can be undone by a reply still arriving; 📎 notes are sent again every turn; removals are reported as "Added".
 - [ ] **Tagging:** two quick answers' tags can land out of order, and a subject change counts against the newest bridge rather than the one in the answer before.
 - [ ] **MentalMap list:** a redraw trusts the owner set by the last checked handler and doesn't re-check the viewer (every edit does).
-- [ ] **Games:** an educator's race uses their own map, so they can't rehearse a student's questions; in dark mode the MentalMap picture's labels are hard to read; a start that waits on a slow write can run a second one; when the student leads, the slowed bot named may be behind; one player's question wait queues others' Race taps (shared concurrency); the MentalMaps points line refreshes only on picking a student; `eval_race.py` checks only after the server's filter. Garage file: a typed `Infinity` or a huge number stops the server starting (catch OverflowError); switching cars mid-race shows the new car at the old boost; the Buy button shows ⭐ without a thousands comma; one route-test path is rewritten by the test client.
+- [ ] **Games:** in dark mode the MentalMap picture's labels are hard to read, and the white car is faint on the light track; when the student leads, the slowed bot named may be behind; a tap within 0.8 s is dropped silently; the MentalMaps points line refreshes only on picking a student; the race docstring still says only right answers decide the finish; the quiz prompt's "race cars" example may pull every question toward cars. Garage file: a car removed from it disappears from its owners (add a `retired` flag instead, and say so in the admin reference); one route-test path is rewritten by the test client; the picture route serves any signed-in account, has no `nosniff`, and caches a replaced picture for a day. `lift_car.swift`: a bad crop number crashes it, it keeps every foreground object (a person beside the car), writes full size, and may ignore a photo's rotation.
+- [ ] **Groups:** removing a group with two parents moves its kinds into only one; the plural rule matches short words ("pi" and "pies"); a group ticked in the MentalMaps chat can bring back a removed name without Put back, and one failing member skips the rest; the tagger can link any two names on the map without seeing the existing groups, and "Not under" blocks one direction only.
+- [ ] **Safety:** nothing tells the educator when a student says they're hurt (a content-free "check in with the student" flag would); a sad-but-not-harm message ("my dog died") isn't clearly covered; the disclosure eval runs each case once and checks keywords.
 - [ ] **Menu:** the closed drawer is still reachable by keyboard and VoiceOver.
 - [ ] **Accounts:** two educators archiving each other leaves none (recover with `lerni student add`); password hashing runs inside the account write lock; a live session can guess its current password in My account without the sign-in delay; a non-ASCII cookie gives a 500; an archived account is detectable by timing; `/signin` has no Origin check and `/signout` is a GET; the data folder is created 0755; a password change doesn't sign out other devices.
 - [ ] **Tests:** the role check on each educator handler, cookie expiry, and a supervised cookie calling an educator event over HTTP.
