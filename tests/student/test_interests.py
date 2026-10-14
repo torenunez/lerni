@@ -1,5 +1,6 @@
 """Interest maps: people's edits, the cap, the tagger's observations, and saving."""
 
+import json
 from datetime import date
 
 import pytest
@@ -300,3 +301,44 @@ def test_a_removed_name_blocks_its_plural_and_short_names_dont_match():
     assert same_name("bus", "buses") and not same_name("pi", "pies")
     assert mentions_set_aside(m, "Why do guns go bang?")
     assert not mentions_set_aside(m, "A gunner's mate")  # whole words only
+
+
+def test_put_back_never_breaks_the_map():
+    # regression: putting back "fractions" took over "fraction", leaving a bridge to a missing id
+    m = InterestMap()
+    remove(m, add_goal(m, "fractions").id)
+    m.entries.append(m.new_entry("fraction", "interest"))  # an older map could hold both
+    with pytest.raises(MapError):
+        put_back(m, "fractions")
+    # regression: a restored group link could close a loop, and grouping then recursed forever
+    m = InterestMap()
+    coupe, cars, vehicles = (_interest(m, n) for n in ("coupe", "cars", "vehicles"))
+    group(m, coupe.id, cars.id)
+    group(m, cars.id, vehicles.id)
+    remove(m, cars.id)  # coupe moves under vehicles
+    ungroup(m, coupe.id, vehicles.id)
+    group(m, vehicles.id, coupe.id)
+    back = put_back(m, "cars")
+    assert not (parents(m, back.id) and back.id in parents(m, coupe.id))  # no loop
+    group(m, _interest(m, "minis").id, coupe.id)  # still works
+
+
+def test_a_broken_map_on_disk_loads_without_its_dangling_links(tmp_path):
+    store = MapStore(tmp_path)
+    store.change("sam", lambda m: add_goal(m, "Telling time"))
+    path = tmp_path / "maps" / "sam.json"
+    data = json.loads(path.read_text())
+    data["links"].append({"a": "e9", "b": "e1", "kind": "bridge", "day": "2026-10-01"})
+    path.write_text(json.dumps(data))
+    m = store.get("sam")
+    assert m.links == [] and map_block(m, date(2026, 10, 14))  # Chat's prompt still builds
+
+
+def test_a_group_made_a_goal_hands_its_kinds_up():
+    # regression: a goal kept its kinds, read as strong with no days, and hid them from Chat
+    m = InterestMap()
+    fish, sharks, white = (_interest(m, n) for n in ("fish", "sharks", "great white"))
+    group(m, sharks.id, fish.id)
+    group(m, white.id, sharks.id)
+    add_goal(m, "sharks")
+    assert parents(m, white.id) == [fish.id] and parents(m, sharks.id) == []
