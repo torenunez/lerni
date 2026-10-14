@@ -28,7 +28,7 @@ Approved in conversation on 2026-10-12. Requirements: [student PRD, Version 3](.
   - After 10 races in a day: "The track is closed for today 🌙 Come back tomorrow."
   - While Lerni is resting (usage limits): "Lerni is resting until Mon 6:00 pm."
   - Earlier points and cars stay either way.
-- **The header** shows ⭐ points on every screen for a player (supervised students and educators).
+- **The header** shows ⭐ points on every screen for a player (supervised students and educators). From v3.6, tapping it opens a short "How to earn ⭐": 🏁 race in Games, or 💬 answer Lerni's questions in your own words in Chat.
 
 ### Chat (v3.6; Ask is renamed Chat)
 
