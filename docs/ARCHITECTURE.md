@@ -109,7 +109,7 @@ Every code file, one line each: [code manifest](code-manifest.md).
 
 | Piece | Version | Seam to leave room for now |
 |---|---|---|
-| Points for conversation answers | 3 (v3.6) | Judged by the tagger, never by the conversation model; each exchange awards once. |
+| Points for conversation answers | 3 (v3.7) | Judged by the tagger, never by the conversation model; each exchange awards once. |
 | Remembering preferences, recall | 4 | The map is the memory; preferences and recall build on it. |
 | Suggested goals | 5 | Suggestions are shown for the educator to accept; they never become goals on their own (boundary 1). |
 | Curated or checked content | — | None planned; if ever needed, it arrives as information in the map block, never as a separate path. |

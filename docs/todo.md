@@ -28,9 +28,9 @@ Open tasks by who does the work. The educator and admin tracks run in parallel: 
 
 What ships next, in order, one PR each ([how versions work](roadmap.md#versions)):
 
-1. **v3.6: points in the conversation, and Ask becomes Chat:** the tagger judges the student's answer to Lerni's last question (right, a real try, or nothing) and the server adds points, once per exchange, up to a daily cap; "⭐ +3" shows by the total; no multiple choice in the conversation. Tapping ⭐ in the header (every screen) opens a short "How to earn ⭐": 🏁 race in Games, or 💬 answer Lerni's questions in your own words in Chat.
-2. **v3.7: voice that fails says so:** a transcript that ends mid-letter (an accented character cut short) no longer crashes the clip (read whisper's output with `errors="replace"`; seen in production 2026-10-13); if `say` returns empty audio, startup prints `Voice (hold to talk): off` with the reason, instead of sending silence; the microphone is released if you let go before Safari asks; recording stops and sends at 30 seconds instead of dropping the end; a microphone failure switches to Type with a short note.
-3. **v3.8: production keeps running on its own:** run production and development the same way, as macOS LaunchAgents in the desktop session (start at login, restart after a crash); check `say` works there first. Until then both run in Terminal windows, and production stops if that window or the Mac does.
+1. **v3.6: production keeps running on its own:** run production and development the same way, as macOS LaunchAgents in the desktop session (start at login, restart after a crash); check `say` works there first. Until then production stops whenever its window closes: on 2026-10-18 it went down with a Claude app restart, because it ran in the app's Terminal panel.
+2. **v3.7: points in the conversation, and Ask becomes Chat:** the tagger judges the student's answer to Lerni's last question (right, a real try, or nothing) and the server adds points, once per exchange, up to a daily cap; "⭐ +3" shows by the total; no multiple choice in the conversation. Tapping ⭐ in the header (every screen) opens a short "How to earn ⭐": 🏁 race in Games, or 💬 answer Lerni's questions in your own words in Chat.
+3. **v3.8: voice that fails says so:** a transcript that ends mid-letter (an accented character cut short) no longer crashes the clip (read whisper's output with `errors="replace"`; seen in production 2026-10-13); if `say` returns empty audio, startup prints `Voice (hold to talk): off` with the reason, instead of sending silence; the microphone is released if you let go before Safari asks; recording stops and sends at 30 seconds instead of dropping the end; a microphone failure switches to Type with a short note.
 4. **Version 4, remembering:** Bridge Trip (a trip along their map with recall stops) is its front door; its first PR writes the plan.
 
 How PRs are split:
@@ -62,7 +62,7 @@ Versions 1 and 2 also need sessions, not code: the educator sets goals, rehearse
 - [ ] Check Claude's answer keys: add answer-correctness cases to `eval_race.py` (it checks only questions that survived the filter), then maybe a cheap second pass where Haiku answers its own questions and the server drops disagreements; later a "this question seems wrong" button that doesn't use up a race.
 - [ ] After a wrong answer, keep the answered question on screen with its why, then **Next**, instead of showing the why under the next question.
 - [ ] Garage extras: read-aloud 🔊 on cards; a short "here are your keys" moment on buying (reduced motion respected); paint and a number plate bought with ⭐; shark, rocket or dinosaur bodies for students who aren't into cars; an educator preview of a student's race questions.
-- [ ] Two weeks after v3.6: are Lerni's questions getting real answers, or are points just being hunted? Tune the points, or stop.
+- [ ] Two weeks after v3.7: are Lerni's questions getting real answers, or are points just being hunted? Tune the points, or stop.
 
 ### Later: Version 4 Remembering
 
