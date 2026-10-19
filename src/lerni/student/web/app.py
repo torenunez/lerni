@@ -104,7 +104,10 @@ _CSS = """
 /* Hold to talk: a big round button for the thumb, red and pulsing while held */
 .lerni-hide { display: none !important; }
 /* Games: the ⭐ in the header, big answer buttons, and a track that doesn't sprawl */
-.lerni-stars p { font-size: 16px; margin: 0; white-space: nowrap; }
+.lerni-stars { min-height: 44px !important; font-size: 16px !important; flex-grow: 0 !important;
+  min-width: 0 !important; white-space: nowrap; }
+#lerni-earn { font-size: 16px; padding: 8px 12px !important; border-radius: 12px;
+  background: var(--color-accent-soft); }
 .lerni-question p { font-size: 18px; }
 .lerni-choice { min-height: 56px !important; font-size: 18px !important; }
 /* the garage: your car big at the top, then tiles, 2 across on a phone */

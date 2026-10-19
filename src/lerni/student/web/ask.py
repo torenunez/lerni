@@ -118,10 +118,13 @@ def ask_tab(
     conversations: Conversations | None,
     supervised: bool = False,
     speech: Speech | None = None,
-) -> tuple[gr.Tab, gr.Chatbot, gr.Checkbox]:
+) -> tuple[gr.Tab, gr.Chatbot, gr.Checkbox, list[Any]]:
     """Chat (independent students) or, with ``supervised``, a supervised student's whole screen.
 
     With ``speech``, a Hold to talk button too (the browser side is ``talk.js``).
+
+    Returns:
+        The tab, its chat, the supervised-voice box, and its answer events (typed and spoken).
     """
     ready = conversations is not None
     label, tab_id = ("Chat", "home") if supervised else ("Chat", "ask")
@@ -325,4 +328,4 @@ def ask_tab(
         if talks:
             # pressing the talk button stops any answer, like Stop (the page presses hush)
             hush.click(unlock, None, controls, cancels=events, **PRIVATE)
-    return tab, chat, voice
+    return tab, chat, voice, events
