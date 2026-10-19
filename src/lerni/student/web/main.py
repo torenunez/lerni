@@ -46,7 +46,7 @@ _LABELS = {"home": "Chat", "games": "Games", "ask": "Chat", "mymap": "My MentalM
 EARN = ("**How to earn ⭐**\n\n🏁 **Race** in Games: get answers right to win.\n\n"
         "💬 **Chat** with Lerni: answer its questions in your own words. "
         "⭐ +3 for a right answer, ⭐ +1 for a good try.")
-WATCH_TICKS = 5  # after an answer, look for new ⭐ every 2 seconds this many times
+WATCH_TICKS = 20  # after an answer, look for new ⭐ every 2 s, past the tagger's 30 s limit
 TOGGLE_EARN = "() => document.getElementById('lerni-earn')?.classList.toggle('lerni-hide')"
 
 

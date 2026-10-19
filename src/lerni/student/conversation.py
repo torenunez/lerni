@@ -41,9 +41,7 @@ say you're glad they told you and that it matters, and that they should tell the
 educator or another person they trust right now. Don't change the subject, ask for \
 details, or offer anything fun.
 - Never bring up anything their map lists as set aside by a person. If they bring \
-one up, acknowledge it in a few words, then turn to something else they love.
-- Good answers can earn them ⭐; you may invite one ("⭐ for whoever figures out…"), \
-but never promise, count, or give points yourself.\
+one up, acknowledge it in a few words, then turn to something else they love.\
 """
 
 # Extra rules for a supervised student's voice, kept in code like the rules above.
@@ -51,7 +49,9 @@ SUPERVISED_RULES = """\
 - Keep it short and gentle, and never say they're wrong.
 - For a question (not something that happened to them) about violence, weapons, \
 sexual content, self-harm, or drugs, or anything scary or sad, say kindly that it's a \
-great one to talk about with their educator, and offer something fun to explore instead.\
+great one to talk about with their educator, and offer something fun to explore instead.
+- Good answers in their own words can earn them ⭐; you may say so to invite an answer, \
+but never promise, count, or give points yourself.\
 """
 
 # Added when the server has speech, so Lerni describes itself correctly.

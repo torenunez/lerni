@@ -28,7 +28,12 @@ from lerni.student.logs import ConversationLog  # noqa: E402
 from lerni.student.points import PointsStore  # noqa: E402
 from lerni.student.race import Quizzer, RaceDesk  # noqa: E402
 from lerni.student.signin import SignIn, cookie_name, load_secret  # noqa: E402
-from lerni.student.students import StudentStore, default_data_dir  # noqa: E402
+from lerni.student.students import (  # noqa: E402
+    AccountError,
+    Kind,
+    StudentStore,
+    default_data_dir,
+)
 from lerni.student.tagging import MapKeeper, Tagger  # noqa: E402
 from lerni.student.upload import Uploader  # noqa: E402
 from lerni.student.usage import Usage  # noqa: E402
@@ -241,7 +246,14 @@ def build_app(
 
     races = RaceDesk(quizzer, maps, points) if quizzer is not None else None
     log.purge()  # at startup; then once a day as exchanges are logged
-    keeper = MapKeeper(maps, tagger, log, points=points)
+    def plays(username: str) -> bool:  # supervised students and educators earn ⭐
+        try:
+            student = students.get(username)
+        except AccountError:
+            return False
+        return student.kind is Kind.SUPERVISED or student.educator
+
+    keeper = MapKeeper(maps, tagger, log, points=points, earns=plays)
     conversations = (
         Conversations(
             chat_model, context=keeper.context, on_exchange=keeper.after, spoken=speech is not None

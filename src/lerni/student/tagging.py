@@ -119,9 +119,10 @@ class MapKeeper:
         run: Callable[[Callable[[], None]], None] = _background,
         today: Callable[[], date] = date.today,
         points: PointsStore | None = None,
+        earns: Callable[[str], bool] = lambda username: True,
     ) -> None:
         self.maps, self.tagger, self.log = maps, tagger, log
-        self.run, self.today, self.points = run, today, points
+        self.run, self.today, self.points, self.earns = run, today, points, earns
 
     def context(self, username: str) -> str:
         """The map block for this student's prompt."""
@@ -146,7 +147,8 @@ class MapKeeper:
             tags = parse_tags(self.tagger.tag(TAGGER_SYSTEM, prompt))  # type: ignore[union-attr]
         except Exception:  # noqa: BLE001 - a failure just skips this update
             return "failed"
-        if self.points is not None and tags.answered and not tags.skip and ex.is_current():
+        if (self.points is not None and tags.answered and not tags.skip and ex.is_current()
+                and self.earns(ex.username)):  # players only: others never see ⭐
             # a real answer earns ⭐ even if the map update turns out stale; never after New
             self.points.award(ex.username, f"chat-{ex.id}", "chat",
                               CHAT_POINTS[tags.answered], self.today())
