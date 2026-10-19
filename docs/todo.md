@@ -8,28 +8,38 @@ Open tasks by who does the work. The educator and admin tracks run in parallel: 
 
 - [ ] Think of 2–3 things you'd like the supervised student to explore (with a note each on what you have in mind). Add them on MentalMaps (☰ → MentalMaps): type them into the list, or tell the chat, or attach your notes with 📎 and tick what to add.
 
-- [ ] Before the first race (v3.1): check the goals on MentalMaps are what you'd like the race to practice, since its questions come from them; then sit with the supervised student for their first race.
+- [ ] Before the first race: check the goals on MentalMaps are what you'd like the race to practice, since its questions come from them; then sit with the supervised student for their first race.
 
 ### Later: Version 1 MVP
 
 - [ ] Talk with Lerni yourself for a few days and watch your own MentalMap; tell the admin what's confusing, or mention it in the MentalMaps chat.
 - [ ] Try the conversation with the supervised-student voice, then sit beside the supervised student for a short first conversation. Keep notes private, or mention them in the MentalMaps chat.
 
+### Later: Version 4 Remembering
+
+- [ ] Pick one goal for the first fact cards (acceleration or fractions) and review a dozen short cards for it, with sources.
+
 ## Admin
 
 ### Now
 
-- [ ] Check v3.3 on the iPhone and iPad (both on the same Wi-Fi as the Mac): the race and garage in Games, both MentalMap screens, and Hold to talk.
+- [ ] Check v3.7 on the iPhone and iPad (both on the same Wi-Fi as the Mac): Games, the ⭐ tap and "+3" in Chat, both MentalMap screens, and Hold to talk.
 - [ ] Turn off extra usage (paid credits) on the Claude account Lerni uses (claude.ai → Settings → Usage), so Lerni can never spend credits; Lerni also rests if a call ever uses them.
-- [ ] Pick Lerni's voice ([admin reference: Voice](reference/admin.md#voice)), try Hold to talk on the iPad, then with the supervised student and an adult nearby (Version 2 is done when their map grows from a spoken conversation).
+- [ ] Pick Lerni's voice ([admin reference: Voice](reference/admin.md#voice); after v3.10, which passes it to the service), try Hold to talk on the iPad, then with the supervised student and an adult nearby (Version 2 is done when their map grows from a spoken conversation).
 - [ ] Optionally delete the old plan files on the home server (`~/.lerni/student/plans/`); nothing reads them any more.
 
 ### Upcoming versions
 
 What ships next, in order, one PR each ([how versions work](roadmap.md#versions)):
 
-1. **v3.8: voice that fails says so:** a transcript that ends mid-letter (an accented character cut short) no longer crashes the clip (read whisper's output with `errors="replace"`; seen in production 2026-10-13); if `say` returns empty audio, startup prints `Voice (hold to talk): off` with the reason, instead of sending silence; the microphone is released if you let go before Safari asks; recording stops and sends at 30 seconds instead of dropping the end; a microphone failure switches to Type with a short note.
-2. **Version 4, remembering:** Bridge Trip (a trip along their map with recall stops) is its front door; its first PR writes the plan.
+1. **v3.8: the plan after the ML review:** this list, the roadmap, and docs drift (docs only).
+2. **v3.9: map and race fixes:** loading an old map keeps a set-aside beside a near-name interest ("guns" stays set aside; the interest "gun" goes), and heals only beside a goal; questions Claude writes while a race starts are checked against the map again, and too few left refuses the race before it's counted; a plural "es" counts only after s, x, z, ch, or sh (bus and buses, never plan and planes), and "pi"/"pies" and "news"/"new" stop matching; the map block leaves out whole lines instead of cutting at 1,500 characters.
+3. **v3.10: services that say when they fail:** `install` and `restart` wait for the server to answer and otherwise print the last log lines and fail; `install` passes the `LERNI_*` settings (`LERNI_SAY_VOICE`, the models) to the server, since a LaunchAgent gets none of the shell's; the dev/prod data check compares real folders (case, symlinks), refuses production on development's data and development on port 7860, and warns when production isn't on `main`; a PATH without `claude` or `whisper-cli` warns at install; `stop` says when nothing was running; logs rotate by size.
+4. **v3.11: voice that fails says so:** a transcript that ends mid-letter (an accented character cut short) no longer crashes the clip (read whisper's output with `errors="replace"`; seen in production 2026-10-13); if `say` returns empty audio, startup prints `Voice (hold to talk): off` with the reason, instead of sending silence; the microphone is released if you let go before Safari asks; recording stops and sends at 30 seconds instead of dropping the end; a microphone failure switches to Type with a short note; time a transcription under the LaunchAgent against Terminal, and set `ProcessType` to `Interactive` if it's slower.
+5. **v3.12: right answers, and a results log:** arithmetic answers are computed by the server from the question's numbers; a second, blind Haiku pass answers each question, and a disagreement drops it (about one more small call per 10 questions); `eval_race.py` gains wrong-key cases. Each race answer is logged as numbers only (`<data>/results/<user>.jsonl`: date, goal id, question hash, right or wrong, seconds, place, version; never question or answer text), and the educator sees "fractions: 7/10 right this week" on MentalMaps.
+6. **v3.13: spec 10, local embeddings:** a local embedder run as a command like `whisper-cli` (llama.cpp `llama-embedding` with a small model in `~/.lerni/models/`, chosen by a bake-off on about 100 labelled name pairs; nothing hosted), behind an adapter with a fake for tests, vectors cached by name. Uses: catch set-aside topics by meaning in race questions (beside the word match, never instead), shortlist near-miss names ("racecars" and "race cars": normalise first, merge only when spelling agrees too), and rank the map block by the current message (whole lines; safety lines first). It flags and shortlists only; it never changes the map. Lifts spec 08's "no embeddings" for these uses only; and the plan.
+7. **v3.14: local embeddings built,** per spec 10. Without the embedder, everything falls back to today's behavior.
+8. **Version 4, remembering:** opens with an educator-approved fact-card library for one goal (`~/.lerni/library/`, nothing about any student): race questions quote a card and the server checks the quote; cards go into the map block as information; recall questions come from cards, with recall attempts kept apart from discussion (FSRS or SM-2). Bridge Trip (a trip along their map with recall stops) is its front door; its first PR writes the plan.
 
 How PRs are split:
 
@@ -57,15 +67,16 @@ Versions 1 and 2 also need sessions, not code: the educator sets goals, rehearse
 - [ ] Pit stop: fill a toy car's fuel gauge with quarters, then the same amount with eighths (fixed math, no Claude calls); the educator sketches the scene first.
 - [ ] An educator "reset points", and Games for independent students.
 - [ ] Other games: Beat builder (rhythm and fractions), Recipe mixer (ratios), Build and balance.
-- [ ] Check Claude's answer keys: add answer-correctness cases to `eval_race.py` (it checks only questions that survived the filter), then maybe a cheap second pass where Haiku answers its own questions and the server drops disagreements; later a "this question seems wrong" button that doesn't use up a race.
+- [ ] A "this question seems wrong" button that doesn't use up a race.
 - [ ] After a wrong answer, keep the answered question on screen with its why, then **Next**, instead of showing the why under the next question.
 - [ ] Garage extras: read-aloud 🔊 on cards; a short "here are your keys" moment on buying (reduced motion respected); paint and a number plate bought with ⭐; shark, rocket or dinosaur bodies for students who aren't into cars; an educator preview of a student's race questions.
-- [ ] Two weeks after v3.7: are Lerni's questions getting real answers, or are points just being hunted? Tune the points, or stop.
+- [ ] Two weeks after v3.7: are Lerni's questions getting real answers, or are points just being hunted? `answered` is Claude's judgment, not a check, so spot-check it in `lerni logs`. Tune the points, or stop.
 
 ### Later: Version 4 Remembering
 
 - [ ] Personal personas: Lerni learns what each student likes over time (topics, examples, answer length), starting from the persona for their kind; visible to the student, and to the educator for a supervised student.
-- [ ] Write the Version 4 plan (`plans/v4.1-remembering.md`), starting from the MentalMap: recall questions about goals the student once explained, tracking the last recall attempt apart from the last time a goal was discussed.
+- [ ] Write the Version 4 plan (`plans/v4.1-remembering.md`), starting from the MentalMap and the fact cards: recall questions about goals the student once explained, tracking the last recall attempt apart from the last time a goal was discussed.
+- [ ] Later, once the results log has months of data: a per-goal difficulty number (never shown) to ask for easier or harder questions; embedding hints for proposals already on the map, "kind of" suggestions, and repeated race questions.
 
 ### Before anyone outside the family uses the app
 
@@ -79,16 +90,16 @@ Versions 1 and 2 also need sessions, not code: the educator sets goals, rehearse
 
 - [ ] **Chat:** Stop before the first word can be slow and a quick re-ask may say "Still answering"; the two chat panels allow 8 answers at once instead of 4 (share one concurrency id); a cancel can log "Exception ignored"; the new message isn't JSON like earlier turns; when Claude isn't set up the supervised screen greets over a disabled box; the guns redirect offered squirt guns (offer something unrelated).
 - [ ] **Upload and feedback:** cap how big a .docx may expand when read, and show a friendly message for a malformed one; a file-read error can hide its cause; no server-side check for real names in proposals; "Tick what to add" shows when every idea is already on the map; `lerni feedback done` can lose an entry saved at the same moment and finds entries by position; editing feedback after checking keeps the old summary; Claude pads goal notes with restatements.
-- [ ] **The map:** the map block's 1,500-character cut can cut a line mid-word; top interests rank by all-time days rather than the last 30; a faded explained goal can be listed twice in the block; the MentalMaps timer ticks on every page; an unreadable map file shows a Gradio error; `lerni logs` can fail if a purge runs mid-read.
+- [ ] **The map:** top interests rank by all-time days rather than the last 30; a faded explained goal can be listed twice in the block; the MentalMaps timer ticks on every page; an unreadable map file shows a Gradio error; `lerni logs` can fail if a purge runs mid-read.
 - [ ] **Educator chat:** a proposal names its target, so an old one can change a newer item with the same name; Clear or a new student can be undone by a reply still arriving; 📎 notes are sent again every turn; removals are reported as "Added".
 - [ ] **Tagging:** two quick answers' tags can land out of order, and a subject change counts against the newest bridge rather than the one in the answer before.
 - [ ] **MentalMap list:** a redraw trusts the owner set by the last checked handler and doesn't re-check the viewer (every edit does).
 - [ ] **Games:** in dark mode the MentalMap picture's labels are hard to read, and the white car is faint on the light track; when the student leads, the slowed bot named may be behind; a tap within 0.8 s is dropped silently; the MentalMaps points line refreshes only on picking a student; the quiz prompt's "race cars" example may pull every question toward cars. Garage file: a car removed from it disappears from its owners (add a `retired` flag instead, and say so in the admin reference); one route-test path is rewritten by the test client; the picture route serves any signed-in account, has no `nosniff`, and caches a replaced picture for a day. `lift_car.swift`: a bad crop number crashes it, it keeps every foreground object (a person beside the car), writes full size, and may ignore a photo's rotation.
-- [ ] **Groups:** the plural rule matches short words ("pi" and "pies"); a group ticked in the MentalMaps chat can bring back a removed name without Put back, and one failing member skips the rest; the tagger can link any two names on the map without seeing the existing groups, and "Not under" blocks one direction only.
+- [ ] **Groups:** a group ticked in the MentalMaps chat can bring back a removed name without Put back, and one failing member skips the rest; the tagger can link any two names on the map without seeing the existing groups, and "Not under" blocks one direction only.
 - [ ] **Chat points (v3.7 review):** the ⭐ baseline is read when an answer ends, so a much faster tagger could add points before it and "+3" wouldn't show (read it when the answer starts); two answers close together announce only the second; "⭐ N +3" stays on the button until the next refresh; `games_tab` still types the header ⭐ as Markdown.
-- [ ] **Services (v3.6 review):** `install prod` from the development checkout would run a branch as production (warn when prod isn't on `main`); a PATH from SSH or cron drops `claude` and `whisper-cli` silently (warn at install); `stop` says "Stopped." even when nothing was loaded, and status could say "stopped" rather than "not answering"; logs aren't rotated.
-- [ ] **Garage (v3.5 review):** a driven car gone from the garage file leaves no tile saying "Driving" (the hero shows the starter); with no garage file a new player reads "Every car is yours! 🏆" over an empty Showroom; a cartoon car's Car facts holds only the ⚡ line (skip it); the Car facts line writes $2,500 instead of using `PRICE_PER_STAR`; car names go into the result line's Markdown unescaped; after buying on the finish screen the new car shows only on the next race.
-- [ ] **Names and races (v3.4 review):** a set-aside "pi" still blocks "pies", and "news" blocks "new" (singulars are cut without a length or word check); a failed first Race tap makes a second waiting tap try Claude twice more (remember the failure for a few seconds); when the only goal is removed, its held questions still race; the Race catch-all logs nothing (log the error's type only); re-adding "shark" drops the removed "sharks" history; after Put back a kind can sit under both a group and that group's parent.
+- [ ] **Services:** status could say "stopped" rather than "not answering"; `restart` after `stop` says "isn't installed", a hand-edited plist gives a traceback, and launchctl errors print three times.
+- [ ] **Garage (v3.5 review):** a driven car gone from the garage file leaves no tile saying "Driving" (the hero shows the starter); with no garage file a new player reads "Every car is yours! 🏆" over an empty Showroom; a cartoon car's Car facts holds only the ⚡ line (skip it); the Car facts line writes $2,500 instead of using `PRICE_PER_STAR`; car names go into the result line's Markdown unescaped; after buying on the finish screen the new car shows only on the next race; ⚡ 1–5 stands for only 3 race outcomes (⚡⚡⚡ to ⚡⚡⚡⚡⚡ race alike: use ⚡ 1–3 or a smooth boost); `usd: true` loads as $1 and `name: null` shows "None".
+- [ ] **Names and races (v3.4 review):** a failed first Race tap makes a second waiting tap try Claude twice more (remember the failure for a few seconds); when the only goal is removed, its held questions still race; the Race catch-all logs nothing (log the error's type only); re-adding "shark" drops the removed "sharks" history; after Put back a kind can sit under both a group and that group's parent.
 - [ ] **Safety:** nothing tells the educator when a student says they're hurt (a content-free "check in with the student" flag would); a sad-but-not-harm message ("my dog died") isn't clearly covered; the disclosure eval runs each case once and checks keywords.
 - [ ] **Menu:** the closed drawer is still reachable by keyboard and VoiceOver.
 - [ ] **Accounts:** two educators archiving each other leaves none (recover with `lerni student add`); password hashing runs inside the account write lock; a live session can guess its current password in My account without the sign-in delay; a non-ASCII cookie gives a 500; an archived account is detectable by timing; `/signin` has no Origin check and `/signout` is a GET; the data folder is created 0755; a password change doesn't sign out other devices.

@@ -103,7 +103,7 @@ As a student, I want to hold one button to talk and let go when I'm done, so tha
 
 ## Version 3: play and points
 
-The student doesn't always take Lerni's questions seriously; points give them a reason to. Design: spec 09 (written in v3.0).
+The student doesn't always take Lerni's questions seriously; points give them a reason to. Design: [spec 09](../../plans/specs/09-play-and-points.md).
 
 ### Story: Race to win points
 

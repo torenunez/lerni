@@ -6,7 +6,7 @@ Build plans, named `v<major>.<minor>-<name>.md` for the version they ship (older
 |---|---|---|
 | 1 — MVP | [release-1-mvp.md](release-1-mvp.md) | Built; sessions next |
 | 2 — Voice | [spec 05](specs/05-voice.md), [HTTPS](release-2-step-1-https.md), [voice](release-2-step-2-voice.md) | Built; sessions next |
-| 3 — Play and points | [spec 09](specs/09-play-and-points.md), [v3.1 plan](v3.1-race.md) | Next |
+| 3 — Play and points | [spec 09](specs/09-play-and-points.md), [v3.1 plan](v3.1-race.md) | Under way (v3.1–v3.7 built) |
 | 4 — Remembering | Not written | Later |
 | 5 — Suggested goals | Not written. Start from [later/prs/11-recommendations.md](later/prs/11-recommendations.md) | Later |
 | 6 — Without an educator present | Not written | Later |

@@ -148,6 +148,7 @@ At about 50 ⭐ a day, a $100,000 car comes on day 1 and a $5 million one after 
   - `right`: Lerni's previous message asked a question and the student answered it correctly;
   - `tried`: a real attempt in their own words;
   - empty: anything else.
+  - This is Claude's judgment, not a check; it's spot-checked in the logs.
 - **Each exchange gets an id;** that is the award id.
 - **The award is applied even if the map update is stale** (a person edited the map meanwhile), but not after New conversation.
 - **The ⭐ total refreshes** with a short timer that runs for a few seconds after each answer, then stops.

@@ -60,7 +60,7 @@ Grades mean blackout (0), recognition after seeing the answer (1), apparent ease
 
 ## Running the student app
 
-`lerni serve` runs the student app on the home server (Version 1: sign-in; Chat, My MentalMap, and My account for independent students; MentalMaps and Students for educators; the conversation, full screen, for a supervised student).
+`lerni serve` runs the student app on the home server (Version 1: sign-in; Chat, My MentalMap, and My account for independent students; MentalMaps, Students, and Games for educators; Chat, full screen, and Games for a supervised student).
 
 ```bash
 pip install -e ".[student]"                # once: installs Gradio
@@ -90,7 +90,7 @@ lerni serve                                 # binds 0.0.0.0:7860
 ### Two environments
 
 - **Production:** the home server, on `main`, port 7860, the real data folder (`~/.lerni/student/`). The family uses it; on the student's iPad, open it in Safari and use Share → Add to Home Screen.
-- **Development:** the computer where changes are built, on a branch, port 7861, its own data folder and made-up test accounts: `LERNI_STUDENT_DATA=~/.lerni/student-dev lerni serve --port 7861 --label Development` plus the same `--cert` and `--key` as production, so its address stays `https://` (add accounts the same way: `LERNI_STUDENT_DATA=~/.lerni/student-dev lerni student add tester …`). Bookmark it on the admin's phone; it has its own sign-in, so both bookmarks stay signed in.
+- **Development:** the computer where changes are built, on a branch, port 7861, its own data folder and made-up test accounts, run with `lerni service install dev` ("Running on its own" below), so its address stays `https://` too (add accounts the same way: `LERNI_STUDENT_DATA=~/.lerni/student-dev lerni student add tester …`). Bookmark it on the admin's phone; it has its own sign-in, so both bookmarks stay signed in.
 - Never point development at `~/.lerni/student/`, or test conversations land in the real maps and logs. Both use the admin's Claude account, so heavy testing uses the same plan.
 
 ### Updating the home server
@@ -122,7 +122,7 @@ iPad Safari allows the microphone only over HTTPS. Lerni uses its own certificat
 1. `brew install mkcert`. Its first run creates a small private certificate authority on this Mac; skip `mkcert -install`, which only makes this Mac trust it.
 2. Make the server's certificate, naming every way devices reach it: `mkcert -cert-file ~/.lerni/student/https.pem -key-file ~/.lerni/student/https-key.pem <home-server>.local <its-IP> localhost`. The key stays on the home server; never copy it into the repo.
 3. On each device (iPad, phones): send it the authority's certificate, `"$(mkcert -CAROOT)/rootCA.pem"` (AirDrop works), open it to install the profile (Settings → Profile Downloaded, or General → VPN & Device Management → Install), then turn on full trust (Settings → General → About → Certificate Trust Settings).
-4. Start with `lerni serve --cert ~/.lerni/student/https.pem --key ~/.lerni/student/https-key.pem` and open `https://<home-server>.local:7860/`.
+4. Install the service with `--cert ~/.lerni/student/https.pem --key ~/.lerni/student/https-key.pem` ("Running on its own" above) and open `https://<home-server>.local:7860/`.
 
 Safari's saved password is for the old `http://` address; sign in once more and let it save again. Replace any bookmark or home-screen icon with the `https://` address (the old one stops working). If the server's IP changes, make the certificate again (step 2); a fixed address for the server in the router avoids that.
 
@@ -133,11 +133,11 @@ Once a device has signed in over HTTPS, keep serving HTTPS: if the server goes b
 Hold to talk needs HTTPS and two tools on the home server, run as commands (nothing else to keep running):
 
 1. `brew install whisper.cpp` (speech to text), then its model, about 0.5 GB: `mkdir -p ~/.lerni/models && curl -L -o ~/.lerni/models/ggml-small.bin https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small.bin`. Another place: set `LERNI_WHISPER_MODEL`.
-2. Lerni speaks with the Mac's own voice (`say`). To pick one, list them with `say -v '?'`, try one with `say -v NAME "Sharks are amazing swimmers!"`, and set `LERNI_SAY_VOICE=NAME` before `lerni serve`. Nicer voices download in System Settings → Accessibility → Spoken Content → System Voice.
-3. Restart `lerni serve`; it prints `Voice (hold to talk): on`. Check it with `.venv/bin/python scripts/eval_voice.py`.
+2. Lerni speaks with the Mac's own voice (`say`). To pick one, list them with `say -v '?'`, try one with `say -v NAME "Sharks are amazing swimmers!"`, and set `LERNI_SAY_VOICE=NAME` before `lerni serve` (the service doesn't pass it on yet; v3.10). Nicer voices download in System Settings → Accessibility → Spoken Content → System Voice.
+3. `lerni service restart prod`; its log prints `Voice (hold to talk): on`. Check it with `.venv/bin/python scripts/eval_voice.py`.
 4. On each device, so Safari stops asking for the microphone: on the Lerni page, the page menu in the address bar → Website Settings → Microphone → Allow.
 
-If answers show but are never spoken, on every device: the server was started inside `tmux` or over SSH; restart it with `lerni service restart`.
+If answers show but are never spoken, on every device: the server was started inside `tmux` or over SSH; run it with `lerni service` instead.
 
 Audio stays on the home server: each clip's temp file is deleted once it's heard, and spoken sentences are never saved.
 
