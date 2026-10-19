@@ -6,13 +6,17 @@ Record each kind of "done" only when it actually happens, with the date: code bu
 
 ## Current state (2026-10-14, v3.3 on the home server: Versions 1 and 2 built: the conversation, MentalMaps, HTTPS, and voice; Version 3's race)
 
-- **Built:** the student app's core (student accounts, sign-in, Lerni's conversations, the MentalMap with its tagger and 7-day logs, Upload and educator feedback, and the educator agent); `lerni serve` with a sign-in page and one app with a ☰ menu by role: an independent student's Ask, My MentalMap (an editable list, the picture, and Upload), and My account; an educator's MentalMaps (a student's list and picture, with a chat) and Students on top; a supervised student's conversation, full screen, and Games (a race for points spent on cartoon cars; educators race too). Hold to talk with spoken answers; a Claude usage warning and rest. The admin tool (`lerni`, with `lerni student`, `lerni logs`, and `lerni feedback`). A [code manifest](code-manifest.md) of every file. Tests: 157 passed.
+- **Built:** the student app's core (student accounts, sign-in, Lerni's conversations, the MentalMap with its tagger and 7-day logs, Upload and educator feedback, and the educator agent); `lerni serve` with a sign-in page and one app with a ☰ menu by role: an independent student's Ask, My MentalMap (an editable list, the picture, and Upload), and My account; an educator's MentalMaps (a student's list and picture, with a chat) and Students on top; a supervised student's conversation, full screen, and Games (a race for points spent on cartoon cars; educators race too). Hold to talk with spoken answers; a Claude usage warning and rest. The admin tool (`lerni`, with `lerni student`, `lerni logs`, and `lerni feedback`). A [code manifest](code-manifest.md) of every file. Tests: 158 passed.
 - **Designed:** the interest map, goals, the tagger, upload, feedback, and the supervised conversation ([specs/04-interest-map.md](../plans/specs/04-interest-map.md)); approved with PR #12.
 - **Not yet:** any supervised student session.
 
 When something changes, update this section and add a log entry below.
 
 ## Log
+
+### 2026-10-19 (production keeps running on its own; v3.6 built)
+
+- v3.6: `lerni service` runs the student app as macOS LaunchAgents, after production went down on 2026-10-18 with a Claude app restart (it ran in the app's Terminal panel). Each server starts at login, restarts within 10 seconds of a crash, and runs from its own checkout with the same settings as before; output goes to `~/Library/Logs/lerni/`. Checked first that `say` works from a LaunchAgent; then development moved over: Claude and voice on, back by itself after a forced crash, answering 2 seconds after a restart. Production moves after the merge. Tests: 158 passed.
 
 ### 2026-10-14 (the garage up front; v3.5 built)
 

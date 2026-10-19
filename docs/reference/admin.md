@@ -78,7 +78,7 @@ lerni serve                                 # binds 0.0.0.0:7860
 - A supervised student's iPad is signed in only as that student. Try the app as yourself on your own device or in a private tab.
 - Data lives in `~/.lerni/student/` (or `$LERNI_STUDENT_DATA`): `students/` (accounts, password hashes only), `secret.key` (signs the sign-in cookie; keep it private; deleting it signs everyone out), `maps/` (interest maps), `logs/` (each exchange, deleted after 7 days), and `feedback.jsonl`.
 - `--port` changes the default port; `--host 127.0.0.1` keeps it on this computer only; `--label Development` marks a development server on every page. Startup prints the running version (number, branch, commit, date), and the sign-in page shows it at the bottom: check it there after updating.
-- Start it in a Terminal window on the home server's own desktop, never inside `tmux` or over SSH: there macOS `say` makes empty audio, so answers show as text but are never spoken.
+- Run it with `lerni service` ("Running on its own" below), or in a Terminal window on the home server's own desktop; never inside `tmux` or over SSH: there macOS `say` makes empty audio, so answers show as text but are never spoken.
 - It never touches the admin tool's database.
 - **Claude** (Ask, the map's tagger, Upload, and the MentalMaps chat) turns on when the `claude` CLI is installed and logged in on this computer; it uses that Claude account, so there's no API key. `LERNI_CLAUDE_MODEL` picks the answering and upload model (default `claude-sonnet-5-5`), `LERNI_TAGGER_MODEL` the tagger's (default `claude-haiku-5-5`). Startup prints whether it's on.
 - **Claude usage:** Lerni shares the account's limits with the admin's own Claude use. Educators see a warning at 75% of the weekly limit or 80% of the 5-hour one, with the reset time; at 95%, or if a call ever uses paid extra usage, Lerni rests until the reset. Turn off extra usage on the Claude account too, so Lerni can never spend credits.
@@ -90,7 +90,7 @@ lerni serve                                 # binds 0.0.0.0:7860
 ### Two environments
 
 - **Production:** the home server, on `main`, port 7860, the real data folder (`~/.lerni/student/`). The family uses it; on the student's iPad, open it in Safari and use Share → Add to Home Screen.
-- **Development:** the computer where changes are built, on a branch, port 7861, its own data folder and made-up test accounts: `LERNI_STUDENT_DATA=~/.lerni/student-dev lerni serve --port 7861 --label Development` plus the same `--cert` and `--key` as production, so its address stays `https://` (add accounts the same way: `LERNI_STUDENT_DATA=~/.lerni/student-dev lerni student add tester …`). Bookmark it on the admin's phone; it's up only while it's started, and it has its own sign-in, so both bookmarks stay signed in.
+- **Development:** the computer where changes are built, on a branch, port 7861, its own data folder and made-up test accounts: `LERNI_STUDENT_DATA=~/.lerni/student-dev lerni serve --port 7861 --label Development` plus the same `--cert` and `--key` as production, so its address stays `https://` (add accounts the same way: `LERNI_STUDENT_DATA=~/.lerni/student-dev lerni student add tester …`). Bookmark it on the admin's phone; it has its own sign-in, so both bookmarks stay signed in.
 - Never point development at `~/.lerni/student/`, or test conversations land in the real maps and logs. Both use the admin's Claude account, so heavy testing uses the same plan.
 
 ### Updating the home server
@@ -99,13 +99,21 @@ The family uses whatever is on `main` while new features are built on branches. 
 
 1. In the production checkout: `git pull`.
 2. `.venv/bin/pip install -e ".[student]"` (only needed when a PR says dependencies or package files changed, but always safe).
-3. In the Terminal window running it: Ctrl-C, then start `lerni serve` again (with `--cert` and `--key` once HTTPS is set up).
+3. `.venv/bin/lerni service restart prod`.
 
 Caveats:
 
 - A restart clears open conversations (they live in memory); accounts, maps, logs, and feedback stay. Restart between sessions, not during one.
 - Never run a branch as production; test branches as development ("Two environments" above).
 - Each PR's Deploying section says whether it's safe to use yet and anything extra to do; if it says not yet, leave the server on the previous `main` (the merge can wait, or `git checkout <the previous merge>` on the server).
+
+### Running on its own
+
+Both servers run as macOS LaunchAgents: they start when the admin logs in (after a reboot too, once someone logs in) and restart within 10 seconds of a crash, whatever happens to a Terminal window. Install once, from each checkout, after stopping any copy running in a Terminal window (otherwise its port is taken):
+
+- Production, in the production checkout: `.venv/bin/lerni service install prod --cert ~/.lerni/student/https.pem --key ~/.lerni/student/https-key.pem`.
+- Development, in the development checkout: `.venv/bin/lerni service install dev --data ~/.lerni/student-dev` plus the same `--cert` and `--key`.
+- Then `lerni service status` (running and answering?), `restart prod|dev` (after an update or a branch change), `stop`, or `uninstall`. Output goes to `~/Library/Logs/lerni/<name>.log`.
 
 ### HTTPS (for voice)
 
@@ -129,7 +137,7 @@ Hold to talk needs HTTPS and two tools on the home server, run as commands (noth
 3. Restart `lerni serve`; it prints `Voice (hold to talk): on`. Check it with `.venv/bin/python scripts/eval_voice.py`.
 4. On each device, so Safari stops asking for the microphone: on the Lerni page, the page menu in the address bar → Website Settings → Microphone → Allow.
 
-If answers show but are never spoken, on every device: the server was started inside `tmux` or over SSH; restart it in a Terminal window on the Mac.
+If answers show but are never spoken, on every device: the server was started inside `tmux` or over SSH; restart it with `lerni service restart`.
 
 Audio stays on the home server: each clip's temp file is deleted once it's heard, and spoken sentences are never saved.
 
