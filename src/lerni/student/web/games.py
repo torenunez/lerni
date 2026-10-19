@@ -293,7 +293,8 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
             ask = f"Question {view['number'] + 1} of {QUESTIONS_PER_RACE}\n\n**{view['question']}**"
             buttons = [gr.update(visible=True, value=c) for c in view["choices"]]
             go_update, ref = gr.update(visible=False), (race.id, race.answered)
-        return [stars(points, viewer),
+        mine = stars(points, viewer)
+        return [gr.update(value=mine, visible=bool(mine)),
                 gr.update(value=hero_html(garage, p), visible=race is None),
                 gr.update(value=track_svg(race, driving, garage), visible=race is not None),
                 ask, *buttons, line, go_update, ref, *garage_updates(p)]

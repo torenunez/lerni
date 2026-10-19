@@ -54,6 +54,13 @@ def main() -> None:
     m = run(m, "", "How do car engines work?",
             "An engine burns fuel to push pistons that turn the wheels. Want to see how?")
     results.append(("an engine is part of a car, not a kind", not parents(m, m.find("engines").id)))
+    # 6–7. a real answer to Lerni's question is "right"; emojis earn nothing
+    asked = "What do you think makes a car speed up: the engine pushing harder, or the paint?"
+    for answer, want in (("the engine pushes it harder", "right"), ("🤷😂", None)):
+        raw = ClaudeCodeTagger().tag(TAGGER_SYSTEM, tagger_input(InterestMap(), asked, answer,
+                                                                 "Nice! Engines push."))
+        print(answer, "→", raw)
+        results.append((f"{answer!r} answered {want}", parse_tags(raw).answered == want))
     for name, ok in results:
         print("PASS" if ok else "FAIL", name)
 

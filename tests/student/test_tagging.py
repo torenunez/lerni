@@ -61,3 +61,48 @@ def test_logs_older_than_7_days_are_deleted(tmp_path):
         (folder / f"{(TODAY - timedelta(days=age)).isoformat()}.jsonl").write_text("{}\n")
     log.purge()
     assert sorted(p.stem for p in folder.iterdir()) == ["2026-10-04"]
+
+
+def test_a_real_answer_earns_stars_once_and_never_when_skipped_stopped_or_cleared(tmp_path):
+    from lerni.student.points import CHAT_CAP, PointsStore
+
+    points, tags = PointsStore(tmp_path), {"answered": "right"}
+    k = MapKeeper(MapStore(tmp_path), FakeTagger(tags), None, run=lambda f: f(),
+                  today=lambda: TODAY, points=points)
+    ex = Exchange("sam", "What makes it speed up?", "the engine pushes", "Yes!", False,
+                  lambda: True)
+    k.after(ex)
+    k.after(ex)  # tagged again: the same exchange awards once
+    assert points.get("sam").balance == 3
+    tags["answered"] = "tried"
+    k.after(exchange("maybe the wheels"))
+    assert points.get("sam").balance == 4
+    tags["answered"] = "right"
+    for skip, stopped, current in (("scary", False, True), (None, True, True),
+                                   (None, False, False)):
+        tags["skip"] = skip
+        k.after(exchange("an answer", stopped=stopped, current=current))
+    assert points.get("sam").balance == 4  # skipped, stopped, or New conversation: nothing
+    tags["skip"] = None
+    for _ in range(20):
+        k.after(exchange("an answer"))
+    assert points.get("sam").balance == CHAT_CAP  # Chat stops at the day's cap
+
+
+def test_only_players_earn_stars_and_the_watch_outlasts_the_tagger(tmp_path):
+    # regression: an independent student earned stars they could never see or spend
+    from lerni.student.adapters.claude_code import TAG_TIMEOUT_SECONDS
+    from lerni.student.conversation import system_prompt
+    from lerni.student.points import PointsStore
+    from lerni.student.web.main import WATCH_TICKS
+
+    points = PointsStore(tmp_path)
+    k = MapKeeper(MapStore(tmp_path), FakeTagger({"answered": "right"}), None,
+                  run=lambda f: f(), today=lambda: TODAY, points=points,
+                  earns=lambda username: username == "sam")
+    k.after(exchange("the engine pushes"))
+    k.after(Exchange("ivy", "", "the engine pushes", "Yes!", False, lambda: True))
+    assert (points.get("sam").balance, points.get("ivy").balance) == (3, 0)
+    assert "⭐" in system_prompt("", "supervised") and "⭐" not in system_prompt("", "independent")
+    # regression: the header stopped looking for "+3" before a slow tagger finished
+    assert WATCH_TICKS * 2 > TAG_TIMEOUT_SECONDS

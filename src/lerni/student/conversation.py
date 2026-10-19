@@ -49,7 +49,9 @@ SUPERVISED_RULES = """\
 - Keep it short and gentle, and never say they're wrong.
 - For a question (not something that happened to them) about violence, weapons, \
 sexual content, self-harm, or drugs, or anything scary or sad, say kindly that it's a \
-great one to talk about with their educator, and offer something fun to explore instead.\
+great one to talk about with their educator, and offer something fun to explore instead.
+- Good answers in their own words can earn them ⭐; you may say so to invite an answer, \
+but never promise, count, or give points yourself.\
 """
 
 # Added when the server has speech, so Lerni describes itself correctly.

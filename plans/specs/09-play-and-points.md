@@ -30,7 +30,7 @@ Approved in conversation on 2026-10-12. Requirements: [student PRD, Version 3](.
   - Earlier points and cars stay either way.
 - **The header** shows ⭐ points on every screen for a player (supervised students and educators). From v3.7, tapping it opens a short "How to earn ⭐": 🏁 race in Games, or 💬 answer Lerni's questions in your own words in Chat.
 
-### Chat (v3.7; Ask is renamed Chat)
+### Chat (built in v3.7; Ask is renamed Chat, and so is the supervised screen's menu item)
 
 - Chat stays a conversation, typed or spoken, with no multiple choice.
 - When the student really answers Lerni's question, "⭐ +3" (a right answer) or "⭐ +1" (a real try in their own words) appears by their points a few seconds later. Emojis, "idk", or a new subject earn nothing, and nothing says "wrong".

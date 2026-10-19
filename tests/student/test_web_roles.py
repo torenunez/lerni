@@ -206,13 +206,13 @@ def test_uploads_over_5_mb_are_refused_and_leftovers_expire(tmp_path):
 
 
 def test_a_supervised_student_signs_in_to_the_conversation(tmp_path):
-    # the page has three chats (Ask, the supervised screen, Maps); only Home is a supervised tab
+    # the page has three chats (Chat, the supervised screen, Maps); only Home is a supervised tab
     StudentStore(tmp_path).add("lee", "Lee", Kind.SUPERVISED, "1234")
     client = TestClient(build_app(data_root=tmp_path))
     client.post("/signin", data={"username": "lee", "password": "1234"})
     config = client.get("/app/config").json()
     labels = [c["props"].get("label") for c in config["components"] if c.get("type") == "tabitem"]
-    assert "Lerni" in labels
+    assert "Chat" in labels
     chats = [c for c in config["components"] if c.get("type") == "chatbot"]
     assert len(chats) == 3
     assert "Get ready to explore" not in client.get("/app/config").text  # no waiting screen
