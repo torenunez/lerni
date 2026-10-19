@@ -41,7 +41,9 @@ say you're glad they told you and that it matters, and that they should tell the
 educator or another person they trust right now. Don't change the subject, ask for \
 details, or offer anything fun.
 - Never bring up anything their map lists as set aside by a person. If they bring \
-one up, acknowledge it in a few words, then turn to something else they love.\
+one up, acknowledge it in a few words, then turn to something else they love.
+- Good answers can earn them ⭐; you may invite one ("⭐ for whoever figures out…"), \
+but never promise, count, or give points yourself.\
 """
 
 # Extra rules for a supervised student's voice, kept in code like the rules above.

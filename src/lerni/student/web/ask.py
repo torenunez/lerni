@@ -1,4 +1,4 @@
-"""The conversation for both kinds of student: an independent student's Ask tab, and a
+"""The conversation for both kinds of student: an independent student's Chat tab, and a
 supervised student's whole screen.
 
 :func:`ask_reply` is a plain function over the server-resolved viewer, so the
@@ -119,19 +119,19 @@ def ask_tab(
     supervised: bool = False,
     speech: Speech | None = None,
 ) -> tuple[gr.Tab, gr.Chatbot, gr.Checkbox]:
-    """Ask (independent students) or, with ``supervised``, a supervised student's whole screen.
+    """Chat (independent students) or, with ``supervised``, a supervised student's whole screen.
 
     With ``speech``, a Hold to talk button too (the browser side is ``talk.js``).
     """
     ready = conversations is not None
-    label, tab_id = ("Lerni", "home") if supervised else ("Ask", "ask")
+    label, tab_id = ("Chat", "home") if supervised else ("Chat", "ask")
     with gr.Tab(label, id=tab_id, visible=False) as tab:
         if not ready:
             gr.Markdown("Claude isn't set up on this server yet.")
         voice = gr.Checkbox(label="Try the supervised-student voice", visible=False)
         # no toolbar or like buttons: one way to start over, below
         chat = gr.Chatbot(
-            label="Ask Lerni",
+            label="Chat with Lerni",
             show_label=False,
             height=None,  # the page's style fills the screen above the dock
             max_height=None,
@@ -190,7 +190,7 @@ def ask_tab(
                 heard_btn = gr.Button(elem_id=f"lerni-heard-{suffix}", elem_classes="lerni-hide")
                 peek = gr.Button(elem_id=f"lerni-peek-{suffix}", elem_classes="lerni-hide")
                 hush = gr.Button(elem_id=f"lerni-hush-{suffix}", elem_classes="lerni-hide")
-        # the supervised screen has no way to start over; Ask does
+        # the supervised screen has no way to start over; Chat does
         new = gr.Button("New conversation", size="sm", visible=not supervised)
         asked = gr.State("")  # the question being answered, so the box can be freed at once
         controls = [question, send, stop]  # order matches start and unlock

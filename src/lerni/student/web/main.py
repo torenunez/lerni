@@ -33,13 +33,14 @@ from lerni.student.web.mapdraw import map_svg, owner_key
 from lerni.student.web.maps import map_tab, supervised_choices
 
 # Tab ids in page order. A supervised student gets Home (their conversation,
-# full screen) and Games; independent students get Ask, My MentalMap, and My account;
+# full screen, shown as Chat) and Games; independent students get Chat, My MentalMap,
+# and My account;
 # educators also get MentalMaps, Students, and Games.
 _TAB_IDS = ("home", "games", "ask", "mymap", "maps", "students", "account")
 _SUPERVISED_TABS = {"home", "games"}
 _EDUCATOR_TABS = {"maps", "students", "games"}
 _INDEPENDENT_TABS = {"ask", "mymap", "account"}
-_LABELS = {"home": "Lerni", "games": "Games", "ask": "Ask", "mymap": "My MentalMap",
+_LABELS = {"home": "Chat", "games": "Games", "ask": "Chat", "mymap": "My MentalMap",
            "maps": "MentalMaps",
            "students": "Students", "account": "My account"}  # the menu's names for the tabs
 
@@ -55,7 +56,7 @@ def visible_tabs(viewer: Viewer | None) -> tuple[str, ...]:
 
 
 def opening_tab(viewer: Viewer | None) -> str | None:
-    """The tab selected on load: Ask for independent students, Home for supervised ones."""
+    """The tab selected on load: Chat for independent students, Home for supervised ones."""
     shown = visible_tabs(viewer)
     return ("ask" if "ask" in shown else shown[0]) if shown else None
 
