@@ -36,7 +36,17 @@ def main_callback(ctx: typer.Context):
 # Import and register commands after app is created to avoid circular imports
 def register_commands():
     """Register all command modules."""
-    from .commands import feedback, logs, notify, organize, question, review, serve, student
+    from .commands import (
+        feedback,
+        logs,
+        notify,
+        organize,
+        question,
+        review,
+        serve,
+        service,
+        student,
+    )
 
     # Question commands (at root level)
     app.command("new")(question.new_question)
@@ -71,6 +81,7 @@ def register_commands():
 
     # Student app
     app.command("serve")(serve.serve_cmd)
+    app.add_typer(service.service_app, name="service")
     app.add_typer(student.student_app, name="student")
     app.command("logs")(logs.logs_cmd)
     app.add_typer(feedback.feedback_app, name="feedback")
