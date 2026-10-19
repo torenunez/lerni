@@ -29,7 +29,7 @@ flowchart LR
     server -. "adapter: the admin's Claude account" .-> ai[Claude]
 ```
 
-The app runs on the home network only and is never exposed to the internet. It serves plain HTTP, or HTTPS when `lerni serve` gets `--cert` and `--key` (a certificate made with mkcert and installed once on each device; Version 2), and voice needs HTTPS on the same server, because browsers allow the microphone only over HTTPS ([MDN](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia)). Speech-to-text (whisper.cpp's `whisper-cli`) and text-to-speech (macOS `say`) run on the home server behind one adapter (`Speech`); what was heard enters the conversation like typing, as text to Claude.
+The app runs on the home network only and is never exposed to the internet, as macOS LaunchAgents (`lerni service`) that start at login and restart after a crash. It serves plain HTTP, or HTTPS when `lerni serve` gets `--cert` and `--key` (a certificate made with mkcert and installed once on each device; Version 2), and voice needs HTTPS on the same server, because browsers allow the microphone only over HTTPS ([MDN](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia)). Speech-to-text (whisper.cpp's `whisper-cli`) and text-to-speech (macOS `say`) run on the home server behind one adapter (`Speech`); what was heard enters the conversation like typing, as text to Claude.
 
 ## How a conversation grows the map
 
@@ -109,7 +109,7 @@ Every code file, one line each: [code manifest](code-manifest.md).
 
 | Piece | Version | Seam to leave room for now |
 |---|---|---|
-| Points for conversation answers | 3 (v3.6) | Judged by the tagger, never by the conversation model; each exchange awards once. |
+| Points for conversation answers | 3 (v3.7) | Judged by the tagger, never by the conversation model; each exchange awards once. |
 | Remembering preferences, recall | 4 | The map is the memory; preferences and recall build on it. |
 | Suggested goals | 5 | Suggestions are shown for the educator to accept; they never become goals on their own (boundary 1). |
 | Curated or checked content | — | None planned; if ever needed, it arrives as information in the map block, never as a separate path. |

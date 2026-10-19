@@ -4,7 +4,7 @@ Approved in conversation on 2026-10-12. Requirements: [student PRD, Version 3](.
 
 **Why.** The supervised student answers Lerni's goal questions with random emojis. Points they can spend on cars give those questions a reason, from two places: a race in Games and real answers in Chat. Points never go down for a wrong answer, are never compared between students, and stay apart from the map.
 
-**Ships as:** v3.1 (the race, points, and the garage), v3.3 (real cars in the garage), and v3.6 (points in Chat, and Ask renamed Chat).
+**Ships as:** v3.1 (the race, points, and the garage), v3.3 (real cars in the garage), and v3.7 (points in Chat, and Ask renamed Chat).
 
 ## What people see
 
@@ -28,9 +28,9 @@ Approved in conversation on 2026-10-12. Requirements: [student PRD, Version 3](.
   - After 10 races in a day: "The track is closed for today 🌙 Come back tomorrow."
   - While Lerni is resting (usage limits): "Lerni is resting until Mon 6:00 pm."
   - Earlier points and cars stay either way.
-- **The header** shows ⭐ points on every screen for a player (supervised students and educators). From v3.6, tapping it opens a short "How to earn ⭐": 🏁 race in Games, or 💬 answer Lerni's questions in your own words in Chat.
+- **The header** shows ⭐ points on every screen for a player (supervised students and educators). From v3.7, tapping it opens a short "How to earn ⭐": 🏁 race in Games, or 💬 answer Lerni's questions in your own words in Chat.
 
-### Chat (v3.6; Ask is renamed Chat)
+### Chat (v3.7; Ask is renamed Chat)
 
 - Chat stays a conversation, typed or spoken, with no multiple choice.
 - When the student really answers Lerni's question, "⭐ +3" (a right answer) or "⭐ +1" (a real try in their own words) appears by their points a few seconds later. Emojis, "idk", or a new subject earn nothing, and nothing says "wrong".
@@ -142,7 +142,7 @@ At about 50 ⭐ a day, a $100,000 car comes on day 1 and a $5 million one after 
 - **Rendering:** the race card and garage are ordinary components, not `gr.render`, so the draw queue isn't involved: each car has a tile in both lists, built once, shown by ownership.
 - **The track** is scaled to the car's perfect run, so nobody reaches the finish line before the fifth answer, and a race keeps the car it started in.
 
-### Chat points (v3.6, `tagging.py`)
+### Chat points (v3.7, `tagging.py`)
 
 - **The tagger gets one more field, `answered`:**
   - `right`: Lerni's previous message asked a question and the student answered it correctly;
@@ -188,7 +188,7 @@ At about 50 ⭐ a day, a $100,000 car comes on day 1 and a $5 million one after 
   - each has 3 distinct choices with the right one among them;
   - a supervised set stays clear of a set-aside interest.
 - **v3.3:** `test_garage.py`: the private file loads with prices at $2,500 a ⭐ and boosts from ×1.0 to ×1.4, and a broken file leaves the cartoon garage; `test_race.py`: at ×1.4, 3 right wins, 2 right is 2nd, 1 right is 3rd; the picture route refuses someone signed out and an id not in the garage.
-- **`test_tagging.py`** (v3.6): `answered` awards once per exchange and respects the cap.
+- **`test_tagging.py`** (v3.7): `answered` awards once per exchange and respects the cap.
 - **Phone size** (iPhone and iPad):
   - a race to the end, Race again, buying and driving a car;
   - the 10-race limit;
