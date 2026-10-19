@@ -99,7 +99,7 @@ The family uses whatever is on `main` while new features are built on branches. 
 
 1. In the production checkout: `git pull`.
 2. `.venv/bin/pip install -e ".[student]"` (only needed when a PR says dependencies or package files changed, but always safe).
-3. `.venv/bin/lerni service restart prod`.
+3. `.venv/bin/lerni service restart prod` (install it once first: "Running on its own" below).
 
 Caveats:
 
@@ -112,7 +112,7 @@ Caveats:
 Both servers run as macOS LaunchAgents: they start when the admin logs in (after a reboot too, once someone logs in) and restart within 10 seconds of a crash, whatever happens to a Terminal window. Install once, from each checkout, after stopping any copy running in a Terminal window (otherwise its port is taken):
 
 - Production, in the production checkout: `.venv/bin/lerni service install prod --cert ~/.lerni/student/https.pem --key ~/.lerni/student/https-key.pem`.
-- Development, in the development checkout: `.venv/bin/lerni service install dev --data ~/.lerni/student-dev` plus the same `--cert` and `--key`.
+- Development, in the development checkout: `.venv/bin/lerni service install dev` with the same `--cert` and `--key` (its data folder is `~/.lerni/student-dev`; it refuses production's).
 - Then `lerni service status` (running and answering?), `restart prod|dev` (after an update or a branch change), `stop`, or `uninstall`. Output goes to `~/Library/Logs/lerni/<name>.log`.
 
 ### HTTPS (for voice)

@@ -11,6 +11,7 @@ import re
 import ssl
 import subprocess
 import sys
+import time
 import urllib.request
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -20,6 +21,10 @@ from typing import Any
 PREFIX = "com.lerni."  # com.lerni.prod, com.lerni.dev
 
 Runner = Callable[..., Any]
+
+
+class ServiceError(Exception):
+    """Something the admin can fix: said in one plain line."""
 
 
 @dataclass(frozen=True)
@@ -86,32 +91,58 @@ def install(
     checkout: Path | None = None,
     path_env: str | None = None,
     uid: int | None = None,
+    wait: float = 1.0,
 ) -> Path:
     """Write the agent and load it, replacing one already loaded.
 
     Returns:
         The property list's path.
+
+    Raises:
+        ServiceError: Development without its own data, no ``lerni`` to run, or macOS refused.
     """
     home = home or Path.home()
+    if server.name == "dev" and server.data in (None, home / ".lerni" / "student"):
+        raise ServiceError("Development needs its own data folder (--data), never production's.")
     lerni = lerni or Path(sys.executable).parent / "lerni"  # this checkout's own venv
-    checkout = checkout or Path(__file__).resolve().parents[3]  # src/lerni/student/ -> root
+    if not lerni.is_file():  # launchd would retry it forever
+        raise ServiceError(f"No lerni at {lerni}: run this checkout's .venv/bin/lerni.")
+    # the checkout root for an editable install (src/lerni/student/ -> root)
+    checkout = checkout or Path(__file__).resolve().parents[3]
     path = agent_path(home, server.name)
     path.parent.mkdir(parents=True, exist_ok=True)
-    log = log_path(home, server.name)
-    log.parent.mkdir(parents=True, exist_ok=True)
-    log.write_text("")  # a fresh log
     path_env = os.environ.get("PATH", "") if path_env is None else path_env
     path.write_bytes(plist(server, lerni, checkout, path_env, home))
-    run(
-        ["launchctl", "bootout", f"gui/{_uid(uid)}/{agent_label(server.name)}"], capture_output=True
-    )  # an older one, if loaded; "not loaded" is fine
-    run(["launchctl", "bootstrap", f"gui/{_uid(uid)}", str(path)], check=True)
-    return path
+    label = f"gui/{_uid(uid)}/{agent_label(server.name)}"
+    run(["launchctl", "bootout", label], capture_output=True)  # an older one; "not loaded" is fine
+    log = log_path(home, server.name)
+    log.parent.mkdir(parents=True, exist_ok=True)
+    log.write_text("")  # a fresh log, once the old one has stopped writing
+    for _ in range(3):  # right after a bootout, launchd can still be unloading it
+        try:
+            run(["launchctl", "bootstrap", f"gui/{_uid(uid)}", str(path)], check=True)
+            return path
+        except subprocess.CalledProcessError:
+            time.sleep(wait)
+    raise ServiceError(
+        f"macOS wouldn't start {agent_label(server.name)}: "
+        "check you're logged in at the Mac, then install again."
+    )
 
 
 def restart(name: str, run: Runner = subprocess.run, uid: int | None = None) -> None:
-    """Stop the server and start it again, on whatever code its checkout now holds."""
-    run(["launchctl", "kickstart", "-k", f"gui/{_uid(uid)}/{agent_label(name)}"], check=True)
+    """Stop the server and start it again, on whatever code its checkout now holds.
+
+    Raises:
+        ServiceError: It isn't installed.
+    """
+    try:
+        run(["launchctl", "kickstart", "-k", f"gui/{_uid(uid)}/{agent_label(name)}"],
+            check=True, capture_output=True)
+    except subprocess.CalledProcessError:
+        raise ServiceError(
+            f"{name} isn't running as a service yet: run lerni service install {name} first."
+        ) from None
 
 
 def stop(name: str, run: Runner = subprocess.run, uid: int | None = None) -> None:
@@ -125,6 +156,14 @@ def uninstall(
     """Unload the agent and delete it; nothing starts at login any more."""
     stop(name, run, uid)
     agent_path(home or Path.home(), name).unlink(missing_ok=True)
+
+
+def _listener(port: int) -> int | None:
+    """The pid listening on this port, if any."""
+    out = subprocess.run(
+        ["lsof", "-nP", f"-iTCP:{port}", "-sTCP:LISTEN", "-t"], capture_output=True, text=True
+    ).stdout.split()
+    return int(out[0]) if out else None
 
 
 def _answers(port: int) -> bool:
@@ -156,6 +195,7 @@ def status(
         text=True,
     )
     pid = re.search(r"\bpid = (\d+)", shown.stdout or "")
-    if pid and _answers(port):
+    # the agent itself must hold the port: a copy in a Terminal window doesn't count
+    if pid and _listener(port) == int(pid.group(1)) and _answers(port):
         return f"{name}: running (pid {pid.group(1)}), answering on :{port}"
     return f"{name}: not answering on :{port}; see {log_path(home, name)}"

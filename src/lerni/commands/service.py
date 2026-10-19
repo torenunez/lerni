@@ -1,6 +1,7 @@
 """The `lerni service` commands: run the student app on its own, as macOS LaunchAgents."""
 
 from pathlib import Path
+from typing import Any
 
 import typer
 from rich.console import Console
@@ -17,14 +18,27 @@ def _check(name: str) -> str:
     return name
 
 
+def _plainly(fn: Any, *args: Any) -> Any:
+    """Run a service call; say any problem in one red line instead of a traceback."""
+    from lerni.student.service import ServiceError
+
+    try:
+        return fn(*args)
+    except ServiceError as exc:
+        console.print(f"[red]{exc}[/red]")
+        raise typer.Exit(1) from None
+
+
 @service_app.command("install")
 def install_cmd(
     name: str = typer.Argument(..., help="prod or dev."),
     cert: Path = typer.Option(..., help="HTTPS certificate (from mkcert)."),  # noqa: B008
     key: Path = typer.Option(..., help="The certificate's private key."),  # noqa: B008
     port: int = typer.Option(0, help="Default: 7860 for prod, 7861 for dev."),
-    label: str = typer.Option(None, help="Default: none for prod, Development for dev."),
-    data: Path = typer.Option(None, help="Data folder (LERNI_STUDENT_DATA)."),  # noqa: B008
+    label: str | None = typer.Option(None, help="Default: none for prod, Development for dev."),
+    data: Path | None = typer.Option(  # noqa: B008
+        None, help="Data folder (LERNI_STUDENT_DATA); dev's default is ~/.lerni/student-dev."
+    ),
 ) -> None:
     """Start this checkout's server now, at every login, and again after a crash."""
     from lerni.student.service import Server, install, log_path
@@ -34,11 +48,13 @@ def install_cmd(
         if not path.expanduser().is_file():
             console.print(f"[red]No such file: {path}[/red]")
             raise typer.Exit(1)
+    if dev and data is None:
+        data = Path.home() / ".lerni" / "student-dev"  # never production's data
     server = Server(name, port or (7861 if dev else 7860),
                     ("Development" if dev else "") if label is None else label,
                     data.expanduser().resolve() if data else None,
                     cert.expanduser().resolve(), key.expanduser().resolve())
-    path = install(server)
+    path = _plainly(install, server)
     console.print(f"Agent: {path}\nLog:   {log_path(Path.home(), name)}\nStarted.")
 
 
@@ -47,7 +63,7 @@ def restart_cmd(name: str = typer.Argument(..., help="prod or dev.")) -> None:
     """Restart the server, on whatever code its checkout now holds."""
     from lerni.student.service import restart
 
-    restart(_check(name))
+    _plainly(restart, _check(name))
     console.print("Restarted.")
 
 
