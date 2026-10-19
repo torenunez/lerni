@@ -19,7 +19,6 @@ Open tasks by who does the work. The educator and admin tracks run in parallel: 
 
 ### Now
 
-- [ ] After v3.6 merges, move production to its LaunchAgent: update the production checkout, press Ctrl-C in the Terminal.app window running production and close it, then `.venv/bin/lerni service install prod` with `--cert` and `--key` ([admin reference](reference/admin.md#running-on-its-own)); try Hold to talk on development first.
 - [ ] Check v3.3 on the iPhone and iPad (both on the same Wi-Fi as the Mac): the race and garage in Games, both MentalMap screens, and Hold to talk.
 - [ ] Turn off extra usage (paid credits) on the Claude account Lerni uses (claude.ai → Settings → Usage), so Lerni can never spend credits; Lerni also rests if a call ever uses them.
 - [ ] Pick Lerni's voice ([admin reference: Voice](reference/admin.md#voice)), try Hold to talk on the iPad, then with the supervised student and an adult nearby (Version 2 is done when their map grows from a spoken conversation).
@@ -29,9 +28,8 @@ Open tasks by who does the work. The educator and admin tracks run in parallel: 
 
 What ships next, in order, one PR each ([how versions work](roadmap.md#versions)):
 
-1. **v3.7: points in the conversation, and Ask becomes Chat:** the tagger judges the student's answer to Lerni's last question (right, a real try, or nothing) and the server adds points, once per exchange, up to a daily cap; "⭐ +3" shows by the total; no multiple choice in the conversation. Tapping ⭐ in the header (every screen) opens a short "How to earn ⭐": 🏁 race in Games, or 💬 answer Lerni's questions in your own words in Chat.
-2. **v3.8: voice that fails says so:** a transcript that ends mid-letter (an accented character cut short) no longer crashes the clip (read whisper's output with `errors="replace"`; seen in production 2026-10-13); if `say` returns empty audio, startup prints `Voice (hold to talk): off` with the reason, instead of sending silence; the microphone is released if you let go before Safari asks; recording stops and sends at 30 seconds instead of dropping the end; a microphone failure switches to Type with a short note.
-3. **Version 4, remembering:** Bridge Trip (a trip along their map with recall stops) is its front door; its first PR writes the plan.
+1. **v3.8: voice that fails says so:** a transcript that ends mid-letter (an accented character cut short) no longer crashes the clip (read whisper's output with `errors="replace"`; seen in production 2026-10-13); if `say` returns empty audio, startup prints `Voice (hold to talk): off` with the reason, instead of sending silence; the microphone is released if you let go before Safari asks; recording stops and sends at 30 seconds instead of dropping the end; a microphone failure switches to Type with a short note.
+2. **Version 4, remembering:** Bridge Trip (a trip along their map with recall stops) is its front door; its first PR writes the plan.
 
 How PRs are split:
 
@@ -47,12 +45,12 @@ Versions 1 and 2 also need sessions, not code: the educator sets goals, rehearse
 ### Later
 
 - [ ] Decide how long to keep conversation logs (7 days now; 20 days or longer is under consideration). Longer keeps more of the students' words on disk; it changes CLAUDE.md rule 6 and the PRDs.
-- [ ] After a week of family use: compare each feature's Claude use (Ask, tagger, Upload, MentalMaps chat) and decide whether any can move to a cheaper model.
+- [ ] After a week of family use: compare each feature's Claude use (Chat, tagger, Upload, MentalMaps chat) and decide whether any can move to a cheaper model.
 - [ ] Try the voice with the students before deciding whether a hosted voice (Inworld, about $18 a month) is worth it; a hosted service means student audio leaves the house, so it needs the educator's agreement first.
 - [ ] MentalMaps chat: PDFs (its Claude call takes text only; Upload on My MentalMap still reads PDFs), and the same chat on My MentalMap once educators have used it.
 - [ ] `feedback.summarize` is unused since v2.14 (the chat writes the note); remove it with its test, or use it for chat feedback.
 - [ ] After the first supervised sessions, if useful: count redirects per session, and a "flag this reply" button for the adult nearby.
-- [ ] Try Ask on the iPad and a phone with the keyboard open; then a VoiceOver and keyboard-only pass.
+- [ ] Try Chat on the iPad and a phone with the keyboard open; then a VoiceOver and keyboard-only pass.
 
 ### Later: Version 3 Play and points
 
@@ -79,7 +77,7 @@ Versions 1 and 2 also need sessions, not code: the educator sets goals, rehearse
 
 ### Deferred review findings (small; family scale)
 
-- [ ] **Ask:** Stop before the first word can be slow and a quick re-ask may say "Still answering"; the two chat panels allow 8 answers at once instead of 4 (share one concurrency id); a cancel can log "Exception ignored"; the new message isn't JSON like earlier turns; when Claude isn't set up the supervised screen greets over a disabled box; the guns redirect offered squirt guns (offer something unrelated).
+- [ ] **Chat:** Stop before the first word can be slow and a quick re-ask may say "Still answering"; the two chat panels allow 8 answers at once instead of 4 (share one concurrency id); a cancel can log "Exception ignored"; the new message isn't JSON like earlier turns; when Claude isn't set up the supervised screen greets over a disabled box; the guns redirect offered squirt guns (offer something unrelated).
 - [ ] **Upload and feedback:** cap how big a .docx may expand when read, and show a friendly message for a malformed one; a file-read error can hide its cause; no server-side check for real names in proposals; "Tick what to add" shows when every idea is already on the map; `lerni feedback done` can lose an entry saved at the same moment and finds entries by position; editing feedback after checking keeps the old summary; Claude pads goal notes with restatements.
 - [ ] **The map:** the map block's 1,500-character cut can cut a line mid-word; top interests rank by all-time days rather than the last 30; a faded explained goal can be listed twice in the block; the MentalMaps timer ticks on every page; an unreadable map file shows a Gradio error; `lerni logs` can fail if a purge runs mid-read.
 - [ ] **Educator chat:** a proposal names its target, so an old one can change a newer item with the same name; Clear or a new student can be undone by a reply still arriving; 📎 notes are sent again every turn; removals are reported as "Added".

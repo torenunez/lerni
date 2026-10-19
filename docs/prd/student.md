@@ -63,7 +63,7 @@ The student signs in and talks with Lerni by text. Their map grows as they talk;
 As a student, I want to sign in as myself, so that my conversation and map are my own.
 
 - WHEN someone opens the app without being signed in THE SYSTEM SHALL show a standard sign-in form (username and password) that the browser can offer to save.
-- WHEN a supervised student signs in THE SYSTEM SHALL show the conversation, full screen, with Games in the ☰ menu; WHEN an independent student signs in, Ask, My MentalMap, and My account.
+- WHEN a supervised student signs in THE SYSTEM SHALL show the conversation, full screen, with Games in the ☰ menu; WHEN an independent student signs in, Chat, My MentalMap, and My account.
 - WHILE someone is signed in THE SYSTEM SHALL show "Signed in as <display name> · <kind>" and Sign out (in the ☰ menu); Sign out signs out this device only.
 - WHEN a username gets 3 or more wrong passwords in a row THE SYSTEM SHALL wait longer before checking each further attempt (up to 30 seconds), without affecting anyone already signed in.
 - WHEN an account is archived or its password reset THE SYSTEM SHALL sign it out on every device at once.
@@ -119,6 +119,7 @@ As a student, I want to earn points when I really answer Lerni's questions, so t
 
 - WHEN the student answers Lerni's question correctly in the conversation THE SYSTEM SHALL add points, and fewer for a real try in their own words; nothing for emojis or a change of subject. The conversation stays a conversation: no multiple choice there.
 - WHEN points are added THE SYSTEM SHALL show them by the ⭐ total, once per answer, up to a daily cap.
+- WHEN the student taps the ⭐ total THE SYSTEM SHALL say the two ways to earn: racing in Games, and answering Lerni's questions in Chat.
 
 ### Story: Spend points on cars
 

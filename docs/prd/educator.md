@@ -46,7 +46,7 @@ The educator signs in with their own account, which has educator access (the adm
 
 As an educator, I want to add and manage the students who use the app, so that each one signs in as themselves.
 
-- WHEN an educator signs in THE SYSTEM SHALL show their own Ask and My MentalMap, plus MentalMaps and Students; educator access is a flag on an independent account, never on a supervised one, and `educator` and `admin` are never usernames.
+- WHEN an educator signs in THE SYSTEM SHALL show their own Chat and My MentalMap, plus MentalMaps and Students; educator access is a flag on an independent account, never on a supervised one, and `educator` and `admin` are never usernames.
 - WHEN the educator adds a student THE SYSTEM SHALL save a username (lowercase letters, digits, and hyphens, starting with a letter, never reused), a display name, the kind (supervised or independent), and a starting password (at least 8 characters for an independent student, 4 for a supervised one), storing only the password's hash.
 - WHEN the educator resets a password or archives a student THE SYSTEM SHALL sign that account out on every device at once; an archived student can't sign in, and their username stays taken.
 - WHEN the educator views the students THE SYSTEM SHALL show an independent student's name and kind only, never their map.

@@ -60,7 +60,7 @@ Grades mean blackout (0), recognition after seeing the answer (1), apparent ease
 
 ## Running the student app
 
-`lerni serve` runs the student app on the home server (Version 1: sign-in; Ask, My MentalMap, and My account for independent students; MentalMaps and Students for educators; the conversation, full screen, for a supervised student).
+`lerni serve` runs the student app on the home server (Version 1: sign-in; Chat, My MentalMap, and My account for independent students; MentalMaps and Students for educators; the conversation, full screen, for a supervised student).
 
 ```bash
 pip install -e ".[student]"                # once: installs Gradio
@@ -80,7 +80,7 @@ lerni serve                                 # binds 0.0.0.0:7860
 - `--port` changes the default port; `--host 127.0.0.1` keeps it on this computer only; `--label Development` marks a development server on every page. Startup prints the running version (number, branch, commit, date), and the sign-in page shows it at the bottom: check it there after updating.
 - Run it with `lerni service` ("Running on its own" below), or in a Terminal window on the home server's own desktop; never inside `tmux` or over SSH: there macOS `say` makes empty audio, so answers show as text but are never spoken.
 - It never touches the admin tool's database.
-- **Claude** (Ask, the map's tagger, Upload, and the MentalMaps chat) turns on when the `claude` CLI is installed and logged in on this computer; it uses that Claude account, so there's no API key. `LERNI_CLAUDE_MODEL` picks the answering and upload model (default `claude-sonnet-5-5`), `LERNI_TAGGER_MODEL` the tagger's (default `claude-haiku-5-5`). Startup prints whether it's on.
+- **Claude** (Chat, the map's tagger, Upload, and the MentalMaps chat) turns on when the `claude` CLI is installed and logged in on this computer; it uses that Claude account, so there's no API key. `LERNI_CLAUDE_MODEL` picks the answering and upload model (default `claude-sonnet-5-5`), `LERNI_TAGGER_MODEL` the tagger's (default `claude-haiku-5-5`). Startup prints whether it's on.
 - **Claude usage:** Lerni shares the account's limits with the admin's own Claude use. Educators see a warning at 75% of the weekly limit or 80% of the 5-hour one, with the reset time; at 95%, or if a call ever uses paid extra usage, Lerni rests until the reset. Turn off extra usage on the Claude account too, so Lerni can never spend credits.
 - **Points and Games:** each player's points, cars, and today's races are in `~/.lerni/student/points/<username>.json` (ids and numbers only). To give or take points, stop the server, edit `balance`, and start it again. A race writes its questions with the small model, about five short calls a day per player; 10 races a day.
 - **Adding a real car:** cut it out of a side-on picture facing right with `swift scripts/lift_car.swift picture.png car.png [x y width height]` (the crop from the top-left), save it as WebP about 600 px wide in `~/.lerni/student/cars/`, and add it to `~/.lerni/student/garage.json`: `{"cars": [{"id", "name", "usd", "zero_to_60", "engine", "power_hp", "drive", "note", "picture"}]}`. Its price is dollars ÷ 2,500, rounded to tens of ⭐, and its gas boost comes from the 0–60. Restart to load it, and copy both into `~/.lerni/student-dev/` so development matches. Keep these files out of the repo.
