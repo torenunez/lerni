@@ -238,7 +238,7 @@ def build_app(
 
     races = RaceDesk(quizzer, maps, points) if quizzer is not None else None
     log.purge()  # at startup; then once a day as exchanges are logged
-    keeper = MapKeeper(maps, tagger, log)
+    keeper = MapKeeper(maps, tagger, log, points=points)
     conversations = (
         Conversations(
             chat_model, context=keeper.context, on_exchange=keeper.after, spoken=speech is not None

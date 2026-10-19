@@ -407,6 +407,7 @@ class Tags:
     changed_subject: bool = False
     skip: str | None = None  # "excluded", "personal", or "scary": add nothing
     kind_of: tuple[tuple[str, str], ...] = ()  # (specific, general), both on the map
+    answered: str | None = None  # "right" or "tried": Lerni's question, answered for real
 
 
 def _names(value: Any, limit: int) -> tuple[str, ...]:
@@ -436,6 +437,7 @@ def parse_tags(data: Any) -> Tags:
         explained=explained if isinstance(explained, str) else None,
         changed_subject=data.get("changed_subject") is True,
         skip=skip if isinstance(skip, str) and skip else None,
+        answered=a if (a := data.get("answered")) in ("right", "tried") else None,
         kind_of=pairs("kind_of", 2),
     )
 

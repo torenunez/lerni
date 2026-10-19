@@ -61,3 +61,29 @@ def test_logs_older_than_7_days_are_deleted(tmp_path):
         (folder / f"{(TODAY - timedelta(days=age)).isoformat()}.jsonl").write_text("{}\n")
     log.purge()
     assert sorted(p.stem for p in folder.iterdir()) == ["2026-10-04"]
+
+
+def test_a_real_answer_earns_stars_once_and_never_when_skipped_stopped_or_cleared(tmp_path):
+    from lerni.student.points import CHAT_CAP, PointsStore
+
+    points, tags = PointsStore(tmp_path), {"answered": "right"}
+    k = MapKeeper(MapStore(tmp_path), FakeTagger(tags), None, run=lambda f: f(),
+                  today=lambda: TODAY, points=points)
+    ex = Exchange("sam", "What makes it speed up?", "the engine pushes", "Yes!", False,
+                  lambda: True)
+    k.after(ex)
+    k.after(ex)  # tagged again: the same exchange awards once
+    assert points.get("sam").balance == 3
+    tags["answered"] = "tried"
+    k.after(exchange("maybe the wheels"))
+    assert points.get("sam").balance == 4
+    tags["answered"] = "right"
+    for skip, stopped, current in (("scary", False, True), (None, True, True),
+                                   (None, False, False)):
+        tags["skip"] = skip
+        k.after(exchange("an answer", stopped=stopped, current=current))
+    assert points.get("sam").balance == 4  # skipped, stopped, or New conversation: nothing
+    tags["skip"] = None
+    for _ in range(20):
+        k.after(exchange("an answer"))
+    assert points.get("sam").balance == CHAT_CAP  # Chat stops at the day's cap
