@@ -130,7 +130,7 @@ def build_main_view(
             ask, chat, voice, ask_done = ask_tab(signin, conversations, speech=speech)
             mymap, picture, owner, version = map_tab(signin, students, maps, uploader)
             maps_tab, who = educator_tab(signin, students, maps, educator_chats, feedback, points,
-                                         garage or Garage())
+                                         garage or Garage(), races.results if races else None)
             students_tab_, students_table = students_tab(signin, students)
             account = account_tab(signin, students)
 

@@ -377,3 +377,97 @@ def test_the_concept_ledger_keeps_every_idea_with_its_answers(tmp_path):
     old.write_text('{"schema": 1, "recent": [{"concept": "halves", "goal": "Fractions", '
                    '"day": "2026-10-12"}]}')
     assert concepts.recent("kim", TODAY) == ["halves"]
+
+
+def test_a_wrong_key_never_races(tmp_path):
+    # the admin's decision (2026-10-19): a race question never teaches a wrong answer
+    import re
+
+    wrong_sum = fresh("Fractions", question="Half of a 400-meter lap, in meters?", math="400 / 2",
+                      choices=["100 meters", "200 meters", "800 meters"], answer=0)
+    right_sum = fresh("Fractions", question="A quarter of 8 laps, in laps?", math="8 * 1/4",
+                      choices=["4", "2", "6"], answer=1)
+    doubted = fresh("Fractions", question="Which is more, a half or a third? DOUBT")
+
+    class Writer(FakeQuizzer):
+        def write(self, system, prompt, schema=None):
+            return {"questions": [wrong_sum, right_sum, doubted,
+                                  *[fresh("Fractions") for _ in range(4)]]}
+
+    class Checker:  # answers blind: the "4" or "2" it would pick, wrong on the doubted one
+        def __init__(self):
+            self.prompts = []
+
+        def write(self, system, prompt, schema=None, **kwargs):
+            self.prompts.append(prompt)
+            picks = []
+            for block in prompt.strip().split("\n\n"):  # one question, a choice per line
+                choices = re.findall(r"^([ABC]): (.*)$", block, flags=re.M)
+                want = "2" if "DOUBT" in block or "quarter" in block else "4"
+                picks.append(next(letter for letter, c in choices if c.strip() == want))
+            return {"picks": picks}
+
+    maps, points = MapStore(tmp_path), PointsStore(tmp_path)
+    maps.change("sam", lambda m: add_goal(m, "Fractions"))
+    checker = Checker()
+    desk = RaceDesk(Writer(), maps, points, checker=checker)
+    desk.prefill = lambda *args: None
+    race = desk.start("sam", supervised=True, today=TODAY)
+    raced = {q.question for q in [*race.questions, *desk._held("sam", TODAY)]}
+    assert right_sum["question"] in raced  # its sum and its key agree, and so does the check
+    assert wrong_sum["question"] not in raced and doubted["question"] not in raced
+    assert "DOUBT" in checker.prompts[0] and "math" not in checker.prompts[0].casefold()
+
+
+def test_answers_are_logged_as_labels_and_numbers(tmp_path):
+    # the results log, kept for good: what was practiced and how it went, never any text
+    import json
+
+    from lerni.student.results import ResultsLog, week_line
+
+    maps, points, results = MapStore(tmp_path), PointsStore(tmp_path), ResultsLog(tmp_path)
+    maps.change("sam", lambda m: add_goal(m, "Fractions"))
+    desk = RaceDesk(FakeQuizzer(), maps, points, results=results)
+    desk.prefill = lambda *args: None
+    ticks = iter(range(0, 1000, 10))
+    desk.clock = lambda: float(next(ticks))
+    race = desk.start("sam", supervised=True)
+    for n, ok in enumerate([True, True, False, True, False]):
+        q = race.questions[n]
+        desk.pick("sam", race.id, n, q.answer if ok else (q.answer + 1) % 3)
+    lines = [json.loads(x) for x in (tmp_path / "results" / "sam.jsonl").read_text().splitlines()]
+    answers, finish = lines[:5], lines[5]
+    assert [a["right"] for a in answers] == [True, True, False, True, False]
+    assert all(a["goal"] == "Fractions" and a["seconds"] > 0 and len(a["q"]) == 12 for a in answers)
+    assert "What is" not in json.dumps(lines)  # never the question's words
+    assert finish["place"] in (1, 2, 3) and finish["points"] > 0
+    assert results.week("sam", date.today()) == [("Fractions", 3, 5)]
+    assert week_line(results, "sam", date.today()) == "This week: Fractions 3/5"
+
+
+
+def test_the_check_never_refuses_a_race_by_itself(tmp_path):
+    # regression (review): a check that disagreed with everything (say, an off-by-one) left
+    # no race at all; a sum written loosely ("400 / 2 = 200") dropped a good question; a huge
+    # number crashed the sum check
+    from lerni.student.race import _arith
+
+    assert _arith("9" * 400 + " * 2") is None and _arith("1e400 - 1e400") is None
+    loose = fresh("Fractions", question="Half of 400?", math="400 / 2 = 200",
+                  choices=["200", "100", "800"], answer=0)
+
+    class Writer(FakeQuizzer):
+        def write(self, system, prompt, schema=None):
+            return {"questions": [loose, *[fresh("Fractions") for _ in range(6)]]}
+
+    class Contrary:  # picks a wrong letter every time
+        def write(self, system, prompt, schema=None, **kwargs):
+            return {"picks": [{"work": "", "pick": "C"}] * prompt.count("\nA: ")}
+
+    maps, points = MapStore(tmp_path), PointsStore(tmp_path)
+    maps.change("sam", lambda m: add_goal(m, "Fractions"))
+    desk = RaceDesk(Writer(), maps, points, checker=Contrary())
+    desk.prefill = lambda *args: None
+    race = desk.start("sam", supervised=True, today=TODAY)
+    raced = {q.question for q in [*race.questions, *desk._held("sam", TODAY)]}
+    assert len(race.questions) == QUESTIONS_PER_RACE and loose["question"] in raced

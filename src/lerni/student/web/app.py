@@ -28,6 +28,7 @@ from lerni.student.interests import MapStore  # noqa: E402
 from lerni.student.logs import ConversationLog  # noqa: E402
 from lerni.student.points import PointsStore  # noqa: E402
 from lerni.student.race import Quizzer, RaceDesk  # noqa: E402
+from lerni.student.results import ResultsLog  # noqa: E402
 from lerni.student.signin import SignIn, cookie_name, load_secret  # noqa: E402
 from lerni.student.students import (  # noqa: E402
     AccountError,
@@ -245,7 +246,9 @@ def build_app(
             return PlainTextResponse("Not found.", status_code=404)
         return FileResponse(path, headers={"Cache-Control": "private, max-age=86400"})
 
-    races = RaceDesk(quizzer, maps, points, ConceptStore(root)) if quizzer is not None else None
+    races = (RaceDesk(quizzer, maps, points, ConceptStore(root), results=ResultsLog(root),
+                      checker=quizzer)  # the same small model answers each question blind
+             if quizzer is not None else None)
     log.purge()  # at startup; then once a day as exchanges are logged
     def plays(username: str) -> bool:  # supervised students and educators earn ⭐
         try:

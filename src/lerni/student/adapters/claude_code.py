@@ -196,7 +196,7 @@ class ClaudeCodeQuizzer:
     def __init__(self, model: str = DEFAULT_TAGGER_MODEL, usage: Usage | None = None) -> None:
         self.model, self.usage = model, usage
 
-    def options(self, system: str, workdir: str) -> Any:
+    def options(self, system: str, workdir: str, schema: dict[str, Any] = QUIZ_SCHEMA) -> Any:
         """No tools, a turn for the JSON answer, nothing kept."""
         return ClaudeAgentOptions(
             system_prompt=system,
@@ -204,12 +204,13 @@ class ClaudeCodeQuizzer:
             tools=[],
             cwd=workdir,
             max_turns=2,
-            output_format={"type": "json_schema", "schema": QUIZ_SCHEMA},
+            output_format={"type": "json_schema", "schema": schema},
             **_isolated(),
         )
 
-    def write(self, system: str, prompt: str) -> dict[str, Any]:
-        """Return the questions as JSON.
+    def write(self, system: str, prompt: str, schema: dict[str, Any] = QUIZ_SCHEMA,
+              timeout: float = QUIZ_TIMEOUT_SECONDS) -> dict[str, Any]:
+        """Return the questions as JSON (or, with the check's schema, its blind picks).
 
         Raises:
             RaceUnavailable: Lerni is resting, or no usable answer in time.
@@ -217,14 +218,16 @@ class ClaudeCodeQuizzer:
         if self.usage is not None and (resting := self.usage.paused()):
             raise RaceUnavailable(resting)
         try:
-            return asyncio.run(asyncio.wait_for(self._write(system, prompt), QUIZ_TIMEOUT_SECONDS))
+            return asyncio.run(
+                asyncio.wait_for(self._write(system, prompt, schema), timeout))
         except Exception as exc:  # never echo the map in errors
             raise RaceUnavailable("The track needs a minute. Try again soon.") from exc
 
-    async def _write(self, system: str, prompt: str) -> dict[str, Any]:
+    async def _write(self, system: str, prompt: str, schema: dict[str, Any]) -> dict[str, Any]:
         with tempfile.TemporaryDirectory(prefix="lerni-race-") as workdir:
             result: ResultMessage | None = None
-            async for message in query(prompt=prompt, options=self.options(system, workdir)):
+            async for message in query(prompt=prompt,
+                                       options=self.options(system, workdir, schema)):
                 _note_limits(self.usage, message)
                 if isinstance(message, ResultMessage):
                     result = message
