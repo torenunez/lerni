@@ -12,10 +12,14 @@ import random
 import threading
 import time
 import uuid
+from collections import deque
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import date
+from difflib import SequenceMatcher
 from typing import Any, Protocol
 
+from lerni.student.concepts import MAX_CONCEPT, ConceptStore, normalize
 from lerni.student.interests import (
     InterestMap,
     MapStore,
@@ -43,12 +47,13 @@ QUIZ_SCHEMA: dict[str, Any] = {
         "additionalProperties": False,
         "properties": {
             "goal": {"type": "string"},
+            "concept": {"type": "string"},
             "question": {"type": "string"},
             "choices": {"type": "array", "items": {"type": "string"}, "minItems": 3, "maxItems": 3},
             "answer": {"type": "integer", "minimum": 0, "maximum": 2},
             "why": {"type": "string"},
         },
-        "required": ["goal", "question", "choices", "answer", "why"],
+        "required": ["goal", "concept", "question", "choices", "answer", "why"],
     }}},
     "required": ["questions"],
 }
@@ -57,10 +62,14 @@ QUIZ_SYSTEM = f"""\
 You write {SET_SIZE} multiple-choice questions for a car race in Lerni, a learning companion.
 Return only the JSON asked for.
 - Each question practices one goal from the list, set in one of their interests \
-(acceleration with race cars); "goal" is that goal's name exactly, without its notes. \
+(halves with pizza slices); "goal" is that goal's name exactly, without its notes. \
 With no goals, ask how things in their interests work, never dates or numbers to memorize. \
 Spread the questions \
 evenly across the goals.
+- Every question tests a different idea; "concept" names it in a few words \
+(under {MAX_CONCEPT} characters, e.g. "top speed vs acceleration"). Never an idea listed as \
+recently asked. Vary the angle: how it works, compare two things, what happens if, \
+a number from their interest.
 - One right answer and two wrong ones that someone might believe; "why" says in one short \
 line why the right one is right.
 - Short questions (under {MAX_QUESTION} characters) and short choices (under {MAX_CHOICE}).
@@ -78,10 +87,11 @@ class Question:
     choices: tuple[str, str, str]
     answer: int
     why: str
+    concept: str = ""  # the idea it tests; never shown
 
 
-def quiz_input(m: InterestMap, today: date, supervised: bool) -> str:
-    """What Claude needs to write questions: goals, interests, and what's set aside."""
+def quiz_input(m: InterestMap, today: date, supervised: bool, recent: Sequence[str] = ()) -> str:
+    """What Claude needs to write questions: goals, interests, set-asides, and recent ideas."""
     goals = [e.name + (f" ({e.notes})" if e.notes else "")
              for e in m.entries if e.kind == "goal"]
     tops = [e for e in m.entries if e.kind == "interest" and not parents(m, e.id)
@@ -99,6 +109,9 @@ def quiz_input(m: InterestMap, today: date, supervised: bool) -> str:
     aside = [r for r in m.removed if "id" in m.removed_info.get(r.casefold(), {})][-8:]
     if aside:
         lines.append("Set aside, never use: " + ", ".join(aside))
+    recent = [c for c in recent if not mentions_set_aside(m, c)]  # set aside since
+    if recent:
+        lines.append("Recently asked, choose other ideas or angles: " + "; ".join(recent))
     return "\n".join(lines)
 
 
@@ -106,9 +119,24 @@ def _plain(value: Any) -> str:
     return " ".join(str(value or "").split())
 
 
-def check_questions(raw: Any, m: InterestMap, rng: random.Random | None = None) -> list[Question]:
-    """Keep only well-formed questions about the map's goals; shuffle their choices."""
+SAME_TEXT = 0.9  # questions this alike (difflib ratio) count as one; concepts do the rest
+
+
+def _alike(text: str, others: Sequence[str]) -> bool:
+    return any(SequenceMatcher(None, text, o).ratio() >= SAME_TEXT for o in others)
+
+
+def check_questions(raw: Any, m: InterestMap, rng: random.Random | None = None,
+                    concepts: Sequence[str] = (), texts: Sequence[str] = (),
+                    spare: list[Question] | None = None) -> list[Question]:
+    """Keep only well-formed, new questions about the map's goals; shuffle their choices.
+
+    ``concepts`` and ``texts`` (normalized) were asked or are held: a question on the same
+    idea, or nearly the same words, is dropped, and so is a repeat within ``raw``. Good
+    questions dropped only as repeats go into ``spare``, if given.
+    """
     rng = rng or random.Random()
+    seen_ideas, seen_texts = {normalize(c) for c in concepts}, [*texts]
     goals = {e.name.casefold(): e.name for e in m.entries if e.kind == "goal"}
     items = raw.get("questions") if isinstance(raw, dict) else None
     kept: list[Question] = []
@@ -116,6 +144,7 @@ def check_questions(raw: Any, m: InterestMap, rng: random.Random | None = None) 
         if not isinstance(item, dict):
             continue
         q, why = _plain(item.get("question")), _plain(item.get("why"))
+        concept = _plain(item.get("concept"))[:MAX_CONCEPT]  # never shown, so a long one is cut
         goal = _plain(item.get("goal")).split(" (")[0]  # Claude may copy the notes too
         choices = [_plain(c) for c in item.get("choices") or []]
         right = item.get("answer")
@@ -123,22 +152,31 @@ def check_questions(raw: Any, m: InterestMap, rng: random.Random | None = None) 
                 or len(choices) != 3 or any(not c or len(c) > MAX_CHOICE for c in choices)
                 or len({c.casefold() for c in choices}) != 3
                 or not isinstance(right, int) or isinstance(right, bool) or right not in (0, 1, 2)
-                or (goals and goal.casefold() not in goals)):
+                or (goals and goal.casefold() not in goals)
+                or not normalize(concept)):
             continue
+        repeat = normalize(concept) in seen_ideas or _alike(normalize(q), seen_texts)
         answer_text = choices[right]
         rng.shuffle(choices)  # the right one isn't always first
         named = goals.get(goal.casefold(), goal)  # the map's spelling
         question = Question(named, q, (choices[0], choices[1], choices[2]),
-                            choices.index(answer_text), why)
-        if fits(question, m):
-            kept.append(question)
+                            choices.index(answer_text), why, concept)
+        if not fits(question, m):
+            continue
+        if repeat:  # asked recently, held already, or a twin in this set
+            if spare is not None:
+                spare.append(question)
+            continue
+        kept.append(question)
+        seen_ideas.add(normalize(concept))
+        seen_texts.append(normalize(q))
     return kept
 
 
 def fits(q: Question, m: InterestMap) -> bool:
     """Whether a question may still race on this map: its goal is there, nothing set aside."""
     goals = {e.name.casefold() for e in m.entries if e.kind == "goal"}
-    shown = " ".join([q.question, *q.choices, q.why])  # everything the student can see
+    shown = " ".join([q.question, *q.choices, q.why, q.concept])  # what's shown, and its idea
     return (not goals or q.goal.casefold() in goals) and not mentions_set_aside(m, shown)
 
 
@@ -212,6 +250,7 @@ def public(race: Race) -> dict[str, Any]:
 NOT_READY = "The track needs a minute. Try again soon."
 QUIZ_WAIT_SECONDS = 70  # how long a race waits for questions already being written
 TAP_GAP_SECONDS = 0.8  # a second answer this soon is a double tap, not a reading of the next one
+ASKED_IN_MEMORY = 60  # question texts kept per person since the server started
 RESTART_GAP_SECONDS = 5.0  # a second Race tap this soon returns the race just started
 
 
@@ -238,8 +277,10 @@ class Quizzer(Protocol):
 class RaceDesk:
     """Today's questions per person, written ahead, and each person's race in progress."""
 
-    def __init__(self, quizzer: Quizzer, maps: MapStore, points: PointsStore) -> None:
-        self.quizzer, self.maps, self.points = quizzer, maps, points
+    def __init__(self, quizzer: Quizzer, maps: MapStore, points: PointsStore,
+                 concepts: ConceptStore | None = None) -> None:
+        self.quizzer, self.maps, self.points, self.concepts = quizzer, maps, points, concepts
+        self._asked: dict[str, deque[str]] = {}  # recent question texts, normalized; memory only
         self._sets: dict[str, tuple[str, list[Question]]] = {}  # username: (day, questions)
         self._races: dict[str, Race] = {}
         self._busy: dict[str, threading.Event] = {}  # writing ahead now; set when done
@@ -249,18 +290,39 @@ class RaceDesk:
         self.clock = time.monotonic  # tests may replace it
         self._lock = threading.Lock()
 
+    def _avoid(self, username: str, today: date) -> tuple[list[str], list[str]]:
+        """Ideas and texts a new question mustn't repeat: asked lately, or held for a race."""
+        recent = self.concepts.recent(username, today) if self.concepts else []
+        with self._lock:
+            held = self._held(username, today)
+            texts = [*self._asked.get(username, ()), *(normalize(q.question) for q in held)]
+        return [*recent, *(q.concept for q in held)], texts
+
     def _write(self, username: str, supervised: bool, today: date) -> list[Question]:
         m = self.maps.get(username)
+        concepts, texts = self._avoid(username, today)
+        recent = list(dict.fromkeys(concepts))  # what Claude hears, each once
+        kept: list[Question] = []
+        spare: list[Question] = []  # good but repeated: better than no race
         for _ in range(2):  # one more try if too few questions pass the checks
             try:
-                raw = self.quizzer.write(QUIZ_SYSTEM, quiz_input(m, today, supervised))
+                raw = self.quizzer.write(QUIZ_SYSTEM, quiz_input(m, today, supervised, recent))
             except RaceUnavailable:
                 raise
             except Exception as exc:  # never show what went wrong inside
                 raise RaceUnavailable(NOT_READY) from exc
-            kept = check_questions(raw, m)
+            # both tries count together, each new one unlike the ones before
+            kept += check_questions(raw, m, concepts=[*concepts, *(q.concept for q in kept)],
+                                    texts=[*texts, *(normalize(q.question) for q in kept)],
+                                    spare=spare)
             if len(kept) >= QUESTIONS_PER_RACE:
                 return kept
+        for q in spare:  # Claude could only repeat: race anyway, never one question twice
+            if len(kept) < QUESTIONS_PER_RACE and normalize(q.question) not in {
+                    normalize(k.question) for k in kept}:
+                kept.append(q)
+        if len(kept) >= QUESTIONS_PER_RACE:
+            return kept
         raise RaceUnavailable(NOT_READY)
 
     def _held(self, username: str, today: date) -> list[Question]:
@@ -333,6 +395,7 @@ class RaceDesk:
                         mine.set()
             questions, rest = held[:QUESTIONS_PER_RACE], held[QUESTIONS_PER_RACE:]
             self.points.start_race(username, day)
+            self._remember(username, questions, day)
             race = new_race(questions, boost, car)
             with self._lock:
                 later = [q for q in self._held(username, day) if id(q) not in before]  # meanwhile
@@ -341,6 +404,17 @@ class RaceDesk:
                 self._started[username] = self.clock()
         self.prefill(username, supervised)  # the next race starts quickly
         return race
+
+    def _remember(self, username: str, questions: list[Question], day: date) -> None:
+        """Note what this race asks, so later questions ask about something else."""
+        with self._lock:
+            asked = self._asked.setdefault(username, deque(maxlen=ASKED_IN_MEMORY))
+            asked.extend(normalize(q.question) for q in questions)
+        if self.concepts is not None:
+            try:
+                self.concepts.add(username, [(q.goal, q.concept) for q in questions], day)
+            except OSError:
+                pass  # best effort: the race goes on without remembering its ideas
 
     def pick(self, username: str, race_id: str, number: int,
              choice: int) -> tuple[Race | None, Turn | None, int]:

@@ -2,10 +2,12 @@
 
 import random
 import time
-from datetime import date
+import uuid
+from datetime import date, timedelta
 
 import pytest
 
+from lerni.student.concepts import ConceptStore, normalize
 from lerni.student.interests import InterestMap, MapStore, add_goal, add_interest, remove
 from lerni.student.points import RACES_PER_DAY, PointsError, PointsStore
 from lerni.student.race import (
@@ -55,7 +57,7 @@ def test_bad_or_off_map_questions_are_dropped_and_shuffling_keeps_the_right_answ
     add_goal(m, "Fractions")
     remove(m, add_interest(m, "sharks").id)  # set aside: never in a question
     good = {"goal": "Fractions", "question": "Half of 8 laps?", "choices": ["4", "2", "6"],
-            "answer": 0, "why": "Half means 2 equal parts."}
+            "answer": 0, "why": "Half means 2 equal parts.", "concept": "halves"}
     raw = {"questions": [
         good,
         {**good, "choices": ["4", "4", "6"]},  # not three different choices
@@ -70,6 +72,13 @@ def test_bad_or_off_map_questions_are_dropped_and_shuffling_keeps_the_right_answ
     assert "Fractions" in text and "sharks" in text  # listed only as never to use
 
 
+def fresh(goal: str, why: str = "Half means 2 equal parts.", **extra) -> dict:
+    """One good question unlike any other: its own text and concept."""
+    tag = uuid.uuid4().hex
+    return {"goal": goal, "concept": tag[:12], "question": f"What is {tag}?",
+            "choices": ["4", "2", "6"], "answer": 0, "why": why, **extra}
+
+
 class FakeQuizzer:
     """Returns ten good questions, or something useless, and counts its calls."""
 
@@ -81,9 +90,8 @@ class FakeQuizzer:
         self.calls += 1
         if self.fail:
             raise RaceUnavailable("Lerni is resting until Mon 6:00 pm. 😴")
-        item = {"goal": "Fractions", "question": "Half of 8 laps?", "choices": ["4", "2", "6"],
-                "answer": 0, "why": self.why}
-        return {"questions": [item] * 10 if self.good else [{"goal": "x"}]}
+        items = [fresh("Fractions", self.why) for _ in range(10)]
+        return {"questions": items if self.good else [{"goal": "x"}]}
 
 
 def desk_for(tmp_path, quizzer):
@@ -133,10 +141,8 @@ class SlowQuizzer(FakeQuizzer):
 
         self.calls += 1
         time.sleep(0.3)
-        item = {"question": "Half of 8 laps?", "choices": ["4", "2", "6"], "answer": 0,
-                "why": "Half means 2 equal parts."}
-        return {"questions": [{**item, "goal": "Fractions"}] * 5
-                + [{**item, "goal": "Acceleration"}] * 5}
+        return {"questions": [fresh("Fractions") for _ in range(5)]
+                + [fresh("Acceleration") for _ in range(5)]}
 
 
 def test_a_race_waits_for_questions_being_written_and_mixes_the_goals(tmp_path):
@@ -153,7 +159,8 @@ def test_a_goal_named_with_its_notes_still_counts():
     m = InterestMap()
     add_goal(m, "Fractions", "halves and quarters")
     item = {"goal": "Fractions (halves and quarters)", "question": "Half of 8 laps?",
-            "choices": ["4", "2", "6"], "answer": 0, "why": "Half means 2 equal parts."}
+            "choices": ["4", "2", "6"], "answer": 0, "why": "Half means 2 equal parts.",
+            "concept": "halves"}
     kept = check_questions({"questions": [item]}, m)  # regression: every one was dropped
     assert [q.goal for q in kept] == ["Fractions"]
 
@@ -190,7 +197,7 @@ def test_set_aside_matches_whole_words_and_the_why_too():
     remove(m, add_interest(m, "great white").id)
     remove(m, add_interest(m, "car").id)
     good = {"goal": "Fractions", "question": "Half of 8 cards?", "choices": ["4", "2", "6"],
-            "answer": 0, "why": "Half means 2 equal parts."}
+            "answer": 0, "why": "Half means 2 equal parts.", "concept": "halves"}
     raw = {"questions": [good, {**good, "why": "Like 2 cars in 4."},
                          {**good, "question": "Half of a Great White's 8 fins?"}]}
     kept = check_questions(raw, m, random.Random(1))
@@ -252,3 +259,70 @@ def test_opening_games_while_a_race_starts_asks_claude_once(tmp_path):
     tap.join()
     time.sleep(0.4)
     assert quizzer.calls == 1
+
+
+def test_repeats_are_dropped_and_recent_concepts_reach_claude(tmp_path):
+    # regression: production raced the same or nearly the same questions again and again
+    class Repeater(FakeQuizzer):
+        def __init__(self):
+            super().__init__()
+            self.prompts, self.first = [], None
+
+        def write(self, system, prompt):
+            self.calls += 1
+            self.prompts.append(prompt)
+            if self.first is None:  # five fresh questions, plus a twin of the first
+                self.first = [fresh("Fractions") for _ in range(5)]
+                return {"questions": [*self.first, {**self.first[0], "concept": "other"}]}
+            old = self.first[0]
+            return {"questions": [
+                fresh("Fractions", concept=old["concept"]),  # an idea asked last race
+                fresh("Fractions", question=old["question"].replace("?", " now?")),  # near copy
+                *[fresh("Fractions") for _ in range(5)]]}
+
+    quizzer = Repeater()
+    maps, points = MapStore(tmp_path), PointsStore(tmp_path)
+    maps.change("sam", lambda m: add_goal(m, "Fractions"))
+    desk = RaceDesk(quizzer, maps, points, ConceptStore(tmp_path))
+    desk.prefill = lambda *args: None  # only the starts ask Claude here
+    ticks = iter(range(0, 1000, 10))
+    desk.clock = lambda: float(next(ticks))  # the second start isn't a quick second tap
+    first = desk.start("sam", supervised=True, today=TODAY)
+    second = desk.start("sam", supervised=True, today=TODAY + timedelta(days=1))  # a new set
+    assert len({q.question for q in first.questions}) == QUESTIONS_PER_RACE  # no twin in a race
+    assert quizzer.first[1]["concept"] in quizzer.prompts[1]  # Claude hears what was asked
+    asked = {normalize(q.question) for q in first.questions}
+    assert not any(normalize(q.question) in asked or "now" in q.question
+                   for q in second.questions)
+    assert not {q.concept for q in first.questions} & {q.concept for q in second.questions}
+    saved = (tmp_path / "concepts" / "sam.json").read_text()
+    assert "What is" not in saved and quizzer.first[1]["concept"] in saved  # labels, never text
+
+
+def test_a_race_still_starts_when_claude_can_only_repeat_or_the_concepts_file_fails(tmp_path):
+    # regression: a narrow goal's near-repeats locked out every race until a restart, and a
+    # failed concepts write counted a race that never showed
+    class Same(FakeQuizzer):
+        def __init__(self):
+            super().__init__()
+            self.items = [fresh("Fractions") for _ in range(10)]
+
+        def write(self, system, prompt):
+            self.calls += 1
+            return {"questions": self.items}
+
+    class Broken(ConceptStore):
+        def add(self, *args, **kwargs):
+            raise OSError("disk full")
+
+    maps, points = MapStore(tmp_path), PointsStore(tmp_path)
+    maps.change("sam", lambda m: add_goal(m, "Fractions"))
+    desk = RaceDesk(Same(), maps, points, Broken(tmp_path))
+    desk.prefill = lambda *args: None
+    ticks = iter(range(0, 1000, 10))
+    desk.clock = lambda: float(next(ticks))
+    for day in range(3):  # each day a new set, and every question already asked
+        race = desk.start("sam", supervised=True, today=TODAY + timedelta(days=day))
+        assert len(race.questions) == QUESTIONS_PER_RACE
+        assert len({q.question for q in race.questions}) == QUESTIONS_PER_RACE
+    assert points.races_left("sam", TODAY + timedelta(days=2)) == RACES_PER_DAY - 1  # counted once
