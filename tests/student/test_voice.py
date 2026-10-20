@@ -60,3 +60,21 @@ def test_a_failed_voice_keeps_the_text():
     assert "".join(text for text, _ in out) == "Hi. Bye."
     assert all(audio is None for _, audio in out)
 
+
+def test_garbled_or_silent_pieces_never_reach_claude_or_stop_the_voice():
+    # regression (review): a transcript of only "�" became a question, and one silent
+    # sentence (only "…") turned the voice off for the rest of the answer
+    from lerni.student.voice import SilentAudio
+
+    with pytest.raises(SpeechUnavailable):
+        heard(FakeSpeech(text="� �"), clip())
+
+    class Picky(FakeSpeech):
+        def speak(self, text):
+            if text == "Wait.":
+                raise SilentAudio("no sound")
+            return super().speak(text)
+
+    speech = Picky()
+    list(spoken_reply(speech, ["Wait. ", "…\n", "Sharks eat fish."]))
+    assert speech.spoken == ["Sharks eat fish."]  # the rest still spoken; "…" never sent

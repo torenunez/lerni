@@ -29,6 +29,10 @@ class SpeechUnavailable(RuntimeError):
     """A speech service failed; the message is general, never the audio or text."""
 
 
+class SilentAudio(SpeechUnavailable):
+    """The voice made no sound for this sentence; skip it, keep the rest."""
+
+
 class ClipRefused(ValueError):
     """The clip is too big, or not a WAV."""
 
@@ -56,7 +60,7 @@ def heard(speech: Speech, clip_b64: str) -> str:
     if len(wav) > MAX_CLIP_BYTES or wav[:4] != b"RIFF" or wav[8:12] != b"WAVE":
         raise ClipRefused(HEARD_NOTHING)
     text = speech.transcribe(wav).strip()
-    if not text:
+    if not text.replace("\ufffd", "").strip():  # nothing, or only letters that couldn't be read
         raise SpeechUnavailable(HEARD_NOTHING)
     return text
 
@@ -82,11 +86,13 @@ def spoken_reply(speech: Speech, pieces: Iterable[str]) -> Iterator[tuple[str, b
     def say(sentence: str) -> Iterator[tuple[str, bytes | None]]:
         nonlocal voice_ok
         clean = for_speaking(sentence)
-        if voice_ok and clean:
+        if voice_ok and re.search(r"\w", clean):  # nothing to say in "…" or "---"
             try:
                 yield "", speech.speak(clean)
+            except SilentAudio:
+                pass  # this sentence only: the next may still be spoken
             except SpeechUnavailable:
-                voice_ok = False  # one failure: text only from here on
+                voice_ok = False  # the voice failed: text only from here on
 
     for piece in pieces:
         yield piece, None

@@ -50,4 +50,10 @@ def test_silent_audio_turns_voice_off(tmp_path, monkeypatch):
     monkeypatch.setenv(mac_speech.MODEL_ENV, str(model))
     monkeypatch.setattr(mac_speech.shutil, "which", lambda tool: "/usr/bin/" + tool)
     speech, why = mac_speech.mac_speech_from_env(runner=silent_say)
-    assert speech is None and "SSH" in why
+    assert speech is None and "SSH" in why and "tmux" in why
+
+    def bad_voice(cmd, **kwargs):  # regression (review): every failure blamed SSH
+        raise subprocess.CalledProcessError(1, cmd)
+
+    speech, why = mac_speech.mac_speech_from_env(runner=bad_voice)
+    assert speech is None and "LERNI_SAY_VOICE" in why and "SSH" not in why

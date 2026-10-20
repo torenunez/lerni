@@ -15,7 +15,7 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-from lerni.student.voice import HEARD_NOTHING, SPOKE_NOTHING, SpeechUnavailable
+from lerni.student.voice import HEARD_NOTHING, SPOKE_NOTHING, SilentAudio, SpeechUnavailable
 
 MODEL_ENV, VOICE_ENV = "LERNI_WHISPER_MODEL", "LERNI_SAY_VOICE"
 DEFAULT_MODEL = Path.home() / ".lerni" / "models" / "ggml-small.bin"
@@ -23,6 +23,7 @@ TIMEOUT = 30  # seconds per command
 MIN_AUDIO = 1000  # bytes: say writes 28 when it makes no sound (over SSH or in tmux)
 NO_TOOLS = "install whisper.cpp and its model: admin reference, Voice"
 NO_SOUND = "say makes no sound here: start it from the Mac's own login, not over SSH or in tmux"
+SAY_FAILED = "say failed or took too long: check LERNI_SAY_VOICE names a voice in say -v '?'"
 _NOISE = re.compile(r"\[[^\]]*\]|\([^)]*\)")  # [BLANK_AUDIO], (music) and the like
 
 
@@ -79,7 +80,7 @@ class MacSpeech:
             except (OSError, subprocess.SubprocessError):
                 raise SpeechUnavailable(SPOKE_NOTHING) from None
         if len(spoken) < MIN_AUDIO:  # silence: show the text instead of playing nothing
-            raise SpeechUnavailable(SPOKE_NOTHING)
+            raise SilentAudio(SPOKE_NOTHING)
         return spoken
 
 
@@ -97,6 +98,8 @@ def mac_speech_from_env(
     speech = MacSpeech(model, os.environ.get(VOICE_ENV, ""), runner)
     try:
         speech.speak("Hi")  # once, at startup: a second or so
-    except SpeechUnavailable:
+    except SilentAudio:
         return None, NO_SOUND
+    except SpeechUnavailable:
+        return None, SAY_FAILED
     return speech, ""
