@@ -30,6 +30,9 @@ Never something they said they dislike.
 - kind_of: up to 2 pairs [specific, general] of interests on the map or in new_interests, \
 when the first is plainly a kind of the second ("great white", "sharks"); not a part of it \
 (an engine isn't a kind of car). Only when obvious; never make up a general name.
+- same_as: up to 2 pairs [a name the student used, a name on the map] when they mean the \
+very same thing ("T-Rex", "Tyrannosaurus"); never a kind of it ("Mount Etna", "volcanoes") \
+or something related ("lava", "volcano").
 - bridge: if Lerni's answer led from one interest on the map to one goal on the map, \
 those two names.
 - explained: a goal the student explained in their own words, not by repeating Lerni.
@@ -59,6 +62,7 @@ TAG_SCHEMA: dict[str, Any] = {
         "new_interests": _NAMES,
         "related": _PAIRS(3),
         "kind_of": _PAIRS(2),
+        "same_as": _PAIRS(2),
         "bridge": {"type": "object", "additionalProperties": False,
                    "properties": {"interest": {"type": "string"}, "goal": {"type": "string"}}},
         "explained": {"type": "string"},
@@ -91,7 +95,9 @@ class Exchange:
 def tagger_input(m: InterestMap, previous: str, question: str, answer: str) -> str:
     """What the tagger reads: the map's entries, then the exchange with who said what."""
     entries = [
-        f"- {e.name} ({e.kind}" + (f": {e.notes}" if e.notes else "") + ")" for e in m.entries
+        f"- {e.name} ({e.kind}" + (f": {e.notes}" if e.notes else "")
+        + (f"; also: {', '.join(e.aliases)}" if e.aliases else "") + ")"
+        for e in m.entries
     ]
     parts = ["Map entries:", *(entries or ["(none yet)"]), ""]
     bridges = [k for k in m.links if k.kind == "bridge"]

@@ -9,6 +9,7 @@ from lerni.student.interests import (
     MAP_HEADER,
     MAX_ENTRIES,
     InterestMap,
+    Link,
     MapError,
     MapStore,
     add_goal,
@@ -425,3 +426,35 @@ def test_interests_named_together_on_a_full_map_all_stay_on_it():
     apply_tags(m, tags, "a shark and a whale", date(2026, 10, 14))
     assert m.find("sharks") is not None and m.find("whale") is not None
     assert len(m.entries) == MAX_ENTRIES and m.find("sharks").days[0] == "2026-09-01"
+
+
+def test_one_item_keeps_every_name_and_its_history():
+    # the admin's decision (2026-10-20): one item with many names, never split hairs over them
+    day = date(2026, 10, 20)
+    m = InterestMap()
+    cars = _interest(m, "race cars")
+    cars.days = ["2026-10-01"]
+    apply_tags(m, parse_tags({"about": ["racecars"]}), "I love racecars", day)
+    assert [e.name for e in m.entries] == ["race cars"] and cars.aliases == ["racecars"]
+    assert cars.days == ["2026-10-01", "2026-10-20"]
+    rex = _interest(m, "Tyrannosaurus")
+    apply_tags(m, parse_tags({"same_as": [["T-Rex", "Tyrannosaurus"]]}), "a T-Rex!", day)
+    assert m.find("t-rex") is rex and rex.aliases == ["T-Rex"]
+    lava, volcano = _interest(m, "magma"), _interest(m, "lava")
+    lava.days, volcano.days = ["2026-10-02"], ["2026-10-03"]
+    m.links.append(Link(rex.id, lava.id, "related", "2026-10-02"))
+    m.links.append(Link(lava.id, volcano.id, "related", "2026-10-02"))
+    apply_tags(m, parse_tags({"same_as": [["lava", "magma"]]}), "lava is magma", day)
+    assert m.find("lava") is lava and lava.aliases == ["lava"] and len(m.entries) == 3
+    assert lava.days == ["2026-10-02", "2026-10-03", "2026-10-20"]
+    assert [(k.a, k.b) for k in m.links] == [(rex.id, lava.id)]  # moved, never to itself
+    goal = add_goal(m, "Acceleration", "speeding up")
+    add_goal(m, "Speed")
+    zoom = _interest(m, "zoom")
+    apply_tags(m, parse_tags({"same_as": [["zoom", "Acceleration"], ["Speed", "Acceleration"]]}),
+               "zoom! speed", day)
+    assert m.find("zoom") is goal and goal.name == "Acceleration" and goal.notes == "speeding up"
+    assert m.find("Speed").name == "Speed" and zoom not in m.entries  # two goals never merge
+    remove(m, _interest(m, "guns").id)
+    apply_tags(m, parse_tags({"same_as": [["guns", "race cars"]]}), "guns", day)
+    assert "guns" not in cars.aliases  # set aside: never joined

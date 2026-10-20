@@ -49,6 +49,7 @@ class Entry:
     # goals only: dates Lerni thinks they explained it back, and dates they bounced off a bridge
     explained: list[str] = field(default_factory=list)
     bounces: list[str] = field(default_factory=list)
+    aliases: list[str] = field(default_factory=list)  # other names the student used for it
 
 
 @dataclass
@@ -74,14 +75,26 @@ class InterestMap:
     next_id: int = 1
     removed_info: dict[str, dict[str, Any]] = field(default_factory=dict)  # for Put back
     archived: list[Entry] = field(default_factory=list)  # rested to make room; back when named
+    not_same: list[list[str]] = field(default_factory=list)  # name pairs a person split apart
 
     def find(self, name: str) -> Entry | None:
-        """The entry with this name, ignoring case, or None; "car" finds "cars" and back."""
+        """The entry with this name or alias, ignoring case, or None; "car" finds "cars",
+        "racecars" finds "race cars", unless a person split the two."""
         key = name.strip().casefold()
-        exact = next((e for e in self.entries if e.name.casefold() == key), None)
-        if exact is not None or not key:
+        if not key:
+            return None
+        exact = next((e for e in self.entries
+                      if key in (n.casefold() for n in (e.name, *e.aliases))), None)
+        if exact is not None:
             return exact
-        return next((e for e in self.entries if same_name(e.name, key)), None)
+        return next((e for e in self.entries if not self.split(key, e)
+                     and any(same_name(n, key) for n in (e.name, *e.aliases))), None)
+
+    def split(self, name: str, entry: Entry) -> bool:
+        """Whether a person said this name is not the same as the entry."""
+        key = name.strip().casefold()
+        return any(sorted([key, n.casefold()]) in self.not_same
+                   for n in (entry.name, *entry.aliases))
 
     def get(self, entry_id: str) -> Entry:
         """The entry with this id.
@@ -100,9 +113,15 @@ class InterestMap:
         self.next_id += 1
         return entry
 
+    def removed_names(self) -> list[str]:
+        """Every name set aside: removed items and the other names they had."""
+        info = self.removed_info
+        return [*self.removed,
+                *(a for r in self.removed for a in info.get(r.casefold(), {}).get("aliases", []))]
+
     def is_removed(self, name: str) -> bool:
-        """Whether a person removed this name, or its singular or plural."""
-        return any(same_name(r, name) for r in self.removed)
+        """Whether a person removed this name or one of its item's names, plurals included."""
+        return any(same_name(r, name) for r in self.removed_names())
 
 
 # words that end in "s" but aren't plurals ("news" is not more than one "new")
@@ -128,22 +147,31 @@ def _plurals(word: str) -> list[str]:
     return [word + "s"] + ([word + "es"] if word.endswith(ES_AFTER) else [])
 
 
+def _squash(name: str) -> str:
+    """A name without spaces, hyphens, or punctuation: "race-cars" and "race cars" match."""
+    return re.sub(r"[\W_]+", "", name)
+
+
 def same_name(a: str, b: str) -> bool:
-    """Whether two names are one, ignoring case and a plural "s" or "es" (car, cars, buses)."""
+    """Whether two names are one, ignoring case, spacing and punctuation, and a plural
+    "s" or "es" (car, cars, buses; race cars, racecars)."""
     a, b = a.strip().casefold(), b.strip().casefold()
-    if a == b:
+    if a == b or (_squash(a) and _squash(a) == _squash(b)):
         return True
     short, long = sorted((a, b), key=len)
-    return short in _singulars(long)  # never "pi" and "pies", or "plan" and "planes"
+    # never "pi" and "pies", or "plan" and "planes"
+    return _squash(short) in {_squash(s) for s in _singulars(long)}
 
 
 def mentions_set_aside(m: InterestMap, text: str) -> bool:
     """Whether ``text`` names anything removed from the map, as whole words, plurals included."""
     folded = text.casefold()
-    for name in m.removed:
+    for name in m.removed_names():
         n = name.strip().casefold()
         forms = {n, *_plurals(n), *_singulars(n)}  # "guns" set aside: "gun" too
-        if any(re.search(rf"(?<!\w){re.escape(f)}(?!\w)", folded) for f in forms):
+        # a space or hyphen may be there or not: "race cars" also blocks "racecars"
+        patterns = [re.sub(r"(\\ |\\-)", r"[\\s-]?", re.escape(f)) for f in forms]
+        if any(re.search(rf"(?<!\w){p}(?!\w)", folded) for p in patterns):
             return True
     return False
 
@@ -212,12 +240,14 @@ def make_room(m: InterestMap, keep: Collection[str] = ()) -> bool:
 
 def _wake(m: InterestMap, name: str, kind: Kind = "interest") -> Entry | None:
     """Bring a resting item back onto the map with its history, or None if it isn't resting."""
-    resting = next((a for a in m.archived if same_name(a.name, name)), None)
+    resting = next((a for a in m.archived
+                    if any(same_name(n, name) for n in (a.name, *a.aliases))), None)
     if resting is None or m.is_removed(resting.name):
         return None
     m.archived = [a for a in m.archived if a is not resting]
     entry = m.new_entry(resting.name, kind)
     entry.days, entry.mentions = list(resting.days), resting.mentions
+    entry.aliases = list(resting.aliases)
     m.entries.append(entry)
     return entry
 
@@ -292,6 +322,10 @@ def rename(m: InterestMap, entry_id: str, name: str) -> Entry:
     if other is not None and other.id != entry_id:
         raise MapError(f"{other.name} is already on the map.")
     _unremove(m, name)  # a removed name in use again
+    old = entry.name
+    entry.aliases = [a for a in entry.aliases if a.casefold() != name.casefold()]
+    if old.casefold() != name.casefold():
+        entry.aliases.append(old)  # what it was called stays one of its names
     entry.name = name
     m.edits += 1
     return entry
@@ -328,7 +362,7 @@ def remove(m: InterestMap, entry_id: str) -> None:
     m.removed_info[entry.name.casefold()] = {
         "kind": entry.kind, "notes": entry.notes, "id": entry.id, "days": entry.days,
         "mentions": entry.mentions, "explained": entry.explained, "bounces": entry.bounces,
-        "links": links,
+        "links": links, "aliases": entry.aliases,  # set aside too
     }
     m.edits += 1
 
@@ -368,6 +402,7 @@ def put_back(m: InterestMap, name: str) -> Entry:
         entry.id = old  # ids are never reused, so links removed with it still point here
     entry.days, entry.explained = list(info.get("days", [])), list(info.get("explained", []))
     entry.mentions, entry.bounces = int(info.get("mentions", 0)), list(info.get("bounces", []))
+    entry.aliases = list(info.get("aliases", []))
     ids = {e.id for e in m.entries}
     waiting = {i["id"]: i for i in m.removed_info.values() if "id" in i}  # still in Removed
     for k in info.get("links", []):
@@ -411,6 +446,7 @@ def _from_dict(data: dict[str, Any]) -> InterestMap:
         int(data.get("next_id", 1)),
         dict(data.get("removed_info", {})),
         archived,
+        [list(p) for p in data.get("not_same", []) if isinstance(p, list) and len(p) == 2],
     )
 
 
@@ -465,6 +501,7 @@ class Tags:
     skip: str | None = None  # "excluded", "personal", or "scary": add nothing
     kind_of: tuple[tuple[str, str], ...] = ()  # (specific, general), both on the map
     answered: str | None = None  # "right" or "tried": Lerni's question, answered for real
+    same_as: tuple[tuple[str, str], ...] = ()  # (a name the student used, a name on the map)
 
 
 def _names(value: Any, limit: int) -> tuple[str, ...]:
@@ -496,6 +533,7 @@ def parse_tags(data: Any) -> Tags:
         skip=skip if isinstance(skip, str) and skip else None,
         answered=a if (a := data.get("answered")) in ("right", "tried") else None,
         kind_of=pairs("kind_of", 2),
+        same_as=pairs("same_as", 2),
     )
 
 
@@ -516,6 +554,74 @@ def _said(name: str, text: str) -> bool:
     return re.search(rf"(?<!\w){re.escape(name.casefold())}(?!\w)", text) is not None
 
 
+def _alias(entry: Entry, name: str) -> None:
+    """Note another name the student used for this item."""
+    if name.casefold() not in {n.casefold() for n in (entry.name, *entry.aliases)}:
+        entry.aliases.append(name)
+
+
+def _merge(m: InterestMap, keep: Entry, gone: Entry) -> None:
+    """Make two items one: ``gone``'s names, days, and links join ``keep``."""
+    keep.days = sorted({*keep.days, *gone.days})
+    keep.mentions += gone.mentions
+    keep.explained = sorted({*keep.explained, *gone.explained})
+    keep.bounces = sorted([*keep.bounces, *gone.bounces])
+    for n in (gone.name, *gone.aliases):
+        _alias(keep, n)
+    moved: list[Link] = []
+    for k in m.links:  # in order of recency; a later copy of a link wins
+        a, b = (keep.id if x == gone.id else x for x in (k.a, k.b))
+        if a == b:
+            continue  # a link between the two, or a group made one with its kind
+        ordered = k.kind in ("kind_of", "not_kind_of")  # a group link has a direction
+        moved = [x for x in moved if not (x.kind == k.kind and (
+            (x.a, x.b) == (a, b) if ordered else {x.a, x.b} == {a, b}))]
+        moved.append(Link(a, b, k.kind, k.day))
+    m.links = moved
+    m.entries = [e for e in m.entries if e.id != gone.id]
+
+
+def _same_as(m: InterestMap, new: str, old: str, said: str) -> Entry | None:
+    """Apply one "same as" from the tagger; the item it counts for, or None if refused."""
+    try:
+        new = check_name(new)
+    except MapError:
+        return None
+    target = m.find(old)
+    if (target is None or not _said(new, said) or m.is_removed(new) or m.split(new, target)
+            or m.is_removed(target.name)):
+        return None
+    other = m.find(new)
+    if other is None:
+        _alias(target, new)
+        return target
+    if other.id == target.id:
+        return target
+    if other.kind == "goal" and target.kind == "goal":
+        return None  # two goals stay two: only people set goals
+    keep, gone = (other, target) if other.kind == "goal" else (target, other)
+    _merge(m, keep, gone)
+    return keep
+
+
+def not_the_same(m: InterestMap, entry_id: str, name: str) -> None:
+    """A person splits a name off an item; nothing joins the two again.
+
+    Raises:
+        MapError: Unknown entry, or not one of its other names.
+    """
+    entry = m.get(entry_id)
+    key = (name or "").strip().casefold()
+    found = next((a for a in entry.aliases if a.casefold() == key), None)
+    if found is None:
+        raise MapError("That isn't one of its names any more.")
+    entry.aliases = [a for a in entry.aliases if a is not found]
+    pair = sorted([found.casefold(), entry.name.casefold()])
+    if pair not in m.not_same:
+        m.not_same.append(pair)
+    m.edits += 1
+
+
 def apply_tags(m: InterestMap, tags: Tags, student_text: str, today: date) -> None:
     """Apply the tagger's observations: interests, days, links, explained, bounces.
 
@@ -526,9 +632,14 @@ def apply_tags(m: InterestMap, tags: Tags, student_text: str, today: date) -> No
         return  # excluded, personal, or scary: nothing is recorded
     day, said = today.isoformat(), " ".join(_plain(student_text).casefold().split())
     touched: dict[str, Entry] = {}
+    for new, old in tags.same_as:  # first, so a name used for an item never becomes a new one
+        if (e := _same_as(m, new, old, said)) is not None:
+            touched[e.id] = e
     for name in tags.about:
         if (e := m.find(name)) is not None:
             touched[e.id] = e
+            if _said(name, said) and not m.split(name, e):
+                _alias(e, name.strip())  # another spelling, in the student's own words
     for raw in tags.new_interests:
         try:
             name = check_name(raw)
@@ -536,6 +647,8 @@ def apply_tags(m: InterestMap, tags: Tags, student_text: str, today: date) -> No
             continue
         if (e := m.find(name)) is not None:
             touched[e.id] = e  # already on the map (an interest or a goal): it counts there
+            if _said(name, said):
+                _alias(e, name)
         elif not m.is_removed(name) and _said(name, said) and make_room(m, keep=touched):
             e = _wake(m, name)  # resting: it comes back with its history
             if e is None:
