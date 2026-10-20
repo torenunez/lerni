@@ -135,7 +135,7 @@ The companion learns what each student likes (how they like to be talked to, whi
 
 ## Version 5: new goals from the map
 
-The agent suggests goals that connect to what the student already loves; the educator accepts or declines each. Stories to be written after Version 4.
+The agent suggests goals that connect to what the student already loves, using race probes (nearby ideas the student chose to explore or was ready for); the educator accepts or declines each. Stories to be written after Version 4.
 
 ## Version 6: conversation without an educator present
 
@@ -181,7 +181,7 @@ Public access and a native iPad app.
 - 2026-10-10: Lerni speaks with the home server's own voice (macOS `say`) and hears with whisper.cpp's `whisper-cli`, both run as commands, so there's nothing to install for the voice and no helper program to keep running; Kokoro or a hosted voice can replace them behind the same adapter. While the button is held, what's heard so far shows below it. Only spoken questions are answered aloud. With voice on, both conversation screens are just the chat and the button (a tap stops Lerni); typing shows only when voice is off. (Replaces "local Whisper and Kokoro, as separate helper programs".)
 - 2026-10-10: Files Gradio keeps in its cache on the home server (an upload before it's read, any voice audio) can be reached by URL by anyone signed in. Accepted for the household: at most three people signed in, each with their own account. Revisit before anyone outside the family uses the app.
 - 2026-10-12: Play and points become Version 3 (the admin's decision, after seeing the student answer Lerni's questions with random emojis). A car race answered by multiple choice, MathGas style (a wrong pick slows your car), and answers in the conversation, judged by the tagger, earn points spent on cars in a garage. This replaces "No scores, no failing": points are never taken away for a wrong answer, never compared between students, and kept apart from the map. Later versions move up one (remembering is now 4, suggested goals 5, without an educator 6); decisions above keep their old numbers.
-- 2026-10-19: The race gets harder and asks for explanations (the admin's decision, after the student won every race since their first car upgrade with about 84% right, and saw the same questions repeat): questions don't repeat, difficulty adapts per goal, missed ideas come back, and an occasional bonus question is answered in their own words, typed or spoken, and graded with partial credit. This replaces "no typing, no chat" in the race and "no difficulty settings" in Version 3.
+- 2026-10-19: The race gets harder and asks for explanations (the admin's decision, after the student won every race since their first car upgrade with about 84% right, and saw the same questions repeat): questions don't repeat, difficulty adapts per goal, missed ideas come back, and an occasional bonus question is answered in their own words, typed or spoken, and graded with partial credit. This replaces "no typing, no chat" in the race and "no difficulty settings" in Version 3. The race also probes nearby ideas: the student's choice to explore one opens Chat, and probe results feed Version 5's suggested goals, never the map directly; practice shows on goals read-only, and a nailed explanation marks a goal explained.
 
 ## Open questions
 
