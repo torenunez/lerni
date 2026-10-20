@@ -12,7 +12,7 @@ import re
 import threading
 import unicodedata
 from collections.abc import Callable, Collection
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, fields
 from datetime import date, timedelta
 from pathlib import Path
 from typing import Any, Literal, TypeVar
@@ -428,10 +428,15 @@ def _to_dict(m: InterestMap) -> dict[str, Any]:
     return {"schema": SCHEMA, **asdict(m)}
 
 
+def _known(cls: Any, data: dict[str, Any]) -> Any:
+    # fields a later version added are left out, so a rollback still loads its maps
+    return cls(**{f.name: data[f.name] for f in fields(cls) if f.name in data})
+
+
 def _from_dict(data: dict[str, Any]) -> InterestMap:
-    entries = [Entry(**e) for e in data.get("entries", [])]
+    entries = [_known(Entry, e) for e in data.get("entries", [])]
     ids = {e.id for e in entries}
-    links = [Link(**k) for k in data.get("links", [])]
+    links = [_known(Link, k) for k in data.get("links", [])]
     links = [k for k in links if k.a in ids and k.b in ids]  # heals a map an older bug broke
     # older code could keep a name set aside beside its near-name on the map: a goal was a
     # person's choice, so it stays; an interest was the tagger's, so the set-aside wins
@@ -441,7 +446,7 @@ def _from_dict(data: dict[str, Any]) -> InterestMap:
             and any(same_name(r, e.name) for r in removed)}
     entries = [e for e in entries if e.id not in gone]
     links = [k for k in links if k.a not in gone and k.b not in gone]
-    archived = [Entry(**a) for a in data.get("archived", [])]  # older maps have none
+    archived = [_known(Entry, a) for a in data.get("archived", [])]  # older maps have none
     archived = [a for a in archived if not any(same_name(a.name, x) for x in removed)
                 and not any(same_name(a.name, e.name) for e in entries)]
     return InterestMap(
@@ -838,12 +843,12 @@ def link_strength(link: Link, today: date) -> str:
 
 def bridge_record(m: InterestMap, link: Link) -> tuple[int, int]:
     """A bridge's days held, and its goal's bounces on those days."""
+    held = set(link.days)
     try:
         goal = m.get(link.b)
     except MapError:
-        return len(link.days), 0
-    days = set(link.days)
-    return len(link.days), sum(d in days for d in goal.bounces)
+        return len(held), 0
+    return len(held), sum(d in held for d in goal.bounces)
 
 
 @dataclass(frozen=True)
@@ -877,6 +882,7 @@ def details(m: InterestMap, entry_id: str, today: date) -> Details:
 
     members = {x.id for x in family(m, e)}  # a group lists its kinds' bridges too
     ties: dict[tuple[str, str], tuple[str, int, int]] = {}
+    joined: dict[tuple[str, str], tuple[Link, set[str]]] = {}  # a group's links to one end
 
     def ends(kind: str) -> list[tuple[str, str]]:
         mine = members if kind == "bridge" else {e.id}
@@ -888,8 +894,13 @@ def details(m: InterestMap, entry_id: str, today: date) -> Details:
             if other in mine:
                 continue
             found.append(other)
-            held, bounced = bridge_record(m, k) if kind == "bridge" else (len(k.days), 0)
-            ties[(kind, other)] = (link_strength(k, today), held, bounced)  # the latest wins
+            _, days = joined.setdefault((kind, other), (k, set()))
+            days.update(k.days)  # every kind's days count once, as group_days does
+        for (kind_, other), (k, days) in joined.items():
+            if kind_ == kind:
+                whole = Link(k.a, k.b, k.kind, max(days), sorted(days))
+                held, bounced = bridge_record(m, whole) if kind == "bridge" else (len(days), 0)
+                ties[(kind, other)] = (link_strength(whole, today), held, bounced)
         return [(i, names[i]) for i in dict.fromkeys(found) if i in names]
 
     days = group_days(m, e)

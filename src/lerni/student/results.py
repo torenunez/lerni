@@ -66,9 +66,11 @@ class ResultsLog:
         out = []
         for line in lines:  # the whole file: about 50 lines a day is small at family scale
             try:
-                out.append(json.loads(line))
+                record = json.loads(line)
             except ValueError:
                 continue
+            if isinstance(record, dict):  # anything else is skipped like a broken line
+                out.append(record)
         return out
 
     def week(self, username: str, today: date) -> list[tuple[str, int, int]]:
@@ -83,11 +85,9 @@ class ResultsLog:
                 tally[str(r["goal"])] = counts
         return [(goal, right, asked) for goal, (right, asked) in reversed(tally.items())]
 
-    def practice(self, username: str, goal_id: str, today: date,
-                 records: list[dict[str, Any]] | None = None) -> Practice | None:
-        """One goal's Practice line, or None if it was never raced; pass ``records`` to reuse
-        one read for many goals."""
-        lines = [r for r in (self.read(username) if records is None else records)
+    def practice(self, username: str, goal_id: str, today: date) -> Practice | None:
+        """One goal's Practice line, or None if it was never raced."""
+        lines = [r for r in self.read(username)
                  if "right" in r and goal_id and r.get("goal_id") == goal_id]
         if not lines:
             return None

@@ -12,6 +12,8 @@ from lerni.student.interests import (
     Link,
     MapError,
     MapStore,
+    _from_dict,
+    _to_dict,
     add_goal,
     add_interest,
     apply_tags,
@@ -559,4 +561,13 @@ def test_links_keep_their_days_and_bridges_say_how_they_held():
     # a group lists its kinds' bridges
     apply_tags(m, parse_tags({"kind_of": [["great white", "sharks"]]}), "x", d3)
     apply_tags(m, parse_tags({"bridge": {"interest": "great white", "goal": "Fractions"}}), "x", d3)
-    assert (fractions.id, "Fractions") in details(m, m.find("sharks").id, d3).bridges
+    sharks = m.find("sharks")
+    assert (fractions.id, "Fractions") in details(m, sharks.id, d3).bridges
+    # regression: the group showed only its latest kind's record, not every kind's days
+    apply_tags(m, parse_tags({"kind_of": [["cars", "sharks"]]}), "x", d3)
+    tie = details(m, sharks.id, d3).ties[("bridge", fractions.id)]
+    assert tie[1:] == (2, 2)  # cars' day 1 and great white's day 3, a bounce on each
+    # regression: a map saved by a later version (a field this one doesn't know) still loads
+    saved = _to_dict(m)
+    saved["links"][0]["weight"], saved["entries"][0]["colour"] = 3, "red"
+    assert len(_from_dict(saved).links) == len(m.links)

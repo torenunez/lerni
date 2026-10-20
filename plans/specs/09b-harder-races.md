@@ -118,7 +118,7 @@ v3.18 (a map journal and nightly backups) sits between v3.17 and v3.19 and isn't
 ### Practice and link days (v3.17, `interests.py`, `results.py`, `web/mentallist.py`)
 
 - **Link days:**
-  - `Link.day` becomes `Link.days`, a sorted list of the days the two items came up together.
+  - `Link` gains `days`, a sorted list of the days the two items came up together; `Link.day` stays as the latest.
   - Old maps load as `[day]` and upgrade on their next write.
   - `_link` adds today to an existing link instead of skipping it.
 - **Link strength** uses the item rule (`strength`): 4 or more days in 30 is strong, 2 or more growing, and 1 faint.
@@ -132,7 +132,7 @@ v3.18 (a map journal and nightly backups) sits between v3.17 and v3.19 and isn't
   - **This week:** right out of asked over the last 7 days;
   - **Missed lately:** concepts on this goal answered wrong in the last 14 days and not answered right since, at most 3.
 
-  It's read from the results log and the concept ledger, and never stored.
+  It's read from the results log, and never stored.
 - **Who sees it:** the MentalMaps line keeps "This week:" per goal. The Practice line is in a goal's details on both MentalMap screens.
 
 ### Levels (v3.19, `race.py`, `concepts.py`)

@@ -9,6 +9,7 @@ and every edit names that map, so it never lands on another account's.
 
 from __future__ import annotations
 
+import re
 import time
 from datetime import date
 from typing import Any
@@ -179,6 +180,11 @@ def bump() -> int:
 LINK_KINDS = {"Bridges": "bridge", "Related": "related"}  # list headings with a link record
 
 
+def _md(text: str) -> str:
+    """Text shown as-is in Markdown: its formatting characters escaped."""
+    return re.sub(r"([\\`*_{}\[\]()#+\-.!|<>~])", r"\\\1", text)
+
+
 def _tie(tie: tuple[str, int, int] | None, bridge: bool) -> str:
     """ " 💪" for a link's strength; a bridge adds how it held ("· held 5 days · bounced once")."""
     if tie is None:
@@ -334,7 +340,6 @@ def mental_list(
             gr.Markdown(empty)
             return
         m, today = maps.get(who), date.today()
-        records = results.read(who) if results else []  # one read for every goal's Practice line
         for title, kind_ in (("🎯 Goals", "goal"), ("💚 Interests", "interest")):
             items = [e for e in m.entries if e.kind == kind_]
             gr.Markdown(f"**{title}**" + ("" if items else ": none yet"), key=f"h-{kind_}")
@@ -356,11 +361,14 @@ def mental_list(
                 if e.kind == "goal":
                     facts.append(f"explained on {_plural(d.explained, 'day')} (Lerni's guess)")
                     facts += ["Lerni is giving it a rest"] if d.resting else []
-                    p = results.practice(who, e.id, today, records) if results else None
+                    # read for the open goal only, never on every redraw
+                    p = results.practice(who, e.id, today) if results else None
                     if p is not None:  # how racing on it is going, read-only
                         parts = [f"raced {p.last}"] + ([f"this week {p.right}/{p.asked}"]
                                                        if p.asked else [])
-                        parts += [f"missed lately: {', '.join(p.missed)}"] if p.missed else []
+                        # Claude's labels, shown as plain text
+                        missed = ", ".join(_md(c) for c in p.missed)
+                        parts += [f"missed lately: {missed}"] if p.missed else []
                         facts.append("Practice: " + " · ".join(parts))
                 with gr.Column(elem_classes="lerni-detail", key=f"d-{e.id}"):
                     gr.Markdown(" · ".join(facts), key=f"facts-{e.id}")
