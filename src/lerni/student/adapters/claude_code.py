@@ -208,8 +208,8 @@ class ClaudeCodeQuizzer:
             **_isolated(),
         )
 
-    def write(self, system: str, prompt: str,
-              schema: dict[str, Any] = QUIZ_SCHEMA) -> dict[str, Any]:
+    def write(self, system: str, prompt: str, schema: dict[str, Any] = QUIZ_SCHEMA,
+              timeout: float = QUIZ_TIMEOUT_SECONDS) -> dict[str, Any]:
         """Return the questions as JSON (or, with the check's schema, its blind picks).
 
         Raises:
@@ -219,7 +219,7 @@ class ClaudeCodeQuizzer:
             raise RaceUnavailable(resting)
         try:
             return asyncio.run(
-                asyncio.wait_for(self._write(system, prompt, schema), QUIZ_TIMEOUT_SECONDS))
+                asyncio.wait_for(self._write(system, prompt, schema), timeout))
         except Exception as exc:  # never echo the map in errors
             raise RaceUnavailable("The track needs a minute. Try again soon.") from exc
 

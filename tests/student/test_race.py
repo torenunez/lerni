@@ -398,13 +398,13 @@ def test_a_wrong_key_never_races(tmp_path):
         def __init__(self):
             self.prompts = []
 
-        def write(self, system, prompt, schema=None):
+        def write(self, system, prompt, schema=None, **kwargs):
             self.prompts.append(prompt)
             picks = []
-            for block in re.split(r"\n(?=\d+\. )", prompt.strip()):
-                choices = re.findall(r"(\d)\) ([^\n]*?)(?=\s+\d\) |$)", block, flags=re.M)
+            for block in prompt.strip().split("\n\n"):  # one question, a choice per line
+                choices = re.findall(r"^([ABC]): (.*)$", block, flags=re.M)
                 want = "2" if "DOUBT" in block or "quarter" in block else "4"
-                picks.append(next(int(i) for i, c in choices if c.strip() == want))
+                picks.append(next(letter for letter, c in choices if c.strip() == want))
             return {"picks": picks}
 
     maps, points = MapStore(tmp_path), PointsStore(tmp_path)
@@ -443,3 +443,31 @@ def test_answers_are_logged_as_labels_and_numbers(tmp_path):
     assert finish["place"] in (1, 2, 3) and finish["points"] > 0
     assert results.week("sam", date.today()) == [("Fractions", 3, 5)]
     assert week_line(results, "sam", date.today()) == "This week: Fractions 3/5"
+
+
+
+def test_the_check_never_refuses_a_race_by_itself(tmp_path):
+    # regression (review): a check that disagreed with everything (say, an off-by-one) left
+    # no race at all; a sum written loosely ("400 / 2 = 200") dropped a good question; a huge
+    # number crashed the sum check
+    from lerni.student.race import _arith
+
+    assert _arith("9" * 400 + " * 2") is None and _arith("1e400 - 1e400") is None
+    loose = fresh("Fractions", question="Half of 400?", math="400 / 2 = 200",
+                  choices=["200", "100", "800"], answer=0)
+
+    class Writer(FakeQuizzer):
+        def write(self, system, prompt, schema=None):
+            return {"questions": [loose, *[fresh("Fractions") for _ in range(6)]]}
+
+    class Contrary:  # picks a wrong letter every time
+        def write(self, system, prompt, schema=None, **kwargs):
+            return {"picks": [{"work": "", "pick": "C"}] * prompt.count("\nA: ")}
+
+    maps, points = MapStore(tmp_path), PointsStore(tmp_path)
+    maps.change("sam", lambda m: add_goal(m, "Fractions"))
+    desk = RaceDesk(Writer(), maps, points, checker=Contrary())
+    desk.prefill = lambda *args: None
+    race = desk.start("sam", supervised=True, today=TODAY)
+    raced = {q.question for q in [*race.questions, *desk._held("sam", TODAY)]}
+    assert len(race.questions) == QUESTIONS_PER_RACE and loose["question"] in raced

@@ -68,10 +68,11 @@ def main() -> None:
         Question("Fractions", "Half of 10 laps is how many laps?", ("5", "2", "20"), 0, "",
                  "half of a number"),  # keyed right
     ]
-    picks = ClaudeCodeQuizzer().write(CHECK_SYSTEM, check_input(keyed), CHECK_SCHEMA)["picks"]
+    picks = [p["pick"] for p in
+             ClaudeCodeQuizzer().write(CHECK_SYSTEM, check_input(keyed), CHECK_SCHEMA)["picks"]]
     print("blind picks:", picks)
-    results.append(("both wrong keys are caught", picks[0] != 0 and picks[1] != 0))
-    results.append(("a right key is kept", picks[2] == 0))
+    results.append(("both wrong keys are caught", picks[0] != "A" and picks[1] != "A"))
+    results.append(("a right key is kept", picks[2] == "A"))
     for name, ok in results:
         print("PASS" if ok else "FAIL", name)
 
