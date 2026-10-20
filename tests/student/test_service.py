@@ -73,7 +73,7 @@ def test_install_and_restart_fail_plainly_and_dev_never_uses_production_data(tmp
     assert [c[1] for c in flaky.calls] == ["bootout", "bootstrap", "bootstrap"]
     # regression: restart before install gave a traceback
     with pytest.raises(ServiceError, match="install"):
-        restart("dev", run=Launchctl(kickstart=[(113, "")]), uid=501)
+        restart("dev", run=Launchctl(kickstart=[(113, "")]), uid=501, home=tmp_path)
 
 
 def test_status_is_not_fooled_by_another_copy_on_the_port(tmp_path, monkeypatch):
@@ -91,3 +91,51 @@ def test_status_is_not_fooled_by_another_copy_on_the_port(tmp_path, monkeypatch)
     monkeypatch.setattr(service, "_listener", lambda port: 10)
     shown = Launchctl(print=[(0, "\tpid = 10\n")])
     assert "running (pid 10)" in status("prod", run=shown, uid=501, home=tmp_path)
+def test_install_passes_lerni_settings_and_refuses_crossed_data(tmp_path):
+    # regression: LERNI_SAY_VOICE never reached the agent; a symlink got dev onto real data
+    from lerni.student.service import setup_warnings
+
+    lerni = tmp_path / "lerni"
+    lerni.write_text("")
+    cert, key = tmp_path / "c.pem", tmp_path / "k.pem"
+    shell = {"LERNI_SAY_VOICE": "Samantha", "LERNI_STUDENT_DATA": str(tmp_path / "dev-data"),
+             "HOME": str(tmp_path)}
+    path = install(Server("prod", 7860, "", None, cert, key), run=Launchctl(), home=tmp_path,
+                   lerni=lerni, path_env="/usr/bin", uid=501, environ=shell)
+    env = plistlib.loads(path.read_bytes())["EnvironmentVariables"]
+    assert env == {"PATH": "/usr/bin", "LERNI_SAY_VOICE": "Samantha"}  # never the shell's data
+    real = tmp_path / ".lerni" / "student"
+    real.mkdir(parents=True)
+    (tmp_path / "alias").symlink_to(real)
+    for server in (Server("dev", 7861, "Development", tmp_path / "alias", cert, key),
+                   Server("prod", 7860, "", tmp_path / ".lerni" / "student-dev", cert, key),
+                   Server("dev", 7860, "Development", tmp_path / "dev-data", cert, key)):
+        with pytest.raises(ServiceError):
+            install(server, run=Launchctl(), home=tmp_path, lerni=lerni, uid=501)
+    warned = setup_warnings(Server("prod", 7860, "", None, cert, key), tmp_path, "/nowhere",
+                            run=Launchctl())
+    assert any("claude" in w for w in warned)
+
+
+def test_a_server_that_doesnt_come_up_says_why(tmp_path):
+    # regression: install said "Started." for a server that crash-looped every 10 seconds
+    from lerni.student.service import log_path, stop, wait_until_up
+
+    lerni = tmp_path / "lerni"
+    lerni.write_text("")
+    install(Server("prod", 7860, "", None, tmp_path / "c.pem", tmp_path / "k.pem"),
+            run=Launchctl(), home=tmp_path, lerni=lerni, uid=501)
+    log = log_path(tmp_path, "prod")
+    log.write_text("x" * 6_000_000 + "\nFileNotFoundError: c.pem\n")
+    with pytest.raises(ServiceError, match="c.pem"):
+        wait_until_up("prod", tmp_path, check=lambda: "prod: not answering",
+                      sleep=lambda s: None, seconds=3)
+    after_stop = Launchctl(kickstart=[(113, "")])  # not loaded: start it from its agent file
+    restart("prod", run=after_stop, uid=501, home=tmp_path)
+    assert [c[1] for c in after_stop.calls] == ["kickstart", "bootstrap"]
+    assert (log.parent / "prod.log.1").stat().st_size > 5_000_000  # rotated, not lost
+    quick = {"uid": 501, "sleep": lambda s: None}
+    assert stop("prod", run=Launchctl(bootout=[(3, "")]), **quick) is False  # wasn't running
+    # regression: a second stop right after the first said "Stopped." again
+    assert stop("prod", run=Launchctl(print=[(113, "")]), **quick) is False
+    assert stop("prod", run=Launchctl(), **quick) is True
