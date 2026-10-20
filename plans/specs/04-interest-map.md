@@ -50,12 +50,12 @@ Only educators see a supervised student's map; the student never does. An indepe
 - **One name, one entry.** Adding a goal with the name of an existing interest turns that interest into the goal and keeps its days. The tagger never adds an interest named like a goal; it counts toward the goal.
 - **Removed means gone for good.** Only the name is kept, so it's never re-added; a person can add it again by hand.
 - **Dislikes aren't interests.** "I don't like sharks" adds nothing.
-- **Limits:** 60 entries per map. At the limit, the interest that came up on the fewest days and longest ago is dropped to make room.
+- **Limits:** 60 entries per map. At the limit, the interest that came up on the fewest days and longest ago rests to make room: it keeps its days and comes back with them when it comes up again (v3.10).
 - **Lifecycle:** an archived student's map is kept, like their account. Release 1 has no clear or export; the admin can delete the file.
 
-**Conversation logs**, `logs/<username>/<date>.jsonl`: each exchange (the question, the answer, and what the tagger did with it), so the admin can check that the map matches what was said. Every student is logged. Files older than 7 days are deleted at startup and once a day. The admin reads them in the terminal (`lerni logs [username]`); no screen shows them.
+**Conversation logs**, `logs/<username>/<date>.jsonl`: each exchange (the question, the answer, and what the tagger did with it), so the admin can check that the map matches what was said. Every student is logged. Files older than a year are deleted at startup and once a day (7 days until v3.10). The admin reads them in the terminal (`lerni logs [username]`); no screen shows them.
 
-**Saved, then:** accounts; maps (short names drawn from the conversation, plus dates and links); feedback (an educator's own words and a summary); and the 7-day logs. The ongoing conversation itself lives in memory (until New conversation or a restart), and nothing goes to browser storage. All of it lives only on the home server and is never committed (CLAUDE.md rule 8).
+**Saved, then:** accounts; maps (short names drawn from the conversation, plus dates and links); feedback (an educator's own words and a summary); and the logs, kept a year. The ongoing conversation itself lives in memory (until New conversation or a restart), and nothing goes to browser storage. All of it lives only on the home server and is never committed (CLAUDE.md rule 8).
 
 ## The agent
 
@@ -93,7 +93,7 @@ Left out of the map to keep it minimal: stepping-stone ideas between an interest
 
 - **The household rule:** the supervised student has agreed to be supervised; an educator or the admin is around them whenever they use Lerni, and the iPad is signed in only as that student (the educator and admin use their own phones and never save their passwords on it). The app doesn't enforce this.
 - The conversation runs through the admin's Claude account, like everything else in the prototype. An API key is not planned; revisit before anyone outside the family uses the app.
-- **No automatic reply check in Release 1.** Replies stream; the adult nearby and the 7-day logs are the check. The supervised persona and the supervised rules are prompt instructions kept in code: short, gentle, never "wrong"; subjects on the starting exclusion list (violence, weapons, sexual content, self-harm, drugs) and anything scary or sad get a kind redirect to their educator and something fun instead. Lerni says plainly it's a computer helper and never pretends to be a person. Personas describe a style (short, simple, playful), never an age; the persona files describe a style (since step 7).
+- **No automatic reply check in Release 1.** Replies stream; the adult nearby and the logs are the check. The supervised persona and the supervised rules are prompt instructions kept in code: short, gentle, never "wrong"; subjects on the starting exclusion list (violence, weapons, sexual content, self-harm, drugs) and anything scary or sad get a kind redirect to their educator and something fun instead. Lerni says plainly it's a computer helper and never pretends to be a person. Personas describe a style (short, simple, playful), never an age; the persona files describe a style (since step 7).
 
 ## Upload
 
@@ -131,7 +131,7 @@ Tests (fakes only, minimal, CLAUDE.md rule 4):
 - a tagger result that started before a person's Rename or Remove is thrown away;
 - the prompt carries the map as information and puts the safety rules last;
 - a student never reaches another student's map; only educators see a supervised student's map; the picture is inline, with names escaped;
-- logs older than 7 days are deleted;
+- logs older than a year are deleted;
 - feedback is saved and never changes a map.
 
 Evals (real calls, run by hand when instructions or models change; start with 2–3 cases, and add one for each mismatch seen in the logs):

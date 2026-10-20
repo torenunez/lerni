@@ -41,7 +41,7 @@ These hold for every version.
 
 **For every student:**
 
-- Conversation text is kept on the home server only in 7-day logs the admin can read, then deleted; never in browser storage. The ongoing conversation lives in memory until New conversation or a server restart. Also saved: the account and the interest map (interest names, goals and notes, dates, and links).
+- Conversation text is kept on the home server only in logs the admin can read, deleted after a year; never in browser storage. The ongoing conversation lives in memory until New conversation or a server restart. Also saved: the account and the interest map (interest names, goals and notes, dates, and links).
 - No account details (name, username) are sent to Claude; their own messages can still contain anything.
 - Goals come only from a person: an educator, or an independent student for their own map. The agent only records interests, time, and links.
 - Nothing is sent to an outside service without consent at the moment of sending. In the family prototype, pressing Send (or Upload) is that consent: everyone in the household knows where messages go, so the screen carries no notice. A short notice comes back before anyone outside the family uses it.
@@ -97,7 +97,7 @@ As a student, I want to hold one button to talk and let go when I'm done, so tha
 
 - WHEN the student holds the talk button THE SYSTEM SHALL listen until they let go, show what it heard in the chat, and send it at once, as if typed; Stop works as it does for text.
 - WHEN Lerni answers THE SYSTEM SHALL speak it aloud a sentence at a time as it's written, with the text visible; Stop silences it.
-- WHEN speech is turned into text, or text into speech, THE SYSTEM SHALL do it on the home server, so no audio leaves the house; any audio kept on the server is deleted within 7 days, like the conversation logs.
+- WHEN speech is turned into text, or text into speech, THE SYSTEM SHALL do it on the home server, so no audio leaves the house; any audio kept on the server is deleted within 7 days.
 - WHEN voice is unavailable THE SYSTEM SHALL still accept typing.
 - WHEN the student picks Type THE SYSTEM SHALL show the question box instead of the talk button, keep that choice on the device, and still speak the answer.
 
@@ -181,6 +181,7 @@ Public access and a native iPad app.
 - 2026-10-10: Lerni speaks with the home server's own voice (macOS `say`) and hears with whisper.cpp's `whisper-cli`, both run as commands, so there's nothing to install for the voice and no helper program to keep running; Kokoro or a hosted voice can replace them behind the same adapter. While the button is held, what's heard so far shows below it. Only spoken questions are answered aloud. With voice on, both conversation screens are just the chat and the button (a tap stops Lerni); typing shows only when voice is off. (Replaces "local Whisper and Kokoro, as separate helper programs".)
 - 2026-10-10: Files Gradio keeps in its cache on the home server (an upload before it's read, any voice audio) can be reached by URL by anyone signed in. Accepted for the household: at most three people signed in, each with their own account. Revisit before anyone outside the family uses the app.
 - 2026-10-12: Play and points become Version 3 (the admin's decision, after seeing the student answer Lerni's questions with random emojis). A car race answered by multiple choice, MathGas style (a wrong pick slows your car), and answers in the conversation, judged by the tagger, earn points spent on cars in a garage. This replaces "No scores, no failing": points are never taken away for a wrong answer, never compared between students, and kept apart from the map. Later versions move up one (remembering is now 4, suggested goals 5, without an educator 6); decisions above keep their old numbers.
+- 2026-10-19: Lerni remembers for the long run (the admin's decision): conversation logs are kept a year while the family hosts it, every race idea is kept with how it went, and a full map rests its least-seen interest with its history instead of deleting it; it comes back when it comes up again. Shorten the logs before anyone outside the family uses Lerni. (Replaces the 7-day logs.)
 - 2026-10-19: The race gets harder and asks for explanations (the admin's decision, after the student won every race since their first car upgrade with about 84% right, and saw the same questions repeat): questions don't repeat, difficulty adapts per goal, missed ideas come back, and an occasional bonus question is answered in their own words, typed or spoken, and graded with partial credit. This replaces "no typing, no chat" in the race and "no difficulty settings" in Version 3. The race also probes nearby ideas: the student's choice to explore one opens Chat, and probe results feed Version 5's suggested goals, never the map directly; practice shows on goals read-only, and a nailed explanation marks a goal explained.
 
 ## Open questions
