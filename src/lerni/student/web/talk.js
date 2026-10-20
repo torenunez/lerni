@@ -14,6 +14,16 @@
     S.player.play().catch(() => {});
   }
 
+  const MAX_HOLD = 29.5;  // seconds: the clip sends itself before the server's 30-second limit
+  const NO_MIC = 'No microphone: type here';
+
+  // the microphone failed: switch to Type, and say so in the question box
+  function noMic(suffix) {
+    mode('type');
+    const box = document.querySelector(`#lerni-question-${suffix} textarea`);
+    if (box) { box.placeholder = NO_MIC; box.focus(); }
+  }
+
   async function start(e, btn, suffix) {
     e.preventDefault();
     stop();  // a tap silences Lerni; a hold also asks something new
@@ -24,8 +34,8 @@
     try {
       if (session) session.type = 'play-and-record';
       if (!S.stream) S.stream = await navigator.mediaDevices.getUserMedia({audio: true});
-    } catch (err) { reset(btn); return; }  // no microphone: typing still works
-    if (!S.on) return;  // let go while Safari was asking
+    } catch (err) { reset(btn); noMic(suffix); return; }  // no microphone: typing still works
+    if (!S.on) { reset(btn); return; }  // let go while Safari was asking: release the microphone
     S.src = S.ctx.createMediaStreamSource(S.stream);
     S.node = S.ctx.createScriptProcessor(4096, 1, 1);
     S.node.onaudioprocess = ev => {
@@ -38,6 +48,7 @@
         btn.classList.add('lerni-listening');
       }
       S.chunks.push(new Float32Array(buf));
+      if ((performance.now() - S.t0) / 1000 >= MAX_HOLD) send(null, btn, suffix);  // still holding
     };
     S.src.connect(S.node); S.node.connect(S.ctx.destination);
     // every 1.5 s, send the clip so far for a live preview
@@ -100,8 +111,8 @@
   }
 
   function send(e, btn, suffix) {
-    if (!S.on) return;
-    e.preventDefault();
+    if (!S.on) return;  // sent already (at 30 seconds), or never started
+    e?.preventDefault();
     const held = (performance.now() - S.t0) / 1000;
     S.on = false;  // stop collecting before the last copy
     if (held >= 0.5) fill(`lerni-clip-${suffix}`, `lerni-heard-${suffix}`);  // shorter: Whisper invents words
