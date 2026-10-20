@@ -156,22 +156,24 @@ def same_name(a: str, b: str) -> bool:
     """Whether two names are one, ignoring case, spacing and punctuation, and a plural
     "s" or "es" (car, cars, buses; race cars, racecars)."""
     a, b = a.strip().casefold(), b.strip().casefold()
-    if a == b or (_squash(a) and _squash(a) == _squash(b)):
+    sa, sb = _squash(a), _squash(b)
+    if a == b or (sa and sa == sb):
         return True
-    short, long = sorted((a, b), key=len)
-    # never "pi" and "pies", or "plan" and "planes"
-    return _squash(short) in {_squash(s) for s in _singulars(long)}
+    # either may be the plural, whatever its spacing; never "pi"/"pies" or "plan"/"planes"
+    return (sa in {_squash(s) for s in _singulars(b)}
+            or sb in {_squash(s) for s in _singulars(a)})
 
 
 def mentions_set_aside(m: InterestMap, text: str) -> bool:
     """Whether ``text`` names anything removed from the map, as whole words, plurals included."""
-    folded = text.casefold()
+    words = re.findall(r"\w+", text.casefold())
+    # every run of up to 4 whole words, squashed: "race car", "race-car", and "racecar" alike
+    runs = {"".join(words[i:j]) for i in range(len(words))
+            for j in range(i + 1, min(i + 5, len(words) + 1))}
     for name in m.removed_names():
         n = name.strip().casefold()
         forms = {n, *_plurals(n), *_singulars(n)}  # "guns" set aside: "gun" too
-        # a space or hyphen may be there or not: "race cars" also blocks "racecars"
-        patterns = [re.sub(r"(\\ |\\-)", r"[\\s-]?", re.escape(f)) for f in forms]
-        if any(re.search(rf"(?<!\w){p}(?!\w)", folded) for p in patterns):
+        if any(_squash(f) in runs for f in forms if _squash(f)):
             return True
     return False
 
@@ -247,7 +249,7 @@ def _wake(m: InterestMap, name: str, kind: Kind = "interest") -> Entry | None:
     m.archived = [a for a in m.archived if a is not resting]
     entry = m.new_entry(resting.name, kind)
     entry.days, entry.mentions = list(resting.days), resting.mentions
-    entry.aliases = list(resting.aliases)
+    entry.aliases = [a for a in resting.aliases if not m.is_removed(a)]
     m.entries.append(entry)
     return entry
 
@@ -262,6 +264,8 @@ def _unremove(m: InterestMap, name: str) -> None:
     m.removed = [r for r in m.removed if r not in back]
     for r in back:
         m.removed_info.pop(r.casefold(), None)
+    for info in m.removed_info.values():  # a person uses one of a removed item's other names
+        info["aliases"] = [a for a in info.get("aliases", []) if not same_name(a, name)]
 
 
 def add_goal(m: InterestMap, name: str, notes: str = "") -> Entry:
@@ -322,10 +326,7 @@ def rename(m: InterestMap, entry_id: str, name: str) -> Entry:
     if other is not None and other.id != entry_id:
         raise MapError(f"{other.name} is already on the map.")
     _unremove(m, name)  # a removed name in use again
-    old = entry.name
     entry.aliases = [a for a in entry.aliases if a.casefold() != name.casefold()]
-    if old.casefold() != name.casefold():
-        entry.aliases.append(old)  # what it was called stays one of its names
     entry.name = name
     m.edits += 1
     return entry
@@ -402,7 +403,7 @@ def put_back(m: InterestMap, name: str) -> Entry:
         entry.id = old  # ids are never reused, so links removed with it still point here
     entry.days, entry.explained = list(info.get("days", [])), list(info.get("explained", []))
     entry.mentions, entry.bounces = int(info.get("mentions", 0)), list(info.get("bounces", []))
-    entry.aliases = list(info.get("aliases", []))
+    entry.aliases = [a for a in info.get("aliases", []) if m.find(a) is None]  # one name, one item
     ids = {e.id for e in m.entries}
     waiting = {i["id"]: i for i in m.removed_info.values() if "id" in i}  # still in Removed
     for k in info.get("links", []):
@@ -554,8 +555,10 @@ def _said(name: str, text: str) -> bool:
     return re.search(rf"(?<!\w){re.escape(name.casefold())}(?!\w)", text) is not None
 
 
-def _alias(entry: Entry, name: str) -> None:
-    """Note another name the student used for this item."""
+def _alias(m: InterestMap, entry: Entry, name: str) -> None:
+    """Note another name the student used for this item; never a set-aside or split one."""
+    if m.is_removed(name) or m.split(name, entry):
+        return
     if name.casefold() not in {n.casefold() for n in (entry.name, *entry.aliases)}:
         entry.aliases.append(name)
 
@@ -567,7 +570,9 @@ def _merge(m: InterestMap, keep: Entry, gone: Entry) -> None:
     keep.explained = sorted({*keep.explained, *gone.explained})
     keep.bounces = sorted([*keep.bounces, *gone.bounces])
     for n in (gone.name, *gone.aliases):
-        _alias(keep, n)
+        _alias(m, keep, n)
+    if keep.kind == "goal":  # a goal is never in a group: its kinds move up, as add_goal does
+        _lift_kinds(m, gone.id)
     moved: list[Link] = []
     for k in m.links:  # in order of recency; a later copy of a link wins
         a, b = (keep.id if x == gone.id else x for x in (k.a, k.b))
@@ -577,8 +582,14 @@ def _merge(m: InterestMap, keep: Entry, gone: Entry) -> None:
         moved = [x for x in moved if not (x.kind == k.kind and (
             (x.a, x.b) == (a, b) if ordered else {x.a, x.b} == {a, b}))]
         moved.append(Link(a, b, k.kind, k.day))
-    m.links = moved
     m.entries = [e for e in m.entries if e.id != gone.id]
+    kinds = {e.id: e.kind for e in m.entries}
+    # bridges go from an interest to a goal; groups are rebuilt one by one under their rules
+    m.links = [k for k in moved if k.kind not in ("kind_of", "bridge")
+               or (k.kind == "bridge" and kinds.get(k.a) == "interest")]
+    for k in moved:
+        if k.kind == "kind_of" and not _group_error(m, k.a, k.b, tagger=True):
+            m.links.append(k)
 
 
 def _same_as(m: InterestMap, new: str, old: str, said: str) -> Entry | None:
@@ -593,12 +604,14 @@ def _same_as(m: InterestMap, new: str, old: str, said: str) -> Entry | None:
         return None
     other = m.find(new)
     if other is None:
-        _alias(target, new)
+        _alias(m, target, new)
         return target
     if other.id == target.id:
         return target
     if other.kind == "goal" and target.kind == "goal":
         return None  # two goals stay two: only people set goals
+    if any(m.split(n, target) for n in (other.name, *other.aliases)):
+        return None  # a person said these aren't the same
     keep, gone = (other, target) if other.kind == "goal" else (target, other)
     _merge(m, keep, gone)
     return keep
@@ -640,7 +653,7 @@ def apply_tags(m: InterestMap, tags: Tags, student_text: str, today: date) -> No
             touched[e.id] = e
             if _said(name, said) and not m.split(name, e):
                 try:  # another spelling, in the student's own words, as plain as any name
-                    _alias(e, check_name(name))
+                    _alias(m, e, check_name(name))
                 except MapError:
                     pass
     for raw in tags.new_interests:
@@ -651,7 +664,7 @@ def apply_tags(m: InterestMap, tags: Tags, student_text: str, today: date) -> No
         if (e := m.find(name)) is not None:
             touched[e.id] = e  # already on the map (an interest or a goal): it counts there
             if _said(name, said):
-                _alias(e, name)
+                _alias(m, e, name)
         elif not m.is_removed(name) and _said(name, said) and make_room(m, keep=touched):
             e = _wake(m, name)  # resting: it comes back with its history
             if e is None:
