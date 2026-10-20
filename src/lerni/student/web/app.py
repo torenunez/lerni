@@ -40,6 +40,7 @@ from lerni.student.tagging import MapKeeper, Tagger  # noqa: E402
 from lerni.student.upload import Uploader  # noqa: E402
 from lerni.student.usage import Usage  # noqa: E402
 from lerni.student.voice import Speech  # noqa: E402
+from lerni.student.web.games import SOUNDS  # noqa: E402
 from lerni.student.web.main import build_main_view  # noqa: E402
 from lerni.student.web.signin_page import APP_PATH, add_signin_routes  # noqa: E402
 
@@ -134,7 +135,9 @@ _CSS = """
 .lerni-usd { font-size: 20px; font-weight: 700; }
 .lerni-like, .lerni-card details { font-size: 14px; }
 .lerni-buy { min-height: 48px !important; font-size: 16px !important; }
-#lerni-track svg { max-width: 560px; display: block; margin: 0 auto; }
+#lerni-track svg { max-width: 820px; display: block; margin: 0 auto; }
+.lerni-mute { display: block; margin: 2px 0 0 auto; min-width: 44px; min-height: 44px;
+              font-size: 20px; background: none; border: none; cursor: pointer; }
 /* MentalMap pictures (mapview.js): a tapped item lights up its links; the rest fades */
 .lerni-map .lerni-node { cursor: pointer; }
 .lerni-map svg.lerni-focus .lerni-node:not(.lerni-near) { opacity: 0.15; }
@@ -245,6 +248,17 @@ def build_app(
         if path is None or not path.is_file():
             return PlainTextResponse("Not found.", status_code=404)
         return FileResponse(path, headers={"Cache-Control": "private, max-age=86400"})
+
+    @app.get("/sounds/{name}")
+    def race_sound(name: str, request: Request) -> Any:
+        # the admin's own clips, kept out of the repo: only the race's names, only signed in
+        if current_user(request) is None:
+            return RedirectResponse("/signin", status_code=303)
+        path = root / "sounds" / f"{name}.mp3"
+        if name not in SOUNDS or not path.is_file():
+            return PlainTextResponse("Not found.", status_code=404)
+        return FileResponse(path, media_type="audio/mpeg",  # revalidated, so a swapped clip plays
+                            headers={"Cache-Control": "private, no-cache"})
 
     races = (RaceDesk(quizzer, maps, points, ConceptStore(root), results=ResultsLog(root),
                       checker=quizzer)  # the same small model answers each question blind

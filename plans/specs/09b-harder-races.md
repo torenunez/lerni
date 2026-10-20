@@ -20,9 +20,9 @@ Each version's plan file (`plans/v3.NN-*.md`) is written when it starts, from th
 
 - **The track fills the screen width.** Each car's name is a small label at the start of its lane, readable in dark mode. The white car gets an outline, so it no longer looks faint.
 - **The rivals are real cars:**
-  - **The faster rival** is the next Showroom car they're saving for. If they own every faster car, it's their fastest owned car other than the one they drive. Otherwise it's Zippy.
-  - **The slower rival** is their best owned car that's slower than the one they drive, or Bolt.
-  - Each rival shows its own picture, name, and ⚡.
+  - **The faster rival** is the next Showroom car they're saving for. If they own every car, it's their fastest owned car other than the one they drive. Otherwise it's Zippy.
+  - **The slower rival** is their fastest owned car that's no faster than the one they drive, or Bolt.
+  - Each rival shows its own picture and name.
 - **Who wins** depends on right answers, in every car:
   - 4 or 5 right: 1st;
   - 3 right: 2nd;
@@ -93,7 +93,6 @@ Each version's plan file (`plans/v3.NN-*.md`) is written when it starts, from th
   - A cartoon car the student owns can be a rival.
   - A rival never repeats the car being driven.
   - **Pictures:** a real car uses its garage picture (signed-in route, as today); a bot is drawn in code.
-  - **A rival's ⚡** is its own car's. Only its pace is matched.
 - **The race keeps its rivals** from start to finish, like its car.
 
 ### Sounds (v3.16, `web/race.js`, `web/games.py`)

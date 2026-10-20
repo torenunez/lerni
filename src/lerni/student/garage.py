@@ -208,7 +208,8 @@ class Garage:
                 _ID.fullmatch(c.id)
                 and _PICTURE.fullmatch(picture)
                 and 0 < usd <= MAX_USD
-                and 0 < c.zero_to_60 and math.isfinite(c.zero_to_60)
+                and 0 < c.zero_to_60
+                and math.isfinite(c.zero_to_60)
                 and c.id not in _BY_ID
                 and c.id not in {x.id for x in cars}  # no repeats
                 and (self.folder / picture).is_file()
@@ -232,6 +233,26 @@ class Garage:
     def sold(self, owned: list[str]) -> list[Car]:
         """What this player's garage lists: the starter, real cars, and cartoon cars they own."""
         return [c for c in self.cars if c.id == "starter" or c.id in self._real or c.id in owned]
+
+    def rivals(
+        self, owned: Collection[str], driving: str, balance: int
+    ) -> tuple[Car | None, Car | None]:
+        """The fast and slow lanes' cars; None where a bot drives instead.
+
+        Fast: the car they save for, or with every car theirs, their fastest other one.
+        Slow: their fastest owned car no faster than the one they drive.
+        """
+        mine = [c for c in self.sold(list(owned)) if c.id in owned and c.id != driving]
+        mine.sort(key=boost, reverse=True)
+        fast, _ = next_goal(self.sold(list(owned)), owned, balance)
+        if fast is None and mine:
+            fast = mine[0]
+        try:
+            limit = boost(self.car(driving))
+        except KeyError:
+            limit = 1.0  # a car gone from the garage file drives like the starter
+        slow = next((c for c in mine if boost(c) <= limit and c is not fast), None)
+        return fast, slow
 
     def svg(self, car_id: str, x: float, y: float, lane: str) -> str:
         """A car on the track: a real car's picture, or a cartoon drawing."""

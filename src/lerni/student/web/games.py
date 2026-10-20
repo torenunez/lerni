@@ -1,4 +1,4 @@
-"""Games: race two silly bots by answering questions, and spend points on cars (spec 09).
+"""Games: race two rival cars by answering questions, and spend points on cars (spec 09).
 
 Handlers are plain functions over the server-resolved viewer, so role checks can be
 tested without a browser. The page never holds an answer: a tap sends the race id,
@@ -26,7 +26,7 @@ from lerni.student.garage import (
 )
 from lerni.student.points import STARTER, Points, PointsError, PointsStore
 from lerni.student.race import (
-    BOTS,
+    BOT_RIVALS,
     NOT_READY,
     QUESTIONS_PER_RACE,
     STEP_RIGHT,
@@ -44,9 +44,16 @@ from lerni.student.web.accounts import PRIVATE, NotAllowed
 from lerni.student.web.ask import MAX_AT_ONCE
 from lerni.student.web.maps import map_owner
 
-LANES = (12, 55, 98)  # the student's lane, then Zippy's and Bolt's
-BOT_LOOKS = (("formula", "#7F77DD"), ("muscle", "#888780"))  # how the bots are drawn
-START, END = 40, 248  # a car's left edge at the start and at the finish, in track units
+LANES = (12, 55, 98)  # the student's lane, then the fast and slow rivals'
+BOT_COLORS = {"Zippy": "#7F77DD", "Bolt": "#888780"}  # the bots' own paint
+START, END = 8, 248  # a car's left edge at the start and at the finish, in track units
+MAX_LABEL = 18  # characters of a car's name on the track
+SOUNDS = ("roar", "sputter", "finish")  # <data>/sounds/<name>.mp3, played by race.js
+EDGE = ('<defs><filter id="lerni-edge" x="-10%" y="-10%" width="120%" height="120%">'
+        '<feDropShadow dx="0" dy="0" stdDeviation="0.7" flood-color="#2C2C2A" '
+        'flood-opacity="0.9"/></filter></defs>')  # a thin dark edge, so a white car shows
+MUTE = ('<button type="button" id="lerni-mute" class="lerni-mute" '
+        'aria-label="Sound on">🔊</button>')  # race.js handles it
 ORDINAL = {1: "1st", 2: "2nd", 3: "3rd"}
 NO_CLAUDE = "Games need Claude, which isn't set up on this server."
 
@@ -66,13 +73,13 @@ def stars(points: PointsStore, viewer: Viewer | None) -> str:
         return ""
 
 
-def start_race(desk: RaceDesk, viewer: Viewer | None, gas: float = 1.0,
-               car: str = "") -> tuple[Race | None, str]:
+def start_race(desk: RaceDesk, viewer: Viewer | None, gas: float = 1.0, car: str = "",
+               rivals: tuple[tuple[str, str], ...] = BOT_RIVALS) -> tuple[Race | None, str]:
     """A new race in this car with its gas boost, or why there can't be one."""
     try:
         v = require_player(viewer)
         return desk.start(v.username, supervised=v.role is Role.SUPERVISED, boost=gas,
-                          car=car), ""
+                          car=car, rivals=rivals), ""
     except (NotAllowed, PointsError, RaceUnavailable) as exc:
         return None, str(exc)
     except Exception:  # never stuck on "Pumping the tires"
@@ -119,8 +126,22 @@ def student_points(points: PointsStore, garage: Garage, students: StudentStore,
     return f"⭐ {p.balance} · cars: {names}" + (f"  \n{week}" if week else "")
 
 
+def rival_pairs(garage: Garage, p: Points) -> tuple[tuple[str, str], ...]:
+    """The two rivals as (name, car id), fast lane first; a bot fills a lane with no car."""
+    cars = garage.rivals(p.cars, p.car, p.balance)
+    return tuple((c.name, c.id) if c else bot for c, bot in zip(cars, BOT_RIVALS, strict=True))
+
+
+def _label(text: str, y: int) -> str:
+    # a small name on a pill at the top-left of its lane, readable in either theme
+    name = text if len(text) <= MAX_LABEL else text[:MAX_LABEL - 1] + "…"
+    return (f'<rect x="2" y="{y - 10}" width="{len(name) * 4.6 + 6:.0f}" height="11" rx="5" '
+            f'fill="#FFFFFF" fill-opacity="0.8"/><text x="5" y="{y - 2}" font-size="8" '
+            f'fill="#085041">{html.escape(name)}</text>')
+
+
 def track_svg(race: Race | None, car_id: str, garage: Garage) -> str:
-    """The track: the student's car and two bots, placed by how far each has come."""
+    """The track: the student's car and two rivals, placed by how far each has come."""
 
     full = QUESTIONS_PER_RACE * STEP_RIGHT * (race.boost if race else 1.0)  # 5 right in this car
 
@@ -128,22 +149,28 @@ def track_svg(race: Race | None, car_id: str, garage: Garage) -> str:
         return START + min(pos, full) / full * (END - START)
 
     car_id = (race.car or car_id) if race else car_id  # the car it started in
-
-    me, bots = (race.me, race.bots) if race else (0.0, [0.0 for _ in BOTS])
+    rivals = race.rivals if race else ()
     where = f"You're {ORDINAL[place(race)]}" if race and race.answered else "At the start line"
     parts = [f'<svg viewBox="0 0 320 130" width="100%" role="img" aria-label="{where}" '
              f'data-race="{html.escape(race.id if race else "")}" '
-             f'data-car="{html.escape(car_id)}">',
+             f'data-step="{race.answered if race else 0}" data-right="{race.right if race else 0}" '
+             f'data-total="{QUESTIONS_PER_RACE}" data-car="{html.escape(car_id)}">', EDGE,
              '<rect width="320" height="130" rx="8" fill="#E1F5EE"/>',
              '<line x1="0" y1="43" x2="320" y2="43" stroke="#9FE1CB" stroke-dasharray="6 6"/>',
              '<line x1="0" y1="86" x2="320" y2="86" stroke="#9FE1CB" stroke-dasharray="6 6"/>',
-             f'<rect x="{END + 58}" y="0" width="6" height="130" fill="#444441"/>']  # finish line
-    for label, y in zip(("You", *(name for name, _ in BOTS)), LANES, strict=True):
-        parts.append(f'<text x="4" y="{y + 26}" font-size="10" fill="#085041">{label}</text>')
-    parts.append(garage.svg(car_id, x(me), LANES[0], "me"))
-    for (name, _), (look, color), pos, y in zip(BOTS, BOT_LOOKS, bots, LANES[1:], strict=True):
-        parts.append(car_svg(look, x(pos), y, name, color))
-    return "".join(parts) + "</svg>"
+             f'<rect x="{END + 58}" y="0" width="6" height="130" fill="#444441"/>',  # finish line
+             '<g filter="url(#lerni-edge)">', garage.svg(car_id, x(race.me if race else 0.0),
+                                                          LANES[0], "me")]
+    for rival, pos, y, lane in zip(rivals, race.at if race else (), LANES[1:], ("fast", "slow"),
+                                   strict=False):  # no rivals at the start line
+        if (rival.name, rival.car) in BOT_RIVALS:  # a bot, in its own paint
+            parts.append(car_svg(rival.car, x(pos), y, lane, BOT_COLORS[rival.name]))
+        else:
+            parts.append(garage.svg(rival.car, x(pos), y, lane))
+    parts.append("</g>")
+    names = ("You", *(r.name for r in rivals))
+    parts += [_label(name, y) for name, y in zip(names, LANES, strict=False)]
+    return "".join(parts) + "</svg>" + MUTE
 
 
 def _picture(c: Car) -> str:
@@ -215,7 +242,8 @@ def after_tap(race: Race | None, ref: tuple[str, int], turn: Turn | None,
 
 
 def _feedback(race: Race, turn: Turn, awarded: int, goal: str = "") -> str:
-    line = (f"Right answer: boost! {turn.slowed} slowed down 💨" if turn.right
+    slowed = f"{turn.slowed} slowed down" if turn.slowed else "Both slowed down"
+    line = (f"Right answer: boost! {slowed} 💨" if turn.right
             else f"Not this time: it's **{turn.answer}**. {turn.why}")
     if race.done:
         line += f"\n\nYou finished {ORDINAL[place(race)]}! ⭐ +{awarded}"
@@ -330,7 +358,8 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
             gas = boost(garage.car(driving))
         except KeyError:
             gas = 1.0
-        race, message = start_race(desk, viewer, gas, driving)
+        rivals = rival_pairs(garage, points.get(viewer.username)) if viewer else BOT_RIVALS
+        race, message = start_race(desk, viewer, gas, driving, rivals)
         return screen(viewer, race, message)
 
     def on_choice(i: int) -> Callable[..., list[Any]]:

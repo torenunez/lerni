@@ -1,5 +1,5 @@
 """The race: questions Claude writes from a student's goals, checked by the server,
-and a race against two silly bots that moves by fixed rules (spec 09).
+and a race against two rival cars that moves by fixed rules (spec 09, 09b).
 
 The page gets the question and its three choices, never the answer. Where the
 cars end up depends on how many answers were right and the car's gas, never on a
@@ -40,8 +40,8 @@ from lerni.student.results import ResultsLog, question_hash
 QUESTIONS_PER_RACE = 5
 SET_SIZE = 10  # questions per Claude call: two races' worth
 STEP_RIGHT, STEP_WRONG = 2.2, 0.7  # how far the student moves
-BOTS = (("Zippy", 1.9), ("Bolt", 1.6))  # each bot's name and steady step
-SLOW = 0.4  # each bot moves this much less on a turn the student gets right
+BOT_RIVALS = (("Zippy", "formula"), ("Bolt", "muscle"))  # (name, car) when the garage has none
+SLOW = 0.4  # each rival moves this much less on a turn the student gets right
 PLACE_POINTS = {1: 15, 2: 10, 3: 5}
 MAX_QUESTION, MAX_CHOICE, MAX_WHY = 140, 40, 120
 
@@ -249,6 +249,30 @@ def fits(q: Question, m: InterestMap) -> bool:
     return (not goals or q.goal.casefold() in goals) and not mentions_set_aside(m, shown)
 
 
+@dataclass(frozen=True)
+class Rival:
+    """A car in another lane: its name, its car id, and its steady step."""
+
+    name: str
+    car: str
+    step: float
+
+
+def _between(k: int, boost: float) -> float:
+    """A per-turn step that finishes between the student's k-right and (k+1)-right finishes."""
+
+    def finish(right: int) -> float:  # the student's finish, plus the slowing the rival suffers
+        return (STEP_RIGHT * boost * right + STEP_WRONG * (QUESTIONS_PER_RACE - right)
+                + SLOW * right)
+
+    return (finish(k) + finish(k + 1)) / 2 / QUESTIONS_PER_RACE
+
+
+def pace(boost: float) -> tuple[float, float]:
+    """The fast and slow rivals' steps: 4 right beats both, 3 the slow one, in any car."""
+    return _between(3, boost), _between(2, boost)
+
+
 @dataclass
 class Race:
     """One race in progress, held on the server."""
@@ -256,7 +280,8 @@ class Race:
     questions: list[Question]
     id: str = field(default_factory=lambda: uuid.uuid4().hex)
     me: float = 0.0
-    bots: list[float] = field(default_factory=lambda: [0.0 for _ in BOTS])
+    rivals: tuple[Rival, ...] = ()
+    at: list[float] = field(default_factory=list)  # each rival's position
     answered: int = 0
     right: int = 0
     boost: float = 1.0  # the car's gas boost (garage.boost)
@@ -275,12 +300,19 @@ class Turn:
     right: bool
     answer: str  # the right choice
     why: str
-    slowed: str  # the bot named as slowed down ("" on a wrong answer)
+    slowed: str  # the rival just ahead, named as slowed ("" on a wrong answer, or when leading)
 
 
-def new_race(questions: list[Question], boost: float = 1.0, car: str = "") -> Race:
-    """A race over these questions, everyone at the start line, in this car with its gas boost."""
-    return Race(list(questions), boost=boost, car=car)
+def new_race(questions: list[Question], boost: float = 1.0, car: str = "",
+             rivals: Sequence[tuple[str, str]] = BOT_RIVALS) -> Race:
+    """A race over these questions, everyone at the start line, in this car with its gas boost.
+
+    ``rivals`` are two (name, car id) pairs, the fast lane first; both are paced from ``boost``.
+    """
+    steps = pace(boost)
+    them = tuple(Rival(name, car_id, step) for (name, car_id), step in zip(rivals, steps,
+                                                                            strict=True))
+    return Race(list(questions), boost=boost, car=car, rivals=them, at=[0.0 for _ in them])
 
 
 def answer(race: Race, number: int, choice: int) -> Turn | None:
@@ -289,19 +321,20 @@ def answer(race: Race, number: int, choice: int) -> Turn | None:
         return None
     q = race.questions[number]
     right = choice == q.answer
-    ahead = [i for i, pos in enumerate(race.bots) if pos >= race.me] or [0]
-    named = BOTS[max(ahead, key=lambda i: -race.bots[i])][0] if right else ""  # the nearest ahead
+    ahead = [i for i, pos in enumerate(race.at) if pos >= race.me]
+    nearest = min(ahead, key=lambda i: race.at[i]) if ahead else None  # ties: the fast lane
+    named = race.rivals[nearest].name if right and nearest is not None else ""
     race.me += STEP_RIGHT * race.boost if right else STEP_WRONG
-    for i, (_, step) in enumerate(BOTS):
-        race.bots[i] += step - (SLOW if right else 0)  # a right answer slows both bots
+    for i, rival in enumerate(race.rivals):
+        race.at[i] += rival.step - (SLOW if right else 0)  # a right answer slows both rivals
     race.answered += 1
     race.right += right
     return Turn(right, q.choices[q.answer], q.why, named)
 
 
 def place(race: Race) -> int:
-    """1, 2, or 3: one more than the bots strictly ahead."""
-    return 1 + sum(pos > race.me for pos in race.bots)
+    """1, 2, or 3: one more than the rivals strictly ahead."""
+    return 1 + sum(pos > race.me for pos in race.at)
 
 
 def race_points(race: Race) -> int:
@@ -467,7 +500,8 @@ class RaceDesk:
         threading.Thread(target=work, daemon=True).start()
 
     def start(self, username: str, supervised: bool, today: date | None = None,
-              boost: float = 1.0, car: str = "") -> Race:
+              boost: float = 1.0, car: str = "",
+              rivals: Sequence[tuple[str, str]] = BOT_RIVALS) -> Race:
         """A new race (any race in progress is dropped) in a car with this gas ``boost``.
 
         Raises:
@@ -514,7 +548,7 @@ class RaceDesk:
             questions, rest = held[:QUESTIONS_PER_RACE], held[QUESTIONS_PER_RACE:]
             self.points.start_race(username, day)
             self._remember(username, questions, day)
-            race = new_race(questions, boost, car)
+            race = new_race(questions, boost, car, rivals)
             with self._lock:
                 later = [q for q in self._held(username, day) if id(q) not in before]  # meanwhile
                 self._sets[username] = (day.isoformat(), spread(rest + later))
