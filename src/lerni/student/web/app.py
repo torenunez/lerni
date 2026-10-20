@@ -19,6 +19,7 @@ import gradio as gr  # noqa: E402
 from fastapi import FastAPI, Request  # noqa: E402
 from fastapi.responses import FileResponse, PlainTextResponse, RedirectResponse  # noqa: E402
 
+from lerni.student.concepts import ConceptStore  # noqa: E402
 from lerni.student.conversation import ChatModel, Conversations  # noqa: E402
 from lerni.student.educator_agent import EducatorChats
 from lerni.student.feedback import FeedbackStore  # noqa: E402
@@ -244,7 +245,7 @@ def build_app(
             return PlainTextResponse("Not found.", status_code=404)
         return FileResponse(path, headers={"Cache-Control": "private, max-age=86400"})
 
-    races = RaceDesk(quizzer, maps, points) if quizzer is not None else None
+    races = RaceDesk(quizzer, maps, points, ConceptStore(root)) if quizzer is not None else None
     log.purge()  # at startup; then once a day as exchanges are logged
     def plays(username: str) -> bool:  # supervised students and educators earn ⭐
         try:

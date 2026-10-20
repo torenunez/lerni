@@ -85,16 +85,18 @@ At about 50 ⭐ a day, a $100,000 car comes on day 1 and a $5 million one after 
   - the student's goals and their notes;
   - their top interests, group-aware ([spec 08](08-kind-of.md));
   - the set-aside line;
-  - which voice they have (supervised or independent).
+  - which voice they have (supervised or independent);
+  - the ideas asked recently (v3.9).
   - No conversation text.
 - **Instructions (kept in code):**
-  - each question practices one goal, set in an interest ("acceleration with race cars");
+  - each question practices one goal, set in an interest ("halves with pizza slices"), and tests a different idea from a varied angle, never one asked recently;
   - one right answer and two plausible wrong ones, plus a one-line why;
   - short, kind words;
   - never excluded subjects (violence, weapons, sexual content, self-harm, drugs), anything set aside, a real name, or a trick.
   - With no goals: questions about their interests (how things work), never trivia that needs a date or a number to memorize.
 - **Schema:** `questions`, a list of objects, each with:
   - `goal`;
+  - `concept` (the idea it tests, in a few words; never shown; v3.9);
   - `question`;
   - `choices` (3 strings);
   - `answer` (0, 1 or 2);
@@ -103,8 +105,10 @@ At about 50 ⭐ a day, a $100,000 car comes on day 1 and a $5 million one after 
   - the question is over 140 characters, or a choice over 40, or the why over 120;
   - the choices aren't 3 different, non-empty strings;
   - the answer index is out of range;
-  - the goal isn't on the map (when the map has goals).
-- **Then it shuffles the choices**, so the right one isn't always first, and a race takes turns across the goals. A goal's notes, if Claude copies them into `goal`, are ignored when matching. If fewer than 5 survive, it asks again once; then: "The track needs a minute. Try again soon."
+  - the goal isn't on the map (when the map has goals);
+  - **it repeats (v3.9):** its concept matches one asked in the last 14 days or one held, or its words are nearly the same (a `difflib` ratio of 0.8) as a question asked since the server started, held, or earlier in the set.
+- **What's remembered (v3.9):** when a race starts, its 5 concepts go into `<data>/concepts/<user>.json` (label, goal, day; the last 40, for 14 days; never question text), and the question texts stay in memory only.
+- **Then it shuffles the choices**, so the right one isn't always first, and a race takes turns across the goals. A goal's notes, if Claude copies them into `goal`, are ignored when matching. If fewer than 5 survive, it asks again once and keeps the good ones from both; then: "The track needs a minute. Try again soon."
 - **Writing ahead:** the next set is written in the background when Games opens, and after each race, but not once the day's races are used. A set is kept in memory for the day only, and checked against the map again when a race starts, so a goal or set-aside changed since still counts.
 
 ### Points (`points.py`)

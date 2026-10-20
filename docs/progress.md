@@ -6,13 +6,17 @@ Record each kind of "done" only when it actually happens, with the date: code bu
 
 ## Current state (2026-10-19, v3.7 on the home server: Versions 1 and 2 built: the conversation, MentalMaps, HTTPS, and voice; Version 3's race, garage, and Chat points)
 
-- **Built:** the student app's core (student accounts, sign-in, Lerni's conversations, the MentalMap with its tagger and 7-day logs, Upload and educator feedback, and the educator agent); `lerni serve` with a sign-in page and one app with a ☰ menu by role: an independent student's Chat, My MentalMap (an editable list, the picture, and Upload), and My account; an educator's MentalMaps (a student's list and picture, with a chat) and Students on top; a supervised student's Chat, full screen, and Games (a race for points spent on real cars; educators race too); good answers in Chat earn points too. Hold to talk with spoken answers; a Claude usage warning and rest. Both servers run as LaunchAgents (`lerni service`). The admin tool (`lerni`, with `lerni student`, `lerni logs`, and `lerni feedback`). A [code manifest](code-manifest.md) of every file. Tests: 162 passed.
+- **Built:** the student app's core (student accounts, sign-in, Lerni's conversations, the MentalMap with its tagger and 7-day logs, Upload and educator feedback, and the educator agent); `lerni serve` with a sign-in page and one app with a ☰ menu by role: an independent student's Chat, My MentalMap (an editable list, the picture, and Upload), and My account; an educator's MentalMaps (a student's list and picture, with a chat) and Students on top; a supervised student's Chat, full screen, and Games (a race for points spent on real cars; educators race too); good answers in Chat earn points too. Hold to talk with spoken answers; a Claude usage warning and rest. Both servers run as LaunchAgents (`lerni service`). The admin tool (`lerni`, with `lerni student`, `lerni logs`, and `lerni feedback`). A [code manifest](code-manifest.md) of every file. Tests: 163 passed.
 - **Designed:** the interest map, goals, the tagger, upload, feedback, and the supervised conversation ([specs/04-interest-map.md](../plans/specs/04-interest-map.md)); approved with PR #12.
 - **Not yet:** a recorded supervised session (the supervised student has used it informally).
 
 When something changes, update this section and add a log entry below.
 
 ## Log
+
+### 2026-10-19 (no repeated questions; v3.9 built)
+
+- Race questions stop repeating: each carries a concept label; a player's recent concepts (labels only, 14 days) are kept in `concepts/` and sent to Claude, and the server drops a question on a recent idea or with nearly the same words; good questions from both tries count. The eval's second set, told what was asked, came back with all new ideas. Tests: 163 passed.
 
 ### 2026-10-19 (the plan after an ML review)
 
