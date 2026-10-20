@@ -61,6 +61,16 @@ def main() -> None:
                                                                  "Nice! Engines push."))
         print(answer, "→", raw)
         results.append((f"{answer!r} answered {want}", parse_tags(raw).answered == want))
+    # 8–9. the very same thing joins its item; something related doesn't (v3.12)
+    m = InterestMap()
+    m.entries.append(m.new_entry("Tyrannosaurus", "interest"))
+    m = run(m, "", "The T-Rex is my favorite!", "The T-Rex had tiny arms and huge teeth!")
+    results.append(("T-Rex joins Tyrannosaurus", len(m.entries) == 1
+                    and m.find("T-Rex") is m.find("Tyrannosaurus")))
+    m = InterestMap()
+    m.entries.append(m.new_entry("volcano", "interest"))
+    m = run(m, "", "What is lava made of?", "Lava is melted rock that comes out of a volcano.")
+    results.append(("lava stays its own thing", m.find("lava") is not m.find("volcano")))
     for name, ok in results:
         print("PASS" if ok else "FAIL", name)
 

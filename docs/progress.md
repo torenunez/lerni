@@ -6,13 +6,17 @@ Record each kind of "done" only when it actually happens, with the date: code bu
 
 ## Current state (2026-10-19, v3.7 on the home server: Versions 1 and 2 built: the conversation, MentalMaps, HTTPS, and voice; Version 3's race, garage, and Chat points)
 
-- **Built:** the student app's core (student accounts, sign-in, Lerni's conversations, the MentalMap with its tagger and 7-day logs, Upload and educator feedback, and the educator agent); `lerni serve` with a sign-in page and one app with a ☰ menu by role: an independent student's Chat, My MentalMap (an editable list, the picture, and Upload), and My account; an educator's MentalMaps (a student's list and picture, with a chat) and Students on top; a supervised student's Chat, full screen, and Games (a race for points spent on real cars; educators race too); good answers in Chat earn points too. Hold to talk with spoken answers; a Claude usage warning and rest. Both servers run as LaunchAgents (`lerni service`). The admin tool (`lerni`, with `lerni student`, `lerni logs`, and `lerni feedback`). A [code manifest](code-manifest.md) of every file. Tests: 172 passed.
+- **Built:** the student app's core (student accounts, sign-in, Lerni's conversations, the MentalMap with its tagger and 7-day logs, Upload and educator feedback, and the educator agent); `lerni serve` with a sign-in page and one app with a ☰ menu by role: an independent student's Chat, My MentalMap (an editable list, the picture, and Upload), and My account; an educator's MentalMaps (a student's list and picture, with a chat) and Students on top; a supervised student's Chat, full screen, and Games (a race for points spent on real cars; educators race too); good answers in Chat earn points too. Hold to talk with spoken answers; a Claude usage warning and rest. Both servers run as LaunchAgents (`lerni service`). The admin tool (`lerni`, with `lerni student`, `lerni logs`, and `lerni feedback`). A [code manifest](code-manifest.md) of every file. Tests: 174 passed.
 - **Designed:** the interest map, goals, the tagger, upload, feedback, and the supervised conversation ([specs/04-interest-map.md](../plans/specs/04-interest-map.md)); approved with PR #12.
 - **Not yet:** a recorded supervised session (the supervised student has used it informally).
 
 When something changes, update this section and add a log entry below.
 
 ## Log
+
+### 2026-10-20 (one item with many names; v3.12 built)
+
+- A map item keeps every name the student used for it: spellings differing only in case, plurals, spaces, or punctuation join on their own ("race cars", "racecars"), and the tagger's new `same_as` joins the very same thing (T-Rex, Tyrannosaurus), merging two items' days, mentions, and links (a goal is kept over an interest; two goals never merge). Each item's details show Also called, with Not the same to split a name off for good; setting an item aside covers all its names. Checked at phone size on both MentalMap lists. Tagger eval: 9 of 9, including T-Rex joining Tyrannosaurus and lava staying apart from volcano. The startup line says Chat. Tests: 174 passed.
 
 ### 2026-10-20 (services that say when they fail; v3.11 built)
 
