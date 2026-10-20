@@ -18,6 +18,7 @@ When something changes, update this section and add a log entry below.
 
 - Two outside reviews of v3.4–v3.6 and of where ML fits. Confirmed and planned: a set-aside lifted on load beside a near-name interest, questions not rechecked after a race start writes them, "es" plurals merging unrelated words, the map block cut mid-line, services that don't say when they fail or pass settings on, and unchecked answer keys.
 - Decisions (the admin): car facts stay hidden until a car is affordable; local embeddings come in Version 3, flagging and shortlisting only; a numbers-only results log ships with the answer-key checks; fact cards open Version 4. Declined: hosted embedders, a vector database, and retrieval over conversations (rule 6).
+- Production so far: since their first car upgrade the supervised student won all 16 races with about 84% right (55% and 3rd place with the starter); the admin saw the same questions repeat; Chat was used once in 7 days. Decisions (the admin): no repeated questions first, then garage rivals and sounds, difficulty for 50–75% right, missed ideas back on a schedule (labels only), and an explain-it bonus round with partial credit.
 
 ### 2026-10-19 (points in Chat; v3.7 built)
 

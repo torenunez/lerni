@@ -13,7 +13,7 @@ Approved in conversation on 2026-10-12. Requirements: [student PRD, Version 3](.
 - **Top (v3.5):** the car they're driving, big, with its ⚡ and the next car to save for ("Next car: … · ⭐ 280 / 400 · about 10 races" over a bar); then **Race!**. While a race runs, the track takes its place.
 - **The race:**
   - Their car and two silly bots (Zippy and Bolt) on a three-lane track, with a finish flag.
-  - A question card under it: "Question 3 of 5", the question, and **three big buttons**. No typing and no chat in a race.
+  - A question card under it: "Question 3 of 5", the question, and **three big buttons**. No typing and no chat in a race (until the bonus round, v3.18).
   - A right pick: their car leaps ahead and the bot in front slows ("Right answer: boost! Zippy slowed down 💨").
   - Another pick: a small step, the right answer, and a one-line why ("It's acceleration: speeding up").
   - Cars glide to their new places after each answer; nothing moves on a clock.
@@ -167,7 +167,7 @@ At about 50 ⭐ a day, a $100,000 car comes on day 1 and a $5 million one after 
 - Pit stop.
 - An educator "reset points".
 - Games for independent students.
-- Difficulty settings.
+- Difficulty settings (until v3.16).
 - Bridge Trip (Version 4).
 
 ## Testing (minimal, per rule 4)
