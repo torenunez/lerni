@@ -103,15 +103,16 @@ As a student, I want to hold one button to talk and let go when I'm done, so tha
 
 ## Version 3: play and points
 
-The student doesn't always take Lerni's questions seriously; points give them a reason to. Design: spec 09 (written in v3.0).
+The student doesn't always take Lerni's questions seriously; points give them a reason to. Design: [spec 09](../../plans/specs/09-play-and-points.md).
 
 ### Story: Race to win points
 
 As a student, I want to race my car by answering questions, so that I can win points for a cooler car.
 
-- WHEN the student opens Games and starts a race THE SYSTEM SHALL show their car and two silly bots, and 5 questions from their goals and interests, each with 3 choices to tap (no typing, no chat).
+- WHEN the student opens Games and starts a race THE SYSTEM SHALL show their car and two silly bots, and 5 questions from their goals and interests, each with 3 choices to tap (now and then a bonus question is answered in their own words, typed or spoken, for more points).
 - WHEN they pick the right answer THE SYSTEM SHALL boost their car and slow a bot; WHEN they pick another THE SYSTEM SHALL slow their car and show the right answer with a short why.
 - WHEN the race ends THE SYSTEM SHALL award points by their place, once per race, and offer Race again.
+- WHEN questions are written THE SYSTEM SHALL avoid ideas asked recently, bring back missed ideas after a gap, and adjust difficulty per goal so the student gets about half to three quarters right.
 
 ### Story: Points for good answers in the conversation
 
@@ -134,7 +135,7 @@ The companion learns what each student likes (how they like to be talked to, whi
 
 ## Version 5: new goals from the map
 
-The agent suggests goals that connect to what the student already loves; the educator accepts or declines each. Stories to be written after Version 4.
+The agent suggests goals that connect to what the student already loves, using race probes (nearby ideas the student chose to explore or was ready for); the educator accepts or declines each. Stories to be written after Version 4.
 
 ## Version 6: conversation without an educator present
 
@@ -180,6 +181,7 @@ Public access and a native iPad app.
 - 2026-10-10: Lerni speaks with the home server's own voice (macOS `say`) and hears with whisper.cpp's `whisper-cli`, both run as commands, so there's nothing to install for the voice and no helper program to keep running; Kokoro or a hosted voice can replace them behind the same adapter. While the button is held, what's heard so far shows below it. Only spoken questions are answered aloud. With voice on, both conversation screens are just the chat and the button (a tap stops Lerni); typing shows only when voice is off. (Replaces "local Whisper and Kokoro, as separate helper programs".)
 - 2026-10-10: Files Gradio keeps in its cache on the home server (an upload before it's read, any voice audio) can be reached by URL by anyone signed in. Accepted for the household: at most three people signed in, each with their own account. Revisit before anyone outside the family uses the app.
 - 2026-10-12: Play and points become Version 3 (the admin's decision, after seeing the student answer Lerni's questions with random emojis). A car race answered by multiple choice, MathGas style (a wrong pick slows your car), and answers in the conversation, judged by the tagger, earn points spent on cars in a garage. This replaces "No scores, no failing": points are never taken away for a wrong answer, never compared between students, and kept apart from the map. Later versions move up one (remembering is now 4, suggested goals 5, without an educator 6); decisions above keep their old numbers.
+- 2026-10-19: The race gets harder and asks for explanations (the admin's decision, after the student won every race since their first car upgrade with about 84% right, and saw the same questions repeat): questions don't repeat, difficulty adapts per goal, missed ideas come back, and an occasional bonus question is answered in their own words, typed or spoken, and graded with partial credit. This replaces "no typing, no chat" in the race and "no difficulty settings" in Version 3. The race also probes nearby ideas: the student's choice to explore one opens Chat, and probe results feed Version 5's suggested goals, never the map directly; practice shows on goals read-only, and a nailed explanation marks a goal explained.
 
 ## Open questions
 

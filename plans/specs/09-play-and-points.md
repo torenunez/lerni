@@ -13,7 +13,7 @@ Approved in conversation on 2026-10-12. Requirements: [student PRD, Version 3](.
 - **Top (v3.5):** the car they're driving, big, with its ⚡ and the next car to save for ("Next car: … · ⭐ 280 / 400 · about 10 races" over a bar); then **Race!**. While a race runs, the track takes its place.
 - **The race:**
   - Their car and two silly bots (Zippy and Bolt) on a three-lane track, with a finish flag.
-  - A question card under it: "Question 3 of 5", the question, and **three big buttons**. No typing and no chat in a race.
+  - A question card under it: "Question 3 of 5", the question, and **three big buttons**. No typing and no chat in a race (until the bonus round, v3.19).
   - A right pick: their car leaps ahead and the bot in front slows ("Right answer: boost! Zippy slowed down 💨").
   - Another pick: a small step, the right answer, and a one-line why ("It's acceleration: speeding up").
   - Cars glide to their new places after each answer; nothing moves on a clock.
@@ -148,6 +148,7 @@ At about 50 ⭐ a day, a $100,000 car comes on day 1 and a $5 million one after 
   - `right`: Lerni's previous message asked a question and the student answered it correctly;
   - `tried`: a real attempt in their own words;
   - empty: anything else.
+  - This is Claude's judgment, not a check; it's spot-checked in the logs.
 - **Each exchange gets an id;** that is the award id.
 - **The award is applied even if the map update is stale** (a person edited the map meanwhile), but not after New conversation.
 - **The ⭐ total refreshes** with a short timer that runs for a few seconds after each answer, then stops.
@@ -166,7 +167,7 @@ At about 50 ⭐ a day, a $100,000 car comes on day 1 and a $5 million one after 
 - Pit stop.
 - An educator "reset points".
 - Games for independent students.
-- Difficulty settings.
+- Difficulty settings (until v3.17).
 - Bridge Trip (Version 4).
 
 ## Testing (minimal, per rule 4)
