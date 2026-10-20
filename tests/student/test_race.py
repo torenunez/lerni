@@ -377,3 +377,43 @@ def test_the_concept_ledger_keeps_every_idea_with_its_answers(tmp_path):
     old.write_text('{"schema": 1, "recent": [{"concept": "halves", "goal": "Fractions", '
                    '"day": "2026-10-12"}]}')
     assert concepts.recent("kim", TODAY) == ["halves"]
+
+
+def test_a_wrong_key_never_races(tmp_path):
+    # the admin's decision (2026-10-19): a race question never teaches a wrong answer
+    import re
+
+    wrong_sum = fresh("Fractions", question="Half of a 400-meter lap, in meters?", math="400 / 2",
+                      choices=["100 meters", "200 meters", "800 meters"], answer=0)
+    right_sum = fresh("Fractions", question="A quarter of 8 laps, in laps?", math="8 * 1/4",
+                      choices=["4", "2", "6"], answer=1)
+    doubted = fresh("Fractions", question="Which is more, a half or a third? DOUBT")
+
+    class Writer(FakeQuizzer):
+        def write(self, system, prompt, schema=None):
+            return {"questions": [wrong_sum, right_sum, doubted,
+                                  *[fresh("Fractions") for _ in range(4)]]}
+
+    class Checker:  # answers blind: the "4" or "2" it would pick, wrong on the doubted one
+        def __init__(self):
+            self.prompts = []
+
+        def write(self, system, prompt, schema=None):
+            self.prompts.append(prompt)
+            picks = []
+            for block in re.split(r"\n(?=\d+\. )", prompt.strip()):
+                choices = re.findall(r"(\d)\) ([^\n]*?)(?=\s+\d\) |$)", block, flags=re.M)
+                want = "2" if "DOUBT" in block or "quarter" in block else "4"
+                picks.append(next(int(i) for i, c in choices if c.strip() == want))
+            return {"picks": picks}
+
+    maps, points = MapStore(tmp_path), PointsStore(tmp_path)
+    maps.change("sam", lambda m: add_goal(m, "Fractions"))
+    checker = Checker()
+    desk = RaceDesk(Writer(), maps, points, checker=checker)
+    desk.prefill = lambda *args: None
+    race = desk.start("sam", supervised=True, today=TODAY)
+    raced = {q.question for q in [*race.questions, *desk._held("sam", TODAY)]}
+    assert right_sum["question"] in raced  # its sum and its key agree, and so does the check
+    assert wrong_sum["question"] not in raced and doubted["question"] not in raced
+    assert "DOUBT" in checker.prompts[0] and "math" not in checker.prompts[0].casefold()
