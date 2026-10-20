@@ -353,3 +353,31 @@ def test_an_old_map_with_a_name_both_on_it_and_set_aside_loads_with_it_on(tmp_pa
     data["removed"] = ["Fractions"]  # older code kept both
     path.write_text(json.dumps(data))
     assert store.get("sam").removed == []
+
+
+def test_old_set_aside_beside_an_interest_stays_and_plurals_are_real(tmp_path):
+    # regression: loading lifted "guns" set aside beside an interest "gun"; "es" made
+    # plan and planes one, and a set-aside "news" blocked "new"
+    store = MapStore(tmp_path)
+    store.change("sam", lambda m: add_interest(m, "gun"))
+    path = tmp_path / "maps" / "sam.json"
+    data = json.loads(path.read_text())
+    data["removed"] = ["guns"]  # older code could keep both
+    path.write_text(json.dumps(data))
+    m = store.get("sam")
+    assert m.removed == ["guns"] and m.find("gun") is None
+    assert not same_name("plan", "planes") and not same_name("cub", "cubes")
+    assert same_name("bus", "buses") and same_name("box", "boxes") and same_name("car", "cars")
+    m = InterestMap(removed=["news", "pies"])
+    assert not mentions_set_aside(m, "What's new?") and not mentions_set_aside(m, "pi is 3.14")
+    assert mentions_set_aside(m, "a pie") and mentions_set_aside(m, "the news")
+
+
+def test_the_map_block_keeps_whole_lines():
+    # regression: eight goals with long notes cut the last one mid-sentence
+    m = InterestMap()
+    for i in range(8):
+        add_goal(m, f"Goal {i}", "n" * 180 + " end.")
+    block = map_block(m, date(2026, 10, 14))
+    assert len(block) <= 1500
+    assert all(line == MAP_HEADER or line.endswith((" end.)", ":")) for line in block.splitlines())

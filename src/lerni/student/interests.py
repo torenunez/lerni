@@ -104,26 +104,46 @@ class InterestMap:
         return any(same_name(r, name) for r in self.removed)
 
 
+# words that end in "s" but aren't plurals ("news" is not more than one "new")
+NOT_PLURAL = frozenset({
+    "news", "series", "species", "physics", "maths", "mathematics", "gymnastics", "athletics",
+    "chess", "gas", "bus", "lens", "plus", "yes", "this", "his", "has", "was", "does", "always",
+})
+ES_AFTER = ("s", "x", "z", "ch", "sh")  # bus → buses, box → boxes; never plan → planes
+
+
+def _singulars(word: str) -> list[str]:
+    """What a plural word could be one of: "cars" → car, "buses" → bus; never under 3 letters."""
+    last = word.split(" ")[-1]
+    if last in NOT_PLURAL or last.endswith(("ss", "us", "is")) or not word.endswith("s"):
+        return []
+    out = [word[:-2]] if word.endswith("es") and word[:-2].endswith(ES_AFTER) else []
+    out.append(word[:-1])
+    return [w for w in out if len(w.split(" ")[-1]) >= 3]
+
+
+def _plurals(word: str) -> list[str]:
+    """The plural forms of a name: car → cars; bus → buses (and buss, harmless)."""
+    return [word + "s"] + ([word + "es"] if word.endswith(ES_AFTER) else [])
+
+
 def same_name(a: str, b: str) -> bool:
     """Whether two names are one, ignoring case and a plural "s" or "es" (car, cars, buses)."""
     a, b = a.strip().casefold(), b.strip().casefold()
     if a == b:
         return True
     short, long = sorted((a, b), key=len)
-    return len(short) >= 3 and long in (short + "s", short + "es")  # never "pi" and "pies"
+    return short in _singulars(long)  # never "pi" and "pies", or "plan" and "planes"
 
 
 def mentions_set_aside(m: InterestMap, text: str) -> bool:
     """Whether ``text`` names anything removed from the map, as whole words, plurals included."""
     folded = text.casefold()
     for name in m.removed:
-        n = re.escape(name.strip().casefold())
-        if re.search(rf"(?<!\w){n}(?:e?s)?(?!\w)", folded):
+        n = name.strip().casefold()
+        forms = {n, *_plurals(n), *_singulars(n)}  # "guns" set aside: "gun" too
+        if any(re.search(rf"(?<!\w){re.escape(f)}(?!\w)", folded) for f in forms):
             return True
-        singles = [n[:-2]] if n.endswith("es") else []
-        singles += [n[:-1]] if n.endswith("s") else []
-        if any(len(s) >= 3 and re.search(rf"(?<!\w){s}(?!\w)", folded) for s in singles):
-            return True  # "guns" set aside: "gun" too
     return False
 
 
@@ -344,9 +364,14 @@ def _from_dict(data: dict[str, Any]) -> InterestMap:
     ids = {e.id for e in entries}
     links = [Link(**k) for k in data.get("links", [])]
     links = [k for k in links if k.a in ids and k.b in ids]  # heals a map an older bug broke
-    # older code could keep "Fractions" set aside beside a goal "Fraction": it's on the map
+    # older code could keep a name set aside beside its near-name on the map: a goal was a
+    # person's choice, so it stays; an interest was the tagger's, so the set-aside wins
     removed = [r for r in data.get("removed", [])
-               if not any(same_name(r, e.name) for e in entries)]
+               if not any(same_name(r, e.name) and e.kind == "goal" for e in entries)]
+    gone = {e.id for e in entries if e.kind == "interest"
+            and any(same_name(r, e.name) for r in removed)}
+    entries = [e for e in entries if e.id not in gone]
+    links = [k for k in links if k.a not in gone and k.b not in gone]
     return InterestMap(
         entries,
         links,
@@ -714,4 +739,11 @@ def map_block(m: InterestMap, today: date) -> str:
     recent = bridges[-3:]  # links are in order of recency
     if recent:
         lines.append("Recent bridges: " + "; ".join(f"{names[k.a]} → {names[k.b]}" for k in recent))
-    return "" if len(lines) == 1 else "\n".join(lines)[:MAX_BLOCK]
+    if len(lines) == 1:
+        return ""
+    kept, size = [], 0
+    for line in lines:  # in order of priority; a line that doesn't fit is left out whole
+        if size + len(line) + 1 <= MAX_BLOCK:
+            kept.append(line)
+            size += len(line) + 1
+    return "\n".join(kept)

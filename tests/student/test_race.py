@@ -326,3 +326,18 @@ def test_a_race_still_starts_when_claude_can_only_repeat_or_the_concepts_file_fa
         assert len(race.questions) == QUESTIONS_PER_RACE
         assert len({q.question for q in race.questions}) == QUESTIONS_PER_RACE
     assert points.races_left("sam", TODAY + timedelta(days=2)) == RACES_PER_DAY - 1  # counted once
+
+
+def test_a_set_aside_while_questions_are_written_refuses_the_race(tmp_path):
+    # regression: an educator set "sharks" aside during the Claude call, and shark questions raced
+    class SetsAside(FakeQuizzer):
+        def write(self, system, prompt):
+            self.calls += 1
+            desk.maps.change("sam", lambda m: remove(m, m.find("sharks").id))
+            return {"questions": [fresh("Fractions", "Like 4 sharks in 8.") for _ in range(10)]}
+
+    desk, points = desk_for(tmp_path, SetsAside())
+    desk.maps.change("sam", lambda m: add_interest(m, "sharks"))
+    with pytest.raises(RaceUnavailable):
+        desk.start("sam", supervised=True, today=TODAY)
+    assert points.races_left("sam", TODAY) == RACES_PER_DAY  # not counted

@@ -393,6 +393,10 @@ class RaceDesk:
                         with self._lock:
                             self._busy.pop(username, None)
                         mine.set()
+            m = self.maps.get(username)  # a person may have set something aside meanwhile
+            held = [q for q in held if fits(q, m)]
+            if len(held) < QUESTIONS_PER_RACE:
+                raise RaceUnavailable(NOT_READY)  # before the race is counted
             questions, rest = held[:QUESTIONS_PER_RACE], held[QUESTIONS_PER_RACE:]
             self.points.start_race(username, day)
             self._remember(username, questions, day)
