@@ -639,7 +639,10 @@ def apply_tags(m: InterestMap, tags: Tags, student_text: str, today: date) -> No
         if (e := m.find(name)) is not None:
             touched[e.id] = e
             if _said(name, said) and not m.split(name, e):
-                _alias(e, name.strip())  # another spelling, in the student's own words
+                try:  # another spelling, in the student's own words, as plain as any name
+                    _alias(e, check_name(name))
+                except MapError:
+                    pass
     for raw in tags.new_interests:
         try:
             name = check_name(raw)

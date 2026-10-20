@@ -23,6 +23,7 @@ from lerni.student.interests import (
     group_days,
     map_block,
     mentions_set_aside,
+    not_the_same,
     parents,
     parse_tags,
     put_back,
@@ -458,3 +459,26 @@ def test_one_item_keeps_every_name_and_its_history():
     remove(m, _interest(m, "guns").id)
     apply_tags(m, parse_tags({"same_as": [["guns", "race cars"]]}), "guns", day)
     assert "guns" not in cars.aliases  # set aside: never joined
+
+
+def test_a_split_name_stays_apart_and_set_asides_cover_aliases():
+    day = date(2026, 10, 20)
+    m = InterestMap()
+    volcano = _interest(m, "volcano")
+    apply_tags(m, parse_tags({"same_as": [["volcanic eruption", "volcano"]]}),
+               "a volcanic eruption", day)
+    remove(m, volcano.id)  # set aside: every name it had goes with it
+    assert m.is_removed("volcanic eruptions") and mentions_set_aside(m, "a volcanic eruption")
+    back = put_back(m, "volcano")
+    assert back.aliases == ["volcanic eruption"] and not m.is_removed("volcanic eruption")
+    not_the_same(m, back.id, "volcanic eruption")  # a person: that's not the same thing
+    apply_tags(m, parse_tags({"same_as": [["volcanic eruption", "volcano"]],
+                              "new_interests": ["volcanic eruption"]}),
+               "a volcanic eruption again", day)
+    eruption = m.find("volcanic eruption")
+    assert eruption is not None and eruption is not back and back.aliases == []
+    cars = _interest(m, "race cars")
+    apply_tags(m, parse_tags({"about": ["racecars"]}), "racecars", day)
+    not_the_same(m, cars.id, "racecars")  # even a spelling match stays apart once split
+    apply_tags(m, parse_tags({"new_interests": ["racecars"]}), "racecars", day)
+    assert m.find("racecars") is not cars and cars.aliases == []
