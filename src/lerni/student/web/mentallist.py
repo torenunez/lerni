@@ -30,6 +30,7 @@ from lerni.student.interests import (
     details,
     family,
     group,
+    not_the_same,
     parents,
     put_back,
     remove,
@@ -142,6 +143,13 @@ def ungroup_item(maps, students, viewer, requested, entry_id: str, group_id: str
                 lambda m: ungroup(m, entry_id or "", group_id or ""), "Taken out.", expected)
 
 
+def split_item(maps, students, viewer, requested, entry_id: str, name: str,
+               expected: str | None = None) -> str:
+    """Say one of an item's other names is not the same thing; it's never joined again."""
+    return _act(maps, students, viewer, requested,
+                lambda m: not_the_same(m, entry_id or "", name or ""), "Split off.", expected)
+
+
 def _tree(m: InterestMap, items: list[Entry]) -> list[tuple[Entry, int]]:
     """Items in list order with their depth: each group, then its kinds (under its first group)."""
     ids, out, seen = {e.id for e in items}, [], set()
@@ -243,6 +251,15 @@ def mental_list(
 
             btn.click(on_out, [requested, version], [status, version], **PRIVATE)
 
+    def wire_splits(who: str, e_id: str, splits: list[tuple[str, Any]]) -> None:
+        """An open item's Not the same, one per other name."""
+        for alias, btn in splits:
+
+            def on_split(req: Any, v: int, request: gr.Request, a: str = alias) -> list[Any]:
+                return done(run(split_item, req, who, e_id, a, request=request), v)
+
+            btn.click(on_split, [requested, version], [status, version], **PRIVATE)
+
     def wire(who: str, e_id: str, row: Any, trash: Any, edits: tuple[Any, ...] = ()) -> None:
         """One item's events; edits are (name box, Rename, notes box, Save) when it's open."""
 
@@ -335,6 +352,11 @@ def mental_list(
                         e.name, label="Name", max_length=MAX_NAME, key=f"name-{e.id}"
                     )
                     rename_btn = gr.Button("Rename", size="sm", key=f"ren-{e.id}")
+                    if e.aliases:  # other names the student used: one item, split if wrong
+                        gr.Markdown("**Also called** " + ", ".join(e.aliases), key=f"aka-{e.id}")
+                        wire_splits(who, e.id, [
+                            (a, gr.Button(f"Not the same: {a}", size="sm", key=f"ns-{e.id}-{i}"))
+                            for i, a in enumerate(e.aliases)])
                     if e.kind == "interest":  # its groups: put it under one, or take it out
                         mine = {x.id for x in family(m, e)} | set(parents(m, e.id))
                         options = [x.name for x in m.entries

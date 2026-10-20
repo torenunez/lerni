@@ -44,7 +44,7 @@ Approved in conversation on 2026-10-12, after two outside design reviews. Builds
 ## Not in this version
 
 - Goals under goals, or anything that rolls up explained days (never a mastery score).
-- Aliases, outside taxonomies, or embeddings.
+- Outside taxonomies, or embeddings. (Aliases came in v3.12: one item keeps every name the student used.)
 - A "tidy up" button that asks Claude to group the whole map.
 
 ## Testing

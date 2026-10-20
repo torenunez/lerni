@@ -9,6 +9,7 @@ from lerni.student.interests import (
     MAP_HEADER,
     MAX_ENTRIES,
     InterestMap,
+    Link,
     MapError,
     MapStore,
     add_goal,
@@ -16,12 +17,14 @@ from lerni.student.interests import (
     apply_tags,
     backed_off,
     check_name,
+    children,
     delete_for_good,
     details,
     group,
     group_days,
     map_block,
     mentions_set_aside,
+    not_the_same,
     parents,
     parse_tags,
     put_back,
@@ -425,3 +428,100 @@ def test_interests_named_together_on_a_full_map_all_stay_on_it():
     apply_tags(m, tags, "a shark and a whale", date(2026, 10, 14))
     assert m.find("sharks") is not None and m.find("whale") is not None
     assert len(m.entries) == MAX_ENTRIES and m.find("sharks").days[0] == "2026-09-01"
+
+
+def test_one_item_keeps_every_name_and_its_history():
+    # the admin's decision (2026-10-20): one item with many names, never split hairs over them
+    day = date(2026, 10, 20)
+    m = InterestMap()
+    cars = _interest(m, "race cars")
+    cars.days = ["2026-10-01"]
+    apply_tags(m, parse_tags({"about": ["racecars"]}), "I love racecars", day)
+    assert [e.name for e in m.entries] == ["race cars"] and cars.aliases == ["racecars"]
+    assert cars.days == ["2026-10-01", "2026-10-20"]
+    rex = _interest(m, "Tyrannosaurus")
+    apply_tags(m, parse_tags({"same_as": [["T-Rex", "Tyrannosaurus"]]}), "a T-Rex!", day)
+    assert m.find("t-rex") is rex and rex.aliases == ["T-Rex"]
+    lava, volcano = _interest(m, "magma"), _interest(m, "lava")
+    lava.days, volcano.days = ["2026-10-02"], ["2026-10-03"]
+    m.links.append(Link(rex.id, lava.id, "related", "2026-10-02"))
+    m.links.append(Link(lava.id, volcano.id, "related", "2026-10-02"))
+    apply_tags(m, parse_tags({"same_as": [["lava", "magma"]]}), "lava is magma", day)
+    assert m.find("lava") is lava and lava.aliases == ["lava"] and len(m.entries) == 3
+    assert lava.days == ["2026-10-02", "2026-10-03", "2026-10-20"]
+    assert [(k.a, k.b) for k in m.links] == [(rex.id, lava.id)]  # moved, never to itself
+    goal = add_goal(m, "Acceleration", "speeding up")
+    add_goal(m, "Speed")
+    zoom = _interest(m, "zoom")
+    apply_tags(m, parse_tags({"same_as": [["zoom", "Acceleration"], ["Speed", "Acceleration"]]}),
+               "zoom! speed", day)
+    assert m.find("zoom") is goal and goal.name == "Acceleration" and goal.notes == "speeding up"
+    assert m.find("Speed").name == "Speed" and zoom not in m.entries  # two goals never merge
+    remove(m, _interest(m, "guns").id)
+    apply_tags(m, parse_tags({"same_as": [["guns", "race cars"]]}), "guns", day)
+    assert "guns" not in cars.aliases  # set aside: never joined
+
+
+def test_a_split_name_stays_apart_and_set_asides_cover_aliases():
+    day = date(2026, 10, 20)
+    m = InterestMap()
+    volcano = _interest(m, "volcano")
+    apply_tags(m, parse_tags({"same_as": [["volcanic eruption", "volcano"]]}),
+               "a volcanic eruption", day)
+    remove(m, volcano.id)  # set aside: every name it had goes with it
+    assert m.is_removed("volcanic eruptions") and mentions_set_aside(m, "a volcanic eruption")
+    back = put_back(m, "volcano")
+    assert back.aliases == ["volcanic eruption"] and not m.is_removed("volcanic eruption")
+    not_the_same(m, back.id, "volcanic eruption")  # a person: that's not the same thing
+    apply_tags(m, parse_tags({"same_as": [["volcanic eruption", "volcano"]],
+                              "new_interests": ["volcanic eruption"]}),
+               "a volcanic eruption again", day)
+    eruption = m.find("volcanic eruption")
+    assert eruption is not None and eruption is not back and back.aliases == []
+    cars = _interest(m, "race cars")
+    apply_tags(m, parse_tags({"about": ["racecars"]}), "racecars", day)
+    not_the_same(m, cars.id, "racecars")  # even a spelling match stays apart once split
+    apply_tags(m, parse_tags({"new_interests": ["racecars"]}), "racecars", day)
+    assert m.find("racecars") is not cars and cars.aliases == []
+
+
+def test_names_never_slip_past_a_set_aside_a_split_or_the_group_rules():
+    # regression (review): same_name depended on argument order, so a set-aside "racecars" let
+    # "race car" back on; a split name came back through a merge; a merge put a goal in groups
+    # and made a group loop; a set-aside item's other names blocked a person's own goal
+    day = date(2026, 10, 20)
+    m = InterestMap()
+    remove(m, _interest(m, "racecars").id)
+    assert same_name("racecars", "race car") and same_name("race car", "racecars")
+    assert mentions_set_aside(m, "a race car") and mentions_set_aside(m, "two race cars")
+    apply_tags(m, parse_tags({"new_interests": ["race car"]}), "I like a race car", day)
+    assert m.find("race car") is None
+    m = InterestMap()
+    cars = _interest(m, "race cars")
+    apply_tags(m, parse_tags({"about": ["racecars"]}), "racecars", day)
+    not_the_same(m, cars.id, "racecars")
+    apply_tags(m, parse_tags({"new_interests": ["racecars"]}), "racecars", day)
+    apply_tags(m, parse_tags({"same_as": [["speedsters", "racecars"]]}), "speedsters", day)
+    apply_tags(m, parse_tags({"same_as": [["speedsters", "race cars"]]}), "speedsters", day)
+    assert "racecars" not in [a.casefold() for a in m.find("race cars").aliases]
+    m = InterestMap()
+    white, sharks, animals = (_interest(m, n) for n in ("great white", "sharks", "animals"))
+    group(m, white.id, sharks.id)
+    group(m, sharks.id, animals.id)
+    goal = add_goal(m, "Shark science")
+    apply_tags(m, parse_tags({"same_as": [["sharks", "Shark science"]]}), "sharks", day)
+    assert not parents(m, goal.id) and not any(k.b == goal.id and k.kind == "kind_of"
+                                               for k in m.links)
+    m = InterestMap()
+    white, sharks, fish = (_interest(m, n) for n in ("great white", "sharks", "fish"))
+    group(m, white.id, sharks.id)
+    group(m, sharks.id, fish.id)
+    apply_tags(m, parse_tags({"same_as": [["great white", "fish"]]}), "great white", day)
+    assert not (set(parents(m, sharks.id)) & set(children(m, sharks.id)))  # no loop
+    m = InterestMap()
+    volcano = _interest(m, "volcano")
+    volcano.aliases = ["volcanic eruption"]
+    remove(m, volcano.id)
+    add_goal(m, "Volcanic eruption")  # a person's goal: its name is no longer set aside
+    assert not m.is_removed("volcanic eruption")
+    assert put_back(m, "volcano").aliases == []  # never two items with one name

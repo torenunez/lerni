@@ -11,7 +11,7 @@ TAGGER_ENV = "LERNI_TAGGER_MODEL"
 
 
 def _claude_chat(usage: Any = None) -> Any:
-    """Return the Claude Code chat model for Ask Lerni if the CLI is installed, else ``None``."""
+    """Return the Claude Code chat model for Chat if the CLI is installed, else ``None``."""
     from lerni.student.adapters.claude_code import (
         DEFAULT_MODEL,
         ClaudeCodeChat,
@@ -158,7 +158,7 @@ def serve(
         if chat
         else "off (the claude CLI isn't installed)"
     )
-    print(f"Ask Lerni, the interest map, and Upload with Claude: {status}", flush=True)
+    print(f"Chat, the interest map, and Upload with Claude: {status}", flush=True)
     print(
         "Voice (hold to talk): "
         + ("on" if speech else "off (install whisper.cpp and its model: admin reference, Voice)"),
