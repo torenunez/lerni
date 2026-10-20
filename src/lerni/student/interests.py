@@ -11,7 +11,7 @@ import json
 import re
 import threading
 import unicodedata
-from collections.abc import Callable
+from collections.abc import Callable, Collection
 from dataclasses import asdict, dataclass, field
 from datetime import date, timedelta
 from pathlib import Path
@@ -73,6 +73,7 @@ class InterestMap:
     edits: int = 0  # bumped by every person's edit
     next_id: int = 1
     removed_info: dict[str, dict[str, Any]] = field(default_factory=dict)  # for Put back
+    archived: list[Entry] = field(default_factory=list)  # rested to make room; back when named
 
     def find(self, name: str) -> Entry | None:
         """The entry with this name, ignoring case, or None; "car" finds "cars" and back."""
@@ -104,26 +105,46 @@ class InterestMap:
         return any(same_name(r, name) for r in self.removed)
 
 
+# words that end in "s" but aren't plurals ("news" is not more than one "new")
+NOT_PLURAL = frozenset({
+    "news", "series", "species", "physics", "maths", "mathematics", "gymnastics", "athletics",
+    "chess", "gas", "bus", "lens", "plus", "yes", "this", "his", "has", "was", "does", "always",
+})
+ES_AFTER = ("s", "x", "z", "ch", "sh", "o")  # buses, boxes, volcanoes; never plan → planes
+
+
+def _singulars(word: str) -> list[str]:
+    """What a plural word could be one of: "cars" → car, "buses" → bus; never under 3 letters."""
+    last = word.split(" ")[-1]
+    if last in NOT_PLURAL or last.endswith("ss") or not word.endswith("s"):
+        return []
+    out = [word[:-2]] if word.endswith("es") and word[:-2].endswith(ES_AFTER) else []
+    out.append(word[:-1])
+    return [w for w in out if len(w.split(" ")[-1]) >= 3]
+
+
+def _plurals(word: str) -> list[str]:
+    """The plural forms of a name: car → cars; bus → buses (and buss, harmless)."""
+    return [word + "s"] + ([word + "es"] if word.endswith(ES_AFTER) else [])
+
+
 def same_name(a: str, b: str) -> bool:
     """Whether two names are one, ignoring case and a plural "s" or "es" (car, cars, buses)."""
     a, b = a.strip().casefold(), b.strip().casefold()
     if a == b:
         return True
     short, long = sorted((a, b), key=len)
-    return len(short) >= 3 and long in (short + "s", short + "es")  # never "pi" and "pies"
+    return short in _singulars(long)  # never "pi" and "pies", or "plan" and "planes"
 
 
 def mentions_set_aside(m: InterestMap, text: str) -> bool:
     """Whether ``text`` names anything removed from the map, as whole words, plurals included."""
     folded = text.casefold()
     for name in m.removed:
-        n = re.escape(name.strip().casefold())
-        if re.search(rf"(?<!\w){n}(?:e?s)?(?!\w)", folded):
+        n = name.strip().casefold()
+        forms = {n, *_plurals(n), *_singulars(n)}  # "guns" set aside: "gun" too
+        if any(re.search(rf"(?<!\w){re.escape(f)}(?!\w)", folded) for f in forms):
             return True
-        singles = [n[:-2]] if n.endswith("es") else []
-        singles += [n[:-1]] if n.endswith("s") else []
-        if any(len(s) >= 3 and re.search(rf"(?<!\w){s}(?!\w)", folded) for s in singles):
-            return True  # "guns" set aside: "gun" too
     return False
 
 
@@ -162,8 +183,13 @@ def _check_notes(notes: str) -> str:
     return notes
 
 
-def make_room(m: InterestMap) -> bool:
-    """Make room for one more entry, dropping the least-seen, oldest interest if full.
+MAX_ARCHIVED = 200  # resting items kept; the oldest go first
+
+
+def make_room(m: InterestMap, keep: Collection[str] = ()) -> bool:
+    """Make room for one more entry, resting the least-seen, oldest interest if full.
+
+    ``keep`` ids are never rested (items named in the same exchange).
 
     Returns:
         False if the map is full of goals (nothing the server may drop).
@@ -171,13 +197,29 @@ def make_room(m: InterestMap) -> bool:
     if len(m.entries) < MAX_ENTRIES:
         return True
     groups = {k.b for k in m.links if k.kind == "kind_of"}
-    interests = [e for e in m.entries if e.kind == "interest" and e.id not in groups]
+    interests = [e for e in m.entries
+                 if e.kind == "interest" and e.id not in groups and e.id not in keep]
     if not interests:
         return False  # only goals and groups left: a group with kinds is never dropped
     # fewest days first, then the longest ago
     drop = min(interests, key=lambda e: (len(e.days), e.days[-1] if e.days else ""))
-    _forget(m, drop.id)
+    _lift_kinds(m, drop.id)  # never a group here, but kept safe
+    m.archived = ([a for a in m.archived if not same_name(a.name, drop.name)]
+                  + [drop])[-MAX_ARCHIVED:]
+    _forget(m, drop.id)  # it rests with its days and mentions; its links go
     return True
+
+
+def _wake(m: InterestMap, name: str, kind: Kind = "interest") -> Entry | None:
+    """Bring a resting item back onto the map with its history, or None if it isn't resting."""
+    resting = next((a for a in m.archived if same_name(a.name, name)), None)
+    if resting is None or m.is_removed(resting.name):
+        return None
+    m.archived = [a for a in m.archived if a is not resting]
+    entry = m.new_entry(resting.name, kind)
+    entry.days, entry.mentions = list(resting.days), resting.mentions
+    m.entries.append(entry)
+    return entry
 
 
 def _forget(m: InterestMap, entry_id: str) -> None:
@@ -210,8 +252,11 @@ def add_goal(m: InterestMap, name: str, notes: str = "") -> Entry:
     else:
         if error := full(m):
             raise error
-        entry = m.new_entry(name, "goal", notes)
-        m.entries.append(entry)
+        entry = _wake(m, name, "goal")  # resting: the goal keeps its days
+        if entry is None:
+            entry = m.new_entry(name, "goal")
+            m.entries.append(entry)
+        entry.notes = notes
     m.edits += 1
     return entry
 
@@ -228,8 +273,10 @@ def add_interest(m: InterestMap, name: str) -> Entry:
     if error := full(m):
         raise error
     _unremove(m, name)  # a person may bring back what they removed
-    entry = m.new_entry(name, "interest")
-    m.entries.append(entry)
+    entry = _wake(m, name)
+    if entry is None:
+        entry = m.new_entry(name, "interest")
+        m.entries.append(entry)
     m.edits += 1
     return entry
 
@@ -271,6 +318,7 @@ def remove(m: InterestMap, entry_id: str) -> None:
         MapError: Unknown entry.
     """
     entry = m.get(entry_id)
+    m.archived = [a for a in m.archived if not same_name(a.name, entry.name)]  # removed wins
     links = [asdict(k) for k in m.links if entry_id in (k.a, k.b)]
     _lift_kinds(m, entry_id)  # its kinds stay, one level up
     _forget(m, entry_id)
@@ -344,9 +392,17 @@ def _from_dict(data: dict[str, Any]) -> InterestMap:
     ids = {e.id for e in entries}
     links = [Link(**k) for k in data.get("links", [])]
     links = [k for k in links if k.a in ids and k.b in ids]  # heals a map an older bug broke
-    # older code could keep "Fractions" set aside beside a goal "Fraction": it's on the map
+    # older code could keep a name set aside beside its near-name on the map: a goal was a
+    # person's choice, so it stays; an interest was the tagger's, so the set-aside wins
     removed = [r for r in data.get("removed", [])
-               if not any(same_name(r, e.name) for e in entries)]
+               if not any(same_name(r, e.name) and e.kind == "goal" for e in entries)]
+    gone = {e.id for e in entries if e.kind == "interest"
+            and any(same_name(r, e.name) for r in removed)}
+    entries = [e for e in entries if e.id not in gone]
+    links = [k for k in links if k.a not in gone and k.b not in gone]
+    archived = [Entry(**a) for a in data.get("archived", [])]  # older maps have none
+    archived = [a for a in archived if not any(same_name(a.name, x) for x in removed)
+                and not any(same_name(a.name, e.name) for e in entries)]
     return InterestMap(
         entries,
         links,
@@ -354,6 +410,7 @@ def _from_dict(data: dict[str, Any]) -> InterestMap:
         int(data.get("edits", 0)),
         int(data.get("next_id", 1)),
         dict(data.get("removed_info", {})),
+        archived,
     )
 
 
@@ -479,9 +536,11 @@ def apply_tags(m: InterestMap, tags: Tags, student_text: str, today: date) -> No
             continue
         if (e := m.find(name)) is not None:
             touched[e.id] = e  # already on the map (an interest or a goal): it counts there
-        elif not m.is_removed(name) and _said(name, said) and make_room(m):
-            e = m.new_entry(name, "interest")
-            m.entries.append(e)
+        elif not m.is_removed(name) and _said(name, said) and make_room(m, keep=touched):
+            e = _wake(m, name)  # resting: it comes back with its history
+            if e is None:
+                e = m.new_entry(name, "interest")
+                m.entries.append(e)
             touched[e.id] = e
     for e in touched.values():
         _seen(e, day)
@@ -714,4 +773,11 @@ def map_block(m: InterestMap, today: date) -> str:
     recent = bridges[-3:]  # links are in order of recency
     if recent:
         lines.append("Recent bridges: " + "; ".join(f"{names[k.a]} → {names[k.b]}" for k in recent))
-    return "" if len(lines) == 1 else "\n".join(lines)[:MAX_BLOCK]
+    if len(lines) == 1:
+        return ""
+    kept, size = [], 0
+    for line in lines:  # in order of priority; a line that doesn't fit is left out whole
+        if size + len(line) + 1 <= MAX_BLOCK:
+            kept.append(line)
+            size += len(line) + 1
+    return "\n".join(kept)

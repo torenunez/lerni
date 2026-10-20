@@ -353,3 +353,75 @@ def test_an_old_map_with_a_name_both_on_it_and_set_aside_loads_with_it_on(tmp_pa
     data["removed"] = ["Fractions"]  # older code kept both
     path.write_text(json.dumps(data))
     assert store.get("sam").removed == []
+
+
+def test_old_set_aside_beside_an_interest_stays_and_plurals_are_real(tmp_path):
+    # regression: loading lifted "guns" set aside beside an interest "gun"; "es" made
+    # plan and planes one, and a set-aside "news" blocked "new"
+    store = MapStore(tmp_path)
+    store.change("sam", lambda m: add_interest(m, "gun"))
+    path = tmp_path / "maps" / "sam.json"
+    data = json.loads(path.read_text())
+    data["removed"] = ["guns"]  # older code could keep both
+    path.write_text(json.dumps(data))
+    m = store.get("sam")
+    assert m.removed == ["guns"] and m.find("gun") is None
+    assert not same_name("plan", "planes") and not same_name("cub", "cubes")
+    assert same_name("bus", "buses") and same_name("box", "boxes") and same_name("car", "cars")
+    # regression (review): the first rule lost "o" + es and words ending in "us" or "is"
+    assert same_name("volcano", "volcanoes") and same_name("kiwi", "kiwis")
+    assert same_name("emu", "emus") and same_name("taxi", "taxis")
+    assert mentions_set_aside(InterestMap(removed=["volcano", "kiwis"]), "volcanoes and a kiwi")
+    m = InterestMap(removed=["news", "pies"])
+    assert not mentions_set_aside(m, "What's new?") and not mentions_set_aside(m, "pi is 3.14")
+    assert mentions_set_aside(m, "a pie") and mentions_set_aside(m, "the news")
+
+
+def test_the_map_block_keeps_whole_lines():
+    # regression: eight goals with long notes cut the last one mid-sentence
+    m = InterestMap()
+    for i in range(8):
+        add_goal(m, f"Goal {i}", "n" * 180 + " end.")
+    block = map_block(m, date(2026, 10, 14))
+    assert len(block) <= 1500
+    assert all(line == MAP_HEADER or line.endswith((" end.)", ":")) for line in block.splitlines())
+
+
+def test_a_full_map_rests_an_interest_and_it_comes_back_with_its_history(tmp_path):
+    # the map was forgetting: at 60 items each new interest deleted the least-seen one for good
+    store = MapStore(tmp_path)
+
+    def fill(m):
+        for i in range(MAX_ENTRIES):
+            e = m.new_entry(f"thing {i}", "interest")
+            e.days = ["2026-10-01", "2026-10-02"] if i else ["2026-09-01"]  # thing 0: least seen
+            m.entries.append(e)
+
+    store.change("sam", fill)
+    seen = parse_tags({"about": [], "new_interests": ["volcanoes"]})
+    store.change("sam", lambda m: apply_tags(m, seen, "I love volcanoes", date(2026, 10, 14)))
+    m = store.get("sam")  # saved and loaded
+    assert m.find("thing 0") is None and m.find("volcanoes") is not None
+    assert [(a.name, a.days) for a in m.archived] == [("thing 0", ["2026-09-01"])]
+    back = parse_tags({"about": [], "new_interests": ["thing 0"]})
+    store.change("sam", lambda m: apply_tags(m, back, "tell me about thing 0", date(2026, 10, 15)))
+    m = store.get("sam")
+    assert m.find("thing 0").days == ["2026-09-01", "2026-10-15"] and len(m.entries) == MAX_ENTRIES
+    assert [a.name for a in m.archived] != ["thing 0"]  # another one rests in its place
+
+
+
+def test_interests_named_together_on_a_full_map_all_stay_on_it():
+    # regression (review): a woken or new interest went straight back to rest in the same exchange
+    m = InterestMap()
+    for i in range(MAX_ENTRIES):
+        e = m.new_entry(f"thing {i}", "interest")
+        e.days = ["2026-10-01", "2026-10-02", "2026-10-03"]
+        m.entries.append(e)
+    sharks = m.new_entry("sharks", "interest")
+    sharks.days = ["2026-09-01"]
+    m.archived.append(sharks)
+    tags = parse_tags({"about": [], "new_interests": ["shark", "whale"]})  # two at most
+    apply_tags(m, tags, "a shark and a whale", date(2026, 10, 14))
+    assert m.find("sharks") is not None and m.find("whale") is not None
+    assert len(m.entries) == MAX_ENTRIES and m.find("sharks").days[0] == "2026-09-01"

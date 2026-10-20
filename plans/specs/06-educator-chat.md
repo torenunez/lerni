@@ -50,7 +50,7 @@ The four Maps panels go away: Add a goal, Rename or remove, Upload notes, and Fe
 
 ## Data
 
-Messages are kept like Ask: in memory per educator and student, and in the educator's 7-day log. Nothing new on disk except what's ticked (map entries, feedback). Files are never kept.
+Messages are kept like Ask: in memory per educator and student, and in the educator's log (kept a year). Nothing new on disk except what's ticked (map entries, feedback). Files are never kept.
 
 ## Code
 

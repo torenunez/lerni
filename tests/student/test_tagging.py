@@ -53,14 +53,16 @@ def test_a_late_result_never_undoes_a_person_or_a_new_conversation(tmp_path):
     assert maps.get("sam").find("cars") is None
 
 
-def test_logs_older_than_7_days_are_deleted(tmp_path):
+def test_logs_are_kept_a_year_then_deleted(tmp_path):
+    # the admin's decision (2026-10-19): a year of history while the family hosts it
     log = ConversationLog(tmp_path, today=lambda: TODAY)
     folder = tmp_path / "logs" / "sam"
     folder.mkdir(parents=True)
-    for age in (6, 7):
+    for age in (30, 364, 365):
         (folder / f"{(TODAY - timedelta(days=age)).isoformat()}.jsonl").write_text("{}\n")
     log.purge()
-    assert sorted(p.stem for p in folder.iterdir()) == ["2026-10-04"]
+    kept = sorted(p.stem for p in folder.iterdir())
+    assert kept == [(TODAY - timedelta(days=a)).isoformat() for a in (364, 30)]
 
 
 def test_a_real_answer_earns_stars_once_and_never_when_skipped_stopped_or_cleared(tmp_path):

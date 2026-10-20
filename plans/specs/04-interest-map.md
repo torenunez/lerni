@@ -50,12 +50,12 @@ Only educators see a supervised student's map; the student never does. An indepe
 - **One name, one entry.** Adding a goal with the name of an existing interest turns that interest into the goal and keeps its days. The tagger never adds an interest named like a goal; it counts toward the goal.
 - **Removed means gone for good.** Only the name is kept, so it's never re-added; a person can add it again by hand.
 - **Dislikes aren't interests.** "I don't like sharks" adds nothing.
-- **Limits:** 60 entries per map. At the limit, the interest that came up on the fewest days and longest ago is dropped to make room.
+- **Limits:** 60 entries per map. At the limit, the interest that came up on the fewest days and longest ago rests to make room: it keeps its days and comes back with them when it comes up again (v3.10; the newest 200 rest, listed read-only as Older interests).
 - **Lifecycle:** an archived student's map is kept, like their account. Release 1 has no clear or export; the admin can delete the file.
 
-**Conversation logs**, `logs/<username>/<date>.jsonl`: each exchange (the question, the answer, and what the tagger did with it), so the admin can check that the map matches what was said. Every student is logged. Files older than 7 days are deleted at startup and once a day. The admin reads them in the terminal (`lerni logs [username]`); no screen shows them.
+**Conversation logs**, `logs/<username>/<date>.jsonl`: each exchange (the question, the answer, and what the tagger did with it), so the admin can check that the map matches what was said. Every student is logged. Files older than a year are deleted at startup and once a day (7 days until v3.10). The admin reads them in the terminal (`lerni logs [username]`); no screen shows them.
 
-**Saved, then:** accounts; maps (short names drawn from the conversation, plus dates and links); feedback (an educator's own words and a summary); and the 7-day logs. The ongoing conversation itself lives in memory (until New conversation or a restart), and nothing goes to browser storage. All of it lives only on the home server and is never committed (CLAUDE.md rule 8).
+**Saved, then:** accounts; maps (short names drawn from the conversation, plus dates and links); feedback (an educator's own words and a summary); and the logs, kept a year. The ongoing conversation itself lives in memory (until New conversation or a restart), and nothing goes to browser storage. All of it lives only on the home server and is never committed (CLAUDE.md rule 8).
 
 ## The agent
 
@@ -93,7 +93,7 @@ Left out of the map to keep it minimal: stepping-stone ideas between an interest
 
 - **The household rule:** the supervised student has agreed to be supervised; an educator or the admin is around them whenever they use Lerni, and the iPad is signed in only as that student (the educator and admin use their own phones and never save their passwords on it). The app doesn't enforce this.
 - The conversation runs through the admin's Claude account, like everything else in the prototype. An API key is not planned; revisit before anyone outside the family uses the app.
-- **No automatic reply check in Release 1.** Replies stream; the adult nearby and the 7-day logs are the check. The supervised persona and the supervised rules are prompt instructions kept in code: short, gentle, never "wrong"; subjects on the starting exclusion list (violence, weapons, sexual content, self-harm, drugs) and anything scary or sad get a kind redirect to their educator and something fun instead. Lerni says plainly it's a computer helper and never pretends to be a person. Personas describe a style (short, simple, playful), never an age; the persona files describe a style (since step 7).
+- **No automatic reply check in Release 1.** Replies stream; the adult nearby and the logs are the check. The supervised persona and the supervised rules are prompt instructions kept in code: short, gentle, never "wrong"; subjects on the starting exclusion list (violence, weapons, sexual content, self-harm, drugs) and anything scary or sad get a kind redirect to their educator and something fun instead. Lerni says plainly it's a computer helper and never pretends to be a person. Personas describe a style (short, simple, playful), never an age; the persona files describe a style (since step 7).
 
 ## Upload
 
@@ -118,7 +118,7 @@ One PR per step, each from `main`, in this order. Steps 1–6 are built ([Releas
 
 | Step | Ships | Done when |
 |---|---|---|
-| 7 | **The interest map, for independent students.** `interests.py` and its store; the tagger (adapter call and server checks); the 7-day logs and `lerni logs`; the steering prompt (plan details out of `conversation.py`); My map and Maps (the picture and the list with Add, Rename, Remove); the Topic picker, Learn, Learning plans, Sessions, and the long Guide removed from the screens; `default_data_dir` moved from `plans.py` to `students.py` | The admin talks about their own interests over a few days, sees them on their map, checks it against the logs, adds a goal, and sees a bridge |
+| 7 | **The interest map, for independent students.** `interests.py` and its store; the tagger (adapter call and server checks); the logs and `lerni logs`; the steering prompt (plan details out of `conversation.py`); My map and Maps (the picture and the list with Add, Rename, Remove); the Topic picker, Learn, Learning plans, Sessions, and the long Guide removed from the screens; `default_data_dir` moved from `plans.py` to `students.py` | The admin talks about their own interests over a few days, sees them on their map, checks it against the logs, adds a goal, and sees a bridge |
 | 8 | **Upload and feedback.** `upload.py` replaces the import, proposing interests and goals, for educators and independent students; the Feedback box; `lerni feedback` | The educator uploads notes for the supervised student and adds interests and goals; the admin uploads their own; the admin sees the feedback summarized in the terminal |
 | 9 | **The supervised conversation.** First, the to-do list's items marked "before the supervised conversation": real alternating turns, and Stop cancelling the Claude call. Then the supervised student's screen is the conversation; the supervised persona and rules, with the exclusion list; their map grows | The supervised student has a short conversation with an adult nearby, and the educator sees their map grow |
 | 10 | **Remove the old activity path.** `plans.py`, `plan_import.py`, `catalog.py`, `engine.py`, `domain.py`, `canonical.py`, `lessons/`, `seed/`, `web/educator.py`, the lesson index script; and what depends on them: `explore_freely` in `students.py`, the package data in `pyproject.toml`, `test_core_imports.py`, `test_distribution.py`, the chain-1 content tests, `plans/specs/02-lesson-core.md`, and `plans/runbooks/` | Tests pass with them gone; the code manifest matches |
@@ -131,7 +131,7 @@ Tests (fakes only, minimal, CLAUDE.md rule 4):
 - a tagger result that started before a person's Rename or Remove is thrown away;
 - the prompt carries the map as information and puts the safety rules last;
 - a student never reaches another student's map; only educators see a supervised student's map; the picture is inline, with names escaped;
-- logs older than 7 days are deleted;
+- logs older than a year are deleted;
 - feedback is saved and never changes a map.
 
 Evals (real calls, run by hand when instructions or models change; start with 2–3 cases, and add one for each mismatch seen in the logs):

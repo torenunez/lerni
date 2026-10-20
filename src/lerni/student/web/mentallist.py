@@ -364,3 +364,9 @@ def mental_list(
                 for gone in m.removed:
                     info = m.removed_info.get(gone.casefold(), {})
                     back_button(who, gone, set(info) - {"kind"} != set(), sure_of == (who, gone))
+        if m.archived:  # rested to make room on a full map; read only
+            with gr.Accordion(f"Older interests ({len(m.archived)})", open=False, key="resting"):
+                lines = [f"- {a.name} · {_plural(len(a.days), 'day')}"
+                         for a in reversed(m.archived)]
+                gr.Markdown("Back with its history when it comes up again.\n\n" + "\n".join(lines),
+                            key="resting-list")
