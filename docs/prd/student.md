@@ -103,15 +103,15 @@ As a student, I want to hold one button to talk and let go when I'm done, so tha
 
 ## Version 3: play and points
 
-The student doesn't always take Lerni's questions seriously; points give them a reason to. Design: [spec 09](../../plans/specs/09-play-and-points.md).
+The student doesn't always take Lerni's questions seriously; points give them a reason to. Design: [spec 09](../../plans/specs/09-play-and-points.md) and [part 2](../../plans/specs/09b-harder-races.md).
 
 ### Story: Race to win points
 
 As a student, I want to race my car by answering questions, so that I can win points for a cooler car.
 
-- WHEN the student opens Games and starts a race THE SYSTEM SHALL show their car and two silly bots, and 5 questions from their goals and interests, each with 3 choices to tap (now and then a bonus question is answered in their own words, typed or spoken, for more points).
+- WHEN the student opens Games and starts a race THE SYSTEM SHALL show their car and two rivals (cars from their garage and the Showroom, or silly bots), and 5 questions from their goals and interests, each with 3 choices to tap (now and then a bonus question is answered in their own words, typed or spoken, for more points).
 - WHEN they pick the right answer THE SYSTEM SHALL boost their car and slow a bot; WHEN they pick another THE SYSTEM SHALL slow their car and show the right answer with a short why.
-- WHEN the race ends THE SYSTEM SHALL award points by their place, once per race, and offer Race again.
+- WHEN the race ends THE SYSTEM SHALL award points by their place (4 or 5 right wins, in any car), once per race, and offer Race again.
 - WHEN questions are written THE SYSTEM SHALL avoid ideas asked recently, bring back missed ideas after a gap, and adjust difficulty per goal so the student gets about half to three quarters right.
 
 ### Story: Points for good answers in the conversation
@@ -183,6 +183,7 @@ Public access and a native iPad app.
 - 2026-10-12: Play and points become Version 3 (the admin's decision, after seeing the student answer Lerni's questions with random emojis). A car race answered by multiple choice, MathGas style (a wrong pick slows your car), and answers in the conversation, judged by the tagger, earn points spent on cars in a garage. This replaces "No scores, no failing": points are never taken away for a wrong answer, never compared between students, and kept apart from the map. Later versions move up one (remembering is now 4, suggested goals 5, without an educator 6); decisions above keep their old numbers.
 - 2026-10-19: Lerni remembers for the long run (the admin's decision): conversation logs are kept a year while the family hosts it, every race idea is kept with how it went, and a full map rests its least-seen interest with its history instead of deleting it; it comes back when it comes up again. Shorten the logs before anyone outside the family uses Lerni. (Replaces the 7-day logs.)
 - 2026-10-19: The race gets harder and asks for explanations (the admin's decision, after the student won every race since their first car upgrade with about 84% right, and saw the same questions repeat): questions don't repeat, difficulty adapts per goal, missed ideas come back, and an occasional bonus question is answered in their own words, typed or spoken, and graded with partial credit. This replaces "no typing, no chat" in the race and "no difficulty settings" in Version 3. The race also probes nearby ideas: the student's choice to explore one opens Chat, and probe results feed Version 5's suggested goals, never the map directly; practice shows on goals read-only, and a nailed explanation marks a goal explained.
+- 2026-10-20: Rivals are paced from the student's own car, so a win always takes 4 or 5 right; a faster car brings new rivals and ⚡, not easier wins (the admin's decision). A good bonus explanation moves the car, as a way back from last.
 
 ## Open questions
 
