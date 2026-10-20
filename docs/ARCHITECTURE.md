@@ -49,7 +49,7 @@ flowchart LR
 3. Claude answers, streamed. It follows their curiosity and, every few exchanges, bridges toward one goal.
 4. The answer is shown; the conversation stays in memory.
 5. In the background, a small call gets this exchange, Lerni's previous message, and the map's entries (never the username).
-6. It returns which entries the exchange was about, new interests, links, and whether a bridge happened. The server applies only the observations the [spec](../plans/specs/04-interest-map.md#the-agent) lists (people control goals), under one lock per map, and throws away a result that started before a person's edit. The exchange and what the tagger did go to the 7-day log. A failure is ignored.
+6. It returns which entries the exchange was about, new interests, links, and whether a bridge happened. The server applies only the observations the [spec](../plans/specs/04-interest-map.md#the-agent) lists (people control goals), under one lock per map, and throws away a result that started before a person's edit. The exchange and what the tagger did go to the log. A failure is ignored.
 
 ## Trust boundaries
 
@@ -67,7 +67,7 @@ flowchart LR
 
   No educator screen shows an independent student's map. That is privacy by default, not a protection: the educator can reset a password and sign in as that student, and the admin can read every file.
 - **Devices are a household rule:** a supervised student's iPad is signed in only as that student.
-- **Outbound:** all calls go to Claude (Anthropic) through the admin's Claude account, behind an adapter: the answers, the tagger, the upload, the educator agent, and the feedback themes (`lerni feedback --summary`). No account details are added, and Claude Code keeps no transcript on the server (Anthropic's retention still applies). A supervised student's conversation through this consumer account is a choice the admin made for the household; an API key is not planned, revisit before anyone outside the family uses the app ([spec](../plans/specs/04-interest-map.md#supervised-students)). Version 1 has no automatic reply check; the adult nearby and the 7-day logs are the check.
+- **Outbound:** all calls go to Claude (Anthropic) through the admin's Claude account, behind an adapter: the answers, the tagger, the upload, the educator agent, and the feedback themes (`lerni feedback --summary`). No account details are added, and Claude Code keeps no transcript on the server (Anthropic's retention still applies). A supervised student's conversation through this consumer account is a choice the admin made for the household; an API key is not planned, revisit before anyone outside the family uses the app ([spec](../plans/specs/04-interest-map.md#supervised-students)). Version 1 has no automatic reply check; the adult nearby and the logs are the check.
 - **Files:** uploads are read and deleted at once; maps, feedback, and logs are written only by the server. Gradio serves cached files to anyone signed in, so nothing private is ever served as a file: the map picture is inline.
 
 ## Who owns each kind of data
