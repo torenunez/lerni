@@ -13,7 +13,7 @@ console = Console()
 
 def logs_cmd(
     username: str = typer.Argument(None, help="Only this student (default: everyone)."),
-    days: int = typer.Option(7, "--days", help="How many days back (a year is kept)."),
+    days: int = typer.Option(7, "--days", min=1, help="How many days back (a year is kept)."),
 ) -> None:
     """Show each kept exchange: when, who, the question, the answer, and what the tagger did."""
     try:

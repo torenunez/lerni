@@ -368,6 +368,10 @@ def test_old_set_aside_beside_an_interest_stays_and_plurals_are_real(tmp_path):
     assert m.removed == ["guns"] and m.find("gun") is None
     assert not same_name("plan", "planes") and not same_name("cub", "cubes")
     assert same_name("bus", "buses") and same_name("box", "boxes") and same_name("car", "cars")
+    # regression (review): the first rule lost "o" + es and words ending in "us" or "is"
+    assert same_name("volcano", "volcanoes") and same_name("kiwi", "kiwis")
+    assert same_name("emu", "emus") and same_name("taxi", "taxis")
+    assert mentions_set_aside(InterestMap(removed=["volcano", "kiwis"]), "volcanoes and a kiwi")
     m = InterestMap(removed=["news", "pies"])
     assert not mentions_set_aside(m, "What's new?") and not mentions_set_aside(m, "pi is 3.14")
     assert mentions_set_aside(m, "a pie") and mentions_set_aside(m, "the news")
@@ -404,3 +408,20 @@ def test_a_full_map_rests_an_interest_and_it_comes_back_with_its_history(tmp_pat
     m = store.get("sam")
     assert m.find("thing 0").days == ["2026-09-01", "2026-10-15"] and len(m.entries) == MAX_ENTRIES
     assert [a.name for a in m.archived] != ["thing 0"]  # another one rests in its place
+
+
+
+def test_interests_named_together_on_a_full_map_all_stay_on_it():
+    # regression (review): a woken or new interest went straight back to rest in the same exchange
+    m = InterestMap()
+    for i in range(MAX_ENTRIES):
+        e = m.new_entry(f"thing {i}", "interest")
+        e.days = ["2026-10-01", "2026-10-02", "2026-10-03"]
+        m.entries.append(e)
+    sharks = m.new_entry("sharks", "interest")
+    sharks.days = ["2026-09-01"]
+    m.archived.append(sharks)
+    tags = parse_tags({"about": [], "new_interests": ["shark", "whale"]})  # two at most
+    apply_tags(m, tags, "a shark and a whale", date(2026, 10, 14))
+    assert m.find("sharks") is not None and m.find("whale") is not None
+    assert len(m.entries) == MAX_ENTRIES and m.find("sharks").days[0] == "2026-09-01"

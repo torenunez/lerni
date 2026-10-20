@@ -341,6 +341,18 @@ def test_a_set_aside_while_questions_are_written_refuses_the_race(tmp_path):
     with pytest.raises(RaceUnavailable):
         desk.start("sam", supervised=True, today=TODAY)
     assert points.races_left("sam", TODAY) == RACES_PER_DAY  # not counted
+    # regression (review): questions that still fit were thrown away with the refusal
+    good = fresh("Fractions")
+    desk.maps.change("sam", lambda m: add_interest(m, "whales"))
+
+    def whales(system, prompt):  # set aside again while Claude writes
+        desk.maps.change("sam", lambda m: remove(m, m.find("whales").id))
+        return {"questions": [good, *[fresh("Fractions", "Like 4 whales.") for _ in range(9)]]}
+
+    desk.quizzer.write = whales
+    with pytest.raises(RaceUnavailable):
+        desk.start("sam", supervised=True, today=TODAY)
+    assert [q.question for q in desk._held("sam", TODAY)] == [good["question"]]
 
 
 def test_the_concept_ledger_keeps_every_idea_with_its_answers(tmp_path):

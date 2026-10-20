@@ -11,7 +11,7 @@ import json
 import re
 import threading
 import unicodedata
-from collections.abc import Callable
+from collections.abc import Callable, Collection
 from dataclasses import asdict, dataclass, field
 from datetime import date, timedelta
 from pathlib import Path
@@ -110,13 +110,13 @@ NOT_PLURAL = frozenset({
     "news", "series", "species", "physics", "maths", "mathematics", "gymnastics", "athletics",
     "chess", "gas", "bus", "lens", "plus", "yes", "this", "his", "has", "was", "does", "always",
 })
-ES_AFTER = ("s", "x", "z", "ch", "sh")  # bus → buses, box → boxes; never plan → planes
+ES_AFTER = ("s", "x", "z", "ch", "sh", "o")  # buses, boxes, volcanoes; never plan → planes
 
 
 def _singulars(word: str) -> list[str]:
     """What a plural word could be one of: "cars" → car, "buses" → bus; never under 3 letters."""
     last = word.split(" ")[-1]
-    if last in NOT_PLURAL or last.endswith(("ss", "us", "is")) or not word.endswith("s"):
+    if last in NOT_PLURAL or last.endswith("ss") or not word.endswith("s"):
         return []
     out = [word[:-2]] if word.endswith("es") and word[:-2].endswith(ES_AFTER) else []
     out.append(word[:-1])
@@ -183,8 +183,13 @@ def _check_notes(notes: str) -> str:
     return notes
 
 
-def make_room(m: InterestMap) -> bool:
-    """Make room for one more entry, dropping the least-seen, oldest interest if full.
+MAX_ARCHIVED = 200  # resting items kept; the oldest go first
+
+
+def make_room(m: InterestMap, keep: Collection[str] = ()) -> bool:
+    """Make room for one more entry, resting the least-seen, oldest interest if full.
+
+    ``keep`` ids are never rested (items named in the same exchange).
 
     Returns:
         False if the map is full of goals (nothing the server may drop).
@@ -192,13 +197,15 @@ def make_room(m: InterestMap) -> bool:
     if len(m.entries) < MAX_ENTRIES:
         return True
     groups = {k.b for k in m.links if k.kind == "kind_of"}
-    interests = [e for e in m.entries if e.kind == "interest" and e.id not in groups]
+    interests = [e for e in m.entries
+                 if e.kind == "interest" and e.id not in groups and e.id not in keep]
     if not interests:
         return False  # only goals and groups left: a group with kinds is never dropped
     # fewest days first, then the longest ago
     drop = min(interests, key=lambda e: (len(e.days), e.days[-1] if e.days else ""))
     _lift_kinds(m, drop.id)  # never a group here, but kept safe
-    m.archived = [a for a in m.archived if not same_name(a.name, drop.name)] + [drop]
+    m.archived = ([a for a in m.archived if not same_name(a.name, drop.name)]
+                  + [drop])[-MAX_ARCHIVED:]
     _forget(m, drop.id)  # it rests with its days and mentions; its links go
     return True
 
@@ -245,8 +252,9 @@ def add_goal(m: InterestMap, name: str, notes: str = "") -> Entry:
     else:
         if error := full(m):
             raise error
-        entry = _wake(m, name, "goal") or m.new_entry(name, "goal")
-        if entry not in m.entries:
+        entry = _wake(m, name, "goal")  # resting: the goal keeps its days
+        if entry is None:
+            entry = m.new_entry(name, "goal")
             m.entries.append(entry)
         entry.notes = notes
     m.edits += 1
@@ -528,7 +536,7 @@ def apply_tags(m: InterestMap, tags: Tags, student_text: str, today: date) -> No
             continue
         if (e := m.find(name)) is not None:
             touched[e.id] = e  # already on the map (an interest or a goal): it counts there
-        elif not m.is_removed(name) and _said(name, said) and make_room(m):
+        elif not m.is_removed(name) and _said(name, said) and make_room(m, keep=touched):
             e = _wake(m, name)  # resting: it comes back with its history
             if e is None:
                 e = m.new_entry(name, "interest")
