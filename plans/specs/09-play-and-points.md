@@ -4,7 +4,7 @@ Approved in conversation on 2026-10-12. Requirements: [student PRD, Version 3](.
 
 **Why.** The supervised student answers Lerni's goal questions with random emojis. Points they can spend on cars give those questions a reason, from two places: a race in Games and real answers in Chat. Points never go down for a wrong answer, are never compared between students, and stay apart from the map.
 
-**Ships as:** v3.1 (the race, points, and the garage), v3.3 (real cars in the garage), and v3.7 (points in Chat, and Ask renamed Chat).
+**Ships as:** v3.1 (the race, points, and the garage), v3.3 (real cars in the garage), and v3.7 (points in Chat, and Ask renamed Chat). Part 2 (v3.16–v3.21): [spec 09b](09b-harder-races.md).
 
 ## What people see
 
@@ -72,7 +72,7 @@ At about 50 ⭐ a day, a $100,000 car comes on day 1 and a $5 million one after 
     - 4 or 5 right wins;
     - 3 right finishes 2nd;
     - 2 or fewer finish 3rd.
-  - **The gas boost** comes from the car's 0–60 time: √(4.0 s ÷ its 0–60), from ×1.0 (the starter, or 4.0 s and slower) to at most ×1.4. A faster car turns 3 right answers into a win and 2 into 2nd, but 1 right never wins: the questions still matter.
+  - **The gas boost** comes from the car's 0–60 time: √(4.0 s ÷ its 0–60), from ×1.0 (the starter, or 4.0 s and slower) to at most ×1.4. Until v3.16 (then rivals are paced from the student's car, [spec 09b](09b-harder-races.md)), a faster car turns 3 right answers into a win and 2 into 2nd, but 1 right never wins: the questions still matter.
   - A test pins those outcomes.
 - **The place after the fifth answer sets the points.** The award id is the race id, so a double tap, a refresh, or a late repeat never awards twice.
 - **Leaving mid-race** (another tab, or signing out) drops it: no points, and it still counts toward the day's 10.
