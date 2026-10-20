@@ -126,7 +126,7 @@ def educator_tab(
         list_owner, version = gr.State(""), gr.State(0)  # set only after map_owner's check
         # edits go to the student the list shows, never a newer dropdown pick
         mental_list(signin, students, maps, list_owner, list_owner, version, "lerni-pick-maps",
-                    "Pick a student.")
+                    "Pick a student.", results)
         chat = gr.Chatbot(
             show_label=False,
             placeholder=EMPTY,

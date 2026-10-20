@@ -6,7 +6,7 @@ Approved in conversation on 2026-10-12, after two outside design reviews. Builds
 
 ## What people see
 
-- **In the list,** kinds are indented (↳) under their group. A group's strength counts its kinds: "sharks · 💪 strong", with "came up on 6 days (4 through bull shark, great white)" in its details.
+- **In the list,** kinds are indented (↳) under their group. A group's strength counts its kinds: "sharks · 💪 strong", with "came up on 6 days (4 through bull shark, great white)" in its details, and its kinds' bridges listed there too (v3.17).
 - **An open item** shows **Kind of:** a pick of the interests it could go under, with **Put under**, and **Not under X** for each group it's in.
 - **In the picture,** kinds sit close around their group on short solid lines; a tap on a group lights up the whole family.
 - **In the MentalMaps chat,** an educator can ask "group the cars and the sharks"; the agent proposes groups to tick, including a new group name ("sharks") made from items on the map.

@@ -128,7 +128,8 @@ def build_main_view(
                             "<p>Games are coming soon!</p></div>")
                 games_refresh, games_outputs = None, []
             ask, chat, voice, ask_done = ask_tab(signin, conversations, speech=speech)
-            mymap, picture, owner, version = map_tab(signin, students, maps, uploader)
+            mymap, picture, owner, version = map_tab(signin, students, maps, uploader,
+                                                      races.results if races else None)
             maps_tab, who = educator_tab(signin, students, maps, educator_chats, feedback, points,
                                          garage or Garage(), races.results if races else None)
             students_tab_, students_table = students_tab(signin, students)

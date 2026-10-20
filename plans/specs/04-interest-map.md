@@ -44,7 +44,7 @@ Only educators see a supervised student's map; the student never does. An indepe
 | Mentions | Times it came up |
 | Explained | Goals only: the dates Lerni thinks the student explained it back in their own words; goals are sized by how many different days |
 | Bounces | Goals only: the dates the student changed the subject right after a bridge to it |
-| Links | Two entries and a kind: `related` (came up together) or `bridge` (the agent led from an interest to a goal) |
+| Links | Two entries and a kind: `related` (came up together) or `bridge` (the agent led from an interest to a goal), with every day they came up together (v3.17), so a link has a strength like an item, and a bridge counts its goal's bounces on its days |
 | Removed | Names a person removed; the tagger never adds them back |
 
 - **One name, one entry.** Adding a goal with the name of an existing interest turns that interest into the goal and keeps its days. The tagger never adds an interest named like a goal; it counts toward the goal.

@@ -11,6 +11,7 @@ from __future__ import annotations
 import hashlib
 import json
 import threading
+from dataclasses import dataclass
 from datetime import date, timedelta
 from pathlib import Path
 from typing import Any
@@ -19,6 +20,18 @@ from lerni.student.concepts import normalize
 from lerni.student.students import check_username, default_data_dir
 
 WEEK_DAYS = 7
+MISSED_DAYS = 14  # a miss shows this long, unless a right answer clears it
+MAX_MISSED = 3
+
+
+@dataclass(frozen=True)
+class Practice:
+    """How racing on one goal is going: read from the log, never stored."""
+
+    last: str  # the last day it was raced (ISO)
+    right: int  # this week
+    asked: int
+    missed: list[str]  # ideas missed lately and not answered right since, newest first
 
 
 def question_hash(question: str) -> str:
@@ -69,6 +82,31 @@ class ResultsLog:
                 counts[1] += 1
                 tally[str(r["goal"])] = counts
         return [(goal, right, asked) for goal, (right, asked) in reversed(tally.items())]
+
+    def practice(self, username: str, goal_id: str, today: date,
+                 records: list[dict[str, Any]] | None = None) -> Practice | None:
+        """One goal's Practice line, or None if it was never raced; pass ``records`` to reuse
+        one read for many goals."""
+        lines = [r for r in (self.read(username) if records is None else records)
+                 if "right" in r and goal_id and r.get("goal_id") == goal_id]
+        if not lines:
+            return None
+        week = (today - timedelta(days=WEEK_DAYS - 1)).isoformat()
+        lately = (today - timedelta(days=MISSED_DAYS - 1)).isoformat()
+        recent = [r for r in lines if str(r.get("day", "")) >= week]
+        missed: dict[str, None] = {}  # newest first, each idea once
+        cleared: set[str] = set()
+        for r in reversed(lines):  # newest first: a right answer clears older misses
+            concept = str(r.get("concept") or "")
+            if not concept or str(r.get("day", "")) < lately:
+                continue
+            if r["right"]:
+                cleared.add(concept)
+            elif concept not in cleared:
+                missed.setdefault(concept)
+        return Practice(max(str(r.get("day", "")) for r in lines),
+                        sum(bool(r["right"]) for r in recent), len(recent),
+                        list(missed)[:MAX_MISSED])
 
 
 def week_line(results: ResultsLog, username: str, today: date) -> str:

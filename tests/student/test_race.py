@@ -238,6 +238,7 @@ def test_two_race_taps_at_once_start_one_race(tmp_path):
 
     quizzer = SlowQuizzer()
     desk, points = desk_for(tmp_path, quizzer)
+    desk.prefill = lambda *args: None  # the next set, written ahead, would be a second call
     races = []
     taps = [threading.Thread(target=lambda: races.append(desk.start("sam", supervised=True)))
             for _ in range(2)]
@@ -447,6 +448,17 @@ def test_answers_are_logged_as_labels_and_numbers(tmp_path):
     assert finish["place"] in (1, 2, 3) and finish["points"] > 0
     assert results.week("sam", date.today()) == [("Fractions", 3, 5)]
     assert week_line(results, "sam", date.today()) == "This week: Fractions 3/5"
+    # a goal's Practice line: read from the log each time, never stored
+    today, goal_id = date.today(), maps.get("sam").find("Fractions").id
+    practice = results.practice("sam", goal_id, today)
+    assert (practice.last, practice.right, practice.asked) == (today.isoformat(), 3, 5)
+    for concept, ok in (("halves of odd numbers", False), ("thirds", False),
+                        ("halves of odd numbers", True)):  # a later right answer clears a miss
+        results.add("sam", {"day": today.isoformat(), "goal_id": goal_id, "goal": "Fractions",
+                            "concept": concept, "right": ok})
+    missed = results.practice("sam", goal_id, today).missed
+    assert missed[0] == "thirds" and "halves of odd numbers" not in missed and len(missed) <= 3
+    assert results.practice("sam", "e999", today) is None  # never raced
 
 
 
