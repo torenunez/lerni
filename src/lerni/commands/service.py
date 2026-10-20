@@ -41,7 +41,18 @@ def install_cmd(
     ),
 ) -> None:
     """Start this checkout's server now, at every login, and again after a crash."""
-    from lerni.student.service import Server, install, log_path
+    import os
+
+    from lerni.student import service
+    from lerni.student.service import (
+        Server,
+        agent_settings,
+        install,
+        log_path,
+        settings_note,
+        setup_warnings,
+        wait_until_up,
+    )
 
     dev = _check(name) == "dev"
     for path in (cert, key):
@@ -54,16 +65,24 @@ def install_cmd(
                     ("Development" if dev else "") if label is None else label,
                     data.expanduser().resolve() if data else None,
                     cert.expanduser().resolve(), key.expanduser().resolve())
+    checkout = Path(service.__file__).resolve().parents[3]  # this checkout's root
+    for line in setup_warnings(server, checkout, os.environ.get("PATH", "")):
+        console.print(f"[yellow]{line}[/yellow]")
+    before = agent_settings(Path.home(), name)
     path = _plainly(install, server)
-    console.print(f"Agent: {path}\nLog:   {log_path(Path.home(), name)}\nStarted.")
+    console.print(settings_note(before, agent_settings(Path.home(), name)))
+    console.print(f"Agent: {path}\nLog:   {log_path(Path.home(), name)}\nWaiting for it to answer…")
+    console.print(_plainly(wait_until_up, name, Path.home()))
+    console.print("Started.")
 
 
 @service_app.command("restart")
 def restart_cmd(name: str = typer.Argument(..., help="prod or dev.")) -> None:
     """Restart the server, on whatever code its checkout now holds."""
-    from lerni.student.service import restart
+    from lerni.student.service import restart, wait_until_up
 
     _plainly(restart, _check(name))
+    console.print(_plainly(wait_until_up, name, Path.home()))
     console.print("Restarted.")
 
 
@@ -72,8 +91,7 @@ def stop_cmd(name: str = typer.Argument(..., help="prod or dev.")) -> None:
     """Stop the server until the next install or login."""
     from lerni.student.service import stop
 
-    stop(_check(name))
-    console.print("Stopped.")
+    console.print("Stopped." if _plainly(stop, _check(name)) else "Wasn't running.")
 
 
 @service_app.command("uninstall")
