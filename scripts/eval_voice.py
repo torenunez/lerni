@@ -29,9 +29,9 @@ def words(text: str) -> set[str]:
 
 
 def main() -> None:
-    speech = mac_speech_from_env()
+    speech, why_off = mac_speech_from_env()
     if speech is None:
-        print("Voice is off: install whisper.cpp and its model (admin reference: Voice).")
+        print(f"Voice is off: {why_off}.")
         return
     said = "Why do volcanoes erupt? I saw one in a book and it had red lava."
     got = speech.transcribe(clip(said))

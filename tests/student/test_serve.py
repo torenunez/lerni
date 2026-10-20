@@ -17,7 +17,7 @@ def test_ctrl_c_stops_the_server_without_waiting_for_open_pages(monkeypatch, tmp
     monkeypatch.setattr(serve, "_claude_uploader", lambda usage=None: None)
     monkeypatch.setattr(serve, "_claude_quizzer", lambda usage=None: None)
     monkeypatch.setattr(serve, "_claude_chat", lambda usage=None: None)
-    monkeypatch.setattr(serve, "_speech", lambda: None)  # no speech tools in tests
+    monkeypatch.setattr(serve, "_speech", lambda: (None, "off in tests"))  # no speech tools
     serve.serve("127.0.0.1", 0)
     assert 0 < seen["timeout_graceful_shutdown"] <= 5
 
@@ -29,9 +29,9 @@ def test_https_needs_both_files_and_passes_them_to_uvicorn(monkeypatch, tmp_path
 
     seen = {}
     monkeypatch.setattr(uvicorn, "run", lambda app, **kwargs: seen.update(kwargs))
-    for name in ("_claude_tagger", "_claude_uploader", "_claude_quizzer", "_claude_chat",
-                 "_speech"):
+    for name in ("_claude_tagger", "_claude_uploader", "_claude_quizzer", "_claude_chat"):
         monkeypatch.setattr(serve, name, lambda *_: None)
+    monkeypatch.setattr(serve, "_speech", lambda: (None, "off in tests"))
     cert, key = tmp_path / "home.pem", tmp_path / "home-key.pem"
     with pytest.raises(ValueError):
         serve.serve("127.0.0.1", 0, cert=cert)  # a key is needed too

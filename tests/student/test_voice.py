@@ -59,3 +59,4 @@ def test_a_failed_voice_keeps_the_text():
     out = list(spoken_reply(FakeSpeech(fail_speak=True), ["Hi. ", "Bye."]))
     assert "".join(text for text, _ in out) == "Hi. Bye."
     assert all(audio is None for _, audio in out)
+
