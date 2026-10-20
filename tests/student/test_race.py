@@ -297,3 +297,32 @@ def test_repeats_are_dropped_and_recent_concepts_reach_claude(tmp_path):
     assert not {q.concept for q in first.questions} & {q.concept for q in second.questions}
     saved = (tmp_path / "concepts" / "sam.json").read_text()
     assert "What is" not in saved and quizzer.first[1]["concept"] in saved  # labels, never text
+
+
+def test_a_race_still_starts_when_claude_can_only_repeat_or_the_concepts_file_fails(tmp_path):
+    # regression: a narrow goal's near-repeats locked out every race until a restart, and a
+    # failed concepts write counted a race that never showed
+    class Same(FakeQuizzer):
+        def __init__(self):
+            super().__init__()
+            self.items = [fresh("Fractions") for _ in range(10)]
+
+        def write(self, system, prompt):
+            self.calls += 1
+            return {"questions": self.items}
+
+    class Broken(ConceptStore):
+        def add(self, *args, **kwargs):
+            raise OSError("disk full")
+
+    maps, points = MapStore(tmp_path), PointsStore(tmp_path)
+    maps.change("sam", lambda m: add_goal(m, "Fractions"))
+    desk = RaceDesk(Same(), maps, points, Broken(tmp_path))
+    desk.prefill = lambda *args: None
+    ticks = iter(range(0, 1000, 10))
+    desk.clock = lambda: float(next(ticks))
+    for day in range(3):  # each day a new set, and every question already asked
+        race = desk.start("sam", supervised=True, today=TODAY + timedelta(days=day))
+        assert len(race.questions) == QUESTIONS_PER_RACE
+        assert len({q.question for q in race.questions}) == QUESTIONS_PER_RACE
+    assert points.races_left("sam", TODAY + timedelta(days=2)) == RACES_PER_DAY - 1  # counted once

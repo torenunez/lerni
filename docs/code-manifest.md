@@ -100,7 +100,7 @@ What every code file does, in the order a request flows through it. When you add
 | `scripts/eval_voice.py` | Voice evals: two real cases (a spoken sentence comes back word for word; a spoken question gets a short supervised answer), run by hand. |
 | `scripts/eval_upload.py` | Upload evals: two real cases (an educator's notes with a made-up name, a person's own notes), run by hand. |
 | `scripts/eval_supervised.py` | Supervised voice evals: seven real cases (short and simple, a scary question, an excluded subject, someone hurting them, wanting to hurt themselves, never using the account's name, a removed interest steered away from), run by hand. |
-| `scripts/eval_race.py` | Race question evals: real Claude calls, run by hand: a race's worth of good questions, each practicing a goal on the map, both goals coming up, nothing set aside, and a second set of new ideas when told what was asked. |
+| `scripts/eval_race.py` | Race question evals: real Claude calls, run by hand: a race's worth of good questions, each practicing a goal on the map, both goals coming up, nothing set aside, and a second set of new ideas (counting reused ones) when told what was asked. |
 | `scripts/lift_car.swift` | Cuts a car out of a picture with Apple's Vision (macOS 14+), for the private garage. |
 
 ## Tests
@@ -116,7 +116,7 @@ Minimal on purpose: one happy path per module, plus a test for each safety guara
 | `tests/student/test_mapdraw.py` | The map picture escapes names, draws every entry, and draws the same map the same way each time. |
 | `tests/student/test_points.py` | Points: an award counts once and Chat stops at its cap; buying charges once and never below zero; only owned cars drive; ten races a day. |
 | `tests/student/test_garage.py` | The garage: eight cartoon cars, each drawn; real cars from a private file with prices and boosts, a bad entry or file skipped, pictures only for garage ids. |
-| `tests/student/test_race.py` | The race: places depend only on how many were right; repeat and stale taps are ignored and the page never sees the answer; bad, off-map, or set-aside questions are dropped; points once at the finish; no questions means no race used; the day's limit stops before asking Claude; repeated questions are dropped and recent concepts reach Claude. |
+| `tests/student/test_race.py` | The race: places depend only on how many were right; repeat and stale taps are ignored and the page never sees the answer; bad, off-map, or set-aside questions are dropped; points once at the finish; no questions means no race used; the day's limit stops before asking Claude; repeated questions are dropped and recent concepts reach Claude; a race still starts when Claude can only repeat or the concepts file fails. |
 | `tests/student/test_educator_agent.py` | The educator agent: hidden proposals block (even split across pieces), checked proposals, only ticked ones applied, a stale one skipped, a ticked group puts kinds under it, one model call per message. |
 | `tests/student/test_voice.py` | Answers are spoken a clean sentence at a time; bad clips are refused before transcribing; a failed voice keeps the text. |
 | `tests/student/test_mac_speech.py` | The speech adapter runs whisper-cli and say, and leaves no clip behind. |

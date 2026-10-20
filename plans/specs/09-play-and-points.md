@@ -106,7 +106,7 @@ At about 50 ⭐ a day, a $100,000 car comes on day 1 and a $5 million one after 
   - the choices aren't 3 different, non-empty strings;
   - the answer index is out of range;
   - the goal isn't on the map (when the map has goals);
-  - **it repeats (v3.9):** its concept matches one asked in the last 14 days or one held, or its words are nearly the same (a `difflib` ratio of 0.8) as a question asked since the server started, held, or earlier in the set.
+  - **it repeats (v3.9):** its concept matches one asked in the last 14 days or one held, or its words are nearly the same (a `difflib` ratio of 0.9) as one of the last 60 asked since the server started, held, or earlier in the set. If Claude can only repeat, the race tops up with repeats (never one question twice), since a race beats no race.
 - **What's remembered (v3.9):** when a race starts, its 5 concepts go into `<data>/concepts/<user>.json` (label, goal, day; the last 40, for 14 days; never question text), and the question texts stay in memory only.
 - **Then it shuffles the choices**, so the right one isn't always first, and a race takes turns across the goals. A goal's notes, if Claude copies them into `goal`, are ignored when matching. If fewer than 5 survive, it asks again once and keeps the good ones from both; then: "The track needs a minute. Try again soon."
 - **Writing ahead:** the next set is written in the background when Games opens, and after each race, but not once the day's races are used. A set is kept in memory for the day only, and checked against the map again when a race starts, so a goal or set-aside changed since still counts.
