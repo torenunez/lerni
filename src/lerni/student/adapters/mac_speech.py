@@ -15,11 +15,15 @@ from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
-from lerni.student.voice import HEARD_NOTHING, SPOKE_NOTHING, SpeechUnavailable
+from lerni.student.voice import HEARD_NOTHING, SPOKE_NOTHING, SilentAudio, SpeechUnavailable
 
 MODEL_ENV, VOICE_ENV = "LERNI_WHISPER_MODEL", "LERNI_SAY_VOICE"
 DEFAULT_MODEL = Path.home() / ".lerni" / "models" / "ggml-small.bin"
 TIMEOUT = 30  # seconds per command
+MIN_AUDIO = 1000  # bytes: say writes 28 when it makes no sound (over SSH or in tmux)
+NO_TOOLS = "install whisper.cpp and its model: admin reference, Voice"
+NO_SOUND = "say makes no sound here: start it from the Mac's own login, not over SSH or in tmux"
+SAY_FAILED = "say failed or took too long: check LERNI_SAY_VOICE names a voice in say -v '?'"
 _NOISE = re.compile(r"\[[^\]]*\]|\([^)]*\)")  # [BLANK_AUDIO], (music) and the like
 
 
@@ -48,10 +52,12 @@ class MacSpeech:
                 "-np",
             ]
             try:
-                out = self._run(cmd, capture_output=True, text=True, timeout=TIMEOUT, check=True)
+                out = self._run(cmd, capture_output=True, timeout=TIMEOUT, check=True)
             except (OSError, subprocess.SubprocessError):
                 raise SpeechUnavailable(HEARD_NOTHING) from None
-        return " ".join(_NOISE.sub(" ", out.stdout).split())
+        # bytes, then decoded leniently: a letter cut short never crashes the clip
+        text = out.stdout.decode("utf-8", errors="replace")
+        return " ".join(_NOISE.sub(" ", text).split())
 
     def speak(self, text: str) -> bytes:
         """Return ``text`` spoken, as AAC audio Safari can play."""
@@ -70,14 +76,30 @@ class MacSpeech:
             ]  # "--": text starting with "-" isn't an option
             try:
                 self._run(cmd, capture_output=True, timeout=TIMEOUT, check=True)
-                return audio.read_bytes()
+                spoken = audio.read_bytes()
             except (OSError, subprocess.SubprocessError):
                 raise SpeechUnavailable(SPOKE_NOTHING) from None
+        if len(spoken) < MIN_AUDIO:  # silence: show the text instead of playing nothing
+            raise SilentAudio(SPOKE_NOTHING)
+        return spoken
 
 
-def mac_speech_from_env() -> MacSpeech | None:
-    """The Mac's speech if ``say``, ``whisper-cli``, and the model are here, else ``None``."""
+def mac_speech_from_env(
+    runner: Callable[..., Any] = subprocess.run,
+) -> tuple[MacSpeech | None, str]:
+    """The Mac's speech, or ``None`` and why: tools missing, or ``say`` making no sound.
+
+    Returns:
+        ``(speech, "")`` when it works, else ``(None, the reason)``.
+    """
     model = Path(os.environ.get(MODEL_ENV, DEFAULT_MODEL)).expanduser()
     if not (shutil.which("say") and shutil.which("whisper-cli") and model.is_file()):
-        return None
-    return MacSpeech(model, os.environ.get(VOICE_ENV, ""))
+        return None, NO_TOOLS
+    speech = MacSpeech(model, os.environ.get(VOICE_ENV, ""), runner)
+    try:
+        speech.speak("Hi")  # once, at startup: a second or so
+    except SilentAudio:
+        return None, NO_SOUND
+    except SpeechUnavailable:
+        return None, SAY_FAILED
+    return speech, ""

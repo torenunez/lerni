@@ -62,8 +62,8 @@ def _claude_uploader(usage: Any = None) -> Any:
     return ClaudeCodeUploader(model=os.environ.get(MODEL_ENV, DEFAULT_MODEL), usage=usage)
 
 
-def _speech() -> Any:
-    """Return the Mac's speech for Hold to talk if its tools are installed, else ``None``."""
+def _speech() -> tuple[Any, str]:
+    """Return the Mac's speech for Hold to talk, or ``None`` and why it's off."""
     from lerni.student.adapters.mac_speech import mac_speech_from_env
 
     return mac_speech_from_env()
@@ -134,7 +134,7 @@ def serve(
     from lerni.student.web.app import build_app
 
     usage = Usage()  # one for every Claude call: the warning and the pause
-    chat, tagger, speech = _claude_chat(usage), _claude_tagger(usage), _speech()
+    (speech, why_off), chat, tagger = _speech(), _claude_chat(usage), _claude_tagger(usage)
     version = running_version()
     app = build_app(
         chat_model=chat,
@@ -161,7 +161,7 @@ def serve(
     print(f"Chat, the interest map, and Upload with Claude: {status}", flush=True)
     print(
         "Voice (hold to talk): "
-        + ("on" if speech else "off (install whisper.cpp and its model: admin reference, Voice)"),
+        + ("on" if speech else f"off ({why_off})"),
         flush=True,
     )
     print("Conversation logs (a year): lerni logs", flush=True)
