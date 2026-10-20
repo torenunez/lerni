@@ -12,7 +12,7 @@ Approved in conversation on 2026-10-12. Requirements: [student PRD, Version 3](.
 
 - **Top (v3.5):** the car they're driving, big, with its ⚡ and the next car to save for ("Next car: … · ⭐ 280 / 400 · about 10 races" over a bar); then **Race!**. While a race runs, the track takes its place.
 - **The race:**
-  - Their car and two silly bots (Zippy and Bolt) on a three-lane track, with a finish flag.
+  - Their car and two silly bots (Zippy and Bolt) on a three-lane track, with a finish flag (rival cars from v3.16, [part 2](09b-harder-races.md)).
   - A question card under it: "Question 3 of 5", the question, and **three big buttons**. No typing and no chat in a race (until the bonus round, v3.20).
   - A right pick: their car leaps ahead and the bot in front slows ("Right answer: boost! Zippy slowed down 💨").
   - Another pick: a small step, the right answer, and a one-line why ("It's acceleration: speeding up").
@@ -194,7 +194,7 @@ At about 50 ⭐ a day, a $100,000 car comes on day 1 and a $5 million one after 
   - questions practice the map's goals;
   - each has 3 distinct choices with the right one among them;
   - a supervised set stays clear of a set-aside interest.
-- **v3.3:** `test_garage.py`: the private file loads with prices at $2,500 a ⭐ and boosts from ×1.0 to ×1.4, and a broken file leaves the cartoon garage; `test_race.py`: at ×1.4, 3 right wins, 2 right is 2nd, 1 right is 3rd; the picture route refuses someone signed out and an id not in the garage.
+- **v3.3:** `test_garage.py`: the private file loads with prices at $2,500 a ⭐ and boosts from ×1.0 to ×1.4, and a broken file leaves the cartoon garage; `test_race.py`: at ×1.4, 3 right wins, 2 right is 2nd, 1 right is 3rd (replaced in v3.16 by [part 2](09b-harder-races.md)'s matched rivals); the picture route refuses someone signed out and an id not in the garage.
 - **`test_tagging.py`** (v3.7): `answered` awards once per exchange and respects the cap.
 - **Phone size** (iPhone and iPad):
   - a race to the end, Race again, buying and driving a car;

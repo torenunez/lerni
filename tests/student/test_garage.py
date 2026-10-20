@@ -95,3 +95,22 @@ def test_cards_say_speed_in_bolts_price_in_family_cars_and_the_next_car_to_save_
     assert next_goal(sold, ["starter"], 50)[1] == "Fast · ⭐ 50 / 400 · about 27 races"
     assert next_goal(sold, ["starter"], 500)[1] == "You can get the Fast now!"
     assert next_goal(sold, ["starter"], 30)[1].endswith("about 1 race")  # regression: "1 races"
+
+
+def test_rivals_are_the_next_car_and_an_owned_slower_one(tmp_path):
+    from lerni.student.garage import Garage
+
+    assert Garage(tmp_path).rivals(["starter"], "starter", 0) == (None, None)  # the bots race
+    (tmp_path / "cars").mkdir()
+    (tmp_path / "cars" / "a.webp").write_bytes(b"RIFF")
+    fast = {"id": "fast", "name": "Fast", "usd": 1_000_000, "zero_to_60": 2.0, "picture": "a.webp"}
+    mid = {**fast, "id": "mid", "name": "Mid", "usd": 300_000, "zero_to_60": 3.0}
+    slow = {**fast, "id": "slow", "name": "Slow", "usd": 100_000, "zero_to_60": 3.5}
+    (tmp_path / "garage.json").write_text(json.dumps({"cars": [fast, mid, slow]}))
+    garage = Garage(tmp_path)
+    pick = garage.rivals(["starter"], "starter", 0)
+    assert (pick[0].id, pick[1]) == ("slow", None)  # the car they save for; Bolt fills in
+    pick = garage.rivals(["starter", "slow", "mid"], "mid", 50)
+    assert (pick[0].id, pick[1].id) == ("fast", "slow")  # an owned slower car, never the driven
+    pick = garage.rivals(["starter", "slow", "mid", "fast"], "fast", 0)
+    assert (pick[0].id, pick[1].id) == ("mid", "slow")  # every car theirs: two other owned ones

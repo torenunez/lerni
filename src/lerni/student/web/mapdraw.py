@@ -147,7 +147,8 @@ def map_svg(m: InterestMap, today: date, key: str = "") -> str:
             f'<circle cx="{x:.0f}" cy="{y:.0f}" r="{r}" fill="{fill}" '
             f'stroke="{color}" stroke-width="3"{dash}/>'
             f'<text x="{x:.0f}" y="{y + r + 12:.0f}" text-anchor="middle" '
-            f'font-size="11" fill="#222">{html.escape(e.name)}</text></g>'
+            # the theme's text color, so names read in dark mode too
+            f'font-size="11" fill="currentColor">{html.escape(e.name)}</text></g>'
         )
     parts.append('</svg><button class="lerni-map-reset" type="button">Reset view</button></div>')
     return "".join(parts)

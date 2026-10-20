@@ -179,15 +179,19 @@ def test_quick_second_taps_never_answer_unseen_or_start_a_second_race(tmp_path):
     assert desk.pick("sam", race.id, 1, 0)[1] is not None
 
 
-def test_a_faster_car_turns_three_right_into_a_win_but_one_right_never_places():
+def test_matched_rivals_place_by_right_answers_in_any_car():
     def finish_with(boost, right):
         race = new_race([Q] * QUESTIONS_PER_RACE, boost=boost)
         for n in range(QUESTIONS_PER_RACE):
             answer(race, n, 0 if n < right else 1)
         return place(race)
 
-    assert [finish_with(1.4, r) for r in (3, 2, 1)] == [1, 2, 3]
-    assert [finish_with(1.0, r) for r in (3, 2)] == [2, 3]  # the starter, as before
+    for boost in (1.0, 1.2, 1.4):  # a faster car brings new rivals, not easier wins
+        assert [finish_with(boost, r) for r in range(6)] == [3, 3, 3, 2, 1, 1], boost
+    race = new_race([Q] * QUESTIONS_PER_RACE, rivals=(("Mustang", "m"), ("Bolt", "muscle")))
+    assert answer(race, 0, 0).slowed == "Mustang"  # everyone starts level: the fast one is named
+    answer(race, 1, 0)
+    assert place(race) == 1 and answer(race, 2, 0).slowed == ""  # leading: no rival is ahead
 
 
 def test_set_aside_matches_whole_words_and_the_why_too():

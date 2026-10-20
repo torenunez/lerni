@@ -8,7 +8,7 @@ How Lerni works: what runs where, how a conversation grows a student's interest 
 
 - **Independent students** (educators included) have **Chat**, one ongoing text conversation with Claude. After each exchange, a small background call (the tagger) updates their **interest map**: interests (sized by the days they come up), links, and bridges. They see it on **My MentalMap**, a picture and an editable list of goals and interests (removing an interest steers Lerni away from it), and can **Upload** notes that Claude turns into proposed interests and goals to tick. Each exchange is kept a year in logs the admin reads (`lerni logs`).
 - **Educators** also have **MentalMaps**, where they edit a supervised student's list and plan by chatting with an educator agent (it proposes; only what they tick changes the map or reaches the admin as **feedback**, `lerni feedback`), and **Students**.
-- **Supervised students** see Chat, full screen, and **Games**: a race against two bots answered by multiple choice, for points they spend on cars; real answers to Lerni's questions in Chat earn points too, judged by the tagger, once per exchange (educators can race too, and see a student's points on MentalMaps). They talk in the supervised voice, with an adult nearby (a household rule). Their map grows on the educator's MentalMaps.
+- **Supervised students** see Chat, full screen, and **Games**: a race against two rival cars (from their garage and the Showroom, paced from their own car) answered by multiple choice, for points they spend on cars; real answers to Lerni's questions in Chat earn points too, judged by the tagger, once per exchange (educators can race too, and see a student's points on MentalMaps). They talk in the supervised voice, with an adult nearby (a household rule). Their map grows on the educator's MentalMaps.
 
 
 It assumes one household, a few students, one map per student. Students use an iPad or any browser on the home network. The admin tool (`lerni` in a terminal) is separate: the admin's own learning tool with its own data, plus `lerni student`, `lerni logs`, and `lerni feedback`.
@@ -83,6 +83,7 @@ flowchart LR
 | Race results | Each answer and finish, kept for good: day, goal, concept, a question hash, right or wrong, seconds, place (never question text) | The server, at each answer; the educator sees this week per goal | `~/.lerni/student/results/<username>.jsonl` |
 | Race concepts | Every idea race questions tested, kept for good: short labels, goals, first and last dates, times asked and right (never question text) | The server, at each race start and answer | `~/.lerni/student/concepts/<username>.json` |
 | Garage | Real cars: names, prices, stats, and cut-out pictures | The admin, by hand; players see them in Games (pictures only when signed in) | `~/.lerni/student/garage.json` and `cars/` (private: never in the repo) |
+| Race sounds | The roar, sputter, and finish clips (Pixabay; its licence forbids sharing the files) | The admin, by hand; played in races (served only when signed in) | `~/.lerni/student/sounds/` (private: never in the repo) |
 | Sign-in | The signing secret; wrong-password delays | The app | `~/.lerni/student/secret.key`; delays in memory (built) |
 | Admin data | The admin's own questions, concepts, and reviews | Admin | SQLite at `~/.lerni/lerni.db` (built) |
 

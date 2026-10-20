@@ -103,7 +103,7 @@ def test_a_file_path_sent_by_the_browser_is_refused(tmp_path):
             processing_utils._check_allowed(path, check_in_upload_folder=True)
 
 
-def test_car_pictures_are_only_for_someone_signed_in_and_only_garage_ids(tmp_path):
+def test_car_pictures_and_sounds_are_only_for_someone_signed_in_and_only_known_names(tmp_path):
     import json
 
     StudentStore(tmp_path).add("sam", "Sam", Kind.SUPERVISED, "1234")
@@ -119,3 +119,12 @@ def test_car_pictures_are_only_for_someone_signed_in_and_only_garage_ids(tmp_pat
     assert client.get("/cars/quick").content == b"RIFF....WEBP"
     for bad in ("/cars/../private.txt", "/cars/..%2Fprivate.txt", "/cars/starter", "/cars/nope"):
         assert client.get(bad).status_code == 404
+    (tmp_path / "sounds").mkdir()
+    (tmp_path / "sounds" / "roar.mp3").write_bytes(b"ID3")
+    sound = client.get("/sounds/roar")
+    assert sound.content == b"ID3"  # race sounds: the same rules
+    assert "no-cache" in sound.headers["cache-control"]  # a swapped clip plays at once
+    for bad in ("/sounds/sputter", "/sounds/..%2Fprivate.txt", "/sounds/private"):
+        assert client.get(bad).status_code == 404
+    client.cookies.clear()
+    assert client.get("/sounds/roar").status_code in (302, 303, 401)  # signed out
