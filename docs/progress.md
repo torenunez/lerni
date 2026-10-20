@@ -4,15 +4,22 @@ Where things really stand, then a dated log, newest first. Completed work is rec
 
 Record each kind of "done" only when it actually happens, with the date: code built, content approved, app ready, a student session held. Passing tests show code behaves as specified; they don't make anything ready for a student.
 
-## Current state (2026-10-20, v3.14 on the home server: Versions 1 and 2 built: the conversation, MentalMaps, HTTPS, and voice; Version 3's race, garage, and Chat points)
+## Current state (2026-10-20, v3.16 on the home server: Versions 1 and 2 built: the conversation, MentalMaps, HTTPS, and voice; Version 3's race, garage, and Chat points)
 
-- **Built:** the student app's core (student accounts, sign-in, Lerni's conversations, the MentalMap with its tagger and logs kept a year, Upload and educator feedback, and the educator agent); `lerni serve` with a sign-in page and one app with a ☰ menu by role: an independent student's Chat, My MentalMap (an editable list, the picture, and Upload), and My account; an educator's MentalMaps (a student's list and picture, with a chat) and Students on top; a supervised student's Chat, full screen, and Games (a race for points spent on real cars; educators race too); good answers in Chat earn points too. Hold to talk with spoken answers; a Claude usage warning and rest. Both servers run as LaunchAgents (`lerni service`). The admin tool (`lerni`, with `lerni student`, `lerni logs`, and `lerni feedback`). A [code manifest](code-manifest.md) of every file. Tests: 182 passed.
+- **Built:** the student app's core (student accounts, sign-in, Lerni's conversations, the MentalMap with its tagger and logs kept a year, Upload and educator feedback, and the educator agent); `lerni serve` with a sign-in page and one app with a ☰ menu by role: an independent student's Chat, My MentalMap (an editable list, the picture, and Upload), and My account; an educator's MentalMaps (a student's list and picture, with a chat) and Students on top; a supervised student's Chat, full screen, and Games (a race for points spent on real cars; educators race too); good answers in Chat earn points too. Hold to talk with spoken answers; a Claude usage warning and rest. Both servers run as LaunchAgents (`lerni service`). The admin tool (`lerni`, with `lerni student`, `lerni logs`, and `lerni feedback`). A [code manifest](code-manifest.md) of every file. Tests: 183 passed.
 - **Designed:** the interest map, goals, the tagger, upload, feedback, and the supervised conversation ([specs/04-interest-map.md](../plans/specs/04-interest-map.md)); approved with PR #12. Harder races, practice on the map, and probes ([spec 09b](../plans/specs/09b-harder-races.md)).
 - **Not yet:** a recorded supervised session (the supervised student has used it informally).
 
 When something changes, update this section and add a log entry below.
 
 ## Log
+
+### 2026-10-20 (practice on the map; v3.17 built)
+
+- A goal's details on both MentalMap screens show a Practice line (last raced, this week's right out of asked, up to 3 ideas missed in 14 days and not answered right since), read from the results log each time, never stored.
+- Links keep every day they came up (old links count their one day), so related items and bridges show a strength, and a bridge says how it held ("held 4 days · bounced once"); a group lists its kinds' bridges. A race test that could fail under load (the write-ahead's second call) no longer can.
+- Checked at phone size as an educator on MentalMaps right after a restart, on a throwaway server. Tests: 183 passed.
+- The admin's decision: a map journal and nightly backups come next, as v3.18, ahead of difficulty, so a wrong merge or clustering can be undone and rebuilt from the source before embeddings arrive; the later versions move up one number.
 
 ### 2026-10-20 (the race looks and sounds better; v3.16 built)
 

@@ -12,7 +12,7 @@ import re
 import threading
 import unicodedata
 from collections.abc import Callable, Collection
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, fields
 from datetime import date, timedelta
 from pathlib import Path
 from typing import Any, Literal, TypeVar
@@ -61,7 +61,12 @@ class Link:
     b: str
     # kind_of: a is a kind of b; not_kind_of: a person undid that, so the tagger leaves it
     kind: Literal["related", "bridge", "kind_of", "not_kind_of"]
-    day: str
+    day: str  # the latest day; the list of links is kept in that order
+    days: list[str] = field(default_factory=list)  # every day they came up together, sorted
+
+    def __post_init__(self) -> None:
+        if not self.days:  # links from before v3.17 count their one day
+            self.days = [self.day]
 
 
 @dataclass
@@ -415,7 +420,7 @@ def put_back(m: InterestMap, name: str) -> Entry:
               and not (k["kind"] == "kind_of" and _group_error(m, k["a"], k["b"]))):  # rules hold
             # back in its place by date, so an old bridge doesn't count as the latest
             at = next((i for i, x in enumerate(m.links) if x.day > k["day"]), len(m.links))
-            m.links.insert(at, Link(k["a"], k["b"], k["kind"], k["day"]))
+            m.links.insert(at, Link(k["a"], k["b"], k["kind"], k["day"], list(k.get("days", []))))
     return entry
 
 
@@ -423,10 +428,15 @@ def _to_dict(m: InterestMap) -> dict[str, Any]:
     return {"schema": SCHEMA, **asdict(m)}
 
 
+def _known(cls: Any, data: dict[str, Any]) -> Any:
+    # fields a later version added are left out, so a rollback still loads its maps
+    return cls(**{f.name: data[f.name] for f in fields(cls) if f.name in data})
+
+
 def _from_dict(data: dict[str, Any]) -> InterestMap:
-    entries = [Entry(**e) for e in data.get("entries", [])]
+    entries = [_known(Entry, e) for e in data.get("entries", [])]
     ids = {e.id for e in entries}
-    links = [Link(**k) for k in data.get("links", [])]
+    links = [_known(Link, k) for k in data.get("links", [])]
     links = [k for k in links if k.a in ids and k.b in ids]  # heals a map an older bug broke
     # older code could keep a name set aside beside its near-name on the map: a goal was a
     # person's choice, so it stays; an interest was the tagger's, so the set-aside wins
@@ -436,7 +446,7 @@ def _from_dict(data: dict[str, Any]) -> InterestMap:
             and any(same_name(r, e.name) for r in removed)}
     entries = [e for e in entries if e.id not in gone]
     links = [k for k in links if k.a not in gone and k.b not in gone]
-    archived = [Entry(**a) for a in data.get("archived", [])]  # older maps have none
+    archived = [_known(Entry, a) for a in data.get("archived", [])]  # older maps have none
     archived = [a for a in archived if not any(same_name(a.name, x) for x in removed)
                 and not any(same_name(a.name, e.name) for e in entries)]
     return InterestMap(
@@ -545,9 +555,11 @@ def _seen(entry: Entry, day: str) -> None:
 
 
 def _link(m: InterestMap, a: str, b: str, kind: Any, day: str) -> None:
-    # the list is in order of recency: an existing link moves to the end
-    m.links = [k for k in m.links if not (k.kind == kind and {k.a, k.b} == {a, b})]
-    m.links.append(Link(a, b, kind, day))
+    # the list is in order of recency: an existing link moves to the end, keeping its days
+    same = [k for k in m.links if k.kind == kind and {k.a, k.b} == {a, b}]
+    m.links = [k for k in m.links if k not in same]
+    days = sorted({day, *(d for k in same for d in k.days)})
+    m.links.append(Link(a, b, kind, day, days))
 
 
 def _said(name: str, text: str) -> bool:
@@ -579,9 +591,11 @@ def _merge(m: InterestMap, keep: Entry, gone: Entry) -> None:
         if a == b:
             continue  # a link between the two, or a group made one with its kind
         ordered = k.kind in ("kind_of", "not_kind_of")  # a group link has a direction
-        moved = [x for x in moved if not (x.kind == k.kind and (
-            (x.a, x.b) == (a, b) if ordered else {x.a, x.b} == {a, b}))]
-        moved.append(Link(a, b, k.kind, k.day))
+        twins = [x for x in moved if x.kind == k.kind and (
+            (x.a, x.b) == (a, b) if ordered else {x.a, x.b} == {a, b})]
+        moved = [x for x in moved if x not in twins]
+        days = sorted({*k.days, *(d for x in twins for d in x.days)})  # one link, both histories
+        moved.append(Link(a, b, k.kind, k.day, days))
     m.entries = [e for e in m.entries if e.id != gone.id]
     kinds = {e.id: e.kind for e in m.entries}
     # bridges go from an interest to a goal; groups are rebuilt one by one under their rules
@@ -820,6 +834,23 @@ def strength(entry: Entry, today: date, m: InterestMap | None = None) -> str:
     return "strong" if recent >= 4 else "growing" if recent >= 2 else "faint"
 
 
+def link_strength(link: Link, today: date) -> str:
+    """How alive a link is, by the item rule over the days the two came up together."""
+    cutoff = (today - timedelta(days=FADE_DAYS)).isoformat()
+    recent = sum(d >= cutoff for d in link.days)
+    return "strong" if recent >= 4 else "growing" if recent >= 2 else "faint"
+
+
+def bridge_record(m: InterestMap, link: Link) -> tuple[int, int]:
+    """A bridge's days held, and its goal's bounces on those days."""
+    held = set(link.days)
+    try:
+        goal = m.get(link.b)
+    except MapError:
+        return len(held), 0
+    return len(held), sum(d in held for d in goal.bounces)
+
+
 @dataclass(frozen=True)
 class Details:
     """What tapping an item shows."""
@@ -836,6 +867,8 @@ class Details:
     kinds: list[tuple[str, str]] = field(default_factory=list)  # what's under it
     through: list[str] = field(default_factory=list)  # kinds whose days count here
     own_days: int = 0
+    # (link kind, other id) -> (strength, days held, bounces) for bridges and related items
+    ties: dict[tuple[str, str], tuple[str, int, int]] = field(default_factory=dict)
 
 
 def details(m: InterestMap, entry_id: str, today: date) -> Details:
@@ -847,10 +880,28 @@ def details(m: InterestMap, entry_id: str, today: date) -> Details:
     e = m.get(entry_id)
     names = {x.id: x.name for x in m.entries}
 
+    members = {x.id for x in family(m, e)}  # a group lists its kinds' bridges too
+    ties: dict[tuple[str, str], tuple[str, int, int]] = {}
+    joined: dict[tuple[str, str], tuple[Link, set[str]]] = {}  # a group's links to one end
+
     def ends(kind: str) -> list[tuple[str, str]]:
-        other = [k.b if k.a == e.id else k.a for k in m.links
-                 if k.kind == kind and e.id in (k.a, k.b)]
-        return [(i, names[i]) for i in dict.fromkeys(other) if i in names]
+        mine = members if kind == "bridge" else {e.id}
+        found: list[str] = []
+        for k in m.links:
+            if k.kind != kind or not ({k.a, k.b} & mine):
+                continue
+            other = k.b if k.a in mine else k.a
+            if other in mine:
+                continue
+            found.append(other)
+            _, days = joined.setdefault((kind, other), (k, set()))
+            days.update(k.days)  # every kind's days count once, as group_days does
+        for (kind_, other), (k, days) in joined.items():
+            if kind_ == kind:
+                whole = Link(k.a, k.b, k.kind, max(days), sorted(days))
+                held, bounced = bridge_record(m, whole) if kind == "bridge" else (len(days), 0)
+                ties[(kind, other)] = (link_strength(whole, today), held, bounced)
+        return [(i, names[i]) for i in dict.fromkeys(found) if i in names]
 
     days = group_days(m, e)
     under = [x for x in family(m, e) if x.id != e.id and x.days]
@@ -859,7 +910,7 @@ def details(m: InterestMap, entry_id: str, today: date) -> Details:
                    ends("bridge"), ends("related"),
                    [(i, names[i]) for i in parents(m, e.id) if i in names],
                    [(i, names[i]) for i in children(m, e.id) if i in names],
-                   [x.name for x in under], len(e.days))
+                   [x.name for x in under], len(e.days), ties)
 
 
 def map_block(m: InterestMap, today: date) -> str:

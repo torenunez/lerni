@@ -64,7 +64,7 @@ As an educator, I want to add what I'd like the student to explore, so that Lern
 As an educator, I want to see a supervised student's map, so that I know what they love and whether my goals are landing.
 
 - WHEN the educator opens MentalMaps and picks a supervised student THE SYSTEM SHALL draw their map: interests in green and goals in coral, each sized by its strength (a group counts its kinds), goals outlined until they come up, linked items drawn together, and bridges as dashed lines.
-- WHEN the educator taps an item in the list THE SYSTEM SHALL show its strength (strong, growing, faint, or not yet, from the days it came up in the last 30), the facts behind it, and its bridges and related items, each a tap away.
+- WHEN the educator taps an item in the list THE SYSTEM SHALL show its strength (strong, growing, faint, or not yet, from the days it came up in the last 30), the facts behind it, and its bridges and related items, each a tap away with the link's own strength (a bridge also says how it held).
 - WHEN an interest is a kind of another (a Great White is a kind of shark) THE SYSTEM SHALL list it under that group and count the group's strength from the days any of its kinds came up, each day once; the tagger may group names already on the map, and the educator can put an item under a group, take it out (it stays out), or tick a group the MentalMaps chat proposes.
 
 ### Story: Give feedback
@@ -96,6 +96,7 @@ These notes are for the admin and educator, not the app; the in-app text stays s
 
 - WHEN the educator opens Games THE SYSTEM SHALL let them race too, to rehearse; their points are their own.
 - WHEN the educator picks a supervised student on MentalMaps THE SYSTEM SHALL show that student's points and cars.
+- WHEN the educator taps a goal THE SYSTEM SHALL show how racing on it is going (last raced, this week's right answers, ideas missed lately), read from the race results and never written into the map.
 - Race questions come from the student's goals and interests, so the goals on MentalMaps are what the race practices. Whether Lerni's questions now get real answers instead of emojis is noted privately.
 
 ## Version 4: remembering

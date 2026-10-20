@@ -16,6 +16,7 @@ import gradio as gr
 
 from lerni.student.feedback import FeedbackError, FeedbackStore
 from lerni.student.interests import MapError, MapStore
+from lerni.student.results import ResultsLog
 from lerni.student.signin import Role, SignIn, Viewer
 from lerni.student.students import AccountError, Kind, StudentStore
 from lerni.student.upload import (
@@ -153,8 +154,11 @@ def map_tab(
     students: StudentStore,
     maps: MapStore,
     uploader: Uploader | None = None,
+    results: ResultsLog | None = None,
 ) -> tuple[gr.Tab, gr.HTML, gr.State, gr.State]:
     """My MentalMap; hidden until the page loads for an independent student.
+
+    ``results`` are the race results, for each goal's Practice line.
 
     Returns:
         The tab, its picture, whose map the list shows, and the list's version.
@@ -164,7 +168,8 @@ def map_tab(
     with gr.Tab("My MentalMap", id="mymap", visible=False) as tab:
         picture = gr.HTML(elem_id="lerni-map-mine", elem_classes="lerni-map")
         owner, version = gr.State(""), gr.State(0)  # set on load, by a checked handler
-        mental_list(signin, students, maps, owner, gr.State(None), version, "lerni-pick-mine")
+        mental_list(signin, students, maps, owner, gr.State(None), version, "lerni-pick-mine",
+                    results=results)
         with gr.Accordion("Upload notes", open=False):
             pasted = gr.Textbox(label="Paste notes (any shape)", lines=4, max_length=50_000)
             upload = gr.File(label="Or a file (.txt, .md, .docx, .pdf)", type="filepath",

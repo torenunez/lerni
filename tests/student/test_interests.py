@@ -12,16 +12,20 @@ from lerni.student.interests import (
     Link,
     MapError,
     MapStore,
+    _from_dict,
+    _to_dict,
     add_goal,
     add_interest,
     apply_tags,
     backed_off,
+    bridge_record,
     check_name,
     children,
     delete_for_good,
     details,
     group,
     group_days,
+    link_strength,
     map_block,
     mentions_set_aside,
     not_the_same,
@@ -525,3 +529,45 @@ def test_names_never_slip_past_a_set_aside_a_split_or_the_group_rules():
     add_goal(m, "Volcanic eruption")  # a person's goal: its name is no longer set aside
     assert not m.is_removed("volcanic eruption")
     assert put_back(m, "volcano").aliases == []  # never two items with one name
+
+
+def test_links_keep_their_days_and_bridges_say_how_they_held():
+    old = Link(**{"a": "e1", "b": "e2", "kind": "related", "day": "2026-10-01"})  # before v3.17
+    assert old.days == ["2026-10-01"]
+    m = InterestMap()
+    for name in ("cars", "lava", "T-Rex", "Tyrannosaurus", "sharks", "great white"):
+        m.entries.append(m.new_entry(name, "interest"))
+    fractions = add_goal(m, "Fractions")
+    d1, d2, d3 = date(2026, 10, 1), date(2026, 10, 2), date(2026, 10, 3)
+    for day in (d1, d2):
+        apply_tags(m, parse_tags({"related": [["cars", "lava"]]}), "x", day)
+    related = next(k for k in m.links if k.kind == "related")
+    assert related.days == ["2026-10-01", "2026-10-02"] and link_strength(related, d3) == "growing"
+    apply_tags(m, parse_tags({"bridge": {"interest": "cars", "goal": "Fractions"}}), "x", d1)
+    apply_tags(m, parse_tags({"changed_subject": True}), "dinosaurs!", d1)  # on the bridge's day
+    apply_tags(m, parse_tags({"changed_subject": True}), "dinosaurs!", d3)  # another day
+    bridge = next(k for k in m.links if k.kind == "bridge")
+    assert len(fractions.bounces) == 2 and bridge_record(m, bridge) == (1, 1)
+    cars = m.find("cars")
+    assert details(m, cars.id, d3).ties[("bridge", fractions.id)] == ("faint", 1, 1)
+    # a merge joins the days of the two links that become one
+    apply_tags(m, parse_tags({"related": [["T-Rex", "lava"]]}), "x", d1)
+    apply_tags(m, parse_tags({"related": [["Tyrannosaurus", "lava"]]}), "x", d2)
+    apply_tags(m, parse_tags({"same_as": [["T-Rex", "Tyrannosaurus"]]}), "a T-Rex!", d3)
+    lava = m.find("lava")
+    kept = [k for k in m.links if k.kind == "related" and lava.id in (k.a, k.b)
+            and cars.id not in (k.a, k.b)]
+    assert len(kept) == 1 and {"2026-10-01", "2026-10-02"} <= set(kept[0].days)
+    # a group lists its kinds' bridges
+    apply_tags(m, parse_tags({"kind_of": [["great white", "sharks"]]}), "x", d3)
+    apply_tags(m, parse_tags({"bridge": {"interest": "great white", "goal": "Fractions"}}), "x", d3)
+    sharks = m.find("sharks")
+    assert (fractions.id, "Fractions") in details(m, sharks.id, d3).bridges
+    # regression: the group showed only its latest kind's record, not every kind's days
+    apply_tags(m, parse_tags({"kind_of": [["cars", "sharks"]]}), "x", d3)
+    tie = details(m, sharks.id, d3).ties[("bridge", fractions.id)]
+    assert tie[1:] == (2, 2)  # cars' day 1 and great white's day 3, a bounce on each
+    # regression: a map saved by a later version (a field this one doesn't know) still loads
+    saved = _to_dict(m)
+    saved["links"][0]["weight"], saved["entries"][0]["colour"] = 3, "red"
+    assert len(_from_dict(saved).links) == len(m.links)

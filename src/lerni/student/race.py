@@ -96,7 +96,7 @@ class Question:
     choices: tuple[str, str, str]
     answer: int
     why: str
-    concept: str = ""  # the idea it tests; never shown
+    concept: str = ""  # the idea it tests; never shown to the student (educators see misses)
 
 
 def quiz_input(m: InterestMap, today: date, supervised: bool, recent: Sequence[str] = ()) -> str:
@@ -209,7 +209,7 @@ def check_questions(raw: Any, m: InterestMap, rng: random.Random | None = None,
         if not isinstance(item, dict):
             continue
         q, why = _plain(item.get("question")), _plain(item.get("why"))
-        concept = _plain(item.get("concept"))[:MAX_CONCEPT]  # never shown, so a long one is cut
+        concept = _plain(item.get("concept"))[:MAX_CONCEPT]  # a label, so a long one is cut
         goal = _plain(item.get("goal")).split(" (")[0]  # Claude may copy the notes too
         choices = [_plain(c) for c in item.get("choices") or []]
         right = item.get("answer")

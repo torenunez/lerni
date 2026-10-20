@@ -9,6 +9,7 @@ and every edit names that map, so it never lands on another account's.
 
 from __future__ import annotations
 
+import re
 import time
 from datetime import date
 from typing import Any
@@ -39,6 +40,7 @@ from lerni.student.interests import (
     strength,
     ungroup,
 )
+from lerni.student.results import ResultsLog
 from lerni.student.signin import SignIn
 from lerni.student.students import StudentStore
 from lerni.student.web.accounts import PRIVATE, cleared
@@ -175,6 +177,26 @@ def bump() -> int:
     return time.monotonic_ns()
 
 
+LINK_KINDS = {"Bridges": "bridge", "Related": "related"}  # list headings with a link record
+
+
+def _md(text: str) -> str:
+    """Text shown as-is in Markdown: its formatting characters escaped."""
+    return re.sub(r"([\\`*_{}\[\]()#+\-.!|<>~])", r"\\\1", text)
+
+
+def _tie(tie: tuple[str, int, int] | None, bridge: bool) -> str:
+    """ " 💪" for a link's strength; a bridge adds how it held ("· held 5 days · bounced once")."""
+    if tie is None:
+        return ""
+    alive, held, bounced = tie
+    text = " " + STRENGTH_LABELS[alive].split()[0]
+    if bridge:
+        text += f" · held {_plural(held, 'day')}"
+        text += f" · bounced {'once' if bounced == 1 else f'{bounced} times'}" if bounced else ""
+    return text
+
+
 def _plural(n: int, word: str) -> str:
     return f"{n} {word}{'s' * (n != 1)}"
 
@@ -188,6 +210,7 @@ def mental_list(
     version: gr.State,
     pick_id: str,
     empty: str = "",
+    results: ResultsLog | None = None,
 ) -> None:
     """The add form, then 🎯 Goals and 💚 Interests as rows to open, rename, or remove.
 
@@ -198,6 +221,7 @@ def mental_list(
         version: Bumped by every change, so the list redraws.
         pick_id: The hidden field the picture writes a tapped item's id to (mapview.js).
         empty: What shows before there's a map to draw.
+        results: The race results, for each goal's Practice line (None: no line).
     """
     opened = gr.State(None)  # the open item's id
     confirm = gr.State(None)  # (map owner, removed name) waiting for a second Delete tap
@@ -337,6 +361,15 @@ def mental_list(
                 if e.kind == "goal":
                     facts.append(f"explained on {_plural(d.explained, 'day')} (Lerni's guess)")
                     facts += ["Lerni is giving it a rest"] if d.resting else []
+                    # read for the open goal only, never on every redraw
+                    p = results.practice(who, e.id, today) if results else None
+                    if p is not None:  # how racing on it is going, read-only
+                        parts = [f"raced {p.last}"] + ([f"this week {p.right}/{p.asked}"]
+                                                       if p.asked else [])
+                        # Claude's labels, shown as plain text
+                        missed = ", ".join(_md(c) for c in p.missed)
+                        parts += [f"missed lately: {missed}"] if p.missed else []
+                        facts.append("Practice: " + " · ".join(parts))
                 with gr.Column(elem_classes="lerni-detail", key=f"d-{e.id}"):
                     gr.Markdown(" · ".join(facts), key=f"facts-{e.id}")
                     notes_box = notes_btn = None
@@ -374,8 +407,10 @@ def mental_list(
                         if ends:
                             gr.Markdown(f"**{heading}**", key=f"{heading}-{e.id}")
                         for other_id, other in ends:  # a tap opens the other end
+                            tie = d.ties.get((LINK_KINDS.get(heading, ""), other_id))
                             jump = gr.Button(
-                                f"→ {other}", size="sm", key=f"j-{e.id}-{heading}-{other_id}"
+                                f"→ {other}" + _tie(tie, heading == "Bridges"),
+                                size="sm", key=f"j-{e.id}-{heading}-{other_id}"
                             )
                             jump.click(lambda i=other_id: i, None, opened, **PRIVATE)
                 wire(who, e.id, row, trash, (name_box, rename_btn, notes_box, notes_btn))
