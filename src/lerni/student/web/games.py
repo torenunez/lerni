@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import html
 from collections.abc import Callable
+from datetime import date
 from typing import Any
 
 import gradio as gr
@@ -36,6 +37,7 @@ from lerni.student.race import (
     place,
     public,
 )
+from lerni.student.results import ResultsLog, week_line
 from lerni.student.signin import Role, SignIn, Viewer
 from lerni.student.students import StudentStore
 from lerni.student.web.accounts import PRIVATE, NotAllowed
@@ -103,15 +105,18 @@ def garage_tap(points: PointsStore, garage: Garage, viewer: Viewer | None, car_i
 
 
 def student_points(points: PointsStore, garage: Garage, students: StudentStore,
-                   viewer: Viewer | None, requested: str | None) -> str:
-    """A supervised student's points and cars, for their educator on MentalMaps."""
+                   viewer: Viewer | None, requested: str | None,
+                   results: ResultsLog | None = None) -> str:
+    """A supervised student's points, cars, and this week's race results, for their educator."""
     try:
-        p = points.get(map_owner(students, viewer, requested or ""))
+        owner = map_owner(students, viewer, requested or "")
     except NotAllowed:
         return ""
+    p = points.get(owner)
     known = {c.id: c.name for c in garage.cars}
     names = ", ".join(known[c] for c in p.cars if c in known)
-    return f"⭐ {p.balance} · cars: {names}"
+    week = week_line(results, owner, date.today()) if results else ""
+    return f"⭐ {p.balance} · cars: {names}" + (f"  \n{week}" if week else "")
 
 
 def track_svg(race: Race | None, car_id: str, garage: Garage) -> str:

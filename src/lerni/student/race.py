@@ -20,6 +20,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import date
 from difflib import SequenceMatcher
+from importlib import metadata
 from typing import Any, Protocol
 
 from lerni.student.concepts import MAX_CONCEPT, ConceptStore, normalize
@@ -33,6 +34,7 @@ from lerni.student.interests import (
     parents,
 )
 from lerni.student.points import PointsStore
+from lerni.student.results import ResultsLog, question_hash
 
 QUESTIONS_PER_RACE = 5
 SET_SIZE = 10  # questions per Claude call: two races' worth
@@ -311,6 +313,14 @@ ASKED_IN_MEMORY = 60  # question texts kept per person since the server started
 RESTART_GAP_SECONDS = 5.0  # a second Race tap this soon returns the race just started
 
 
+def _version() -> str:
+    """The installed Lerni version, for the results log."""
+    try:
+        return metadata.version("lerni")
+    except metadata.PackageNotFoundError:
+        return ""
+
+
 def spread(questions: list[Question]) -> list[Question]:
     """Take turns across the goals, so a race isn't five questions about one of them."""
     by_goal: dict[str, list[Question]] = {}
@@ -341,9 +351,11 @@ class RaceDesk:
     """Today's questions per person, written ahead, and each person's race in progress."""
 
     def __init__(self, quizzer: Quizzer, maps: MapStore, points: PointsStore,
-                 concepts: ConceptStore | None = None, checker: Checker | None = None) -> None:
+                 concepts: ConceptStore | None = None, checker: Checker | None = None,
+                 results: ResultsLog | None = None) -> None:
         self.quizzer, self.maps, self.points, self.concepts = quizzer, maps, points, concepts
         self.checker = checker  # answers each question blind; a disagreement drops it
+        self.results = results  # how each answer went, as labels and numbers
         self._asked: dict[str, deque[str]] = {}  # recent question texts, normalized; memory only
         self._sets: dict[str, tuple[str, list[Question]]] = {}  # username: (day, questions)
         self._races: dict[str, Race] = {}
@@ -512,9 +524,13 @@ class RaceDesk:
                 return race, None, 0
             if self.clock() - self._last_tap.get(username, -1e9) < TAP_GAP_SECONDS:
                 return race, None, 0  # a double tap: never an answer to a question not seen
+            # shown when the race began, or when the last question was answered
+            since = self._last_tap if number else self._started
+            shown = since.get(username, 0.0)
             turn = answer(race, number, choice)
             if turn is not None:
                 self._last_tap[username] = self.clock()
+                took = self._last_tap[username] - shown
         if turn is not None and self.concepts is not None:
             try:  # best effort: the long-term record of how each idea went
                 self.concepts.answered(username, race.questions[number].concept, turn.right)
@@ -523,7 +539,26 @@ class RaceDesk:
         awarded = 0
         if turn is not None and race.done:
             awarded = self.points.award(username, race.id, "race", race_points(race))
+        if turn is not None:
+            self._log(username, race, number, turn.right, took)
         return race, turn, awarded
+
+    def _log(self, username: str, race: Race, number: int, right: bool, took: float) -> None:
+        """Note how an answer went, and the place at the finish; never a question's words."""
+        if self.results is None:
+            return
+        q, day = race.questions[number], date.today().isoformat()
+        goal = self.maps.get(username).find(q.goal)
+        try:  # best effort: the race never stops for its record
+            self.results.add(username, {
+                "day": day, "race": race.id, "goal_id": goal.id if goal else "",
+                "goal": q.goal, "concept": q.concept, "q": question_hash(q.question),
+                "right": right, "seconds": round(max(took, 0.0), 1)})
+            if race.done:
+                self.results.add(username, {"day": day, "race": race.id, "place": place(race),
+                                            "points": race_points(race), "version": _version()})
+        except OSError:
+            pass
 
     def current(self, username: str) -> Race | None:
         """The race in progress, if any."""

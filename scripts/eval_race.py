@@ -10,7 +10,15 @@ from datetime import date
 from lerni.student.adapters.claude_code import ClaudeCodeQuizzer
 from lerni.student.concepts import normalize
 from lerni.student.interests import InterestMap, add_goal, add_interest, remove
-from lerni.student.race import QUIZ_SYSTEM, check_questions, quiz_input
+from lerni.student.race import (
+    CHECK_SCHEMA,
+    CHECK_SYSTEM,
+    QUIZ_SYSTEM,
+    Question,
+    check_input,
+    check_questions,
+    quiz_input,
+)
 
 REUSED: list[int] = []  # per call: ideas Claude wrote again though told they were asked
 
@@ -51,6 +59,19 @@ def main() -> None:
         ("told what was asked, the next set is still a race's worth of new ideas", raw_again >= 5),
         ("told what was asked, Claude reuses at most one idea", REUSED[-1] <= 1),
     ]
+    # the blind check (v3.14): a wrong key is caught, a right one kept
+    keyed = [
+        Question("Fractions", "A race car does 2 laps, then 2 more. How many laps in all?",
+                 ("5", "4", "3"), 0, "2 and 2 make 4.", "adding laps"),  # keyed wrong
+        Question("Acceleration", "Which tells you how fast a car speeds up from a stop?",
+                 ("its top speed", "its 0 to 60 time", "its color"), 0, "", "0-60 vs top speed"),
+        Question("Fractions", "Half of 10 laps is how many laps?", ("5", "2", "20"), 0, "",
+                 "half of a number"),  # keyed right
+    ]
+    picks = ClaudeCodeQuizzer().write(CHECK_SYSTEM, check_input(keyed), CHECK_SCHEMA)["picks"]
+    print("blind picks:", picks)
+    results.append(("both wrong keys are caught", picks[0] != 0 and picks[1] != 0))
+    results.append(("a right key is kept", picks[2] == 0))
     for name, ok in results:
         print("PASS" if ok else "FAIL", name)
 

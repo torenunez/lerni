@@ -417,3 +417,29 @@ def test_a_wrong_key_never_races(tmp_path):
     assert right_sum["question"] in raced  # its sum and its key agree, and so does the check
     assert wrong_sum["question"] not in raced and doubted["question"] not in raced
     assert "DOUBT" in checker.prompts[0] and "math" not in checker.prompts[0].casefold()
+
+
+def test_answers_are_logged_as_labels_and_numbers(tmp_path):
+    # the results log, kept for good: what was practiced and how it went, never any text
+    import json
+
+    from lerni.student.results import ResultsLog, week_line
+
+    maps, points, results = MapStore(tmp_path), PointsStore(tmp_path), ResultsLog(tmp_path)
+    maps.change("sam", lambda m: add_goal(m, "Fractions"))
+    desk = RaceDesk(FakeQuizzer(), maps, points, results=results)
+    desk.prefill = lambda *args: None
+    ticks = iter(range(0, 1000, 10))
+    desk.clock = lambda: float(next(ticks))
+    race = desk.start("sam", supervised=True)
+    for n, ok in enumerate([True, True, False, True, False]):
+        q = race.questions[n]
+        desk.pick("sam", race.id, n, q.answer if ok else (q.answer + 1) % 3)
+    lines = [json.loads(x) for x in (tmp_path / "results" / "sam.jsonl").read_text().splitlines()]
+    answers, finish = lines[:5], lines[5]
+    assert [a["right"] for a in answers] == [True, True, False, True, False]
+    assert all(a["goal"] == "Fractions" and a["seconds"] > 0 and len(a["q"]) == 12 for a in answers)
+    assert "What is" not in json.dumps(lines)  # never the question's words
+    assert finish["place"] in (1, 2, 3) and finish["points"] > 0
+    assert results.week("sam", date.today()) == [("Fractions", 3, 5)]
+    assert week_line(results, "sam", date.today()) == "This week: Fractions 3/5"
