@@ -1,7 +1,8 @@
-"""The ideas each player's race questions recently tested, so new ones ask about others.
+"""Every idea a player's race questions have tested, kept for good: the long-term record
+of what was asked and how it went, and the "asked lately" list that keeps questions new.
 
 One JSON file per player in ``<data root>/concepts/``: short concept labels, the
-goal they practiced, and the day, never a question or an answer. Standard library only.
+goal they practiced, dates, and counts, never a question or an answer. Standard library only.
 """
 
 from __future__ import annotations
@@ -11,12 +12,13 @@ import re
 import threading
 from datetime import date, timedelta
 from pathlib import Path
+from typing import Any
 
 from lerni.student.jsonfiles import write_json_atomic
 from lerni.student.students import check_username, default_data_dir
 
 MAX_CONCEPT = 40  # characters in a label
-KEEP_RECENT = 40  # labels remembered per player
+KEEP_RECENT = 40  # labels sent to Claude as asked lately
 RECENT_DAYS = 14
 
 
@@ -26,41 +28,87 @@ def normalize(text: str) -> str:
 
 
 class ConceptStore:
-    """Everyone's recent concepts on disk, changed one at a time per player."""
+    """Everyone's concept ledgers on disk, changed one at a time."""
 
     def __init__(self, root: Path | None = None) -> None:
         self.root = (root or default_data_dir()) / "concepts"
-        self._lock = threading.Lock()  # few writes, one per race start
+        self._lock = threading.Lock()  # a few writes per race
 
     def _path(self, username: str) -> Path:
         return self.root / f"{check_username(username)}.json"
 
-    def _read(self, username: str) -> list[dict[str, str]]:
+    def ledger(self, username: str) -> list[dict[str, Any]]:
+        """Every idea asked, oldest-touched first: concept, goal, first, last, asked, right."""
         try:
             data = json.loads(self._path(username).read_text(encoding="utf-8"))
-            return [r for r in data.get("recent", []) if isinstance(r, dict) and r.get("concept")]
-        except (OSError, ValueError, AttributeError):
-            return []  # missing or broken: nothing recent, and the race still runs
+        except (OSError, ValueError):
+            return []  # missing or broken: nothing known, and the race still runs
+        if not isinstance(data, dict):
+            return []
+        if "concepts" not in data:  # a v3.9 file: the recent list only
+            return [
+                {
+                    "concept": str(r["concept"]),
+                    "goal": str(r.get("goal", "")),
+                    "first": str(r.get("day", "")),
+                    "last": str(r.get("day", "")),
+                    "asked": 1,
+                    "right": 0,
+                }
+                for r in reversed(data.get("recent", []))
+                if isinstance(r, dict) and r.get("concept")
+            ]
+        return [c for c in data["concepts"] if isinstance(c, dict) and c.get("concept")]
 
     def recent(self, username: str, today: date | None = None) -> list[str]:
         """Labels asked in the last 14 days, newest first, at most 40."""
         cutoff = ((today or date.today()) - timedelta(days=RECENT_DAYS)).isoformat()
-        return [str(r["concept"]) for r in self._read(username) if str(r.get("day", "")) >= cutoff][
-            :KEEP_RECENT
+        asked = [
+            str(c["concept"])
+            for c in reversed(self.ledger(username))
+            if str(c.get("last", "")) >= cutoff
         ]
+        return asked[:KEEP_RECENT]
+
+    def _change(self, username: str, fn: Any) -> None:
+        with self._lock:
+            ledger = self.ledger(username)
+            fn(ledger)
+            write_json_atomic(self._path(username), {"schema": 2, "concepts": ledger})
 
     def add(self, username: str, items: list[tuple[str, str]], today: date | None = None) -> None:
-        """Remember (goal, concept) pairs asked today; an old label moves to the front."""
+        """Note (goal, concept) pairs asked today; each moves to the end, as the newest."""
         day = (today or date.today()).isoformat()
-        cutoff = ((today or date.today()) - timedelta(days=RECENT_DAYS)).isoformat()
-        with self._lock:
-            new = [{"concept": c, "goal": g, "day": day} for g, c in items]
-            keys = {normalize(r["concept"]) for r in new}
-            old = [
-                r
-                for r in self._read(username)
-                if normalize(str(r["concept"])) not in keys and str(r.get("day", "")) >= cutoff
-            ]
-            write_json_atomic(
-                self._path(username), {"schema": 1, "recent": (new + old)[:KEEP_RECENT]}
-            )
+
+        def apply(ledger: list[dict[str, Any]]) -> None:
+            for goal, concept in items:
+                key = normalize(concept)
+                old = next((c for c in ledger if normalize(str(c["concept"])) == key), None)
+                if old is None:
+                    old = {
+                        "concept": concept,
+                        "goal": goal,
+                        "first": day,
+                        "last": day,
+                        "asked": 0,
+                        "right": 0,
+                    }
+                else:
+                    ledger.remove(old)
+                old.update(goal=goal, last=day, asked=int(old.get("asked", 0)) + 1)
+                ledger.append(old)
+
+        self._change(username, apply)
+
+    def answered(self, username: str, concept: str, right: bool) -> None:
+        """Count a right answer to a question on this idea."""
+        if not right:
+            return  # asked already counts the try
+
+        def apply(ledger: list[dict[str, Any]]) -> None:
+            key = normalize(concept)
+            for c in ledger:
+                if normalize(str(c["concept"])) == key:
+                    c["right"] = int(c.get("right", 0)) + 1
+
+        self._change(username, apply)

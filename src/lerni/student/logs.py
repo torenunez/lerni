@@ -1,4 +1,4 @@
-"""Conversation logs: each exchange and what the tagger did, kept 7 days for the admin.
+"""Conversation logs: each exchange and what the tagger did, kept a year for the admin.
 
 ``<data root>/logs/<username>/<date>.jsonl``, one JSON line per exchange. The
 only place message text is saved; read with ``lerni logs``. Standard library only.
@@ -16,11 +16,11 @@ from typing import Any
 
 from lerni.student.students import check_username, default_data_dir
 
-KEEP_DAYS = 7  # a file this many days old or older is deleted
+KEEP_DAYS = 365  # a file this many days old or older is deleted (family-hosted; rule 6)
 
 
 class ConversationLog:
-    """Every student's exchanges for the last 7 days."""
+    """Every student's exchanges for the last year."""
 
     def __init__(self, root: Path | None = None, today: Callable[[], date] = date.today) -> None:
         self.root = (root or default_data_dir()) / "logs"
@@ -41,7 +41,7 @@ class ConversationLog:
                 handle.write(json.dumps(line, ensure_ascii=False) + "\n")
 
     def purge(self) -> None:
-        """Delete files 7 or more days old, and folders left empty."""
+        """Delete files a year or more old, and folders left empty."""
         cutoff = (self.today() - timedelta(days=KEEP_DAYS)).isoformat()
         with self._lock:
             self._purged = self.today()
@@ -54,17 +54,20 @@ class ConversationLog:
                 if folder.is_dir() and not any(folder.iterdir()):
                     shutil.rmtree(folder)
 
-    def read(self, username: str | None = None) -> list[dict[str, Any]]:
-        """The kept exchanges, oldest first, each with its ``username``."""
+    def read(self, username: str | None = None, days: int | None = None) -> list[dict[str, Any]]:
+        """The kept exchanges (only the last ``days``, if given), oldest first, with usernames."""
         if not self.root.is_dir():
             return []
         if username:
             folders = [self.root / check_username(username)]
         else:
             folders = sorted(self.root.iterdir())
+        since = (self.today() - timedelta(days=days)).isoformat() if days is not None else ""
         records = []
         for folder in folders:
             for path in sorted(folder.glob("*.jsonl")):
+                if days is not None and path.stem <= since:
+                    continue
                 for line in path.read_text(encoding="utf-8").splitlines():
                     records.append({"username": folder.name, **json.loads(line)})
         return sorted(records, key=lambda r: r.get("time", ""))

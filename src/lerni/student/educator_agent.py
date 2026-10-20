@@ -284,6 +284,6 @@ class EducatorChats:
         with self._lock:
             self._turns[key] = [*turns, Turn("assistant", visible)][-MAX_TURNS:]
             self._proposals[key] = found
-        if self.log is not None:  # the educator's 7-day log
+        if self.log is not None:  # the educator's log
             self.log.write(educator, {"map_owner": owner, "question": text.strip(),
                                       "answer": visible})

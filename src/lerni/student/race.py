@@ -432,6 +432,11 @@ class RaceDesk:
             turn = answer(race, number, choice)
             if turn is not None:
                 self._last_tap[username] = self.clock()
+        if turn is not None and self.concepts is not None:
+            try:  # best effort: the long-term record of how each idea went
+                self.concepts.answered(username, race.questions[number].concept, turn.right)
+            except OSError:
+                pass
         awarded = 0
         if turn is not None and race.done:
             awarded = self.points.award(username, race.id, "race", race_points(race))

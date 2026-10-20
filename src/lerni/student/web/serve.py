@@ -164,7 +164,7 @@ def serve(
         + ("on" if speech else "off (install whisper.cpp and its model: admin reference, Voice)"),
         flush=True,
     )
-    print("Conversation logs (7 days): lerni logs", flush=True)
+    print("Conversation logs (a year): lerni logs", flush=True)
     print("Home network only. Press Ctrl-C to stop.", flush=True)
     # Gradio keeps each open page connected; without a time limit, Ctrl-C waits forever
     uvicorn.run(

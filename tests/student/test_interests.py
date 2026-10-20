@@ -381,3 +381,26 @@ def test_the_map_block_keeps_whole_lines():
     block = map_block(m, date(2026, 10, 14))
     assert len(block) <= 1500
     assert all(line == MAP_HEADER or line.endswith((" end.)", ":")) for line in block.splitlines())
+
+
+def test_a_full_map_rests_an_interest_and_it_comes_back_with_its_history(tmp_path):
+    # the map was forgetting: at 60 items each new interest deleted the least-seen one for good
+    store = MapStore(tmp_path)
+
+    def fill(m):
+        for i in range(MAX_ENTRIES):
+            e = m.new_entry(f"thing {i}", "interest")
+            e.days = ["2026-10-01", "2026-10-02"] if i else ["2026-09-01"]  # thing 0: least seen
+            m.entries.append(e)
+
+    store.change("sam", fill)
+    seen = parse_tags({"about": [], "new_interests": ["volcanoes"]})
+    store.change("sam", lambda m: apply_tags(m, seen, "I love volcanoes", date(2026, 10, 14)))
+    m = store.get("sam")  # saved and loaded
+    assert m.find("thing 0") is None and m.find("volcanoes") is not None
+    assert [(a.name, a.days) for a in m.archived] == [("thing 0", ["2026-09-01"])]
+    back = parse_tags({"about": [], "new_interests": ["thing 0"]})
+    store.change("sam", lambda m: apply_tags(m, back, "tell me about thing 0", date(2026, 10, 15)))
+    m = store.get("sam")
+    assert m.find("thing 0").days == ["2026-09-01", "2026-10-15"] and len(m.entries) == MAX_ENTRIES
+    assert [a.name for a in m.archived] != ["thing 0"]  # another one rests in its place

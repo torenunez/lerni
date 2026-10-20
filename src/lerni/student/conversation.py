@@ -1,6 +1,6 @@
-"""Ask Lerni: a text conversation with Claude.
+"""Chat: a text conversation with Claude.
 
-Holds one ongoing conversation per student in memory (the 7-day logs in
+Holds one ongoing conversation per student in memory (the year of logs in
 ``logs.py`` are the only copy on disk), kept until New conversation or a server
 restart and trimmed to recent messages. Builds the instructions Claude gets: the
 starting persona for that kind of student (``personas/*.md``), the student's map

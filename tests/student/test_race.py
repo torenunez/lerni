@@ -341,3 +341,27 @@ def test_a_set_aside_while_questions_are_written_refuses_the_race(tmp_path):
     with pytest.raises(RaceUnavailable):
         desk.start("sam", supervised=True, today=TODAY)
     assert points.races_left("sam", TODAY) == RACES_PER_DAY  # not counted
+
+
+def test_the_concept_ledger_keeps_every_idea_with_its_answers(tmp_path):
+    # long-term memory: an idea asked months ago is still known, with how it went
+    maps, points = MapStore(tmp_path), PointsStore(tmp_path)
+    maps.change("sam", lambda m: add_goal(m, "Fractions"))
+    concepts = ConceptStore(tmp_path)
+    desk = RaceDesk(FakeQuizzer(), maps, points, concepts)
+    desk.prefill = lambda *args: None
+    ticks = iter(range(0, 1000, 10))
+    desk.clock = lambda: float(next(ticks))
+    race = desk.start("sam", supervised=True, today=TODAY)
+    first = race.questions[0]
+    desk.pick("sam", race.id, 0, first.answer)  # right
+    desk.pick("sam", race.id, 1, (race.questions[1].answer + 1) % 3)  # wrong
+    later = TODAY + timedelta(days=20)
+    assert first.concept not in concepts.recent("sam", later)  # not "asked lately" any more
+    ledger = {c["concept"]: c for c in concepts.ledger("sam")}
+    assert ledger[first.concept]["asked"] == 1 and ledger[first.concept]["right"] == 1
+    assert ledger[race.questions[1].concept]["right"] == 0 and len(ledger) == QUESTIONS_PER_RACE
+    old = tmp_path / "concepts" / "kim.json"  # a v3.9 file still loads
+    old.write_text('{"schema": 1, "recent": [{"concept": "halves", "goal": "Fractions", '
+                   '"day": "2026-10-12"}]}')
+    assert concepts.recent("kim", TODAY) == ["halves"]

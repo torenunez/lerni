@@ -73,6 +73,7 @@ class InterestMap:
     edits: int = 0  # bumped by every person's edit
     next_id: int = 1
     removed_info: dict[str, dict[str, Any]] = field(default_factory=dict)  # for Put back
+    archived: list[Entry] = field(default_factory=list)  # rested to make room; back when named
 
     def find(self, name: str) -> Entry | None:
         """The entry with this name, ignoring case, or None; "car" finds "cars" and back."""
@@ -196,8 +197,22 @@ def make_room(m: InterestMap) -> bool:
         return False  # only goals and groups left: a group with kinds is never dropped
     # fewest days first, then the longest ago
     drop = min(interests, key=lambda e: (len(e.days), e.days[-1] if e.days else ""))
-    _forget(m, drop.id)
+    _lift_kinds(m, drop.id)  # never a group here, but kept safe
+    m.archived = [a for a in m.archived if not same_name(a.name, drop.name)] + [drop]
+    _forget(m, drop.id)  # it rests with its days and mentions; its links go
     return True
+
+
+def _wake(m: InterestMap, name: str, kind: Kind = "interest") -> Entry | None:
+    """Bring a resting item back onto the map with its history, or None if it isn't resting."""
+    resting = next((a for a in m.archived if same_name(a.name, name)), None)
+    if resting is None or m.is_removed(resting.name):
+        return None
+    m.archived = [a for a in m.archived if a is not resting]
+    entry = m.new_entry(resting.name, kind)
+    entry.days, entry.mentions = list(resting.days), resting.mentions
+    m.entries.append(entry)
+    return entry
 
 
 def _forget(m: InterestMap, entry_id: str) -> None:
@@ -230,8 +245,10 @@ def add_goal(m: InterestMap, name: str, notes: str = "") -> Entry:
     else:
         if error := full(m):
             raise error
-        entry = m.new_entry(name, "goal", notes)
-        m.entries.append(entry)
+        entry = _wake(m, name, "goal") or m.new_entry(name, "goal")
+        if entry not in m.entries:
+            m.entries.append(entry)
+        entry.notes = notes
     m.edits += 1
     return entry
 
@@ -248,8 +265,10 @@ def add_interest(m: InterestMap, name: str) -> Entry:
     if error := full(m):
         raise error
     _unremove(m, name)  # a person may bring back what they removed
-    entry = m.new_entry(name, "interest")
-    m.entries.append(entry)
+    entry = _wake(m, name)
+    if entry is None:
+        entry = m.new_entry(name, "interest")
+        m.entries.append(entry)
     m.edits += 1
     return entry
 
@@ -291,6 +310,7 @@ def remove(m: InterestMap, entry_id: str) -> None:
         MapError: Unknown entry.
     """
     entry = m.get(entry_id)
+    m.archived = [a for a in m.archived if not same_name(a.name, entry.name)]  # removed wins
     links = [asdict(k) for k in m.links if entry_id in (k.a, k.b)]
     _lift_kinds(m, entry_id)  # its kinds stay, one level up
     _forget(m, entry_id)
@@ -372,6 +392,9 @@ def _from_dict(data: dict[str, Any]) -> InterestMap:
             and any(same_name(r, e.name) for r in removed)}
     entries = [e for e in entries if e.id not in gone]
     links = [k for k in links if k.a not in gone and k.b not in gone]
+    archived = [Entry(**a) for a in data.get("archived", [])]  # older maps have none
+    archived = [a for a in archived if not any(same_name(a.name, x) for x in removed)
+                and not any(same_name(a.name, e.name) for e in entries)]
     return InterestMap(
         entries,
         links,
@@ -379,6 +402,7 @@ def _from_dict(data: dict[str, Any]) -> InterestMap:
         int(data.get("edits", 0)),
         int(data.get("next_id", 1)),
         dict(data.get("removed_info", {})),
+        archived,
     )
 
 
@@ -505,8 +529,10 @@ def apply_tags(m: InterestMap, tags: Tags, student_text: str, today: date) -> No
         if (e := m.find(name)) is not None:
             touched[e.id] = e  # already on the map (an interest or a goal): it counts there
         elif not m.is_removed(name) and _said(name, said) and make_room(m):
-            e = m.new_entry(name, "interest")
-            m.entries.append(e)
+            e = _wake(m, name)  # resting: it comes back with its history
+            if e is None:
+                e = m.new_entry(name, "interest")
+                m.entries.append(e)
             touched[e.id] = e
     for e in touched.values():
         _seen(e, day)
