@@ -91,6 +91,8 @@ def test_status_is_not_fooled_by_another_copy_on_the_port(tmp_path, monkeypatch)
     monkeypatch.setattr(service, "_listener", lambda port: 10)
     shown = Launchctl(print=[(0, "\tpid = 10\n")])
     assert "running (pid 10)" in status("prod", run=shown, uid=501, home=tmp_path)
+
+
 def test_install_passes_lerni_settings_and_refuses_crossed_data(tmp_path):
     # regression: LERNI_SAY_VOICE never reached the agent; a symlink got dev onto real data
     from lerni.student.service import setup_warnings
@@ -119,7 +121,7 @@ def test_install_passes_lerni_settings_and_refuses_crossed_data(tmp_path):
 
 def test_a_server_that_doesnt_come_up_says_why(tmp_path):
     # regression: install said "Started." for a server that crash-looped every 10 seconds
-    from lerni.student.service import log_path, stop, wait_until_up
+    from lerni.student.service import log_path, settings_note, stop, wait_until_up
 
     lerni = tmp_path / "lerni"
     lerni.write_text("")
@@ -127,15 +129,35 @@ def test_a_server_that_doesnt_come_up_says_why(tmp_path):
             run=Launchctl(), home=tmp_path, lerni=lerni, uid=501)
     log = log_path(tmp_path, "prod")
     log.write_text("x" * 6_000_000 + "\nFileNotFoundError: c.pem\n")
+    now = [0.0]
+
+    def tick(seconds):  # each check takes 4 seconds, as an HTTPS timeout can
+        now[0] += seconds + 4
+
     with pytest.raises(ServiceError, match="c.pem"):
         wait_until_up("prod", tmp_path, check=lambda: "prod: not answering",
-                      sleep=lambda s: None, seconds=3)
+                      sleep=tick, clock=lambda: now[0])
+    # regression (review): a 30 s throttle outlasted a 30-try wait, so a slow first start failed
+    assert now[0] >= 75
+    tries = iter(["prod: not answering"] * 12 + ["prod: running (pid 7)"])
+    now[0] = 0.0
+    assert "running" in wait_until_up("prod", tmp_path, check=lambda: next(tries),
+                                      sleep=tick, clock=lambda: now[0])
     after_stop = Launchctl(kickstart=[(113, "")])  # not loaded: start it from its agent file
     restart("prod", run=after_stop, uid=501, home=tmp_path)
     assert [c[1] for c in after_stop.calls] == ["kickstart", "bootstrap"]
     assert (log.parent / "prod.log.1").stat().st_size > 5_000_000  # rotated, not lost
     quick = {"uid": 501, "sleep": lambda s: None}
-    assert stop("prod", run=Launchctl(bootout=[(3, "")]), **quick) is False  # wasn't running
     # regression: a second stop right after the first said "Stopped." again
-    assert stop("prod", run=Launchctl(print=[(113, "")]), **quick) is False
-    assert stop("prod", run=Launchctl(), **quick) is True
+    assert stop("prod", run=Launchctl(print=[(113, "")] * 2), **quick) is False
+    # regression (review): stop said "Stopped." for an agent still loaded, and a stray failed
+    # kickstart was taken for "not loaded"
+    with pytest.raises(ServiceError):
+        stop("prod", run=Launchctl(), **quick)  # still loaded after every poll
+    gone = Launchctl(print=[(0, ""), (113, "")])
+    assert stop("prod", run=gone, **quick) is True
+    with pytest.raises(ServiceError, match="restart"):
+        restart("prod", run=Launchctl(kickstart=[(5, "")]), uid=501, home=tmp_path)
+    assert settings_note({"PATH": "/a", "LERNI_SAY_VOICE": "Ava"},
+                         {"PATH": "/a", "LERNI_CLAUDE_MODEL": "x"}) == (
+        "Settings saved: LERNI_CLAUDE_MODEL. Dropped (not in this shell): LERNI_SAY_VOICE.")

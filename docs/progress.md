@@ -16,7 +16,7 @@ When something changes, update this section and add a log entry below.
 
 ### 2026-10-20 (services that say when they fail; v3.11 built)
 
-- `lerni service install` passes every `LERNI_*` setting (the voice, the models) to the server but never the shell's data folder; it refuses either server on the other's data (through symlinks and letter case) or port, and warns if `claude` or `whisper-cli` can't be found or production's checkout isn't on `main`. Install and restart wait for an answer and show the log's end if none comes; a failing start retries every 30 seconds; logs rotate at 5 MB; stop, status, and restart after stop say plainly what happened (checked on development). Next: v3.12, one item with many names. Tests: 172 passed.
+- `lerni service install` passes every `LERNI_*` setting (the voice, the models) to the server but never the shell's data folder; it refuses either server on the other's data (through symlinks and letter case) or port, and warns if `claude` or `whisper-cli` can't be found or production's checkout isn't on `main`. Install says which settings it saved or dropped and keeps the last log; install and restart wait up to 75 seconds for an answer and show the log's end if none comes; a failing start retries every 30 seconds; logs rotate at 5 MB; stop, status, and restart after stop say plainly what happened (checked on development). Next: v3.12, one item with many names. Tests: 172 passed.
 
 ### 2026-10-19 (map fixes and long-term memory; v3.10 built)
 

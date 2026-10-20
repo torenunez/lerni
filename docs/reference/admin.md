@@ -113,8 +113,8 @@ Both servers run as macOS LaunchAgents: they start when the admin logs in (after
 
 - Production, in the production checkout: `.venv/bin/lerni service install prod --cert ~/.lerni/student/https.pem --key ~/.lerni/student/https-key.pem`.
 - Development, in the development checkout: `.venv/bin/lerni service install dev` with the same `--cert` and `--key` (its data folder is `~/.lerni/student-dev`; it refuses production's).
-- Install from a Terminal on this Mac, not over SSH: it saves this shell's PATH and every `LERNI_*` setting (the voice, the models) for the server, and warns if `claude` or `whisper-cli` can't be found, or if production's checkout holds code that isn't on `main`. It refuses either server on the other's data folder or port. To change a setting, install again.
-- Then `lerni service status` (running and answering?), `restart prod|dev` (after an update or a branch change; also starts a stopped one), `stop`, or `uninstall`. `install` and `restart` wait for the server to answer, and if it doesn't, show the end of its log. Output goes to `~/Library/Logs/lerni/<name>.log`; on restart a log over 5 MB moves to `<name>.log.1`.
+- Install from a Terminal on this Mac, not over SSH: it saves this shell's PATH and its `LERNI_*` settings (the voice, the models; the data folder only from `--data`) for the server, says which it saved or dropped, and warns if `claude` or `whisper-cli` can't be found, or if production's checkout holds code that isn't on `main`. It refuses either server on the other's data folder or port. To change a setting, install again with the same `--cert` and `--key`; the last log is kept as `<name>.log.1`.
+- Then `lerni service status` (running and answering?), `restart prod|dev` (after an update or a branch change; also starts a stopped one), `stop`, or `uninstall`. `install` and `restart` wait up to 75 seconds for the server to answer, and if it doesn't, show the end of its log. Output goes to `~/Library/Logs/lerni/<name>.log`; on restart a log over 5 MB moves to `<name>.log.1`.
 
 ### HTTPS (for voice)
 
@@ -134,7 +134,7 @@ Once a device has signed in over HTTPS, keep serving HTTPS: if the server goes b
 Hold to talk needs HTTPS and two tools on the home server, run as commands (nothing else to keep running):
 
 1. `brew install whisper.cpp` (speech to text), then its model, about 0.5 GB: `mkdir -p ~/.lerni/models && curl -L -o ~/.lerni/models/ggml-small.bin https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small.bin`. Another place: set `LERNI_WHISPER_MODEL`.
-2. Lerni speaks with the Mac's own voice (`say`). To pick one, list them with `say -v '?'`, try one with `say -v NAME "Sharks are amazing swimmers!"`, and set `LERNI_SAY_VOICE=NAME`, then install the service again ("Running on its own"). Nicer voices download in System Settings → Accessibility → Spoken Content → System Voice.
+2. Lerni speaks with the Mac's own voice (`say`). To pick one, list them with `say -v '?'`, try one with `say -v NAME "Sharks are amazing swimmers!"`, and set `LERNI_SAY_VOICE=NAME`, then install the service again with its `--cert` and `--key` ("Running on its own"). Nicer voices download in System Settings → Accessibility → Spoken Content → System Voice.
 3. Its log prints `Voice (hold to talk): on`. Check it with `.venv/bin/python scripts/eval_voice.py`.
 4. On each device, so Safari stops asking for the microphone: on the Lerni page, the page menu in the address bar → Website Settings → Microphone → Allow.
 

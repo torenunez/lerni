@@ -22,7 +22,8 @@ from typing import Any
 PREFIX = "com.lerni."  # com.lerni.prod, com.lerni.dev
 PORTS = {"prod": 7860, "dev": 7861}  # neither server may take the other's port
 ROTATE_BYTES = 5_000_000  # a log this big moves to <name>.log.1 on restart
-WAIT_SECONDS = 30  # how long install and restart wait for the server to answer
+WAIT_SECONDS = 75  # longer than a failed start's 30 s retry plus a cold start
+NOT_LOADED = 113  # launchctl's exit code for a service it doesn't know
 DATA_ENV = "LERNI_STUDENT_DATA"  # set only from --data, never from the shell
 
 Runner = Callable[..., Any]
@@ -114,12 +115,34 @@ def setup_warnings(server: Server, checkout: Path, path_env: str,
               for tool, what in (("claude", "Claude"), ("whisper-cli", "Hold to talk"))
               if shutil.which(tool, path=path_env) is None]
     if server.name == "prod":
-        on_main = run(["git", "-C", str(checkout), "merge-base", "--is-ancestor", "HEAD",
-                       "origin/main"], capture_output=True)
-        if on_main.returncode != 0:
+        try:
+            code = run(["git", "-C", str(checkout), "merge-base", "--is-ancestor", "HEAD",
+                        "origin/main"], capture_output=True).returncode
+        except OSError:
+            code = 128  # no git here
+        if code == 1:
             warned.append("This checkout holds code that isn't on main: production should "
                           "run only what's merged.")
+        elif code:
+            warned.append("Couldn't check this checkout is on main (git or origin/main missing).")
     return warned
+
+
+def agent_settings(home: Path, name: str) -> dict[str, str]:
+    """The settings in this server's agent file now, or none."""
+    try:
+        return dict(plistlib.loads(agent_path(home, name).read_bytes())["EnvironmentVariables"])
+    except (OSError, plistlib.InvalidFileException, KeyError, TypeError, ValueError):
+        return {}
+
+
+def settings_note(before: Mapping[str, str], after: Mapping[str, str]) -> str:
+    """Which Lerni settings an install saved, and which it dropped from the last one."""
+    saved = sorted(k for k in after if k.startswith("LERNI_") and k != DATA_ENV)
+    dropped = sorted(k for k in before if k.startswith("LERNI_") and k != DATA_ENV
+                     and k not in after)
+    note = f"Settings saved: {', '.join(saved) or 'none'}."
+    return note + (f" Dropped (not in this shell): {', '.join(dropped)}." if dropped else "")
 
 
 def _uid(uid: int | None) -> int:
@@ -162,7 +185,8 @@ def install(
     run(["launchctl", "bootout", label], capture_output=True)  # an older one; "not loaded" is fine
     log = log_path(home, server.name)
     log.parent.mkdir(parents=True, exist_ok=True)
-    log.write_text("")  # a fresh log, once the old one has stopped writing
+    if log.is_file():  # a fresh log, keeping the last one: it may say why it failed
+        log.replace(log.with_name(log.name + ".1"))
     for _ in range(3):  # right after a bootout, launchd can still be unloading it
         try:
             run(["launchctl", "bootstrap", f"gui/{_uid(uid)}", str(path)], check=True,
@@ -195,8 +219,10 @@ def restart(name: str, run: Runner = subprocess.run, uid: int | None = None,
         run(["launchctl", "kickstart", "-k", f"gui/{_uid(uid)}/{agent_label(name)}"],
             check=True, capture_output=True)
         return
-    except subprocess.CalledProcessError:
-        pass  # not loaded: stopped, or never installed
+    except subprocess.CalledProcessError as exc:
+        if exc.returncode != NOT_LOADED:  # loaded, but macOS refused: say so
+            raise ServiceError(f"macOS wouldn't restart {name}; try lerni service restart "
+                               f"{name} again, or see its log.") from None
     path = agent_path(home, name)
     if not path.is_file():
         raise ServiceError(
@@ -222,16 +248,17 @@ def stop(name: str, run: Runner = subprocess.run, uid: int | None = None,
         return run(["launchctl", "print", target], capture_output=True).returncode == 0
 
     was = loaded()
-    done = run(["launchctl", "bootout", target], capture_output=True)
+    run(["launchctl", "bootout", target], capture_output=True)
     for _ in range(20):  # launchd shows it loaded for a moment after bootout: wait it out
         if not loaded():
-            break
+            return was
         sleep(0.25)
-    return was and done.returncode == 0
+    raise ServiceError(f"{name} is still loaded; try lerni service stop {name} again.")
 
 
 def wait_until_up(name: str, home: Path, check: Callable[[], str] | None = None,
                   sleep: Callable[[float], None] = time.sleep,
+                  clock: Callable[[], float] = time.monotonic,
                   seconds: int = WAIT_SECONDS) -> str:
     """Wait for the server to answer; say why if it doesn't.
 
@@ -242,10 +269,13 @@ def wait_until_up(name: str, home: Path, check: Callable[[], str] | None = None,
         ServiceError: Still not answering: the last log lines.
     """
     check = check or (lambda: status(name, home=home))
-    for _ in range(seconds):
+    deadline = clock() + seconds  # a check can take seconds itself: go by the clock
+    while True:
         line = check()
         if ": running" in line:
             return line
+        if clock() >= deadline:
+            break
         sleep(1)
     log = log_path(home, name)
     tail = log.read_text(errors="replace").splitlines()[-10:] if log.is_file() else []
