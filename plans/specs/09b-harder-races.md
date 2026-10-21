@@ -7,12 +7,12 @@ Approved in conversation on 2026-10-20. Builds on [spec 09](09-play-and-points.m
 **Ships as**, one PR each, in this order:
 - v3.16: the race looks and sounds better;
 - v3.17: practice on the map;
-- v3.19: pitched right;
+- v3.18: pitched right;
 - v3.20: missed ideas come back;
 - v3.21: the bonus round;
 - v3.22: probes.
 
-v3.18 (a map journal and nightly backups) sits between v3.17 and v3.19 and isn't part of this spec. Each version's plan file (`plans/v3.NN-*.md`) is written when it starts, from this spec.
+v3.19 (a map journal and nightly backups) sits between v3.18 and v3.20 and isn't part of this spec. Each version's plan file (`plans/v3.NN-*.md`) is written when it starts, from this spec.
 
 ## What people see
 
@@ -135,7 +135,7 @@ v3.18 (a map journal and nightly backups) sits between v3.17 and v3.19 and isn't
   It's read from the results log, and never stored.
 - **Who sees it:** the MentalMaps line keeps "This week:" per goal. The Practice line is in a goal's details on both MentalMap screens.
 
-### Levels (v3.19, `race.py`, `concepts.py`)
+### Levels (v3.18, `race.py`, `concepts.py`)
 
 - **Where levels live:** the concept file gets `levels: {goal_id: n}` (schema 3; older files load with every goal at 3).
   - **What's stored:** goal ids and numbers only.
@@ -151,7 +151,7 @@ v3.18 (a map journal and nightly backups) sits between v3.17 and v3.19 and isn't
   4. two steps, or a comparison; wrong choices are common mistakes;
   5. a what-if, or work back from an answer; wrong choices are near misses.
 - **Checks:** the server can't check a level; the eval does.
-- **The aim:** about 50–75% right. Two weeks after v3.19, the results log says whether it's working (a to-do item).
+- **The aim:** about 50–75% right. Two weeks after v3.18, the results log says whether it's working (a to-do item).
 
 ### Review (v3.20, `concepts.py`, `race.py`)
 
@@ -257,7 +257,7 @@ v3.18 (a map journal and nightly backups) sits between v3.17 and v3.19 and isn't
   - an old map's link loads with its day;
   - a second day strengthens it;
   - a bridge counts held days and bounces.
-- **v3.19 (`test_race.py`):** five answers at 4 right raise a goal's level, five at 2 lower it, and the level reaches the prompt.
+- **v3.18 (`test_race.py`):** five answers at 4 right raise a goal's level, five at 2 lower it, and the level reaches the prompt.
 - **v3.20 (`test_race.py`):**
   - a miss is due tomorrow and reaches the prompt;
   - a due concept isn't refused as a repeat;

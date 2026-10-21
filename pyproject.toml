@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "lerni"
-version = "3.17"
+version = "3.18"
 description = "Local-first learning system combining Feynman Technique with SM-2 spaced repetition"
 readme = "README.md"
 license = {text = "MIT"}

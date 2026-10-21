@@ -23,9 +23,11 @@ from lerni.student.race import (
 REUSED: list[int] = []  # per call: ideas Claude wrote again though told they were asked
 
 
-def write(m: InterestMap, supervised: bool = True, before: list | None = None) -> list:
+def write(m: InterestMap, supervised: bool = True, before: list | None = None,
+          levels: dict | None = None) -> list:
     recent = [q.concept for q in before or []]
-    raw = ClaudeCodeQuizzer().write(QUIZ_SYSTEM, quiz_input(m, date.today(), supervised, recent))
+    raw = ClaudeCodeQuizzer().write(QUIZ_SYSTEM, quiz_input(m, date.today(), supervised, recent,
+                                                            levels))
     asked = {normalize(c) for c in recent}
     reused = [i for i in raw.get("questions", []) if normalize(str(i.get("concept"))) in asked]
     print(f"Claude reused {len(reused)} of the ideas it was told were asked")
@@ -73,6 +75,15 @@ def main() -> None:
     print("blind picks:", picks)
     results.append(("both wrong keys are caught", picks[0] != "A" and picks[1] != "A"))
     results.append(("a right key is kept", picks[2] == "A"))
+    # levels (v3.18): the same goal at 1 and at 5, printed to compare by eye
+    one = InterestMap()
+    goal = add_goal(one, "Fractions", "halves and quarters")
+    trucks = add_interest(one, "monster trucks")
+    trucks.days = [date.today().isoformat()]
+    for level in (1, 5):
+        print(f"--- level {level}")
+        sets = write(one, levels={goal.id: level})
+        results.append((f"level {level} still makes a race", len(sets) >= 5))
     for name, ok in results:
         print("PASS" if ok else "FAIL", name)
 
