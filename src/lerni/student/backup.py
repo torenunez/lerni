@@ -1,6 +1,7 @@
 """Nightly backups: a whole copy of the data folder each night, the newest 30 kept.
 
-``~/.lerni/backups/nightly-YYYY-MM-DD/`` beside the data folder, made by ``lerni backup run``,
+``~/.lerni/backups/<data folder>/nightly-YYYY-MM-DD/`` (``student/`` for production, so a run
+on development's data never replaces production's copy), made by ``lerni backup run``,
 which a LaunchAgent runs at 03:00. Other folders there (copies made by hand) are never
 touched. On the same disk: it covers a bad merge, edit, or deploy, not a broken disk
 (``--to`` makes a second copy elsewhere). Standard library only.
@@ -40,12 +41,14 @@ def prune(backups: Path, keep: int = KEEP) -> list[str]:
     return [p.name for p in gone]
 
 
-def run(data: Path, backups: Path, today: date, keep: int = KEEP) -> Path:
-    """Copy ``data`` to ``backups/nightly-<today>`` (replacing today's), then prune.
+def run(data: Path, root: Path, today: date, keep: int = KEEP) -> Path:
+    """Copy ``data`` to ``root/<its folder name>/nightly-<today>`` (replacing today's), then
+    prune that folder only.
 
     Raises:
         OSError: The copy failed; any half copy is removed and older copies stay.
     """
+    backups = root / data.name  # each data folder its own copies
     backups.mkdir(parents=True, exist_ok=True)
     dest = backups / f"nightly-{today.isoformat()}"
     half = backups / f".partial-{today.isoformat()}"  # never counted as a copy
@@ -100,9 +103,10 @@ def install(lerni: Path, checkout: Path, data: Path, home: Path | None = None,
     return path
 
 
-def status(backups: Path, home: Path | None = None) -> str:
-    """One line: whether the nightly copy is set up, and the newest copy."""
+def status(root: Path, data: Path, home: Path | None = None) -> str:
+    """One line: whether the nightly copy is set up, and this data folder's newest copy."""
     home = home or Path.home()
+    backups = root / data.name
     nights = sorted(p.name for p in backups.glob("nightly-*") if NIGHTLY.match(p.name)) \
         if backups.is_dir() else []
     last = f"newest {nights[-1]}, {len(nights)} kept" if nights else "no copies yet"

@@ -17,7 +17,8 @@ When something changes, update this section and add a log entry below.
 ### 2026-10-21 (a map journal and nightly backups; v3.20 built)
 
 - Every map change is journaled in `maps/<user>.events.jsonl` (who made it: the tagger, a person, Upload, the MentalMaps chat, or the admin; the items before and after; a baseline first), so `lerni map undo USER N` reverses one change (a bad merge comes back with its history; a later change to the same items makes it refuse) and `lerni map rebuild` checks or rewinds a map. A per-map lock lets the commands run while the server does.
-- `lerni backup` copies the data folder nightly at 03:00 (a LaunchAgent), keeping 30; copies made by hand are never touched. Tried on a throwaway folder: log, undo of a merge, a refused second undo, an exact rebuild, and a copy. Tests: 187 passed.
+- `lerni backup` copies the data folder nightly at 03:00 (a LaunchAgent), keeping 30; copies made by hand are never touched. Tried on a throwaway folder: log, undo of a merge, a refused second undo, an exact rebuild, and a copy.
+- Review fixes: undo keeps what only grew since (so a merge can be undone days later) and refuses a result that breaks the map's rules; maps are saved as a load would tidy them, so the journal never drifts; a change made outside the journal starts a new baseline; rewinds never reuse an id; order lists only when the order moved; the newest line is read from the end; backups go per data folder (`backups/student/`). An older bug fixed: a name a person split off with Not the same was dropped when its near-name was removed. Delete for good still leaves history in the journal (the admin's call; a to-do before other families). Tests: 188 passed.
 
 ### 2026-10-20 (race questions from the garage; v3.19 built)
 

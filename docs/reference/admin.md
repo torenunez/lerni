@@ -119,9 +119,9 @@ Both servers run as macOS LaunchAgents: they start when the admin logs in (after
 
 ### Backups and undo
 
-- **Nightly copies:** `lerni backup install` (once, in the production checkout) copies `~/.lerni/student` to `~/.lerni/backups/nightly-<date>/` every night at 03:00 and keeps the newest 30; `lerni backup run` copies now (`--to /Volumes/Drive/lerni` also copies to a drive); `lerni service status` shows the newest copy. They're on the same disk: they cover a bad change or deploy, not a broken disk.
+- **Nightly copies:** `lerni backup install` (once, in the production checkout) copies `~/.lerni/student` to `~/.lerni/backups/student/nightly-<date>/` every night at 03:00 and keeps the newest 30; `lerni backup run` copies now (`--to /Volumes/Drive/lerni` also copies to a drive: use an encrypted one, since the copy holds the logs, accounts, and keys); `lerni service status` shows the newest copy. They're on the same disk: they cover a bad change or deploy, not a broken disk.
 - **Restore:** `lerni service stop prod`, move `~/.lerni/student` aside, copy a nightly folder back as `~/.lerni/student`, then `lerni service restart prod`.
-- **Undo one map change:** `lerni map log USER` lists each change (number, when, who: the tagger, a person, Upload, the MentalMaps chat, or the admin, and which items); `lerni map undo USER N` reverses one, as a new change, and refuses when a later change touched the same items; then `lerni map rebuild USER --upto N` returns the whole map to just after change N. `lerni map rebuild USER` alone checks the journal still matches the map. All three are safe while the server runs.
+- **Undo one map change:** `lerni map log USER` lists each change (number, when, who: the tagger, a person, Upload, the MentalMaps chat, or the admin, and which items); `lerni map undo USER N` reverses one, as a new change, keeping what only grew since (new days, mentions, other names), and refuses when a later change renamed, removed, or regrouped the same items, or when the result would break the map's rules; then `lerni map rebuild USER --upto N` returns the whole map to just after change N. `lerni map rebuild USER` alone checks the journal still matches the map. All three are safe while the server runs.
 
 ### HTTPS (for voice)
 

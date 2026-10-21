@@ -79,6 +79,7 @@ Versions 1 and 2 also need sessions, not code: the educator sets goals, rehearse
 
 ### Before anyone outside the family uses the app
 
+- [ ] Delete for good: also erase the item's history from its map journal and say that nightly copies keep it up to 30 days, or change the promise (educator PRD, "See and delete what's remembered"); since v3.20 the journal keeps it (the admin's call, 2026-10-21).
 - [ ] Shorten how long conversation logs are kept (a year now) and decide what else to keep less of.
 - [ ] Replace the Claude Code adapter with an API-key adapter (`env:ANTHROPIC_API_KEY`).
 - [ ] Files in Gradio's cache (uploads, any voice audio) are reachable by URL to anyone signed in; serve them only to their owner, or keep none.

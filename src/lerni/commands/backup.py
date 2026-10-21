@@ -21,7 +21,7 @@ def _backups() -> Path:
 def run_cmd(to: Path = typer.Option(  # noqa: B008
                 None, "--to", help="Also copy it here (an external drive)."),
             keep: int = typer.Option(30, "--keep", min=1, help="Nightly copies kept.")) -> None:
-    """Copy the data folder to ~/.lerni/backups/nightly-<today>/ (and --to), then prune."""
+    """Copy the data folder to ~/.lerni/backups/<its name>/nightly-<today>/ (and --to)."""
     from lerni.student.backup import run
 
     data = default_data_dir()
@@ -56,4 +56,4 @@ def status_cmd() -> None:
     """Whether the nightly copy is set up, and the newest copy."""
     from lerni.student.backup import status
 
-    console.print(status(_backups()))
+    console.print(status(_backups(), default_data_dir()))

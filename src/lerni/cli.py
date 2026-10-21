@@ -23,7 +23,7 @@ console = Console()
 
 
 # Commands that must not touch the admin tool's database.
-_NO_DB_COMMANDS = {"serve", "student", "logs", "feedback"}
+_NO_DB_COMMANDS = {"serve", "student", "logs", "feedback", "map", "backup"}
 
 
 @app.callback()

@@ -13,13 +13,15 @@ def test_nightly_backups_copy_everything_and_keep_thirty(tmp_path):
     (data / "maps" / "sam.json").write_text("{}")
     (data / "maps" / "sam.events.jsonl").write_text("{}\n")
     for day in range(1, 31):  # 32 older nights, and a copy the admin made by hand
-        (backups / f"nightly-2026-09-{day:02d}").mkdir(parents=True)
+        (backups / "student" / f"nightly-2026-09-{day:02d}").mkdir(parents=True)
     for day in (1, 2):
-        (backups / f"nightly-2026-08-{day:02d}").mkdir()
+        (backups / "student" / f"nightly-2026-08-{day:02d}").mkdir()
     (backups / "student-before-x").mkdir()
+    (tmp_path / "student-dev").mkdir()
+    run(tmp_path / "student-dev", backups, date(2026, 10, 21))  # never replaces production's
     copy = run(data, backups, date(2026, 10, 21))
     assert (copy / "maps" / "sam.events.jsonl").read_text() == "{}\n"  # the journals too
-    nights = sorted(p.name for p in backups.glob("nightly-*"))
+    nights = sorted(p.name for p in (backups / "student").glob("nightly-*"))
     assert len(nights) == 30 and nights[-1] == "nightly-2026-10-21"
     assert "nightly-2026-08-01" not in nights and "nightly-2026-09-01" not in nights
     assert (backups / "student-before-x").is_dir()  # never touched

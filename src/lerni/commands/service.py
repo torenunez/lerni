@@ -114,4 +114,4 @@ def status_cmd(name: str = typer.Argument(None, help="prod or dev; both if left 
         from lerni.student.backup import status as backup_status
         from lerni.student.students import default_data_dir
 
-        console.print(backup_status(default_data_dir().parent / "backups"))
+        console.print(backup_status(default_data_dir().parent / "backups", default_data_dir()))
