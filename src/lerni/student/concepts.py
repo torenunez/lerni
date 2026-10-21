@@ -1,8 +1,10 @@
 """Every idea a player's race questions have tested, kept for good: the long-term record
-of what was asked and how it went, and the "asked lately" list that keeps questions new.
+of what was asked and how it went, the "asked lately" list that keeps questions new, and
+each goal's level (v3.18), so questions get harder or easier for about 50-75% right.
 
 One JSON file per player in ``<data root>/concepts/``: short concept labels, the
-goal they practiced, dates, and counts, never a question or an answer. Standard library only.
+goal they practiced, dates, counts, and levels by goal id, never a question or an answer.
+Standard library only.
 """
 
 from __future__ import annotations
@@ -20,6 +22,9 @@ from lerni.student.students import check_username, default_data_dir
 MAX_CONCEPT = 40  # characters in a label
 KEEP_RECENT = 40  # labels sent to Claude as asked lately
 RECENT_DAYS = 14
+START_LEVEL, MIN_LEVEL, MAX_LEVEL = 3, 1, 5  # 3 is the questions before levels
+LEVEL_WINDOW = 5  # answers on a goal between level checks
+UP_AT, DOWN_AT = 4, 2  # this many right of 5 or more: harder; this many or fewer: easier
 
 
 def normalize(text: str) -> str:
@@ -37,13 +42,17 @@ class ConceptStore:
     def _path(self, username: str) -> Path:
         return self.root / f"{check_username(username)}.json"
 
-    def ledger(self, username: str) -> list[dict[str, Any]]:
-        """Every idea asked, oldest-touched first: concept, goal, first, last, asked, right."""
+    def _read(self, username: str) -> dict[str, Any]:
         try:
             data = json.loads(self._path(username).read_text(encoding="utf-8"))
         except (OSError, ValueError):
-            return []  # missing or broken: nothing known, and the race still runs
-        if not isinstance(data, dict):
+            return {}  # missing or broken: nothing known, and the race still runs
+        return data if isinstance(data, dict) else {}
+
+    def ledger(self, username: str) -> list[dict[str, Any]]:
+        """Every idea asked, oldest-touched first: concept, goal, first, last, asked, right."""
+        data = self._read(username)
+        if not data:
             return []
         if "concepts" not in data:  # a v3.9 file: the recent list only
             return [
@@ -70,11 +79,41 @@ class ConceptStore:
         ]
         return asked[:KEEP_RECENT]
 
-    def _change(self, username: str, fn: Any) -> None:
+    def _levels(self, username: str) -> dict[str, dict[str, int]]:
+        raw = self._read(username).get("levels", {})
+        return {str(g): v for g, v in raw.items() if isinstance(v, dict)} if isinstance(
+            raw, dict) else {}
+
+    def _change(self, username: str, fn: Any = None, levels: Any = None) -> None:
+        # the ideas and the levels are written together, so neither loses the other
         with self._lock:
-            ledger = self.ledger(username)
-            fn(ledger)
-            write_json_atomic(self._path(username), {"schema": 2, "concepts": ledger})
+            ledger, by_goal = self.ledger(username), self._levels(username)
+            if fn is not None:
+                fn(ledger)
+            if levels is not None:
+                levels(by_goal)
+            write_json_atomic(self._path(username),
+                              {"schema": 3, "concepts": ledger, "levels": by_goal})
+
+    def levels(self, username: str) -> dict[str, int]:
+        """Each goal's level by goal id; a goal not listed is at the start level."""
+        return {g: int(v.get("level", START_LEVEL)) for g, v in self._levels(username).items()}
+
+    def practiced(self, username: str, goal_id: str, right: bool) -> None:
+        """Count one answer on a goal; every 5, its level moves by how many were right."""
+        if not goal_id:
+            return  # a goal gone from the map
+
+        def apply(by_goal: dict[str, dict[str, int]]) -> None:
+            v = by_goal.setdefault(goal_id, {"level": START_LEVEL, "right": 0, "asked": 0})
+            v["asked"] = int(v.get("asked", 0)) + 1
+            v["right"] = int(v.get("right", 0)) + bool(right)
+            if v["asked"] >= LEVEL_WINDOW:
+                step = 1 if v["right"] >= UP_AT else -1 if v["right"] <= DOWN_AT else 0
+                level = int(v.get("level", START_LEVEL)) + step
+                v.update(level=max(MIN_LEVEL, min(MAX_LEVEL, level)), right=0, asked=0)
+
+        self._change(username, levels=apply)
 
     def add(self, username: str, items: list[tuple[str, str]], today: date | None = None) -> None:
         """Note (goal, concept) pairs asked today; each moves to the end, as the newest."""

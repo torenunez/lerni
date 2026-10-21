@@ -476,9 +476,9 @@ def test_the_check_never_refuses_a_race_by_itself(tmp_path):
         def write(self, system, prompt, schema=None):
             return {"questions": [loose, *[fresh("Fractions") for _ in range(6)]]}
 
-    class Contrary:  # picks a wrong letter every time
+    class Contrary:  # never agrees (a fixed letter would match a shuffled answer now and then)
         def write(self, system, prompt, schema=None, **kwargs):
-            return {"picks": [{"work": "", "pick": "C"}] * prompt.count("\nA: ")}
+            return {"picks": [{"work": "", "pick": "D"}] * prompt.count("\nA: ")}
 
     maps, points = MapStore(tmp_path), PointsStore(tmp_path)
     maps.change("sam", lambda m: add_goal(m, "Fractions"))
@@ -487,3 +487,42 @@ def test_the_check_never_refuses_a_race_by_itself(tmp_path):
     race = desk.start("sam", supervised=True, today=TODAY)
     raced = {q.question for q in [*race.questions, *desk._held("sam", TODAY)]}
     assert len(race.questions) == QUESTIONS_PER_RACE and loose["question"] in raced
+
+
+def test_a_goals_level_follows_its_last_five_answers(tmp_path):
+    # pitched right: 4 or 5 right of a goal's last 5 goes one harder, 2 or fewer one easier
+    import json
+
+    class Recording(FakeQuizzer):  # five questions a call, so every race writes and is heard
+        prompts: list = []
+
+        def write(self, system, prompt):
+            self.prompts.append(prompt)
+            return {"questions": [fresh("Fractions") for _ in range(QUESTIONS_PER_RACE)]}
+
+    maps, points, concepts = MapStore(tmp_path), PointsStore(tmp_path), ConceptStore(tmp_path)
+    goal_id = maps.change("sam", lambda m: add_goal(m, "Fractions", "halves")).id
+    (tmp_path / "concepts").mkdir()
+    (tmp_path / "concepts" / "sam.json").write_text(json.dumps({"schema": 2, "concepts": [
+        {"concept": "old idea", "goal": "Fractions", "first": "2026-10-01", "last": "2026-10-01",
+         "asked": 1, "right": 0}]}))  # a file from before levels
+    quizzer = Recording()
+    desk = RaceDesk(quizzer, maps, points, concepts)
+    desk.prefill = lambda *args: None
+    ticks = iter(range(0, 10_000, 10))
+    desk.clock = lambda: float(next(ticks))
+
+    def race(rights):
+        r = desk.start("sam", supervised=True)
+        for n, ok in enumerate(rights):
+            q = r.questions[n]
+            desk.pick("sam", r.id, n, q.answer if ok else (q.answer + 1) % 3)
+
+    assert concepts.levels("sam") == {} and "- Fractions (level 3; notes: halves)" in (
+        quiz_input(maps.get("sam"), TODAY, True))  # every goal starts at 3
+    race([True, True, True, True, False])
+    assert concepts.levels("sam") == {goal_id: 4}
+    assert "old idea" in [c["concept"] for c in concepts.ledger("sam")]  # the ledger survives
+    race([True, True, False, False, False])
+    assert "- Fractions (level 4; notes: halves)" in quizzer.prompts[-1]  # Claude heard the level
+    assert concepts.levels("sam") == {goal_id: 3}

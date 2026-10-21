@@ -86,7 +86,8 @@ At about 50 ⭐ a day, a $100,000 car comes on day 1 and a $5 million one after 
   - their top interests, group-aware ([spec 08](08-kind-of.md));
   - the set-aside line;
   - which voice they have (supervised or independent);
-  - the ideas asked recently (v3.9).
+  - the ideas asked recently (v3.9);
+  - each goal's level, 1 to 5 (v3.18, [part 2](09b-harder-races.md)).
   - No conversation text.
 - **Instructions (kept in code):**
   - each question practices one goal, set in an interest ("halves with pizza slices"), and tests a different idea from a varied angle, never one asked recently;
@@ -173,7 +174,6 @@ At about 50 ⭐ a day, a $100,000 car comes on day 1 and a $5 million one after 
 - Pit stop.
 - An educator "reset points".
 - Games for independent students.
-- Difficulty settings (until v3.18).
 - Bridge Trip (Version 4).
 
 ## Testing (minimal, per rule 4)

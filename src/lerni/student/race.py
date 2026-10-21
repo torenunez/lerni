@@ -17,14 +17,14 @@ import threading
 import time
 import uuid
 from collections import deque
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from datetime import date
 from difflib import SequenceMatcher
 from importlib import metadata
 from typing import Any, Protocol
 
-from lerni.student.concepts import MAX_CONCEPT, ConceptStore, normalize
+from lerni.student.concepts import MAX_CONCEPT, START_LEVEL, ConceptStore, normalize
 from lerni.student.interests import (
     InterestMap,
     MapStore,
@@ -81,6 +81,10 @@ a number from their interest.
 arithmetic in "math" ("400 / 2", "3 / 4 * 12"); otherwise leave "math" out.
 - One right answer and two wrong ones that someone might believe; "why" says in one short \
 line why the right one is right.
+- Pitch each goal's questions at its level: 1, one step in the goal's own words, wrong \
+choices clearly off; 2, one step in a new setting; 3, apply it to one of their interests, \
+wrong choices plausible; 4, two steps or a comparison, wrong choices common mistakes; \
+5, a what-if or work back from an answer, wrong choices near misses.
 - Short questions (under {MAX_QUESTION} characters) and short choices (under {MAX_CHOICE}).
 - Never violence, weapons, sexual content, self-harm, drugs, anything scary or sad, anything \
 set aside, or a real person's name. No trick questions.
@@ -99,9 +103,13 @@ class Question:
     concept: str = ""  # the idea it tests; never shown to the student (educators see misses)
 
 
-def quiz_input(m: InterestMap, today: date, supervised: bool, recent: Sequence[str] = ()) -> str:
-    """What Claude needs to write questions: goals, interests, set-asides, and recent ideas."""
-    goals = [e.name + (f" ({e.notes})" if e.notes else "")
+def quiz_input(m: InterestMap, today: date, supervised: bool, recent: Sequence[str] = (),
+               levels: Mapping[str, int] | None = None) -> str:
+    """What Claude needs to write questions: goals at their levels, interests, set-asides,
+    and recent ideas."""
+    # "Fractions (level 4; notes: …)": a copied level or note is cut off at " (" when checked
+    goals = [f"{e.name} (level {(levels or {}).get(e.id, START_LEVEL)}"
+             + (f"; notes: {e.notes})" if e.notes else ")")
              for e in m.entries if e.kind == "goal"]
     tops = [e for e in m.entries if e.kind == "interest" and not parents(m, e.id)
             and group_days(m, e) and not faded(e, today, m)]
@@ -443,11 +451,13 @@ class RaceDesk:
         m = self.maps.get(username)
         concepts, texts = self._avoid(username, today)
         recent = list(dict.fromkeys(concepts))  # what Claude hears, each once
+        levels = self.concepts.levels(username) if self.concepts else {}
         kept: list[Question] = []
         spare: list[Question] = []  # good but repeated: better than no race
         for _ in range(2):  # one more try if too few questions pass the checks
             try:
-                raw = self.quizzer.write(QUIZ_SYSTEM, quiz_input(m, today, supervised, recent))
+                raw = self.quizzer.write(QUIZ_SYSTEM, quiz_input(m, today, supervised, recent,
+                                                                 levels))
             except RaceUnavailable:
                 raise
             except Exception as exc:  # never show what went wrong inside
@@ -585,8 +595,11 @@ class RaceDesk:
                 self._last_tap[username] = self.clock()
                 took = self._last_tap[username] - shown
         if turn is not None and self.concepts is not None:
-            try:  # best effort: the long-term record of how each idea went
-                self.concepts.answered(username, race.questions[number].concept, turn.right)
+            try:  # best effort: the long-term record of how each idea and goal went
+                q = race.questions[number]
+                self.concepts.answered(username, q.concept, turn.right)
+                goal = self.maps.get(username).find(q.goal)
+                self.concepts.practiced(username, goal.id if goal else "", turn.right)
             except OSError:
                 pass
         awarded = 0
