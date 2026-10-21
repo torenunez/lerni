@@ -4,7 +4,7 @@ Approved in conversation on 2026-10-12. Requirements: [student PRD, Version 3](.
 
 **Why.** The supervised student answers Lerni's goal questions with random emojis. Points they can spend on cars give those questions a reason, from two places: a race in Games and real answers in Chat. Points never go down for a wrong answer, are never compared between students, and stay apart from the map.
 
-**Ships as:** v3.1 (the race, points, and the garage), v3.3 (real cars in the garage), and v3.7 (points in Chat, and Ask renamed Chat). Part 2 (v3.16–v3.22): [spec 09b](09b-harder-races.md).
+**Ships as:** v3.1 (the race, points, and the garage), v3.3 (real cars in the garage), and v3.7 (points in Chat, and Ask renamed Chat). Part 2 (v3.16–v3.23): [spec 09b](09b-harder-races.md).
 
 ## What people see
 
@@ -13,7 +13,7 @@ Approved in conversation on 2026-10-12. Requirements: [student PRD, Version 3](.
 - **Top (v3.5):** the car they're driving, big, with its ⚡ and the next car to save for ("Next car: … · ⭐ 280 / 400 · about 10 races" over a bar); then **Race!**. While a race runs, the track takes its place.
 - **The race:**
   - Their car and two silly bots (Zippy and Bolt) on a three-lane track, with a finish flag (rival cars from v3.16, [part 2](09b-harder-races.md)).
-  - A question card under it: "Question 3 of 5", the question, and **three big buttons**. No typing and no chat in a race (until the bonus round, v3.21).
+  - A question card under it: "Question 3 of 5", the question, and **three big buttons**. No typing and no chat in a race (until the bonus round, v3.22).
   - A right pick: their car leaps ahead and the bot in front slows ("Right answer: boost! Zippy slowed down 💨").
   - Another pick: a small step, the right answer, and a one-line why ("It's acceleration: speeding up").
   - Cars glide to their new places after each answer; nothing moves on a clock.
@@ -87,7 +87,8 @@ At about 50 ⭐ a day, a $100,000 car comes on day 1 and a $5 million one after 
   - the set-aside line;
   - which voice they have (supervised or independent);
   - the ideas asked recently (v3.9);
-  - each goal's level, 1 to 5 (v3.18, [part 2](09b-harder-races.md)).
+  - each goal's level, 1 to 5 (v3.18, [part 2](09b-harder-races.md));
+  - the cars they own or can afford, with their exact facts, for about 1 question in 5 that compares two of them (v3.19).
   - No conversation text.
 - **Instructions (kept in code):**
   - each question practices one goal, set in an interest ("halves with pizza slices"), and tests a different idea from a varied angle, never one asked recently;
@@ -95,6 +96,7 @@ At about 50 ⭐ a day, a $100,000 car comes on day 1 and a $5 million one after 
   - short, kind words;
   - never excluded subjects (violence, weapons, sexual content, self-harm, drugs), anything set aside, a real name, or a trick.
   - With no goals: questions about their interests (how things work), never trivia that needs a date or a number to memorize.
+  - With cars in reach (at most 4) and a goal that works with numbers or how things move: about 1 question in 5 for it compares two cars by a listed number (0–60, horsepower, price), adding no other fact about a car (v3.19).
 - **Schema:** `questions`, a list of objects, each with:
   - `goal`;
   - `concept` (the idea it tests, in a few words; never shown; v3.9);

@@ -5,10 +5,12 @@
 Uses the admin's Claude account. Add one case for each problem seen.
 """
 
+import re
 from datetime import date
 
 from lerni.student.adapters.claude_code import ClaudeCodeQuizzer
 from lerni.student.concepts import normalize
+from lerni.student.garage import Car
 from lerni.student.interests import InterestMap, add_goal, add_interest, remove
 from lerni.student.race import (
     CHECK_SCHEMA,
@@ -24,10 +26,10 @@ REUSED: list[int] = []  # per call: ideas Claude wrote again though told they we
 
 
 def write(m: InterestMap, supervised: bool = True, before: list | None = None,
-          levels: dict | None = None) -> list:
+          levels: dict | None = None, cars: list | None = None) -> list:
     recent = [q.concept for q in before or []]
     raw = ClaudeCodeQuizzer().write(QUIZ_SYSTEM, quiz_input(m, date.today(), supervised, recent,
-                                                            levels))
+                                                            levels, cars or []))
     asked = {normalize(c) for c in recent}
     reused = [i for i in raw.get("questions", []) if normalize(str(i.get("concept"))) in asked]
     print(f"Claude reused {len(reused)} of the ideas it was told were asked")
@@ -84,6 +86,24 @@ def main() -> None:
         print(f"--- level {level}")
         sets = write(one, levels={goal.id: level})
         results.append((f"level {level} still makes a race", len(sets) >= 5))
+    # the garage (v3.19): two cars in reach; the locked one is never given, so never named
+    near = [Car("p1", "McLaren P1", 460, "#000", "", 1_150_000, 2.7, "3.8L twin-turbo V8 hybrid",
+                903, "Rear-wheel drive"),
+            Car("m4", "BMW M4", 40, "#000", "", 100_000, 3.4, "3.0L twin-turbo I6", 523,
+                "All-wheel drive")]
+    facts = {2.7, 3.4, 903, 523, 1_150_000, 100_000, 3.8, 3.0, 60, 0}
+    print("--- garage")
+    asked = write(one, cars=near)
+    about = [q for q in asked if "P1" in q.question or "M4" in q.question]
+    quoted = [float(n.replace(",", "")) for q in about
+              for n in re.findall(r"\d[\d,]*\.?\d*", q.question)]
+    # regression: an earlier rule let Claude add facts (a V8's "left side") instead of comparing
+    results.append(("a question compares two of the cars in reach",
+                    any(("P1" in q.question or "McLaren" in q.question)
+                        and ("M4" in q.question or "BMW" in q.question) for q in about)))
+    results.append(("every big or decimal number quoted is a real fact",
+                    all(n in facts for n in quoted if n >= 100 or n != int(n))))
+    results.append(("the locked car never comes up", all("Jesko" not in q.question for q in asked)))
     for name, ok in results:
         print("PASS" if ok else "FAIL", name)
 

@@ -4,9 +4,9 @@ Where things really stand, then a dated log, newest first. Completed work is rec
 
 Record each kind of "done" only when it actually happens, with the date: code built, content approved, app ready, a student session held. Passing tests show code behaves as specified; they don't make anything ready for a student.
 
-## Current state (2026-10-20, v3.17 on the home server: Versions 1 and 2 built: the conversation, MentalMaps, HTTPS, and voice; Version 3's race, garage, and Chat points)
+## Current state (2026-10-20, v3.18 on the home server: Versions 1 and 2 built: the conversation, MentalMaps, HTTPS, and voice; Version 3's race, garage, and Chat points)
 
-- **Built:** the student app's core (student accounts, sign-in, Lerni's conversations, the MentalMap with its tagger and logs kept a year, Upload and educator feedback, and the educator agent); `lerni serve` with a sign-in page and one app with a ☰ menu by role: an independent student's Chat, My MentalMap (an editable list, the picture, and Upload), and My account; an educator's MentalMaps (a student's list and picture, with a chat) and Students on top; a supervised student's Chat, full screen, and Games (a race for points spent on real cars; educators race too); good answers in Chat earn points too. Hold to talk with spoken answers; a Claude usage warning and rest. Both servers run as LaunchAgents (`lerni service`). The admin tool (`lerni`, with `lerni student`, `lerni logs`, and `lerni feedback`). A [code manifest](code-manifest.md) of every file. Tests: 184 passed.
+- **Built:** the student app's core (student accounts, sign-in, Lerni's conversations, the MentalMap with its tagger and logs kept a year, Upload and educator feedback, and the educator agent); `lerni serve` with a sign-in page and one app with a ☰ menu by role: an independent student's Chat, My MentalMap (an editable list, the picture, and Upload), and My account; an educator's MentalMaps (a student's list and picture, with a chat) and Students on top; a supervised student's Chat, full screen, and Games (a race for points spent on real cars; educators race too); good answers in Chat earn points too. Hold to talk with spoken answers; a Claude usage warning and rest. Both servers run as LaunchAgents (`lerni service`). The admin tool (`lerni`, with `lerni student`, `lerni logs`, and `lerni feedback`). A [code manifest](code-manifest.md) of every file. Tests: 185 passed.
 - **Designed:** the interest map, goals, the tagger, upload, feedback, and the supervised conversation ([specs/04-interest-map.md](../plans/specs/04-interest-map.md)); approved with PR #12. Harder races, practice on the map, and probes ([spec 09b](../plans/specs/09b-harder-races.md)).
 - **Not yet:** a recorded supervised session (the supervised student has used it informally).
 
@@ -14,12 +14,18 @@ When something changes, update this section and add a log entry below.
 
 ## Log
 
+### 2026-10-20 (race questions from the garage; v3.19 built)
+
+- About 1 race question in 5 compares two of the student's cars by a listed number (0–60, horsepower, price) to practice a goal; only cars they own or can afford reach Claude, at most 4, so a locked car's facts stay hidden.
+- The eval caught a first rule that let Claude add facts (a V8's "left side" cylinders, keyed wrong) and not compare at all; the rule now says to compare two cars by a listed number and add nothing. After it: "Does the M4 (523 hp) have more than half the P1's power (903 hp)?" and "about what fraction of the M4's 0–60 is the P1's?" Race eval 13 of 13 before the change; the garage case rerun alone after it. Tests: 185 passed.
+
 ### 2026-10-20 (pitched right; v3.18 built)
 
 - Each goal has a level from 1 to 5 (from 3, never shown), kept in the concept file by goal id: after every 5 answers on a goal, 4 or 5 right is one harder and 2 or fewer one easier, aiming for 50–75% right. Claude hears each goal's level and what the levels mean; questions written ahead keep their old level.
 - The race eval passed 10 of 10, with a new case: the same goal at level 1 (one step: "2 equal pieces, each is what fraction?") and at level 5 (working back, fractions of fractions, near-miss choices).
 - A race test that could fail now and then (its fake check's fixed letter sometimes matched a shuffled answer) no longer can. Tests: 184 passed.
 - The McLaren P1 joins the private garage (460 ⭐, cut out of the admin's picture), loaded at this deploy.
+- The admin's idea, taken as soon as possible: race questions comparing the garage cars' specs, as bridges to science and engineering, become v3.19; the map journal and backups move to v3.20 (still before embeddings).
 
 ### 2026-10-20 (practice on the map; v3.17 built)
 
