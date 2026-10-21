@@ -173,7 +173,7 @@ At about 50 ⭐ a day, a $100,000 car comes on day 1 and a $5 million one after 
 - Pit stop.
 - An educator "reset points".
 - Games for independent students.
-- Difficulty settings (until v3.19).
+- Difficulty settings (until v3.18).
 - Bridge Trip (Version 4).
 
 ## Testing (minimal, per rule 4)

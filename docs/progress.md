@@ -20,6 +20,7 @@ When something changes, update this section and add a log entry below.
 - Links keep every day they came up (old links count their one day), so related items and bridges show a strength, and a bridge says how it held ("held 4 days · bounced once"); a group lists its kinds' bridges. A race test that could fail under load (the write-ahead's second call) no longer can.
 - Checked at phone size as an educator on MentalMaps right after a restart, on a throwaway server. Tests: 183 passed.
 - The admin's decision: a map journal and nightly backups come next, as v3.18, ahead of difficulty, so a wrong merge or clustering can be undone and rebuilt from the source before embeddings arrive; the later versions move up one number.
+- Later the same day, the admin swapped the two: pitched right is v3.18, and the map journal and backups v3.19 (still before embeddings).
 
 ### 2026-10-20 (the race looks and sounds better; v3.16 built)
 
