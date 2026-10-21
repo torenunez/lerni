@@ -7,16 +7,19 @@ conversation; goals and their notes come only from a person. See
 
 from __future__ import annotations
 
+import fcntl
 import json
 import re
 import threading
 import unicodedata
-from collections.abc import Callable, Collection
+from collections.abc import Callable, Collection, Iterator
+from contextlib import contextmanager
 from dataclasses import asdict, dataclass, field, fields
 from datetime import date, timedelta
 from pathlib import Path
 from typing import Any, Literal, TypeVar
 
+from lerni.student.journal import MapJournal, replay, undo
 from lerni.student.jsonfiles import write_json_atomic
 from lerni.student.students import check_username, default_data_dir
 
@@ -468,6 +471,7 @@ class MapStore:
         self.root = (root or default_data_dir()) / "maps"
         self._locks: dict[str, threading.Lock] = {}
         self._guard = threading.Lock()
+        self.journal = MapJournal(root)  # every change, so any one can be undone (v3.20)
 
     def _path(self, username: str) -> Path:
         # canonical usernames only, so a name can never point outside the folder
@@ -484,13 +488,64 @@ class MapStore:
             return InterestMap()
         return _from_dict(json.loads(path.read_text(encoding="utf-8")))
 
-    def change(self, username: str, fn: Callable[[InterestMap], T]) -> T:
-        """Read, change, and save ``username``'s map with no other change in between."""
-        with self._lock(username):  # only the server writes maps, so a thread lock is enough
+    @contextmanager
+    def _locked(self, username: str) -> Iterator[None]:
+        # this server's threads, then any other process (the lerni map commands), in that order
+        with self._lock(username):
+            self.root.mkdir(parents=True, exist_ok=True)
+            with (self.root / f"{check_username(username)}.lock").open("a") as handle:
+                fcntl.flock(handle, fcntl.LOCK_EX)
+                try:
+                    yield
+                finally:
+                    fcntl.flock(handle, fcntl.LOCK_UN)
+
+    def _save(self, username: str, before: dict[str, Any], m: InterestMap, by: str) -> None:
+        after = _to_dict(m)
+        write_json_atomic(self._path(username), after)
+        try:  # best effort: a failed journal line never stops the change
+            self.journal.record(username, before, after, by)
+        except OSError:
+            print("A map change wasn't journaled.", flush=True)
+
+    def change(self, username: str, fn: Callable[[InterestMap], T], by: str = "server") -> T:
+        """Read, change, and save ``username``'s map with no other change in between.
+
+        ``by`` says who made the change, for the journal: ``tagger``, ``person:<username>``,
+        ``upload``, ``educator chat``, or ``admin``.
+        """
+        with self._locked(username):
             m = self.get(username)
+            before = _to_dict(m)
             result = fn(m)
-            write_json_atomic(self._path(username), _to_dict(m))
+            self._save(username, before, m, by)
             return result
+
+    def undo(self, username: str, n: int, by: str = "admin") -> None:
+        """Reverse change ``n`` as a new change, so the undo can be undone too.
+
+        Raises:
+            JournalError: No such change, or a later change touched the same items.
+        """
+        with self._locked(username):
+            before = _to_dict(self.get(username))
+            m = _from_dict(undo(before, self.journal.read(username), n))
+            self._save(username, before, m, by)
+
+    def rebuild(self, username: str, upto: int | None = None, by: str = "admin") -> bool:
+        """With ``upto``, return the map to just after that change; without it, whether the
+        journal alone gives today's map.
+
+        Raises:
+            JournalError: The journal has no starting point.
+        """
+        with self._locked(username):
+            before = _to_dict(self.get(username))
+            rebuilt = replay(self.journal.read(username), upto)
+            if upto is None:
+                return rebuilt == before
+            self._save(username, before, _from_dict(rebuilt), by)
+            return True
 
 
 MAX_BLOCK = 1500  # characters of map in the prompt

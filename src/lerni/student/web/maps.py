@@ -73,7 +73,7 @@ def _act(maps: MapStore, students: StudentStore, viewer: Viewer | None, requeste
         owner = map_owner(students, viewer, requested)
         if expected is not None and owner != expected:  # drawn for another account
             raise NotAllowed("This page is for another account; reload it.")
-        maps.change(owner, change)
+        maps.change(owner, change, by=f"person:{viewer.username}" if viewer else "person")
     except (NotAllowed, MapError) as exc:
         return f"⚠️ {exc}"
     return f"✅ {done}"
@@ -130,7 +130,7 @@ def add_proposals(
         return f"⚠️ {exc}"
     if proposed_for is not None and owner != proposed_for:
         return "⚠️ Those ideas were for another map. Ask Claude again for this one."
-    added, skipped = maps.change(owner, lambda m: apply_proposals(m, chosen))
+    added, skipped = maps.change(owner, lambda m: apply_proposals(m, chosen), by="upload")
     message = f"✅ Added {added}."
     return message + (" Skipped: " + "; ".join(skipped) if skipped else "")
 

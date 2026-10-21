@@ -85,7 +85,8 @@ def educator_add(
     on_map = [p for p in chosen if p.kind != "feedback"]
     done, skipped = 0, []
     if on_map:  # one change: nothing else edits the map in between
-        done, skipped = maps.change(owner, lambda m: apply_educator_proposals(m, on_map))
+        done, skipped = maps.change(owner, lambda m: apply_educator_proposals(m, on_map),
+                                    by="educator chat")
     sent = 0
     for p in chosen:
         if p.kind == "feedback" and feedback is not None:

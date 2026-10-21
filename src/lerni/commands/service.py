@@ -110,3 +110,8 @@ def status_cmd(name: str = typer.Argument(None, help="prod or dev; both if left 
 
     for n in [_check(name)] if name else list(NAMES):
         console.print(status(n))
+    if not name:  # the nightly copy, beside the servers
+        from lerni.student.backup import status as backup_status
+        from lerni.student.students import default_data_dir
+
+        console.print(backup_status(default_data_dir().parent / "backups"))
