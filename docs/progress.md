@@ -20,6 +20,7 @@ When something changes, update this section and add a log entry below.
 - The race eval passed 10 of 10, with a new case: the same goal at level 1 (one step: "2 equal pieces, each is what fraction?") and at level 5 (working back, fractions of fractions, near-miss choices).
 - A race test that could fail now and then (its fake check's fixed letter sometimes matched a shuffled answer) no longer can. Tests: 184 passed.
 - The McLaren P1 joins the private garage (460 ⭐, cut out of the admin's picture), loaded at this deploy.
+- The admin's idea, taken as soon as possible: race questions comparing the garage cars' specs, as bridges to science and engineering, become v3.19; the map journal and backups move to v3.20 (still before embeddings).
 
 ### 2026-10-20 (practice on the map; v3.17 built)
 
