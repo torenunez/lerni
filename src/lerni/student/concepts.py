@@ -117,7 +117,8 @@ class ConceptStore:
             v = by_goal.get(goal_id)
             if not isinstance(v, dict) or not all(
                     isinstance(v.get(k), int) for k in ("asked", "right")):
-                v = {"level": _level(v), "right": 0, "asked": 0}  # a hand edit starts the count over
+                # a hand edit (odd counts) starts the count over
+                v = {"level": _level(v), "right": 0, "asked": 0}
             by_goal[goal_id] = v
             v["asked"] += 1
             v["right"] += bool(right)
