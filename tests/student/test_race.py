@@ -526,3 +526,15 @@ def test_a_goals_level_follows_its_last_five_answers(tmp_path):
     race([True, True, False, False, False])
     assert "- Fractions (level 4; notes: halves)" in quizzer.prompts[-1]  # Claude heard the level
     assert concepts.levels("sam") == {goal_id: 3}
+    # regression (review): a broken map or a hand-edited level never stops a race or its award
+    r = desk.start("sam", supervised=True)
+    for n in range(QUESTIONS_PER_RACE - 1):
+        desk.pick("sam", r.id, n, r.questions[n].answer)
+    (tmp_path / "maps" / "sam.json").write_text("{broken")
+    _, _, awarded = desk.pick("sam", r.id, 4, r.questions[4].answer)
+    assert awarded > 0
+    data = json.loads((tmp_path / "concepts" / "sam.json").read_text())
+    data["levels"] = {"a": {"level": "x", "asked": "y"}, "b": {"level": 99}, "c": None}
+    (tmp_path / "concepts" / "sam.json").write_text(json.dumps(data))
+    assert concepts.levels("sam") == {"a": 3, "b": 5}
+    concepts.practiced("sam", "a", True)  # counts from a clean start, never a crash

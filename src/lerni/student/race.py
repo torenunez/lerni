@@ -69,7 +69,7 @@ QUIZ_SYSTEM = f"""\
 You write {SET_SIZE} multiple-choice questions for a car race in Lerni, a learning companion.
 Return only the JSON asked for.
 - Each question practices one goal from the list, set in one of their interests \
-(halves with pizza slices); "goal" is that goal's name exactly, without its notes. \
+(halves with pizza slices); "goal" is that goal's name exactly, without its level or notes. \
 With no goals, ask how things in their interests work, never dates or numbers to memorize. \
 Spread the questions \
 evenly across the goals.
@@ -600,7 +600,7 @@ class RaceDesk:
                 self.concepts.answered(username, q.concept, turn.right)
                 goal = self.maps.get(username).find(q.goal)
                 self.concepts.practiced(username, goal.id if goal else "", turn.right)
-            except OSError:
+            except Exception:  # a broken map or a full disk: the answer and award still count
                 pass
         awarded = 0
         if turn is not None and race.done:

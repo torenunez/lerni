@@ -32,6 +32,15 @@ def normalize(text: str) -> str:
     return " ".join(re.sub(r"[^\w]+", " ", text.casefold()).split())
 
 
+def _level(v: Any) -> int:
+    """A stored level as 1 to 5; anything odd (a hand edit) is the start level."""
+    try:
+        level = int(v.get("level", START_LEVEL)) if isinstance(v, dict) else START_LEVEL
+    except (TypeError, ValueError):
+        return START_LEVEL
+    return max(MIN_LEVEL, min(MAX_LEVEL, level))
+
+
 class ConceptStore:
     """Everyone's concept ledgers on disk, changed one at a time."""
 
@@ -97,7 +106,7 @@ class ConceptStore:
 
     def levels(self, username: str) -> dict[str, int]:
         """Each goal's level by goal id; a goal not listed is at the start level."""
-        return {g: int(v.get("level", START_LEVEL)) for g, v in self._levels(username).items()}
+        return {g: _level(v) for g, v in self._levels(username).items()}
 
     def practiced(self, username: str, goal_id: str, right: bool) -> None:
         """Count one answer on a goal; every 5, its level moves by how many were right."""
@@ -105,13 +114,16 @@ class ConceptStore:
             return  # a goal gone from the map
 
         def apply(by_goal: dict[str, dict[str, int]]) -> None:
-            v = by_goal.setdefault(goal_id, {"level": START_LEVEL, "right": 0, "asked": 0})
-            v["asked"] = int(v.get("asked", 0)) + 1
-            v["right"] = int(v.get("right", 0)) + bool(right)
+            v = by_goal.get(goal_id)
+            if not isinstance(v, dict) or not all(
+                    isinstance(v.get(k), int) for k in ("asked", "right")):
+                v = {"level": _level(v), "right": 0, "asked": 0}  # a hand edit starts the count over
+            by_goal[goal_id] = v
+            v["asked"] += 1
+            v["right"] += bool(right)
             if v["asked"] >= LEVEL_WINDOW:
                 step = 1 if v["right"] >= UP_AT else -1 if v["right"] <= DOWN_AT else 0
-                level = int(v.get("level", START_LEVEL)) + step
-                v.update(level=max(MIN_LEVEL, min(MAX_LEVEL, level)), right=0, asked=0)
+                v.update(level=_level({"level": _level(v) + step}), right=0, asked=0)
 
         self._change(username, levels=apply)
 
