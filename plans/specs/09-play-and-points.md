@@ -87,7 +87,8 @@ At about 50 ⭐ a day, a $100,000 car comes on day 1 and a $5 million one after 
   - the set-aside line;
   - which voice they have (supervised or independent);
   - the ideas asked recently (v3.9);
-  - each goal's level, 1 to 5 (v3.18, [part 2](09b-harder-races.md)).
+  - each goal's level, 1 to 5 (v3.18, [part 2](09b-harder-races.md));
+  - the cars they own or can afford, with their exact facts, for about 1 question in 5 that compares two of them (v3.19).
   - No conversation text.
 - **Instructions (kept in code):**
   - each question practices one goal, set in an interest ("halves with pizza slices"), and tests a different idea from a varied angle, never one asked recently;

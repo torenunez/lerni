@@ -25,6 +25,7 @@ from importlib import metadata
 from typing import Any, Protocol
 
 from lerni.student.concepts import MAX_CONCEPT, START_LEVEL, ConceptStore, normalize
+from lerni.student.garage import Car, Garage
 from lerni.student.interests import (
     InterestMap,
     MapStore,
@@ -81,6 +82,10 @@ a number from their interest.
 arithmetic in "math" ("400 / 2", "3 / 4 * 12"); otherwise leave "math" out.
 - One right answer and two wrong ones that someone might believe; "why" says in one short \
 line why the right one is right.
+- When their cars are listed, about 1 question in 5 compares two of them by a listed number \
+(0-60 time, horsepower, price) to practice a goal through how cars work (speeding up, \
+power, ratios, big numbers). Use only the listed facts and never add another fact about a \
+car (no cylinders, weights, or top speeds); put any arithmetic in "math".
 - Pitch each goal's questions at its level: 1, one step in the goal's own words, wrong \
 choices clearly off; 2, one step in a new setting; 3, apply it to one of their interests, \
 wrong choices plausible; 4, two steps or a comparison, wrong choices common mistakes; \
@@ -103,10 +108,16 @@ class Question:
     concept: str = ""  # the idea it tests; never shown to the student (educators see misses)
 
 
+def _facts(c: Car) -> str:
+    # one car's exact facts, as the Showroom card shows them
+    return (f"{c.name}: 0–60 mph in {c.zero_to_60:g} s, {c.power_hp} hp, {c.engine}, "
+            f"{c.drive.lower()}, ${c.usd:,}")
+
+
 def quiz_input(m: InterestMap, today: date, supervised: bool, recent: Sequence[str] = (),
-               levels: Mapping[str, int] | None = None) -> str:
+               levels: Mapping[str, int] | None = None, cars: Sequence[Car] = ()) -> str:
     """What Claude needs to write questions: goals at their levels, interests, set-asides,
-    and recent ideas."""
+    recent ideas, and the cars in reach."""
     # "Fractions (level 4; notes: …)": a copied level or note is cut off at " (" when checked
     goals = [f"{e.name} (level {(levels or {}).get(e.id, START_LEVEL)}"
              + (f"; notes: {e.notes})" if e.notes else ")")
@@ -129,6 +140,8 @@ def quiz_input(m: InterestMap, today: date, supervised: bool, recent: Sequence[s
     recent = [c for c in recent if not mentions_set_aside(m, c)]  # set aside since
     if recent:
         lines.append("Recently asked, choose other ideas or angles: " + "; ".join(recent))
+    if cars:  # only cars they own or can afford: facts are earned by saving up
+        lines.append("Their cars (exact facts; use only these): " + "; ".join(map(_facts, cars)))
     return "\n".join(lines)
 
 
@@ -405,8 +418,9 @@ class RaceDesk:
 
     def __init__(self, quizzer: Quizzer, maps: MapStore, points: PointsStore,
                  concepts: ConceptStore | None = None, checker: Checker | None = None,
-                 results: ResultsLog | None = None) -> None:
+                 results: ResultsLog | None = None, garage: Garage | None = None) -> None:
         self.quizzer, self.maps, self.points, self.concepts = quizzer, maps, points, concepts
+        self.garage = garage  # the cars in reach give questions real numbers (v3.19)
         self.checker = checker  # answers each question blind; a disagreement drops it
         self.results = results  # how each answer went, as labels and numbers
         self._asked: dict[str, deque[str]] = {}  # recent question texts, normalized; memory only
@@ -452,12 +466,14 @@ class RaceDesk:
         concepts, texts = self._avoid(username, today)
         recent = list(dict.fromkeys(concepts))  # what Claude hears, each once
         levels = self.concepts.levels(username) if self.concepts else {}
+        p = self.points.get(username)
+        cars = self.garage.in_reach(p.cars, p.balance) if self.garage else []
         kept: list[Question] = []
         spare: list[Question] = []  # good but repeated: better than no race
         for _ in range(2):  # one more try if too few questions pass the checks
             try:
                 raw = self.quizzer.write(QUIZ_SYSTEM, quiz_input(m, today, supervised, recent,
-                                                                 levels))
+                                                                 levels, cars))
             except RaceUnavailable:
                 raise
             except Exception as exc:  # never show what went wrong inside

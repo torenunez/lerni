@@ -114,3 +114,32 @@ def test_rivals_are_the_next_car_and_an_owned_slower_one(tmp_path):
     assert (pick[0].id, pick[1].id) == ("fast", "slow")  # an owned slower car, never the driven
     pick = garage.rivals(["starter", "slow", "mid", "fast"], "fast", 0)
     assert (pick[0].id, pick[1].id) == ("mid", "slow")  # every car theirs: two other owned ones
+
+
+def test_only_cars_in_reach_reach_the_race(tmp_path):
+    # car facts are earned by saving up: a locked car never reaches Claude
+    from datetime import date
+
+    from lerni.student.garage import Garage
+    from lerni.student.interests import InterestMap, add_goal
+    from lerni.student.race import quiz_input
+
+    (tmp_path / "cars").mkdir()
+    (tmp_path / "cars" / "a.webp").write_bytes(b"RIFF")
+    base = {"usd": 100_000, "zero_to_60": 3.4, "engine": "3.0L twin-turbo I6", "power_hp": 523,
+            "drive": "All-wheel drive", "picture": "a.webp"}
+    cars = [{**base, "id": "m4", "name": "BMW M4"},
+            {**base, "id": "p1", "name": "McLaren P1", "usd": 1_150_000, "zero_to_60": 2.7,
+             "power_hp": 903, "engine": "3.8L twin-turbo V8 hybrid", "drive": "Rear-wheel drive"},
+            {**base, "id": "jesko", "name": "Koenigsegg Jesko", "usd": 3_000_000}]
+    (tmp_path / "garage.json").write_text(json.dumps({"cars": cars}))
+    garage = Garage(tmp_path)
+    near = garage.in_reach(["starter", "m4"], 500)  # owns the M4, can afford the P1 (460)
+    assert [c.id for c in near] == ["p1", "m4"]  # fastest first; the Jesko is locked
+    m = InterestMap()
+    add_goal(m, "Fractions")
+    text = quiz_input(m, date(2026, 10, 20), True, cars=near)
+    assert "McLaren P1: 0–60 mph in 2.7 s, 903 hp" in text and "BMW M4" in text
+    assert "Jesko" not in text
+    assert "Their cars" not in quiz_input(m, date(2026, 10, 20), True,
+                                          cars=garage.in_reach(["starter"], 0))

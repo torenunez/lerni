@@ -137,6 +137,7 @@ def boost(c: Car) -> float:
 
 FAMILY_CAR_USD = 50_000  # about what a new family car costs
 STARS_PER_RACE = 13  # about what a race earns, for "about N races"
+MAX_IN_REACH = 4  # cars whose facts race questions may use
 
 
 def bolts(c: Car) -> int:
@@ -233,6 +234,12 @@ class Garage:
     def sold(self, owned: list[str]) -> list[Car]:
         """What this player's garage lists: the starter, real cars, and cartoon cars they own."""
         return [c for c in self.cars if c.id == "starter" or c.id in self._real or c.id in owned]
+
+    def in_reach(self, owned: Collection[str], balance: int) -> list[Car]:
+        """Real cars they own or can afford (the Showroom shows these facts), fastest first."""
+        near = [c for c in self.cars
+                if c.id in self._real and (c.id in owned or c.price <= balance)]
+        return sorted(near, key=lambda c: c.zero_to_60)[:MAX_IN_REACH]
 
     def rivals(
         self, owned: Collection[str], driving: str, balance: int

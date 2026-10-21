@@ -261,7 +261,8 @@ def build_app(
                             headers={"Cache-Control": "private, no-cache"})
 
     races = (RaceDesk(quizzer, maps, points, ConceptStore(root), results=ResultsLog(root),
-                      checker=quizzer)  # the same small model answers each question blind
+                      checker=quizzer,  # the same small model answers each question blind
+                      garage=garage)
              if quizzer is not None else None)
     log.purge()  # at startup; then once a day as exchanges are logged
     def plays(username: str) -> bool:  # supervised students and educators earn ⭐
