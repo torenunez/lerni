@@ -143,3 +143,24 @@ def test_only_cars_in_reach_reach_the_race(tmp_path):
     assert "Jesko" not in text
     assert "Their cars" not in quiz_input(m, date(2026, 10, 20), True,
                                           cars=garage.in_reach(["starter"], 0))
+
+    # and through the race itself: with 0 ⭐ and only the starter, no car reaches Claude
+    from lerni.student.interests import MapStore
+    from lerni.student.points import PointsStore
+    from lerni.student.race import RaceDesk, RaceUnavailable
+
+    class Listening:
+        prompts: list = []
+
+        def write(self, system, prompt):
+            self.prompts.append(prompt)
+            return {"questions": []}
+
+    maps, heard = MapStore(tmp_path), Listening()
+    maps.change("sam", lambda m: add_goal(m, "Fractions"))
+    desk = RaceDesk(heard, maps, PointsStore(tmp_path), garage=garage)
+    try:
+        desk._write("sam", True, date(2026, 10, 20))
+    except RaceUnavailable:
+        pass  # no questions: only the prompt matters here
+    assert heard.prompts and not any("Their cars" in p for p in heard.prompts)

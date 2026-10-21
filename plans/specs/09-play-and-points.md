@@ -96,6 +96,7 @@ At about 50 ⭐ a day, a $100,000 car comes on day 1 and a $5 million one after 
   - short, kind words;
   - never excluded subjects (violence, weapons, sexual content, self-harm, drugs), anything set aside, a real name, or a trick.
   - With no goals: questions about their interests (how things work), never trivia that needs a date or a number to memorize.
+  - With cars in reach (at most 4) and a goal that works with numbers or how things move: about 1 question in 5 for it compares two cars by a listed number (0–60, horsepower, price), adding no other fact about a car (v3.19).
 - **Schema:** `questions`, a list of objects, each with:
   - `goal`;
   - `concept` (the idea it tests, in a few words; never shown; v3.9);
