@@ -459,6 +459,9 @@ def test_answers_are_logged_as_labels_and_numbers(tmp_path):
     missed = results.practice("sam", goal_id, today).missed
     assert missed[0] == "thirds" and "halves of odd numbers" not in missed and len(missed) <= 3
     assert results.practice("sam", "e999", today) is None  # never raced
+    results.add("sam", {"day": today.isoformat(), "goal_id": goal_id, "goal": "Fractions",
+                        "concept": "Thirds", "right": True})  # the same idea, capitalized
+    assert "thirds" not in results.practice("sam", goal_id, today).missed
 
 
 
@@ -538,3 +541,51 @@ def test_a_goals_level_follows_its_last_five_answers(tmp_path):
     (tmp_path / "concepts" / "sam.json").write_text(json.dumps(data))
     assert concepts.levels("sam") == {"a": 3, "b": 5}
     concepts.practiced("sam", "a", True)  # counts from a clean start, never a crash
+
+
+def test_a_missed_idea_comes_back_on_schedule(tmp_path):
+    # spaced review: a miss is due tomorrow, then 3 days, then 7, then retired
+    d0 = date(2026, 10, 22)
+    day = lambda n: d0 + timedelta(days=n)  # noqa: E731
+    maps, points, concepts = MapStore(tmp_path), PointsStore(tmp_path), ConceptStore(tmp_path)
+    maps.change("sam", lambda m: add_goal(m, "Fractions"))
+    idea = "halves of odd numbers"
+    concepts.add("sam", [("Fractions", idea)], d0)
+    concepts.answered("sam", idea, False, d0)
+    assert concepts.due("sam", d0) == [] and concepts.due("sam", day(1)) == [("Fractions", idea)]
+
+    class Recording(FakeQuizzer):  # asks the due idea again, labelled a little differently
+        prompts: list = []
+
+        def write(self, system, prompt):
+            self.prompts.append(prompt)
+            return {"questions": [fresh("Fractions", concept="half of odd numbers"),
+                                  *(fresh("Fractions") for _ in range(QUESTIONS_PER_RACE))]}
+
+    quizzer = Recording()
+    desk = RaceDesk(quizzer, maps, points, concepts)
+    written = desk._write("sam", True, day(1))
+    assert "Due for review" in quizzer.prompts[-1] and idea in quizzer.prompts[-1]
+    assert idea in [q.concept for q in written]  # asked again within 14 days, under its label
+
+    for n, after in ((1, day(4)), (4, day(11))):  # each right answer pushes it out
+        concepts.answered("sam", idea, True, day(n))
+        assert concepts.due("sam", after) == [("Fractions", idea)]
+        assert concepts.due("sam", after - timedelta(days=1)) == []
+    concepts.answered("sam", idea, True, day(11))
+    assert concepts.due("sam", day(60)) == []  # three right in a row: retired
+
+
+def test_a_right_key_written_as_a_mixed_number_races(tmp_path):
+    # regression (eval): "3 and a half", "3 1/2" and "3½" were read as 3, so a right key worked
+    # out as 7 / 2 was dropped as wrong, and half of an odd number was never asked
+    from lerni.student.race import _number
+
+    assert [_number(c) for c in ("3 and a half scoops", "3 1/2 cones", "3½", "2 wheels")] == [
+        3.5, 3.5, 3.5, 2.0]
+    assert _number("3 and a bit") is None  # a mixed number it can't read: the check is skipped
+    m = InterestMap()
+    add_goal(m, "Fractions")
+    odd = fresh("Fractions", question="Half of 7 scoops?", math="7 / 2",
+                choices=["3 and a half scoops", "2 scoops", "7 scoops"], answer=0)
+    assert len(check_questions({"questions": [odd]}, m)) == 1

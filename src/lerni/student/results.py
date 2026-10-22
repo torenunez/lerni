@@ -94,19 +94,20 @@ class ResultsLog:
         week = (today - timedelta(days=WEEK_DAYS - 1)).isoformat()
         lately = (today - timedelta(days=MISSED_DAYS - 1)).isoformat()
         recent = [r for r in lines if str(r.get("day", "")) >= week]
-        missed: dict[str, None] = {}  # newest first, each idea once
+        missed: dict[str, str] = {}  # newest first, each idea once (by its normalized label)
         cleared: set[str] = set()
         for r in reversed(lines):  # newest first: a right answer clears older misses
             concept = str(r.get("concept") or "")
-            if not concept or str(r.get("day", "")) < lately:
+            key = normalize(concept)
+            if not key or str(r.get("day", "")) < lately:
                 continue
             if r["right"]:
-                cleared.add(concept)
-            elif concept not in cleared:
-                missed.setdefault(concept)
+                cleared.add(key)
+            elif key not in cleared:
+                missed.setdefault(key, concept)
         return Practice(max(str(r.get("day", "")) for r in lines),
                         sum(bool(r["right"]) for r in recent), len(recent),
-                        list(missed)[:MAX_MISSED])
+                        list(missed.values())[:MAX_MISSED])
 
 
 def week_line(results: ResultsLog, username: str, today: date) -> str:
