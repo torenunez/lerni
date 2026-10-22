@@ -24,6 +24,7 @@ KEEP_RECENT = 40  # labels sent to Claude as asked lately
 RECENT_DAYS = 14
 START_LEVEL, MIN_LEVEL, MAX_LEVEL = 3, 1, 5  # 3 is the questions before levels
 LEVEL_WINDOW = 5  # answers on a goal between level checks
+REVIEW_DAYS = (1, 3, 7)  # a missed idea comes back after these gaps, one per right answer
 UP_AT, DOWN_AT = 4, 2  # this many right of 5 or more: harder; this many or fewer: easier
 
 
@@ -39,6 +40,14 @@ def _level(v: Any) -> int:
     except (TypeError, ValueError):
         return START_LEVEL
     return max(MIN_LEVEL, min(MAX_LEVEL, level))
+
+
+def _day(value: Any) -> date | None:
+    """A stored ISO date, or None for none or anything odd (a hand edit)."""
+    try:
+        return date.fromisoformat(value) if isinstance(value, str) else None
+    except ValueError:
+        return None
 
 
 class ConceptStore:
@@ -152,15 +161,36 @@ class ConceptStore:
 
         self._change(username, apply)
 
-    def answered(self, username: str, concept: str, right: bool) -> None:
-        """Count a right answer to a question on this idea."""
-        if not right:
-            return  # asked already counts the try
+    def answered(self, username: str, concept: str, right: bool,
+                 today: date | None = None) -> None:
+        """Count an answer on this idea and move its review: a miss is due tomorrow; a right
+        answer on a due idea pushes it to 3 days, then 7, then retires it."""
+        day = today or date.today()
 
         def apply(ledger: list[dict[str, Any]]) -> None:
             key = normalize(concept)
             for c in ledger:
-                if normalize(str(c["concept"])) == key:
-                    c["right"] = int(c.get("right", 0)) + 1
+                if normalize(str(c["concept"])) != key:
+                    continue
+                if not right:
+                    c.update(step=0, due=(day + timedelta(days=REVIEW_DAYS[0])).isoformat())
+                    continue
+                c["right"] = int(c.get("right", 0)) + 1
+                due = _day(c.get("due"))
+                if due is None or due > day:
+                    continue  # never missed, retired, or not due yet: only counted
+                step = min(max(c.get("step", 0) if isinstance(c.get("step"), int) else 0, 0), 2) + 1
+                if step >= len(REVIEW_DAYS):
+                    c.pop("due", None)  # right three times in a row: learned
+                    c.pop("step", None)
+                else:
+                    c.update(step=step, due=(day + timedelta(days=REVIEW_DAYS[step])).isoformat())
 
         self._change(username, apply)
+
+    def due(self, username: str, today: date | None = None) -> list[tuple[str, str]]:
+        """(goal, idea) pairs due for review today or earlier, the longest waiting first."""
+        day = today or date.today()
+        waiting = [c for c in self.ledger(username) if (d := _day(c.get("due"))) and d <= day]
+        waiting.sort(key=lambda c: c["due"])
+        return [(str(c.get("goal", "")), str(c["concept"])) for c in waiting]

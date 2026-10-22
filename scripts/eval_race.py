@@ -7,6 +7,7 @@ Uses the admin's Claude account. Add one case for each problem seen.
 
 import re
 from datetime import date
+from difflib import SequenceMatcher
 
 from lerni.student.adapters.claude_code import ClaudeCodeQuizzer
 from lerni.student.concepts import normalize
@@ -26,10 +27,11 @@ REUSED: list[int] = []  # per call: ideas Claude wrote again though told they we
 
 
 def write(m: InterestMap, supervised: bool = True, before: list | None = None,
-          levels: dict | None = None, cars: list | None = None) -> list:
-    recent = [q.concept for q in before or []]
+          levels: dict | None = None, cars: list | None = None, due: list | None = None) -> list:
+    labels = {normalize(idea) for _, idea in due or []}  # due ideas may come back (v3.22)
+    recent = [q.concept for q in before or [] if normalize(q.concept) not in labels]
     raw = ClaudeCodeQuizzer().write(QUIZ_SYSTEM, quiz_input(m, date.today(), supervised, recent,
-                                                            levels, cars or []))
+                                                            levels, cars or [], due or []))
     asked = {normalize(c) for c in recent}
     reused = [i for i in raw.get("questions", []) if normalize(str(i.get("concept"))) in asked]
     print(f"Claude reused {len(reused)} of the ideas it was told were asked")
@@ -104,6 +106,16 @@ def main() -> None:
     results.append(("every big or decimal number quoted is a real fact",
                     all(n in facts for n in quoted if n >= 100 or n != int(n))))
     results.append(("the locked car never comes up", all("Jesko" not in q.question for q in asked)))
+    # review (v3.22): a missed idea is asked again, in new words
+    missed = Question("Fractions", "A monster truck crushes 7 cars, half of them red. How many "
+                      "red?", ("3 and a half", "3", "4"), 0, "", "halves of odd numbers")
+    print("--- due for review")
+    again = write(one, before=[missed], due=[("Fractions", "halves of odd numbers")])
+    back = [q for q in again if SequenceMatcher(None, normalize(q.concept),
+                                                "halves of odd numbers").ratio() >= 0.8]
+    results.append(("a due idea comes back", bool(back)))
+    results.append(("in new words", all(SequenceMatcher(None, normalize(q.question), normalize(
+        missed.question)).ratio() < 0.9 for q in back)))
     for name, ok in results:
         print("PASS" if ok else "FAIL", name)
 

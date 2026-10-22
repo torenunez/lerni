@@ -157,12 +157,12 @@ v3.19 (race questions from the garage), v3.20 (a map journal and nightly backups
 
 - **The ledger:** each concept entry gets `due` (an ISO date, or none) and `step` (0 to 2).
   - **A wrong answer:** `step` 0, due tomorrow.
-  - **A right answer on a due concept:** the next step: due in 3 days, then 7.
+  - **A right answer on a due concept (its date has come):** the next step: due in 3 days, then 7.
   - **A right answer at step 2:** retires the concept (no `due`).
   - **A right answer on a concept that isn't due:** changes nothing.
   - **A "partly" bonus answer:** counts as a miss.
 - **In the prompt:**
-  - "Due for review (ask each idea in new words): …", for at most 4 concepts per set of 10 (2 a race), oldest due first;
+  - "Due for review (ask each idea in new words): …", for at most 4 concepts per set of 10 (about 2 a race), oldest due first;
   - only concepts whose goal is still on the map and that mention nothing set aside.
 - **Repeat rules:**
   - A due concept is exempt from the 14-day concept rule (v3.9).

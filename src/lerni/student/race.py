@@ -18,7 +18,7 @@ import time
 import uuid
 from collections import deque
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import date
 from difflib import SequenceMatcher
 from importlib import metadata
@@ -34,6 +34,7 @@ from lerni.student.interests import (
     group_days,
     mentions_set_aside,
     parents,
+    same_name,
 )
 from lerni.student.points import PointsStore
 from lerni.student.results import ResultsLog, question_hash
@@ -76,8 +77,8 @@ Spread the questions \
 evenly across the goals.
 - Every question tests a different idea; "concept" names it in a few words \
 (under {MAX_CONCEPT} characters, e.g. "top speed vs acceleration"). Never an idea listed as \
-recently asked. Vary the angle: how it works, compare two things, what happens if, \
-a number from their interest.
+recently asked, except ideas due for review. Vary the angle: how it works, compare two \
+things, what happens if, a number from their interest.
 - When the right answer is a number worked out from numbers in the question, put that \
 arithmetic in "math" ("400 / 2", "3 / 4 * 12"); otherwise leave "math" out.
 - One right answer and two wrong ones that someone might believe; "why" says in one short \
@@ -118,7 +119,8 @@ def _facts(c: Car) -> str:
 
 
 def quiz_input(m: InterestMap, today: date, supervised: bool, recent: Sequence[str] = (),
-               levels: Mapping[str, int] | None = None, cars: Sequence[Car] = ()) -> str:
+               levels: Mapping[str, int] | None = None, cars: Sequence[Car] = (),
+               due: Sequence[tuple[str, str]] = ()) -> str:
     """What Claude needs to write questions: goals at their levels, interests, set-asides,
     recent ideas, and the cars in reach."""
     # "Fractions (level 4; notes: …)": a copied level or note is cut off at " (" when checked
@@ -143,6 +145,9 @@ def quiz_input(m: InterestMap, today: date, supervised: bool, recent: Sequence[s
     recent = [c for c in recent if not mentions_set_aside(m, c)]  # set aside since
     if recent:
         lines.append("Recently asked, choose other ideas or angles: " + "; ".join(recent))
+    if due:  # missed ideas, back after a gap (v3.22)
+        lines.append("Due for review (ask each idea again in new words; use its label as the "
+                     "concept): " + "; ".join(f"{idea} ({goal})" for goal, idea in due))
     if cars:  # only cars they own or can afford: facts are earned by saving up
         lines.append("Their cars (exact facts; use only these): " + "; ".join(map(_facts, cars)))
     return "\n".join(lines)
@@ -195,10 +200,34 @@ def _arith(expr: str) -> float | None:
     return value if math.isfinite(value) else None
 
 
+GLYPHS = {"½": 1 / 2, "¼": 1 / 4, "¾": 3 / 4, "⅓": 1 / 3, "⅔": 2 / 3}
+PARTS = {"half": 1 / 2, "quarter": 1 / 4, "third": 1 / 3, "three quarters": 3 / 4}
+# right after the number: another number, a ½, or a word that makes it a mixed number
+_MIXED_HINT = re.compile(r"\s*(?:[½¼¾⅓⅔]|\d|and\b|halfs?\b|halves\b|quarters?\b|thirds?\b)",
+                         re.I)
+
+
 def _number(choice: str) -> float | None:
-    """The number a choice starts with ("200 meters", "3/4", "-1.5"), or None."""
-    found = re.search(r"-?\d+(?:\.\d+)?(?:\s*/\s*\d+)?", choice.replace(",", ""))
-    return _arith(found.group(0)) if found else None
+    """The number a choice starts with ("200 meters", "3/4", "-1.5", "3 and a half", "3 1/2",
+    "3½"), or None when it can't be read for sure."""
+    text = choice.replace(",", "").strip()
+    found = re.search(r"-?\d+(?:\.\d+)?(?:\s*/\s*\d+)?", text)
+    if not found:
+        return None
+    value, rest = _arith(found.group(0)), text[found.end():]
+    if value is None or "/" in found.group(0) or "." in found.group(0) \
+            or not _MIXED_HINT.match(rest):
+        return value  # a plain number, a fraction, or a decimal
+    # a whole number with a part after it: 3 1/2, 3½, 3 and a half (anything else: unread)
+    sign = -1 if value < 0 else 1
+    if m := re.match(r"\s+(\d+)\s*/\s*(\d+)", rest):
+        return value + sign * int(m.group(1)) / int(m.group(2)) if int(m.group(2)) else None
+    if rest.lstrip()[:1] in GLYPHS:  # 3½ or 3 ½
+        return value + sign * GLYPHS[rest.lstrip()[0]]
+    if m := re.match(r"\s+and\s+(?:a|one)\s+(half|quarter|third)\b|\s+and\s+(three quarters)\b",
+                     rest, re.I):
+        return value + sign * PARTS[(m.group(1) or m.group(2)).lower()]
+    return None
 
 
 def check_input(questions: Sequence[Question]) -> str:
@@ -208,7 +237,34 @@ def check_input(questions: Sequence[Question]) -> str:
         for n, q in enumerate(questions, 1))  # one choice per line: "A: 5" never reads as a sum
 
 
+MAX_DUE = 4  # due ideas per set of 10 questions: 2 a race
 SAME_TEXT = 0.9  # questions this alike (difflib ratio) count as one; concepts do the rest
+
+
+def _same_word(a: str, b: str) -> bool:
+    # one word, or its plural: "number" and "numbers", "half" and "halves"
+    return a == b or same_name(a, b) or any(
+        x.endswith("ves") and y in (x[:-3] + "f", x[:-3] + "fe") for x, y in ((a, b), (b, a)))
+
+
+def _same_idea(label: str, other: str) -> bool:
+    """The same idea in other plurals ("half of odd number" for "halves of odd numbers"), never
+    a near one ("halves of even numbers", "dividing by 3")."""
+    a, b = normalize(label).split(), normalize(other).split()
+    return len(a) == len(b) and all(_same_word(x, y) for x, y in zip(a, b, strict=True))
+
+
+def _as_due(questions: list[Question], due: Sequence[tuple[str, str]]) -> list[Question]:
+    """A question on a due idea takes its label exactly, if Claude only changed a plural, so the
+    answer moves that idea's review; each idea goes to one question at most."""
+    out, taken = [], set()
+    for q in questions:
+        label = next((idea for _, idea in due if idea not in taken and _same_idea(idea, q.concept)),
+                     None)
+        if label is not None:
+            taken.add(label)
+        out.append(replace(q, concept=label) if label is not None else q)
+    return out
 
 
 def _alike(text: str, others: Sequence[str]) -> bool:
@@ -444,6 +500,19 @@ class RaceDesk:
             texts = [*self._asked.get(username, ()), *(normalize(q.question) for q in held)]
         return [*recent, *(q.concept for q in held)], texts
 
+    def _due(self, username: str, m: InterestMap, today: date) -> list[tuple[str, str]]:
+        """Missed ideas to ask again: their goal still on the map, nothing set aside."""
+        if self.concepts is None:
+            return []
+        try:
+            waiting = self.concepts.due(username, today)
+        except OSError:
+            return []  # best effort: the race goes on without reviews
+        ok = [(goal, idea) for goal, idea in waiting
+              if (g := m.find(goal)) is not None and g.kind == "goal"
+              and not mentions_set_aside(m, idea)]
+        return ok[:MAX_DUE]
+
     def _verify(self, questions: list[Question]) -> list[Question]:
         """Keep only the questions a blind answer agrees with; all of them if it can't run."""
         if self.checker is None or not questions:
@@ -467,6 +536,12 @@ class RaceDesk:
     def _write(self, username: str, supervised: bool, today: date) -> list[Question]:
         m = self.maps.get(username)
         concepts, texts = self._avoid(username, today)
+        with self._lock:  # a due idea already in a held question isn't asked twice
+            held = {normalize(q.concept) for q in self._held(username, today)}
+        due = [(g, idea) for g, idea in self._due(username, m, today)
+               if normalize(idea) not in held]
+        labels = {normalize(idea) for _, idea in due}
+        concepts = [c for c in concepts if normalize(c) not in labels]  # due ideas may come back
         recent = list(dict.fromkeys(concepts))  # what Claude hears, each once
         levels = self.concepts.levels(username) if self.concepts else {}
         p = self.points.get(username)
@@ -476,7 +551,7 @@ class RaceDesk:
         for _ in range(2):  # one more try if too few questions pass the checks
             try:
                 raw = self.quizzer.write(QUIZ_SYSTEM, quiz_input(m, today, supervised, recent,
-                                                                 levels, cars))
+                                                                 levels, cars, due))
             except RaceUnavailable:
                 raise
             except Exception as exc:  # never show what went wrong inside
@@ -490,13 +565,13 @@ class RaceDesk:
             kept += [q for q in new if id(q) in agreed]
             spare += [q for q in new_spare if id(q) in agreed]
             if len(kept) >= QUESTIONS_PER_RACE:
-                return kept
+                return _as_due(kept, due)
         for q in spare:  # Claude could only repeat: race anyway, never one question twice
             if len(kept) < QUESTIONS_PER_RACE and normalize(q.question) not in {
                     normalize(k.question) for k in kept}:
                 kept.append(q)
         if len(kept) >= QUESTIONS_PER_RACE:
-            return kept
+            return _as_due(kept, due)
         raise RaceUnavailable(NOT_READY)
 
     def _held(self, username: str, today: date) -> list[Question]:
