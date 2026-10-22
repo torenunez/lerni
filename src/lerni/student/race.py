@@ -34,6 +34,7 @@ from lerni.student.interests import (
     group_days,
     mentions_set_aside,
     parents,
+    same_name,
 )
 from lerni.student.points import PointsStore
 from lerni.student.results import ResultsLog, question_hash
@@ -221,8 +222,8 @@ def _number(choice: str) -> float | None:
     sign = -1 if value < 0 else 1
     if m := re.match(r"\s+(\d+)\s*/\s*(\d+)", rest):
         return value + sign * int(m.group(1)) / int(m.group(2)) if int(m.group(2)) else None
-    if rest[:1] in GLYPHS:
-        return value + sign * GLYPHS[rest[0]]
+    if rest.lstrip()[:1] in GLYPHS:  # 3½ or 3 ½
+        return value + sign * GLYPHS[rest.lstrip()[0]]
     if m := re.match(r"\s+and\s+(?:a|one)\s+(half|quarter|third)\b|\s+and\s+(three quarters)\b",
                      rest, re.I):
         return value + sign * PARTS[(m.group(1) or m.group(2)).lower()]
@@ -236,19 +237,33 @@ def check_input(questions: Sequence[Question]) -> str:
         for n, q in enumerate(questions, 1))  # one choice per line: "A: 5" never reads as a sum
 
 
-DUE_MATCH = 0.8  # a concept this close to a due idea's label counts as that idea
 MAX_DUE = 4  # due ideas per set of 10 questions: 2 a race
 SAME_TEXT = 0.9  # questions this alike (difflib ratio) count as one; concepts do the rest
 
 
+def _same_word(a: str, b: str) -> bool:
+    # one word, or its plural: "number" and "numbers", "half" and "halves"
+    return a == b or same_name(a, b) or any(
+        x.endswith("ves") and y in (x[:-3] + "f", x[:-3] + "fe") for x, y in ((a, b), (b, a)))
+
+
+def _same_idea(label: str, other: str) -> bool:
+    """The same idea in other plurals ("half of odd number" for "halves of odd numbers"), never
+    a near one ("halves of even numbers", "dividing by 3")."""
+    a, b = normalize(label).split(), normalize(other).split()
+    return len(a) == len(b) and all(_same_word(x, y) for x, y in zip(a, b, strict=True))
+
+
 def _as_due(questions: list[Question], due: Sequence[tuple[str, str]]) -> list[Question]:
-    """Questions on a due idea take its label exactly, even if Claude wrote it a little
-    differently, so the answer moves that idea's review."""
-    out = []
+    """A question on a due idea takes its label exactly, if Claude only changed a plural, so the
+    answer moves that idea's review; each idea goes to one question at most."""
+    out, taken = [], set()
     for q in questions:
-        score, label = max(((SequenceMatcher(None, normalize(q.concept), normalize(idea)).ratio(),
-                             idea) for _, idea in due), default=(0.0, ""))
-        out.append(replace(q, concept=label) if score >= DUE_MATCH else q)
+        label = next((idea for _, idea in due if idea not in taken and _same_idea(idea, q.concept)),
+                     None)
+        if label is not None:
+            taken.add(label)
+        out.append(replace(q, concept=label) if label is not None else q)
     return out
 
 
@@ -521,7 +536,10 @@ class RaceDesk:
     def _write(self, username: str, supervised: bool, today: date) -> list[Question]:
         m = self.maps.get(username)
         concepts, texts = self._avoid(username, today)
-        due = self._due(username, m, today)
+        with self._lock:  # a due idea already in a held question isn't asked twice
+            held = {normalize(q.concept) for q in self._held(username, today)}
+        due = [(g, idea) for g, idea in self._due(username, m, today)
+               if normalize(idea) not in held]
         labels = {normalize(idea) for _, idea in due}
         concepts = [c for c in concepts if normalize(c) not in labels]  # due ideas may come back
         recent = list(dict.fromkeys(concepts))  # what Claude hears, each once

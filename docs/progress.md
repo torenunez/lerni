@@ -17,7 +17,8 @@ When something changes, update this section and add a log entry below.
 ### 2026-10-22 (missed ideas come back; v3.22 built)
 
 - A missed idea is due again the next day, then after 3 and 7 days with each right answer, and retired after three right in a row (labels and dates in the concept file). Up to 4 due ideas a set go to Claude, exempt from the 14-day idea rule but not the near-same-words rule; a question labelled close to a due idea takes its label, so its answer moves the schedule. The Practice line counts "Thirds" and "thirds" as one.
-- The eval found a v3.14 bug: a right key written as a mixed number ("3 and a half", "3 1/2", "3½") was read as 3, so the server dropped correct questions like half of 7 laps, and that kind of idea could never come back. Fixed; anything it can't read for sure skips the sum check (the blind check still runs). After it: "7 laps, half is how many?" (3 and a half) came back in new words. Tests: 192 passed.
+- The eval found a v3.14 bug: a right key written as a mixed number ("3 and a half", "3 1/2", "3½") was read as 3, so the server dropped correct questions like half of 7 laps, and that kind of idea could never come back. Fixed; anything it can't read for sure skips the sum check (the blind check still runs). After it: "7 laps, half is how many?" (3 and a half) came back in new words.
+- Review fixes: a review moves only once its date has come (two questions on one idea in a day no longer step it twice), a due idea already held isn't asked again, a question takes a due idea's label only when just the plurals differ ("dividing by 3" never moves "dividing by 2"), one question per idea; odd stored dates or steps read as none; "3 ½" reads as 3.5. Tests: 192 passed.
 
 ### 2026-10-22 (Next after a wrong answer; v3.21 built)
 

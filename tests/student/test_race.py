@@ -575,6 +575,23 @@ def test_a_missed_idea_comes_back_on_schedule(tmp_path):
     concepts.answered("sam", idea, True, day(11))
     assert concepts.due("sam", day(60)) == []  # three right in a row: retired
 
+    # regression (review): a right answer before the idea is due again doesn't move it, so two
+    # questions on one idea in a day never step it twice
+    concepts.answered("sam", idea, False, day(20))
+    concepts.answered("sam", idea, True, day(21))  # due: step 1, back on day 24
+    concepts.answered("sam", idea, True, day(21))  # the same day again: no change
+    assert concepts.due("sam", day(24)) == [("Fractions", idea)]
+    # regression (review): a different idea with a similar label never takes the due one's,
+    # and one question at most takes it
+    from lerni.student.race import Question, _as_due
+
+    q = lambda c: Question("Fractions", f"About {c}?", ("1", "2", "3"), 0, "", c)  # noqa: E731
+    asked = _as_due([q("halves of even numbers"), q("dividing by 3"), q("half of odd number"),
+                     q("halves of odd numbers")],
+                    [("Fractions", idea), ("Fractions", "dividing by 2")])
+    assert [x.concept for x in asked] == ["halves of even numbers", "dividing by 3", idea,
+                                          "halves of odd numbers"]
+
 
 def test_a_right_key_written_as_a_mixed_number_races(tmp_path):
     # regression (eval): "3 and a half", "3 1/2" and "3½" were read as 3, so a right key worked

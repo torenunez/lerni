@@ -42,6 +42,14 @@ def _level(v: Any) -> int:
     return max(MIN_LEVEL, min(MAX_LEVEL, level))
 
 
+def _day(value: Any) -> date | None:
+    """A stored ISO date, or None for none or anything odd (a hand edit)."""
+    try:
+        return date.fromisoformat(value) if isinstance(value, str) else None
+    except ValueError:
+        return None
+
+
 class ConceptStore:
     """Everyone's concept ledgers on disk, changed one at a time."""
 
@@ -168,9 +176,10 @@ class ConceptStore:
                     c.update(step=0, due=(day + timedelta(days=REVIEW_DAYS[0])).isoformat())
                     continue
                 c["right"] = int(c.get("right", 0)) + 1
-                if not c.get("due"):
-                    continue  # never missed, or retired: nothing to review
-                step = int(c.get("step", 0)) + 1 if isinstance(c.get("step"), int) else 1
+                due = _day(c.get("due"))
+                if due is None or due > day:
+                    continue  # never missed, retired, or not due yet: only counted
+                step = min(max(c.get("step", 0) if isinstance(c.get("step"), int) else 0, 0), 2) + 1
                 if step >= len(REVIEW_DAYS):
                     c.pop("due", None)  # right three times in a row: learned
                     c.pop("step", None)
@@ -181,8 +190,7 @@ class ConceptStore:
 
     def due(self, username: str, today: date | None = None) -> list[tuple[str, str]]:
         """(goal, idea) pairs due for review today or earlier, the longest waiting first."""
-        day = (today or date.today()).isoformat()
-        waiting = [c for c in self.ledger(username)
-                   if isinstance(c.get("due"), str) and c["due"] <= day]
+        day = today or date.today()
+        waiting = [c for c in self.ledger(username) if (d := _day(c.get("due"))) and d <= day]
         waiting.sort(key=lambda c: c["due"])
         return [(str(c.get("goal", "")), str(c["concept"])) for c in waiting]
