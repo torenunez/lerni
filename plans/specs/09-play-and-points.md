@@ -15,7 +15,7 @@ Approved in conversation on 2026-10-12. Requirements: [student PRD, Version 3](.
   - Their car and two silly bots (Zippy and Bolt) on a three-lane track, with a finish flag (rival cars from v3.16, [part 2](09b-harder-races.md)).
   - A question card under it: "Question 3 of 5", the question, and **three big buttons**. No typing and no chat in a race (until the bonus round, v3.23).
   - A right pick: their car leaps ahead and the bot in front slows ("Right answer: boost! Zippy slowed down 💨").
-  - Another pick: a small step, the right answer, and a one-line why ("It's acceleration: speeding up").
+  - Another pick: a small step, and (from v3.21) the question stays on screen with the right answer and a one-line why ("It's acceleration: speeding up"); **Next** shows the next question. A wrong last answer shows the finish instead.
   - Cars glide to their new places after each answer; nothing moves on a clock.
   - After the fifth answer: "You finished 2nd! ⭐ +13", the next car to save for, then **Race again**.
 - **The garage (v3.5):** always open below Race!, as tiles (2 across on a phone): **My cars**, then the **Showroom**, cheapest first. No decimals on screen.

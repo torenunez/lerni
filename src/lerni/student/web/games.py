@@ -241,8 +241,23 @@ def after_tap(race: Race | None, ref: tuple[str, int], turn: Turn | None,
     return None
 
 
+def question_card(race: Race, last: tuple[int, Turn] | None = None) -> tuple[str, bool]:
+    """The question card, and whether its choices show: right after a wrong answer mid-race,
+    the question just answered with its right answer and why (the next waits for Next);
+    otherwise the current question."""
+    if last is not None and not last[1].right and not race.done:
+        number, turn = last
+        return (f"Question {number + 1} of {QUESTIONS_PER_RACE}\n\n"
+                f"**{race.questions[number].question}**\n\n"
+                f"Not this time: it's **{turn.answer}**. {turn.why}", False)
+    view = public(race)
+    return f"Question {view['number'] + 1} of {QUESTIONS_PER_RACE}\n\n**{view['question']}**", True
+
+
 def _feedback(race: Race, turn: Turn, awarded: int, goal: str = "") -> str:
     slowed = f"{turn.slowed} slowed down" if turn.slowed else "Both slowed down"
+    if not turn.right and not race.done:
+        return ""  # the card shows the right answer and its why, until Next
     line = (f"Right answer: boost! {slowed} 💨" if turn.right
             else f"Not this time: it's **{turn.answer}**. {turn.why}")
     if race.done:
@@ -277,6 +292,7 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
         choices = [gr.Button(visible=False, elem_classes="lerni-choice") for _ in range(3)]
         note = gr.Markdown(elem_id="lerni-note")
         go = gr.Button("Race!", variant="primary", elem_classes="lerni-go")
+        next_btn = gr.Button("Next", variant="primary", elem_classes="lerni-go", visible=False)
         shown = gr.State(("", 0))  # the race id and question number on screen
         # tiles are built once at startup, one per car in each list; each player sees theirs
         mine_title = gr.Markdown("### 🅿️ My cars")
@@ -286,7 +302,7 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
         with gr.Row(elem_classes="lerni-tiles"):
             shop = {c.id: shop_tile(c) for c in garage.cars}
 
-    outputs = [header_stars, hero, track, question, *choices, note, go, shown, mine_title,
+    outputs = [header_stars, hero, track, question, *choices, note, go, next_btn, shown, mine_title,
                *(x for pair in mine.values() for x in pair),
                *(x for parts in shop.values() for x in parts)]
 
@@ -313,24 +329,25 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
                         gr.update(value=f"{c.price - p.balance:,} more ⭐", interactive=False)]
         return ups
 
-    def screen(viewer: Viewer | None, race: Race | None, line: str) -> list[Any]:
-        """Every output, in order."""
+    def screen(viewer: Viewer | None, race: Race | None, line: str,
+               last: tuple[int, Turn] | None = None) -> list[Any]:
+        """Every output, in order; ``last`` is the answer just given, for the waiting card."""
         p = points.get(viewer.username) if viewer else None
         driving = p.car if p else STARTER
         if race is None or race.done:
             ask, buttons = "", [gr.update(visible=False) for _ in choices]
             go_update = gr.update(visible=True, value="Race again!" if race else "Race!")
-            ref = (race.id, race.answered) if race else ("", 0)
+            ref, waiting = (race.id, race.answered) if race else ("", 0), False
         else:
-            view = public(race)
-            ask = f"Question {view['number'] + 1} of {QUESTIONS_PER_RACE}\n\n**{view['question']}**"
-            buttons = [gr.update(visible=True, value=c) for c in view["choices"]]
-            go_update, ref = gr.update(visible=False), (race.id, race.answered)
+            ask, show = question_card(race, last)
+            buttons = [gr.update(visible=show, value=c) for c in public(race)["choices"]]
+            go_update, ref, waiting = gr.update(visible=False), (race.id, race.answered), not show
         mine = stars(points, viewer)
         return [gr.update(value=mine, visible=bool(mine)),
                 gr.update(value=hero_html(garage, p), visible=race is None),
                 gr.update(value=track_svg(race, driving, garage), visible=race is not None),
-                ask, *buttons, line, go_update, ref, *garage_updates(p)]
+                ask, *buttons, line, go_update, gr.update(visible=waiting), ref,
+                *garage_updates(p)]
 
     def viewer_of(request: gr.Request) -> Viewer | None:
         viewer = signin.viewer(request.username)  # re-read on every request
@@ -372,8 +389,14 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
             shown = after_tap(race, ref, turn, awarded, goal)
             if shown is None:
                 return [gr.update() for _ in outputs]  # a repeat tap: nothing changes
-            return screen(viewer, *shown)
+            return screen(viewer, *shown, last=(ref[1], turn) if turn else None)
         return handler
+
+    def on_next(request: gr.Request) -> list[Any]:
+        # the next question, after the right answer and its why (a dropped race: the start)
+        viewer = viewer_of(request)
+        race = desk.current(viewer.username) if desk and viewer else None
+        return screen(viewer, race, "")
 
     def on_garage(car_id: str) -> Callable[..., list[Any]]:
         def handler(request: gr.Request) -> list[Any]:
@@ -390,6 +413,7 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
         on_go, None, outputs, concurrency_limit=MAX_AT_ONCE, **PRIVATE)  # side by side
     for i, button in enumerate(choices):
         button.click(on_choice(i), shown, outputs, concurrency_limit=MAX_AT_ONCE, **PRIVATE)
+    next_btn.click(on_next, None, outputs, concurrency_limit=MAX_AT_ONCE, **PRIVATE)
     for car_id, button in [*((i, t[-1]) for i, t in mine.items()),
                            *((i, t[-1]) for i, t in shop.items())]:
         button.click(on_garage(car_id), None, outputs, concurrency_limit=MAX_AT_ONCE, **PRIVATE)

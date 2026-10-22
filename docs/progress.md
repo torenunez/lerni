@@ -14,6 +14,11 @@ When something changes, update this section and add a log entry below.
 
 ## Log
 
+### 2026-10-22 (Next after a wrong answer; v3.21 built)
+
+- After a wrong answer mid-race, the card keeps that question with the right answer and its why, and the choices wait for **Next**; right answers move straight on, and a wrong last answer shows the finish. Checked at phone size on a throwaway server (a race through wrong and right answers to the finish). Tests: 189 passed.
+- Rule 5 reworded (the admin's call): people decide goals; agents may propose them (Upload, the MentalMaps chat, later suggestions), and a proposal stays a proposal until a person accepts it. ARCHITECTURE's boundary says the same. Nothing about who may accept changed.
+
 ### 2026-10-22 (the order of what's next)
 
 - The admin's reordering: Next after a wrong answer comes first (v3.21, small and seen every race), then missed ideas (v3.22, which Version 4's recall builds on), the bonus round (v3.23, after the 2026-11-03 check of right answers per goal), and probes (v3.24); then Version 4's plan (v4.1), with local embeddings after it (v4.2–v4.3), since nothing in the race needs them and the journal makes them safe whenever they come.
@@ -22,7 +27,7 @@ When something changes, update this section and add a log entry below.
 
 - Every map change is journaled in `maps/<user>.events.jsonl` (who made it: the tagger, a person, Upload, the MentalMaps chat, or the admin; the items before and after; a baseline first), so `lerni map undo USER N` reverses one change (a bad merge comes back with its history; a later change to the same items makes it refuse) and `lerni map rebuild` checks or rewinds a map. A per-map lock lets the commands run while the server does.
 - `lerni backup` copies the data folder nightly at 03:00 (a LaunchAgent), keeping 30; copies made by hand are never touched. Tried on a throwaway folder: log, undo of a merge, a refused second undo, an exact rebuild, and a copy.
-- Review fixes: undo keeps what only grew since (so a merge can be undone days later) and refuses a result that breaks the map's rules; maps are saved as a load would tidy them, so the journal never drifts; a change made outside the journal starts a new baseline; rewinds never reuse an id; order lists only when the order moved; the newest line is read from the end; backups go per data folder (`backups/student/`). An older bug fixed: a name a person split off with Not the same was dropped when its near-name was removed. Delete for good still leaves history in the journal (the admin's call; a to-do before other families). Tests: 188 passed.
+- Review fixes: undo keeps what only grew since (so a merge can be undone days later) and refuses a result that breaks the map's rules; maps are saved as a load would tidy them, so the journal never drifts; a change made outside the journal starts a new baseline; rewinds never reuse an id; order lists only when the order moved; the newest line is read from the end; backups go per data folder (`backups/student/`). An older bug fixed: a name a person split off with Not the same was dropped when its near-name was removed. Delete for good still leaves history in the journal (the admin's call; a to-do before other families). Tests: 189 passed.
 
 ### 2026-10-20 (race questions from the garage; v3.19 built)
 

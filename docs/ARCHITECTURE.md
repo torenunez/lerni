@@ -93,7 +93,7 @@ flowchart LR
 
 If a change would break one of these, stop and ask.
 
-1. **Only people set goals.** Goals and their notes come only from a signed-in educator (or an independent student for their own map), through the server. The tagger can add interests, time, and links, never goals. Feedback is summarized, never acted on.
+1. **People decide goals; agents may propose them.** A goal and its notes are saved only from a person's tap, through the server: a signed-in educator for a supervised student, or an independent student for their own map. Claude's proposals (Upload, the MentalMaps chat, later suggestions) stay proposals until a person accepts them. The tagger can add interests, time, and links, never goals. Feedback is summarized, never acted on.
 2. **Conversation text is kept only in the logs** on the home server, for a year while the family hosts it: never in other files, server output, or browser storage. Also saved: accounts; maps (short names drawn from the conversation, plus dates and links; a full map rests its least-seen interest, history and all, until it comes up again); feedback (an educator's own words and a summary).
 3. **The safety rules come last** in every prompt, after the persona and the map, and live in code, not in the editable persona files. That's how the prompt is built, not a guarantee of what Claude says; the evals check it.
 4. **Home network only.** See [trust boundaries](#trust-boundaries).
