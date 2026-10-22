@@ -117,7 +117,7 @@ _CSS = """
 #lerni-earn { font-size: 16px; padding: 8px 12px !important; border-radius: 12px;
   background: var(--color-accent-soft); }
 .lerni-question p { font-size: 18px; }
-.lerni-choice { min-height: 56px !important; font-size: 18px !important; }
+.lerni-choice, .lerni-go { min-height: 56px !important; font-size: 18px !important; }
 /* the garage: your car big at the top, then tiles, 2 across on a phone */
 #lerni-hero { text-align: center; font-size: 18px; }
 .lerni-hero-car img, .lerni-hero-car svg { width: 100%; max-width: 480px; height: auto; }
