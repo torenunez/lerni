@@ -76,6 +76,7 @@ flowchart LR
 |---|---|---|---|
 | Student accounts | Username, display name, kind, password hash, session version, educator flag, archived flag | Educator manages; an independent student changes their own name and password | `~/.lerni/student/students/` (built) |
 | Interest map | Entries (name, other names it was called, interest or goal, notes, days, mentions, explained and bounce dates) and links (related, bridge, or kind of; a group's strength counts its kinds' days, worked out on read), plus removed items' history, resting items, and name pairs a person split | Educators for a supervised student; an independent student for their own | `~/.lerni/student/maps/<username>.json` (built) |
+| Map journal | Every map change: who made it (the tagger, a person, Upload, the MentalMaps chat, the admin) and the items before and after, so any change can be undone and a map rebuilt | The server, at each map change; the admin reads and undoes with `lerni map` | `~/.lerni/student/maps/<username>.events.jsonl` |
 | Conversation | The last 20 messages, one ongoing conversation per student | That student | Memory only; gone on New conversation or a server restart (built) |
 | Conversation logs | Each exchange and what the tagger did with it | The admin reads them (`lerni logs`) | `~/.lerni/student/logs/<username>/<date>.jsonl`, deleted after a year (built) |
 | Feedback | Date, who, which map, the note the educator ticked | The admin processes it | `~/.lerni/student/feedback.jsonl` (built) |
@@ -83,6 +84,7 @@ flowchart LR
 | Race results | Each answer and finish, kept for good: day, goal, concept, a question hash, right or wrong, seconds, place (never question text) | The server, at each answer; the educator sees this week per goal | `~/.lerni/student/results/<username>.jsonl` |
 | Race concepts | Every idea race questions tested, kept for good: short labels, goals, first and last dates, times asked and right, and each goal's level by goal id (never question text) | The server, at each race start and answer | `~/.lerni/student/concepts/<username>.json` |
 | Garage | Real cars: names, prices, stats, and cut-out pictures | The admin, by hand; players see them in Games (pictures only when signed in) | `~/.lerni/student/garage.json` and `cars/` (private: never in the repo) |
+| Nightly backups | A copy of the whole data folder each night at 03:00, the newest 30 kept (same disk: covers bad changes and deploys, not a broken disk) | `lerni backup` (a LaunchAgent) | `~/.lerni/backups/student/nightly-YYYY-MM-DD/` |
 | Race sounds | The roar, sputter, and finish clips (Pixabay; its licence forbids sharing the files) | The admin, by hand; played in races (served only when signed in) | `~/.lerni/student/sounds/` (private: never in the repo) |
 | Sign-in | The signing secret; wrong-password delays | The app | `~/.lerni/student/secret.key`; delays in memory (built) |
 | Admin data | The admin's own questions, concepts, and reviews | Admin | SQLite at `~/.lerni/lerni.db` (built) |

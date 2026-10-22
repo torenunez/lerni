@@ -7,16 +7,19 @@ conversation; goals and their notes come only from a person. See
 
 from __future__ import annotations
 
+import fcntl
 import json
 import re
 import threading
 import unicodedata
-from collections.abc import Callable, Collection
+from collections.abc import Callable, Collection, Iterator
+from contextlib import contextmanager
 from dataclasses import asdict, dataclass, field, fields
 from datetime import date, timedelta
 from pathlib import Path
 from typing import Any, Literal, TypeVar
 
+from lerni.student.journal import JournalError, MapJournal, replay, undo
 from lerni.student.jsonfiles import write_json_atomic
 from lerni.student.students import check_username, default_data_dir
 
@@ -126,7 +129,9 @@ class InterestMap:
 
     def is_removed(self, name: str) -> bool:
         """Whether a person removed this name or one of its item's names, plurals included."""
-        return any(same_name(r, name) for r in self.removed_names())
+        key = name.strip().casefold()  # a name a person split off isn't covered by it
+        return any(same_name(r, name) and sorted([r.casefold(), key]) not in self.not_same
+                   for r in self.removed_names())
 
 
 # words that end in "s" but aren't plurals ("news" is not more than one "new")
@@ -442,8 +447,10 @@ def _from_dict(data: dict[str, Any]) -> InterestMap:
     # person's choice, so it stays; an interest was the tagger's, so the set-aside wins
     removed = [r for r in data.get("removed", [])
                if not any(same_name(r, e.name) and e.kind == "goal" for e in entries)]
-    gone = {e.id for e in entries if e.kind == "interest"
-            and any(same_name(r, e.name) for r in removed)}
+    split = [list(p) for p in data.get("not_same", []) if isinstance(p, list) and len(p) == 2]
+    gone = {e.id for e in entries if e.kind == "interest"  # a name a person split off stays
+            and any(same_name(r, e.name) and sorted([r.casefold(), e.name.casefold()]) not in split
+                    for r in removed)}
     entries = [e for e in entries if e.id not in gone]
     links = [k for k in links if k.a not in gone and k.b not in gone]
     archived = [_known(Entry, a) for a in data.get("archived", [])]  # older maps have none
@@ -457,8 +464,33 @@ def _from_dict(data: dict[str, Any]) -> InterestMap:
         int(data.get("next_id", 1)),
         dict(data.get("removed_info", {})),
         archived,
-        [list(p) for p in data.get("not_same", []) if isinstance(p, list) and len(p) == 2],
+        split,
     )
+
+
+def _checked(current: dict[str, Any], proposed: dict[str, Any]) -> InterestMap:
+    """An undone or rewound map, if it keeps the map's rules; counted as a person's edit.
+
+    Raises:
+        JournalError: It would break a rule (two items with one name, a group loop, too many
+            items), or loading it would drop something.
+    """
+    m = _from_dict(proposed)
+    if len(m.entries) != len(proposed.get("entries", [])):
+        raise JournalError("That would leave an item the map can't keep (it's set aside).")
+    if len(m.entries) > MAX_ENTRIES:
+        raise JournalError(f"That would put the map over {MAX_ENTRIES} items.")
+    for e in m.entries:
+        for name in (e.name, *e.aliases):
+            if m.find(name) is not e:
+                raise JournalError(f"That would leave two items called {name}.")
+    for k in [k for k in m.links if k.kind == "kind_of"]:
+        rest = InterestMap(m.entries, [x for x in m.links if x is not k], m.removed)
+        if _group_error(rest, k.a, k.b):
+            raise JournalError("That would break the groups (a loop, or too many levels).")
+    m.next_id = max(m.next_id, int(current.get("next_id", 1)))  # an id is never used twice
+    m.edits = int(current.get("edits", 0)) + 1  # a tagger result read before it waits
+    return m
 
 
 class MapStore:
@@ -468,6 +500,7 @@ class MapStore:
         self.root = (root or default_data_dir()) / "maps"
         self._locks: dict[str, threading.Lock] = {}
         self._guard = threading.Lock()
+        self.journal = MapJournal(root)  # every change, so any one can be undone (v3.20)
 
     def _path(self, username: str) -> Path:
         # canonical usernames only, so a name can never point outside the folder
@@ -484,13 +517,64 @@ class MapStore:
             return InterestMap()
         return _from_dict(json.loads(path.read_text(encoding="utf-8")))
 
-    def change(self, username: str, fn: Callable[[InterestMap], T]) -> T:
-        """Read, change, and save ``username``'s map with no other change in between."""
-        with self._lock(username):  # only the server writes maps, so a thread lock is enough
+    @contextmanager
+    def _locked(self, username: str) -> Iterator[None]:
+        # this server's threads, then any other process (the lerni map commands), in that order
+        with self._lock(username):
+            self.root.mkdir(parents=True, exist_ok=True)
+            with (self.root / f"{check_username(username)}.lock").open("a") as handle:
+                fcntl.flock(handle, fcntl.LOCK_EX)
+                try:
+                    yield
+                finally:
+                    fcntl.flock(handle, fcntl.LOCK_UN)
+
+    def _save(self, username: str, before: dict[str, Any], m: InterestMap, by: str) -> None:
+        after = _to_dict(_from_dict(_to_dict(m)))  # as a load would tidy it, so the journal agrees
+        write_json_atomic(self._path(username), after)
+        try:  # best effort: a failed journal line never stops the change
+            self.journal.record(username, before, after, by)
+        except OSError:
+            print("A map change wasn't journaled.", flush=True)
+
+    def change(self, username: str, fn: Callable[[InterestMap], T], by: str = "server") -> T:
+        """Read, change, and save ``username``'s map with no other change in between.
+
+        ``by`` says who made the change, for the journal: ``tagger``, ``person:<username>``,
+        ``upload``, ``educator chat``, or ``admin``.
+        """
+        with self._locked(username):
             m = self.get(username)
+            before = _to_dict(m)
             result = fn(m)
-            write_json_atomic(self._path(username), _to_dict(m))
+            self._save(username, before, m, by)
             return result
+
+    def undo(self, username: str, n: int, by: str = "admin") -> None:
+        """Reverse change ``n`` as a new change, so the undo can be undone too.
+
+        Raises:
+            JournalError: No such change, or a later change touched the same items.
+        """
+        with self._locked(username):
+            before = _to_dict(self.get(username))
+            self._save(username, before, _checked(before, undo(before, self.journal.read(
+                username), n)), by)
+
+    def rebuild(self, username: str, upto: int | None = None, by: str = "admin") -> bool:
+        """With ``upto``, return the map to just after that change; without it, whether the
+        journal alone gives today's map.
+
+        Raises:
+            JournalError: The journal has no starting point.
+        """
+        with self._locked(username):
+            before = _to_dict(self.get(username))
+            rebuilt = replay(self.journal.read(username), upto)
+            if upto is None:
+                return rebuilt == before
+            self._save(username, before, _checked(before, rebuilt), by)
+            return True
 
 
 MAX_BLOCK = 1500  # characters of map in the prompt

@@ -117,6 +117,12 @@ Both servers run as macOS LaunchAgents: they start when the admin logs in (after
 - Install from a Terminal on this Mac, not over SSH: it saves this shell's PATH and its `LERNI_*` settings (the voice, the models; the data folder only from `--data`) for the server, says which it saved or dropped, and warns if `claude` or `whisper-cli` can't be found, or if production's checkout holds code that isn't on `main`. It refuses either server on the other's data folder or port. To change a setting, install again with the same `--cert` and `--key`; the last log is kept as `<name>.log.1`.
 - Then `lerni service status` (running and answering?), `restart prod|dev` (after an update or a branch change; also starts a stopped one), `stop`, or `uninstall`. `install` and `restart` wait up to 75 seconds for the server to answer, and if it doesn't, show the end of its log. Output goes to `~/Library/Logs/lerni/<name>.log`; on restart a log over 5 MB moves to `<name>.log.1`.
 
+### Backups and undo
+
+- **Nightly copies:** `lerni backup install` (once, in the production checkout) copies `~/.lerni/student` to `~/.lerni/backups/student/nightly-<date>/` every night at 03:00 and keeps the newest 30; `lerni backup run` copies now (`--to /Volumes/Drive/lerni` also copies to a drive: use an encrypted one, since the copy holds the logs, accounts, and keys); `lerni service status` shows the newest copy. They're on the same disk: they cover a bad change or deploy, not a broken disk.
+- **Restore:** `lerni service stop prod`, move `~/.lerni/student` aside, copy a nightly folder back as `~/.lerni/student`, then `lerni service restart prod`.
+- **Undo one map change:** `lerni map log USER` lists each change (number, when, who: the tagger, a person, Upload, the MentalMaps chat, or the admin, and which items); `lerni map undo USER N` reverses one, as a new change, keeping what only grew since (new days, mentions, other names), and refuses when a later change renamed, removed, or regrouped the same items, or when the result would break the map's rules; then `lerni map rebuild USER --upto N` returns the whole map to just after change N. `lerni map rebuild USER` alone checks the journal still matches the map. All three are safe while the server runs.
+
 ### HTTPS (for voice)
 
 iPad Safari allows the microphone only over HTTPS. Lerni uses its own certificate, made once with [mkcert](https://github.com/FiloSottile/mkcert) on the home server:

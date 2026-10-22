@@ -166,4 +166,4 @@ class MapKeeper:
             apply_tags(m, tags, ex.question, self.today())
             return asdict(tags)
 
-        return self.maps.change(ex.username, apply)
+        return self.maps.change(ex.username, apply, by="tagger")
