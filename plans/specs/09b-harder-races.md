@@ -8,11 +8,11 @@ Approved in conversation on 2026-10-20. Builds on [spec 09](09-play-and-points.m
 - v3.16: the race looks and sounds better;
 - v3.17: practice on the map;
 - v3.18: pitched right;
-- v3.21: missed ideas come back;
-- v3.22: the bonus round;
-- v3.23: probes.
+- v3.22: missed ideas come back;
+- v3.23: the bonus round;
+- v3.24: probes.
 
-v3.19 (race questions from the garage) and v3.20 (a map journal and nightly backups) sit between v3.18 and v3.21; v3.19 is designed in its plan, and v3.20 isn't part of this spec. Each version's plan file (`plans/v3.NN-*.md`) is written when it starts, from this spec.
+v3.19 (race questions from the garage), v3.20 (a map journal and nightly backups), and v3.21 (Next after a wrong answer) sit between v3.18 and v3.22; each is designed in its own plan, not here. Each version's plan file (`plans/v3.NN-*.md`) is written when it starts, from this spec.
 
 ## What people see
 
@@ -39,13 +39,13 @@ v3.19 (race questions from the garage) and v3.20 (a map journal and nightly back
 
 ### Practice on the map (v3.17)
 
-- **Goals:** tapping a goal on either MentalMap screen shows a **Practice** line, for example "Raced Oct 20 · this week 7/10 · missed lately: halves of odd numbers". From v3.21, "missed lately" becomes "due:".
+- **Goals:** tapping a goal on either MentalMap screen shows a **Practice** line, for example "Raced Oct 20 · this week 7/10 · missed lately: halves of odd numbers". From v3.22, "missed lately" becomes "due:".
 - **Links:** a related or bridge item in an item's details shows its strength ("volcanoes 💪"), like an item does.
 - **Bridges:** a bridge also says how it went: "held 5 days · bounced once".
 - **Groups:** a group counts its kinds' bridges and explanations, as it already counts their days.
 - **Read-only:** nothing here is written into the map.
 
-### The bonus round (v3.22)
+### The bonus round (v3.23)
 
 - **When:**
   - if the student is 3rd after question 3, question 4 is a bonus;
@@ -60,7 +60,7 @@ v3.19 (race questions from the garage) and v3.20 (a map journal and nightly back
   - the car moves.
 - **Skip or a blank answer** takes a small step and earns 0. It's never called wrong.
 
-### "Want to find out more?" (v3.23)
+### "Want to find out more?" (v3.24)
 
 - **At the finish,** under the place, there are up to two topic buttons, such as "🌋 Earthquakes".
 - **A tap** opens Chat, where Lerni starts on that topic. The topic joins the map only if the student then talks about it.
@@ -153,7 +153,7 @@ v3.19 (race questions from the garage) and v3.20 (a map journal and nightly back
 - **Checks:** the server can't check a level; the eval does.
 - **The aim:** about 50–75% right. Two weeks after v3.18, the results log says whether it's working (a to-do item).
 
-### Review (v3.21, `concepts.py`, `race.py`)
+### Review (v3.22, `concepts.py`, `race.py`)
 
 - **The ledger:** each concept entry gets `due` (an ISO date, or none) and `step` (0 to 2).
   - **A wrong answer:** `step` 0, due tomorrow.
@@ -170,7 +170,7 @@ v3.19 (race questions from the garage) and v3.20 (a map journal and nightly back
   - A question whose concept matches a due one counts as its review.
 - **Unanswered reviews:** if Claude skips a due concept, it stays due. Nothing is lost for being overdue.
 
-### The bonus round (v3.22, `race.py`, `adapters/claude_code.py`, `web/games.py`)
+### The bonus round (v3.23, `race.py`, `adapters/claude_code.py`, `web/games.py`)
 
 - **Writing:** the same call that writes 10 questions writes up to 2 bonus questions (`bonus`: goal, concept, question, `key_ideas` of 2 or 3 short phrases).
   - **Checks:** like a question (lengths, goal on the map, set-asides, repeats); a key idea is at most 60 characters.
@@ -206,7 +206,7 @@ v3.19 (race questions from the garage) and v3.20 (a map journal and nightly back
 - **Speaking:** the card reuses Chat's Hold to talk (`talk.js`, `voice.py`). Whisper turns the speech into text, and the text is graded.
 - **Cost:** one small-model call per bonus.
 
-### Probes (v3.23, `race.py`, `results.py`, `web/games.py`)
+### Probes (v3.24, `race.py`, `results.py`, `web/games.py`)
 
 - **What the server gives Claude:** "Nearby ideas to try", built from:
   - the strong interests, with their groups and those groups' other kinds;
@@ -258,15 +258,15 @@ v3.19 (race questions from the garage) and v3.20 (a map journal and nightly back
   - a second day strengthens it;
   - a bridge counts held days and bounces.
 - **v3.18 (`test_race.py`):** five answers at 4 right raise a goal's level, five at 2 lower it, and the level reaches the prompt.
-- **v3.21 (`test_race.py`):**
+- **v3.22 (`test_race.py`):**
   - a miss is due tomorrow and reaches the prompt;
   - a due concept isn't refused as a repeat;
   - a right answer at 7 days retires it.
-- **v3.22 (`test_race.py`):**
+- **v3.23 (`test_race.py`):**
   - last after question 3 gets the bonus;
   - each tier moves the car and awards once;
   - the answer is on disk nowhere.
-- **v3.23 (`test_race.py`):**
+- **v3.24 (`test_race.py`):**
   - a probe on the map or set aside is dropped;
   - a probe answer leaves the level alone;
   - a tap is logged.

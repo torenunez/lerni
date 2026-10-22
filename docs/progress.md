@@ -4,7 +4,7 @@ Where things really stand, then a dated log, newest first. Completed work is rec
 
 Record each kind of "done" only when it actually happens, with the date: code built, content approved, app ready, a student session held. Passing tests show code behaves as specified; they don't make anything ready for a student.
 
-## Current state (2026-10-21, v3.19 on the home server: Versions 1 and 2 built: the conversation, MentalMaps, HTTPS, and voice; Version 3's race, garage, and Chat points)
+## Current state (2026-10-22, v3.20 on the home server: Versions 1 and 2 built: the conversation, MentalMaps, HTTPS, and voice; Version 3's race, garage, and Chat points)
 
 - **Built:** the student app's core (student accounts, sign-in, Lerni's conversations, the MentalMap with its tagger and logs kept a year, Upload and educator feedback, and the educator agent); `lerni serve` with a sign-in page and one app with a ☰ menu by role: an independent student's Chat, My MentalMap (an editable list, the picture, and Upload), and My account; an educator's MentalMaps (a student's list and picture, with a chat) and Students on top; a supervised student's Chat, full screen, and Games (a race for points spent on real cars; educators race too); good answers in Chat earn points too. Hold to talk with spoken answers; a Claude usage warning and rest. Both servers run as LaunchAgents (`lerni service`). The admin tool (`lerni`, with `lerni student`, `lerni logs`, and `lerni feedback`). A [code manifest](code-manifest.md) of every file. Tests: 187 passed.
 - **Designed:** the interest map, goals, the tagger, upload, feedback, and the supervised conversation ([specs/04-interest-map.md](../plans/specs/04-interest-map.md)); approved with PR #12. Harder races, practice on the map, and probes ([spec 09b](../plans/specs/09b-harder-races.md)).
@@ -13,6 +13,10 @@ Record each kind of "done" only when it actually happens, with the date: code bu
 When something changes, update this section and add a log entry below.
 
 ## Log
+
+### 2026-10-22 (the order of what's next)
+
+- The admin's reordering: Next after a wrong answer comes first (v3.21, small and seen every race), then missed ideas (v3.22, which Version 4's recall builds on), the bonus round (v3.23, after the 2026-11-03 check of right answers per goal), and probes (v3.24); then Version 4's plan (v4.1), with local embeddings after it (v4.2–v4.3), since nothing in the race needs them and the journal makes them safe whenever they come.
 
 ### 2026-10-21 (a map journal and nightly backups; v3.20 built)
 
