@@ -340,7 +340,9 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
             ref, waiting = (race.id, race.answered) if race else ("", 0), False
         else:
             ask, show = question_card(race, last)
-            buttons = [gr.update(visible=show, value=c) for c in public(race)["choices"]]
+            # while the why shows, the hidden buttons don't get the next question yet
+            buttons = ([gr.update(visible=True, value=c) for c in public(race)["choices"]] if show
+                       else [gr.update(visible=False) for _ in choices])
             go_update, ref, waiting = gr.update(visible=False), (race.id, race.answered), not show
         mine = stars(points, viewer)
         return [gr.update(value=mine, visible=bool(mine)),
@@ -395,8 +397,11 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
     def on_next(request: gr.Request) -> list[Any]:
         # the next question, after the right answer and its why (a dropped race: the start)
         viewer = viewer_of(request)
+        if desk and viewer and desk.just_answered(viewer.username):
+            return [gr.update() for _ in outputs]  # a double tap's second half: read the why
         race = desk.current(viewer.username) if desk and viewer else None
-        return screen(viewer, race, "")
+        ended = "" if race or viewer is None else "That race ended. Tap Race! 🏁"
+        return screen(viewer, race, ended)
 
     def on_garage(car_id: str) -> Callable[..., list[Any]]:
         def handler(request: gr.Request) -> list[Any]:

@@ -645,6 +645,12 @@ class RaceDesk:
         except Exception:  # a broken map or a full disk: the answer still counts
             pass
 
+    def just_answered(self, username: str) -> bool:
+        """Whether their last answer was a moment ago: a tap now is the rest of a double tap."""
+        with self._lock:
+            last = self._last_tap.get(username)
+        return last is not None and self.clock() - last < TAP_GAP_SECONDS
+
     def current(self, username: str) -> Race | None:
         """The race in progress, if any."""
         with self._lock:

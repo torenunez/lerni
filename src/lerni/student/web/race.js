@@ -77,10 +77,13 @@
   }, true);
 
   new MutationObserver(records => {
-    const note = document.getElementById('lerni-note');  // results and purchases are announced
-    if (note && !note.hasAttribute('role')) {
-      note.setAttribute('role', 'status');
-      note.setAttribute('aria-live', 'polite');
+    // results, purchases, and the right answer after a wrong one are announced
+    for (const live of [document.getElementById('lerni-note'),
+                        document.querySelector('.lerni-question')]) {
+      if (live && !live.hasAttribute('role')) {
+        live.setAttribute('role', 'status');
+        live.setAttribute('aria-live', 'polite');
+      }
     }
     const cars = new Set();
     for (const r of records) {

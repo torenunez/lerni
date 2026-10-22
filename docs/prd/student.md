@@ -43,7 +43,7 @@ These hold for every version.
 
 - Conversation text is kept on the home server only in logs the admin can read, deleted after a year; never in browser storage. The ongoing conversation lives in memory until New conversation or a server restart. Also saved: the account and the interest map (interest names, goals and notes, dates, and links).
 - No account details (name, username) are sent to Claude; their own messages can still contain anything.
-- Goals come only from a person: an educator, or an independent student for their own map. The agent only records interests, time, and links.
+- Goals are saved only from a person's tap: an educator, or an independent student for their own map. Claude may propose goals for a person to accept; the tagger only records interests, time, and links.
 - Nothing is sent to an outside service without consent at the moment of sending. In the family prototype, pressing Send (or Upload) is that consent: everyone in the household knows where messages go, so the screen carries no notice. A short notice comes back before anyone outside the family uses it.
 - A student never sees another student's map or conversation.
 - It's designed for touch and phones first. That's a goal, not an absolute.
