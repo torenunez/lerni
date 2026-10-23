@@ -121,7 +121,8 @@ def build_main_view(
                                                     speech=speech)
             if points is not None:
                 games, games_refresh, games_outputs = games_tab(signin, races, points, stars,
-                                                                garage or Garage())
+                                                                garage or Garage(),
+                                                                speech=speech)
             else:  # built without a points store (tests): the old placeholder
                 with gr.Tab("Games", id="games", visible=False) as games:
                     gr.HTML('<div class="lerni-soon"><div aria-hidden="true">🎮</div>'

@@ -27,6 +27,7 @@ from lerni.student.garage import (
 from lerni.student.points import STARTER, Points, PointsError, PointsStore
 from lerni.student.race import (
     BOT_RIVALS,
+    MAX_ANSWER,
     NOT_READY,
     QUESTIONS_PER_RACE,
     STEP_RIGHT,
@@ -40,8 +41,9 @@ from lerni.student.race import (
 from lerni.student.results import ResultsLog, week_line
 from lerni.student.signin import Role, SignIn, Viewer
 from lerni.student.students import StudentStore
+from lerni.student.voice import ClipRefused, Speech, SpeechUnavailable, heard
 from lerni.student.web.accounts import PRIVATE, NotAllowed
-from lerni.student.web.ask import MAX_AT_ONCE
+from lerni.student.web.ask import MAX_AT_ONCE, talk_preview
 from lerni.student.web.maps import map_owner
 
 LANES = (12, 55, 98)  # the student's lane, then the fast and slow rivals'
@@ -244,7 +246,14 @@ def after_tap(race: Race | None, ref: tuple[str, int], turn: Turn | None,
 def question_card(race: Race, last: tuple[int, Turn] | None = None) -> tuple[str, bool]:
     """The question card, and whether its choices show: right after a wrong answer mid-race,
     the question just answered with its right answer and why (the next waits for Next);
-    otherwise the current question."""
+    otherwise the current question. The bonus shows its question alone, then its grade."""
+    if race.bonus_live and race.bonus is not None:  # typed or spoken: no choices
+        return (f"Question {race.answered + 1} of {QUESTIONS_PER_RACE}\n\n⭐ **Bonus: explain "
+                f"it in your own words!**\n\n**{race.bonus.question}**", False)
+    if last is not None and not last[1].answer and race.bonus is not None and not race.done:
+        number, turn = last  # a graded bonus waits for Next too, so its line is read
+        return (f"Question {number + 1} of {QUESTIONS_PER_RACE}\n\n⭐ **{race.bonus.question}**"
+                f"\n\n{turn.why}", False)
     if last is not None and not last[1].right and not race.done:
         number, turn = last
         return (f"Question {number + 1} of {QUESTIONS_PER_RACE}\n\n"
@@ -267,8 +276,8 @@ def _feedback(race: Race, turn: Turn, awarded: int, goal: str = "") -> str:
 
 
 def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
-              header_stars: gr.Markdown,
-              garage: Garage) -> tuple[gr.Tab, Callable[..., list[Any]], list[Any]]:
+              header_stars: gr.Markdown, garage: Garage,
+              speech: Speech | None = None) -> tuple[gr.Tab, Callable[..., list[Any]], list[Any]]:
     """The Games tab: your car and the next goal, the race, then My cars and Showroom.
 
     Returns:
@@ -290,6 +299,30 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
         track = gr.HTML(elem_id="lerni-track", visible=False)  # once a race starts
         question = gr.Markdown(elem_classes="lerni-question")
         choices = [gr.Button(visible=False, elem_classes="lerni-choice") for _ in range(3)]
+        talks = speech is not None
+        # the bonus: typed or spoken, like Chat's dock (talk.js drives the "bonus" parts)
+        with gr.Column(elem_id="lerni-dock-bonus", visible=False,
+                       elem_classes="lerni-dock lerni-voice" if talks else "lerni-dock") as dock:
+            if talks:
+                preview = gr.Markdown(elem_id="lerni-preview-bonus")  # what's heard so far
+                gr.Button("🎤\nHold to talk", elem_id="lerni-talk-bonus", elem_classes="lerni-talk")
+            with gr.Row(elem_classes="lerni-type"):
+                answer_box = gr.Textbox(
+                    show_label=False, placeholder="Explain it in your own words…", lines=2,
+                    max_lines=6, max_length=MAX_ANSWER, container=False, scale=4,
+                    elem_id="lerni-question-bonus")
+                send = gr.Button("Send", variant="primary", scale=1, min_width=70,
+                                 elem_id="lerni-send-bonus")
+            if talks:
+                gr.HTML('<div class="lerni-mode" role="group" aria-label="Talk or type">'
+                        '<button type="button" data-mode="talk">🎤 Talk</button>'
+                        '<button type="button" data-mode="type">⌨️ Type</button></div>')
+                hide = {"elem_classes": "lerni-hide", "container": False}
+                clip = gr.Textbox(elem_id="lerni-clip-bonus", **hide)
+                partial = gr.Textbox(elem_id="lerni-partial-bonus", **hide)
+                heard_btn = gr.Button(elem_id="lerni-heard-bonus", elem_classes="lerni-hide")
+                peek = gr.Button(elem_id="lerni-peek-bonus", elem_classes="lerni-hide")
+            skip = gr.Button("Skip", size="sm")
         note = gr.Markdown(elem_id="lerni-note")
         go = gr.Button("Race!", variant="primary", elem_classes="lerni-go")
         next_btn = gr.Button("Next", variant="primary", elem_classes="lerni-go", visible=False)
@@ -302,7 +335,8 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
         with gr.Row(elem_classes="lerni-tiles"):
             shop = {c.id: shop_tile(c) for c in garage.cars}
 
-    outputs = [header_stars, hero, track, question, *choices, note, go, next_btn, shown, mine_title,
+    outputs = [header_stars, hero, track, question, *choices, dock, answer_box, send, note, go,
+               next_btn, shown, mine_title,
                *(x for pair in mine.values() for x in pair),
                *(x for parts in shop.values() for x in parts)]
 
@@ -337,18 +371,21 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
         if race is None or race.done:
             ask, buttons = "", [gr.update(visible=False) for _ in choices]
             go_update = gr.update(visible=True, value="Race again!" if race else "Race!")
-            ref, waiting = (race.id, race.answered) if race else ("", 0), False
+            ref, waiting, live = (race.id, race.answered) if race else ("", 0), False, False
         else:
             ask, show = question_card(race, last)
             # while the why shows, the hidden buttons don't get the next question yet
             buttons = ([gr.update(visible=True, value=c) for c in public(race)["choices"]] if show
                        else [gr.update(visible=False) for _ in choices])
-            go_update, ref, waiting = gr.update(visible=False), (race.id, race.answered), not show
+            live = race.bonus_live  # the bonus dock instead of Next
+            go_update, ref, waiting = gr.update(visible=False), (race.id, race.answered), not (
+                show or live)
         mine = stars(points, viewer)
         return [gr.update(value=mine, visible=bool(mine)),
                 gr.update(value=hero_html(garage, p), visible=race is None),
                 gr.update(value=track_svg(race, driving, garage), visible=race is not None),
-                ask, *buttons, line, go_update, gr.update(visible=waiting), ref,
+                ask, *buttons, gr.update(visible=live), gr.update(value=""),
+                gr.update(interactive=True), line, go_update, gr.update(visible=waiting), ref,
                 *garage_updates(p)]
 
     def viewer_of(request: gr.Request) -> Viewer | None:
@@ -394,6 +431,19 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
             return screen(viewer, *shown, last=(ref[1], turn) if turn else None)
         return handler
 
+    def on_bonus(text: str, ref: tuple[str, int], request: gr.Request,
+                 said: str = "") -> list[Any]:
+        # grade the answer once (it stays in memory), then show the grade until Next
+        viewer = viewer_of(request)
+        if desk is None or viewer is None:
+            return screen(viewer, None, "")
+        race, turn, awarded = desk.answer_bonus(viewer.username, ref[0], ref[1], text or "",
+                                                supervised=viewer.role is Role.SUPERVISED)
+        if turn is None:  # a double send, or the race ended
+            return screen(viewer, race, "" if race else "That race ended. Tap Race! 🏁")
+        line = (f"🎤 {said}\n\n" if said else "") + (f"⭐ +{awarded}" if awarded else "")
+        return screen(viewer, race, line, last=(ref[1], turn))
+
     def on_next(request: gr.Request) -> list[Any]:
         # the next question, after the right answer and its why (a dropped race: the start)
         viewer = viewer_of(request)
@@ -419,6 +469,33 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
     for i, button in enumerate(choices):
         button.click(on_choice(i), shown, outputs, concurrency_limit=MAX_AT_ONCE, **PRIVATE)
     next_btn.click(on_next, None, outputs, concurrency_limit=MAX_AT_ONCE, **PRIVATE)
+    reading = (lambda: ["Lerni is reading your answer… ⭐", gr.update(interactive=False)],
+               None, [note, send])  # Send waits while Claude grades
+    for trigger in (send.click, answer_box.submit):
+        trigger(*reading, **PRIVATE).then(on_bonus, [answer_box, shown], outputs,
+                                          concurrency_limit=MAX_AT_ONCE, **PRIVATE)
+    def on_skip(ref: tuple[str, int], request: gr.Request) -> list[Any]:
+        return on_bonus("", ref, request)  # nothing to grade: no points, never called wrong
+
+    skip.click(on_skip, [shown], outputs, concurrency_limit=MAX_AT_ONCE, **PRIVATE)
+    if talks:
+        def on_heard(b64: str, ref: tuple[str, int], request: gr.Request) -> list[Any]:
+            # what Whisper heard is sent at once, as in Chat; nothing heard: try again
+            try:
+                text = heard(speech, b64)
+            except (ClipRefused, SpeechUnavailable):
+                ups = [gr.update() for _ in outputs]  # the bonus stays; only the note changes
+                ups[outputs.index(note)] = "I didn't catch that. Hold to talk again, or type it."
+                return ups
+            return on_bonus(text, ref, request, said=text)
+
+        heard_btn.click(on_heard, [clip, shown], outputs, concurrency_limit=MAX_AT_ONCE,
+                        **PRIVATE)
+        def on_peek(b64: str, request: gr.Request) -> str:
+            viewer = viewer_of(request)  # what's heard so far, while the button is held
+            return f"🎤 {talk_preview(speech, viewer, b64)}" if viewer else ""
+
+        peek.click(on_peek, [partial], [preview], **PRIVATE)
     for car_id, button in [*((i, t[-1]) for i, t in mine.items()),
                            *((i, t[-1]) for i, t in shop.items())]:
         button.click(on_garage(car_id), None, outputs, concurrency_limit=MAX_AT_ONCE, **PRIVATE)

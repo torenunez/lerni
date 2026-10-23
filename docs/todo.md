@@ -32,12 +32,11 @@ Open tasks by who does the work. The educator and admin tracks run in parallel: 
 
 What ships next, in order, one PR each ([how versions work](roadmap.md#versions)):
 
-1. **v3.24: the bonus round** (after the 2026-11-03 check of right answers per goal): an "explain it" question as question 4 when the student is last after question 3, or in about 1 race in 4; typed or spoken; Claude grades it against its key ideas: nailed 15 ⭐, partly 7, a real try 2, otherwise 0; nailed and partly move the car like a right answer; the answer stays in memory only.
-2. **v3.25: probes:** one question a race tries a nearby idea not on the map; never set aside, never counted toward the level; after the race, up to two "Want to find out more?" topics open Chat; probe answers and taps are kept as labels for Version 5.
-3. **v4.1: the Version 4 plan** (docs; Version 4 below), which also says where the embeddings fit.
-4. **v4.2: spec 10, local embeddings:** a local embedder run as a command like `whisper-cli` (llama.cpp `llama-embedding` with a small model in `~/.lerni/models/`, chosen by a bake-off on about 100 labelled name pairs; nothing hosted), behind an adapter with a fake for tests, vectors cached by name. Uses: shortlist "same as" candidates the tagger can't see (Older interests, long maps) for Claude to confirm; catch set-aside topics by meaning in race questions (beside the word match, never instead), and rank the map block by the current message (whole lines; safety lines first). It flags and shortlists only; it never changes the map. Lifts spec 08's "no embeddings" for these uses only; and the plan.
-5. **v4.3: local embeddings built,** per spec 10. Without the embedder, everything falls back to today's behavior.
-6. **Version 4, remembering:** opens with an educator-approved fact-card library for one goal (`~/.lerni/library/`, nothing about any student): race questions quote a card and the server checks the quote; cards go into the map block as information; recall questions come from cards, with recall attempts kept apart from discussion (building on v3.22's review schedule; FSRS or SM-2). Bridge Trip (a trip along their map with recall stops) is its front door; its first PR writes the plan.
+1. **v3.25: probes:** one question a race tries a nearby idea not on the map; never set aside, never counted toward the level; after the race, up to two "Want to find out more?" topics open Chat; probe answers and taps are kept as labels for Version 5.
+2. **v4.1: the Version 4 plan** (docs; Version 4 below), which also says where the embeddings fit.
+3. **v4.2: spec 10, local embeddings:** a local embedder run as a command like `whisper-cli` (llama.cpp `llama-embedding` with a small model in `~/.lerni/models/`, chosen by a bake-off on about 100 labelled name pairs; nothing hosted), behind an adapter with a fake for tests, vectors cached by name. Uses: shortlist "same as" candidates the tagger can't see (Older interests, long maps) for Claude to confirm; catch set-aside topics by meaning in race questions (beside the word match, never instead), and rank the map block by the current message (whole lines; safety lines first). It flags and shortlists only; it never changes the map. Lifts spec 08's "no embeddings" for these uses only; and the plan.
+4. **v4.3: local embeddings built,** per spec 10. Without the embedder, everything falls back to today's behavior.
+5. **Version 4, remembering:** opens with an educator-approved fact-card library for one goal (`~/.lerni/library/`, nothing about any student): race questions quote a card and the server checks the quote; cards go into the map block as information; recall questions come from cards, with recall attempts kept apart from discussion (building on v3.22's review schedule; FSRS or SM-2). Bridge Trip (a trip along their map with recall stops) is its front door; its first PR writes the plan.
 
 How PRs are split:
 
@@ -69,6 +68,7 @@ Versions 1 and 2 also need sessions, not code: the educator sets goals, rehearse
 - [ ] Garage extras: read-aloud 🔊 on cards; a short "here are your keys" moment on buying (reduced motion respected); paint and a number plate bought with ⭐; shark, rocket or dinosaur bodies for students who aren't into cars; an educator preview of a student's race questions.
 - [ ] Two weeks after v3.7: are Lerni's questions getting real answers, or are points just being hunted? `answered` is Claude's judgment, not a check, so spot-check it in `lerni logs`. Tune the points, or stop.
 - [ ] Two weeks after v3.18 (about 2026-11-03): read the results log; is each goal at about 50–75% right? If not, change `UP_AT`/`DOWN_AT` or the level descriptions in `QUIZ_SYSTEM`.
+- [ ] After a week of bonus rounds: read the results log's bonus tiers (how often nailed, partly, tried) and spot-check that grading is fair; tune `GRADE_SYSTEM` or the points if not.
 
 ### Later: Version 4 Remembering
 

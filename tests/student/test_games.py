@@ -50,3 +50,19 @@ def test_a_double_tap_on_a_wrong_answer_never_skips_the_why(tmp_path):
     assert desk.just_answered("sam")  # Next waits: this tap was meant for the choice
     now[0] += 2
     assert not desk.just_answered("sam")
+
+
+def test_the_bonus_card_asks_then_shows_its_grade():
+    from lerni.student.race import Bonus, bonus_move
+
+    race = new_race([HALF] * QUESTIONS_PER_RACE)
+    race.bonus = Bonus("Fractions", "halves", "Explain why two halves make a whole.",
+                       ("two equal parts", "together they make one"))
+    for n in range(3):
+        answer(race, n, 1)  # last after three: the bonus
+    text, choices = question_card(race)
+    assert "Bonus" in text and "two halves make a whole" in text and not choices
+    assert "equal parts" not in text  # never the key ideas
+    turn = bonus_move(race, "partly", "Good start: the missing idea is that they're equal.")
+    text, choices = question_card(race, (3, turn))
+    assert "two halves make a whole" in text and "Good start" in text and not choices  # Next
