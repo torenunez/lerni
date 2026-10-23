@@ -9,10 +9,10 @@ Approved in conversation on 2026-10-20. Builds on [spec 09](09-play-and-points.m
 - v3.17: practice on the map;
 - v3.18: pitched right;
 - v3.22: missed ideas come back;
-- v3.23: the bonus round;
-- v3.24: probes.
+- v3.24: the bonus round;
+- v3.25: probes.
 
-v3.19 (race questions from the garage), v3.20 (a map journal and nightly backups), and v3.21 (Next after a wrong answer) sit between v3.18 and v3.22; each is designed in its own plan, not here. Each version's plan file (`plans/v3.NN-*.md`) is written when it starts, from this spec.
+v3.19 (race questions from the garage), v3.20 (a map journal and nightly backups), and v3.21 (Next after a wrong answer) sit between v3.18 and v3.22, and v3.23 (Chat's goals take turns) between v3.22 and v3.24; each is designed in its own plan, not here. Each version's plan file (`plans/v3.NN-*.md`) is written when it starts, from this spec.
 
 ## What people see
 
@@ -45,7 +45,7 @@ v3.19 (race questions from the garage), v3.20 (a map journal and nightly backups
 - **Groups:** a group counts its kinds' bridges and explanations, as it already counts their days.
 - **Read-only:** nothing here is written into the map.
 
-### The bonus round (v3.23)
+### The bonus round (v3.24)
 
 - **When:**
   - if the student is 3rd after question 3, question 4 is a bonus;
@@ -60,7 +60,7 @@ v3.19 (race questions from the garage), v3.20 (a map journal and nightly backups
   - the car moves.
 - **Skip or a blank answer** takes a small step and earns 0. It's never called wrong.
 
-### "Want to find out more?" (v3.24)
+### "Want to find out more?" (v3.25)
 
 - **At the finish,** under the place, there are up to two topic buttons, such as "🌋 Earthquakes".
 - **A tap** opens Chat, where Lerni starts on that topic. The topic joins the map only if the student then talks about it.
@@ -170,7 +170,7 @@ v3.19 (race questions from the garage), v3.20 (a map journal and nightly backups
   - A question whose concept matches a due one counts as its review.
 - **Unanswered reviews:** if Claude skips a due concept, it stays due. Nothing is lost for being overdue.
 
-### The bonus round (v3.23, `race.py`, `adapters/claude_code.py`, `web/games.py`)
+### The bonus round (v3.24, `race.py`, `adapters/claude_code.py`, `web/games.py`)
 
 - **Writing:** the same call that writes 10 questions writes up to 2 bonus questions (`bonus`: goal, concept, question, `key_ideas` of 2 or 3 short phrases).
   - **Checks:** like a question (lengths, goal on the map, set-asides, repeats); a key idea is at most 60 characters.
@@ -206,7 +206,7 @@ v3.19 (race questions from the garage), v3.20 (a map journal and nightly backups
 - **Speaking:** the card reuses Chat's Hold to talk (`talk.js`, `voice.py`). Whisper turns the speech into text, and the text is graded.
 - **Cost:** one small-model call per bonus.
 
-### Probes (v3.24, `race.py`, `results.py`, `web/games.py`)
+### Probes (v3.25, `race.py`, `results.py`, `web/games.py`)
 
 - **What the server gives Claude:** "Nearby ideas to try", built from:
   - the strong interests, with their groups and those groups' other kinds;
@@ -262,11 +262,11 @@ v3.19 (race questions from the garage), v3.20 (a map journal and nightly backups
   - a miss is due tomorrow and reaches the prompt;
   - a due concept isn't refused as a repeat;
   - a right answer at 7 days retires it.
-- **v3.23 (`test_race.py`):**
+- **v3.24 (`test_race.py`):**
   - last after question 3 gets the bonus;
   - each tier moves the car and awards once;
   - the answer is on disk nowhere.
-- **v3.24 (`test_race.py`):**
+- **v3.25 (`test_race.py`):**
   - a probe on the map or set aside is dropped;
   - a probe answer leaves the level alone;
   - a tap is logged.
