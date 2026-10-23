@@ -170,7 +170,7 @@ v3.19 (race questions from the garage), v3.20 (a map journal and nightly backups
   - A question whose concept matches a due one counts as its review.
 - **Unanswered reviews:** if Claude skips a due concept, it stays due. Nothing is lost for being overdue.
 
-### The bonus round (v3.24, `race.py`, `adapters/claude_code.py`, `web/games.py`)
+### The bonus round (v3.24, `race.py`, `web/games.py`, `web/talk.js`)
 
 - **Writing:** the same call that writes 10 questions writes up to 2 bonus questions (`bonus`: goal, concept, question, `key_ideas` of 2 or 3 short phrases).
   - **Checks:** like a question (lengths, goal on the map, set-asides, repeats); a key idea is at most 60 characters.
@@ -191,7 +191,7 @@ v3.19 (race questions from the garage), v3.20 (a map journal and nightly backups
     - none: blank, emojis, or off-topic.
 - **Safety:**
   - The grader follows the supervised safety rules.
-  - With `care`, the card shows Chat's caring words instead of feedback, and counts the answer as tried.
+  - With `care`, the card shows Chat's caring words instead of feedback, with no points; that one answer goes to the conversation log, as a worrying message in Chat does, and the results log gets a `care` flag (changed in review).
 - **Failures:** if the call fails or takes over 20 seconds, the answer counts as tried: "Lerni couldn't read that one. ⭐ +2 for trying."
 - **Movement:**
   - nailed and partly move the car like a right answer, and count as right for the place;

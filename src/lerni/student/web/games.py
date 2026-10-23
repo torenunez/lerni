@@ -243,10 +243,21 @@ def after_tap(race: Race | None, ref: tuple[str, int], turn: Turn | None,
     return None
 
 
+def _why_first(race: Race, last: tuple[int, Turn] | None) -> bool:
+    # a multiple-choice miss just now, mid-race: its right answer and why wait for Next
+    return (last is not None and bool(last[1].answer) and not last[1].right and not race.done
+            and last[0] == race.answered - 1)
+
+
 def question_card(race: Race, last: tuple[int, Turn] | None = None) -> tuple[str, bool]:
     """The question card, and whether its choices show: right after a wrong answer mid-race,
     the question just answered with its right answer and why (the next waits for Next);
     otherwise the current question. The bonus shows its question alone, then its grade."""
+    if _why_first(race, last):  # a wrong answer's why comes before anything, the bonus too
+        number, turn = last
+        return (f"Question {number + 1} of {QUESTIONS_PER_RACE}\n\n"
+                f"**{race.questions[number].question}**\n\n"
+                f"Not this time: it's **{turn.answer}**. {turn.why}", False)
     if race.bonus_live and race.bonus is not None:  # typed or spoken: no choices
         return (f"Question {race.answered + 1} of {QUESTIONS_PER_RACE}\n\n⭐ **Bonus: explain "
                 f"it in your own words!**\n\n**{race.bonus.question}**", False)
@@ -308,8 +319,8 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
                 gr.Button("🎤\nHold to talk", elem_id="lerni-talk-bonus", elem_classes="lerni-talk")
             with gr.Row(elem_classes="lerni-type"):
                 answer_box = gr.Textbox(
-                    show_label=False, placeholder="Explain it in your own words…", lines=2,
-                    max_lines=6, max_length=MAX_ANSWER, container=False, scale=4,
+                    show_label=False, placeholder="Explain it in your own words…", lines=1,
+                    max_lines=4, max_length=MAX_ANSWER, container=False, scale=4,
                     elem_id="lerni-question-bonus")
                 send = gr.Button("Send", variant="primary", scale=1, min_width=70,
                                  elem_id="lerni-send-bonus")
@@ -377,7 +388,7 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
             # while the why shows, the hidden buttons don't get the next question yet
             buttons = ([gr.update(visible=True, value=c) for c in public(race)["choices"]] if show
                        else [gr.update(visible=False) for _ in choices])
-            live = race.bonus_live  # the bonus dock instead of Next
+            live = race.bonus_live and not _why_first(race, last)  # the dock, not Next
             go_update, ref, waiting = gr.update(visible=False), (race.id, race.answered), not (
                 show or live)
         mine = stars(points, viewer)
@@ -439,6 +450,8 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
             return screen(viewer, None, "")
         race, turn, awarded = desk.answer_bonus(viewer.username, ref[0], ref[1], text or "",
                                                 supervised=viewer.role is Role.SUPERVISED)
+        if turn is None and race is not None and desk.grading(race.id):
+            return [gr.update() for _ in outputs]  # the first answer is still being read
         if turn is None:  # a double send, or the race ended
             return screen(viewer, race, "" if race else "That race ended. Tap Race! 🏁")
         line = (f"🎤 {said}\n\n" if said else "") + (f"⭐ +{awarded}" if awarded else "")
@@ -481,6 +494,8 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
     if talks:
         def on_heard(b64: str, ref: tuple[str, int], request: gr.Request) -> list[Any]:
             # what Whisper heard is sent at once, as in Chat; nothing heard: try again
+            if viewer_of(request) is None:  # who's asking, before anything is heard
+                return screen(None, None, "")
             try:
                 text = heard(speech, b64)
             except (ClipRefused, SpeechUnavailable):
@@ -489,13 +504,13 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
                 return ups
             return on_bonus(text, ref, request, said=text)
 
-        heard_btn.click(on_heard, [clip, shown], outputs, concurrency_limit=MAX_AT_ONCE,
-                        **PRIVATE)
+        heard_btn.click(lambda: "", None, [preview], **PRIVATE).then(  # the last words go
+            on_heard, [clip, shown], outputs, concurrency_limit=MAX_AT_ONCE, **PRIVATE)
         def on_peek(b64: str, request: gr.Request) -> str:
             viewer = viewer_of(request)  # what's heard so far, while the button is held
             return f"🎤 {talk_preview(speech, viewer, b64)}" if viewer else ""
 
-        peek.click(on_peek, [partial], [preview], **PRIVATE)
+        peek.click(on_peek, [partial], [preview], trigger_mode="always_last", **PRIVATE)
     for car_id, button in [*((i, t[-1]) for i, t in mine.items()),
                            *((i, t[-1]) for i, t in shop.items())]:
         button.click(on_garage(car_id), None, outputs, concurrency_limit=MAX_AT_ONCE, **PRIVATE)

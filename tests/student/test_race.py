@@ -668,8 +668,10 @@ def test_a_bonus_answer_is_graded_safely(tmp_path):
     maps, points = MapStore(tmp_path), PointsStore(tmp_path)
     goal = maps.change("sam", lambda m: add_goal(m, "Fractions"))
     grader = Grader()
+    from lerni.student.logs import ConversationLog as Log
+
     desk = RaceDesk(Writer(), maps, points, ConceptStore(tmp_path), results=ResultsLog(tmp_path),
-                    grader=grader)
+                    grader=grader, log=Log(tmp_path))
     desk.prefill = lambda *args: None
     ticks = iter(range(0, 10_000, 10))
     desk.clock = lambda: float(next(ticks))
@@ -698,9 +700,14 @@ def test_a_bonus_answer_is_graded_safely(tmp_path):
     race = at_bonus()
     _, turn, awarded = desk.answer_bonus("sam", race.id, 3, "halves are the same size")
     assert race.bonus_tier == "tried" and awarded == BONUS_POINTS["tried"]
-    assert "couldn't read" in turn.why
+    assert "couldn't read" in turn.why and "+2" not in turn.why  # the ⭐ is said once, below
 
     grader.reply = {"tier": "nailed", "line": "Great!", "care": True}  # worry comes first
     race = at_bonus()
-    _, turn, _ = desk.answer_bonus("sam", race.id, 3, "someone keeps hurting me")
-    assert race.bonus_tier == "tried" and turn.why == CARE_LINE
+    _, turn, awarded = desk.answer_bonus("sam", race.id, 3, "someone keeps hurting me")
+    assert race.bonus_tier == "care" and turn.why == CARE_LINE and awarded == 0  # no reward
+    # regression (review): a worry left no trace; like Chat's, it's kept in the conversation log
+    from lerni.student.logs import ConversationLog
+
+    assert any("hurting me" in r.get("answer", "") for r in ConversationLog(tmp_path).read("sam"))
+    assert '"care": true' in (tmp_path / "results" / "sam.jsonl").read_text()
