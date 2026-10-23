@@ -8,6 +8,7 @@ conversation; goals and their notes come only from a person. See
 from __future__ import annotations
 
 import fcntl
+import hashlib
 import json
 import re
 import threading
@@ -997,6 +998,11 @@ def details(m: InterestMap, entry_id: str, today: date) -> Details:
                    [x.name for x in under], len(e.days), ties)
 
 
+def _turn(day: date, entry_id: str) -> str:
+    """A goal's place among tied goals on this day: the same all day, reshuffled each day."""
+    return hashlib.sha256(f"{day.isoformat()}|{entry_id}".encode()).hexdigest()
+
+
 def map_block(m: InterestMap, today: date) -> str:
     """The map for the prompt, as information, at most 1,500 characters; "" if empty."""
     names = {e.id: e.name for e in m.entries}
@@ -1015,7 +1021,9 @@ def map_block(m: InterestMap, today: date) -> str:
 
     goals = [e for e in m.entries if e.kind == "goal"]
     covered = {g.id: sum(k.b == g.id for k in bridges) + len(g.explained) for g in goals}
-    steer = sorted((g for g in goals if not backed_off(g, today)), key=lambda g: covered[g.id])[:8]
+    # the least covered first; goals tied on that take turns by day (the oldest won every time)
+    steer = sorted((g for g in goals if not backed_off(g, today)),
+                   key=lambda g: (covered[g.id], _turn(today, g.id)))[:8]
     revisit = [g for g in goals if g.explained and faded(g, today)]
     lines = [MAP_HEADER]
     # removed interests with their history: not older removals, nor ones deleted for good

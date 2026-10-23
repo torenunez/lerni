@@ -571,3 +571,23 @@ def test_links_keep_their_days_and_bridges_say_how_they_held():
     saved = _to_dict(m)
     saved["links"][0]["weight"], saved["entries"][0]["colour"] = 3, "red"
     assert len(_from_dict(saved).links) == len(m.links)
+
+
+def test_tied_goals_take_turns_in_chat():
+    # regression: with more than 8 goals tied on coverage, the oldest always won, so goals
+    # added later never reached Chat
+    from datetime import timedelta
+
+    m = InterestMap()
+    goals = [add_goal(m, f"Goal {chr(65 + i)}") for i in range(15)]
+    covered = m.new_entry("cars", "interest")
+    m.entries.append(covered)
+    apply_tags(m, parse_tags({"bridge": {"interest": "cars", "goal": "Goal A"}}), "x", TODAY)
+
+    def shown(day):
+        block = map_block(m, day)
+        return {g.name for g in goals if f"- {g.name}\n" in block + "\n"}
+
+    assert shown(TODAY) == shown(TODAY) and len(shown(TODAY)) == 8  # steady all day
+    seen = set().union(*(shown(TODAY + timedelta(days=n)) for n in range(14)))
+    assert seen == {g.name for g in goals[1:]}  # every tied goal gets a turn; A has a bridge
