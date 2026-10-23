@@ -1000,7 +1000,7 @@ def details(m: InterestMap, entry_id: str, today: date) -> Details:
 
 def _turn(day: date, entry_id: str) -> str:
     """A goal's place among tied goals on this day: the same all day, reshuffled each day."""
-    return hashlib.sha256(f"{day.isoformat()}|{entry_id}".encode()).hexdigest()
+    return hashlib.sha256(f"{day.toordinal()}|{entry_id}".encode()).hexdigest()  # never the time
 
 
 def map_block(m: InterestMap, today: date) -> str:

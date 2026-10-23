@@ -14,7 +14,7 @@ When something changes, update this section and add a log entry below.
 
 ## Log
 
-### 2026-10-23 (Chat's goals take turns; v3.23 built)
+### 2026-10-22 (Chat's goals take turns; v3.23 built)
 
 - Chat still shows Claude the 8 least-covered goals, but goals tied on coverage now take turns by day (a fingerprint of the date and the goal: the same all day, reshuffled daily). Over 30 simulated days each of 15 tied goals was in view 13 to 20 days. On the supervised student's map (read-only), every zero-coverage goal gets 6 to 9 Chat days in 14, and five of the goals added on 2026-10-22 are in view today. Tests: 193 passed.
 
