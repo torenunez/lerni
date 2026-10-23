@@ -4,7 +4,7 @@ Approved in conversation on 2026-10-12. Requirements: [student PRD, Version 3](.
 
 **Why.** The supervised student answers Lerni's goal questions with random emojis. Points they can spend on cars give those questions a reason, from two places: a race in Games and real answers in Chat. Points never go down for a wrong answer, are never compared between students, and stay apart from the map.
 
-**Ships as:** v3.1 (the race, points, and the garage), v3.3 (real cars in the garage), and v3.7 (points in Chat, and Ask renamed Chat). Part 2 (v3.16–v3.24): [spec 09b](09b-harder-races.md).
+**Ships as:** v3.1 (the race, points, and the garage), v3.3 (real cars in the garage), and v3.7 (points in Chat, and Ask renamed Chat). Part 2 (v3.16–v3.25): [spec 09b](09b-harder-races.md).
 
 ## What people see
 
@@ -13,7 +13,7 @@ Approved in conversation on 2026-10-12. Requirements: [student PRD, Version 3](.
 - **Top (v3.5):** the car they're driving, big, with its ⚡ and the next car to save for ("Next car: … · ⭐ 280 / 400 · about 10 races" over a bar); then **Race!**. While a race runs, the track takes its place.
 - **The race:**
   - Their car and two silly bots (Zippy and Bolt) on a three-lane track, with a finish flag (rival cars from v3.16, [part 2](09b-harder-races.md)).
-  - A question card under it: "Question 3 of 5", the question, and **three big buttons**. No typing and no chat in a race (until the bonus round, v3.23).
+  - A question card under it: "Question 3 of 5", the question, and **three big buttons**. No typing and no chat in a race (until the bonus round, v3.24).
   - A right pick: their car leaps ahead and the bot in front slows ("Right answer: boost! Zippy slowed down 💨").
   - Another pick: a small step, and (from v3.21) the question stays on screen with the right answer and a one-line why ("It's acceleration: speeding up"); **Next** shows the next question. A wrong last answer shows the finish instead.
   - Cars glide to their new places after each answer; nothing moves on a clock.
