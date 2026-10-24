@@ -728,3 +728,43 @@ def test_held_questions_last_past_midnight(tmp_path):
                                        remove(m, m.find("Fractions").id)])
     with pytest.raises(RaceUnavailable):
         desk.start("sam", supervised=True, today=TODAY + timedelta(days=3))
+
+
+def test_writing_ahead_counts_only_questions_that_still_fit(tmp_path):
+    # review: held questions on a goal removed overnight hid the need to write ahead
+    quizzer = FakeQuizzer()
+    desk, _ = desk_for(tmp_path, quizzer)
+    ticks = iter(range(0, 1000, 10))
+    desk.clock = lambda: float(next(ticks))
+    real_prefill, desk.prefill = desk.prefill, lambda *args: None
+    desk.start("sam", supervised=True)  # five held
+    desk.maps.change("sam", lambda m: [add_goal(m, "Decimals"),
+                                       remove(m, m.find("Fractions").id)])
+    real_prefill("sam", supervised=True)
+    writing = desk._busy.get("sam")
+    assert writing is not None and writing.wait(5)  # it wrote, not trusting the five stale ones
+    assert quizzer.calls > 1
+
+
+def test_a_race_tap_never_writes_while_another_write_runs(tmp_path, monkeypatch):
+    # review: a tap whose wait ran out started a second Claude call beside the first
+    import threading
+
+    import lerni.student.race as race_module
+
+    release = threading.Event()
+
+    class SlowQuizzer(FakeQuizzer):
+        def write(self, system, prompt):
+            release.wait(5)
+            return super().write(system, prompt)
+
+    quizzer = SlowQuizzer()
+    desk, _ = desk_for(tmp_path, quizzer)
+    monkeypatch.setattr(race_module, "QUIZ_WAIT_SECONDS", 0.05)
+    desk.prefill("sam", supervised=True)  # sign-in: writing, slowly
+    with pytest.raises(RaceUnavailable):
+        desk.start("sam", supervised=True)
+    release.set()
+    desk._busy.get("sam", threading.Event()).wait(5)
+    assert quizzer.calls == 1

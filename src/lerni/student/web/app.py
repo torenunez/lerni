@@ -277,10 +277,15 @@ def build_app(
                       log=log)  # a worrying bonus answer is kept where Chat's are
              if quizzer is not None else None)
     log.purge()  # at startup; then once a day as exchanges are logged
-    if races is not None:  # a restart loses held questions: write the next race's now
+    # production only (a labelled server is development): a restart loses held questions
+    if races is not None and not label:
         for s in students.list_students():
             if s.kind is Kind.SUPERVISED and not s.archived:
-                races.prefill(s.username, supervised=True)  # in the background
+                try:  # best effort: the next race's questions, in the background
+                    races.prefill(s.username, supervised=True)
+                except Exception:  # noqa: BLE001 - a broken file never stops the server
+                    pass
+
     def plays(username: str) -> bool:  # supervised students and educators earn ⭐
         try:
             student = students.get(username)

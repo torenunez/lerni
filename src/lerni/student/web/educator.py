@@ -1,4 +1,4 @@
-"""MentalMaps for educators: suggest a goal, then racing this week, the list, and the picture.
+"""MentalMaps for educators: suggest or change a goal, then racing, the list, and the picture.
 
 :func:`educator_send` and :func:`educator_add` are plain functions over the
 server-resolved viewer, so the role checks can be tested without a browser;
@@ -115,7 +115,7 @@ def educator_tab(
     garage: Garage | None = None,
     results: ResultsLog | None = None,
 ) -> tuple[gr.Tab, gr.Dropdown]:
-    """The student's page: suggest a goal first, then racing this week, the list, and the picture.
+    """The student's page: suggest or change a goal, then racing this week, the list, the picture.
 
     With one supervised student it opens on them (main.py picks and hides the dropdown).
     """

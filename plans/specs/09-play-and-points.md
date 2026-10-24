@@ -4,7 +4,7 @@ Approved in conversation on 2026-10-12. Requirements: [student PRD, Version 3](.
 
 **Why.** The supervised student answers Lerni's goal questions with random emojis. Points they can spend on cars give those questions a reason, from two places: a race in Games and real answers in Chat. Points never go down for a wrong answer, are never compared between students, and stay apart from the map.
 
-**Ships as:** v3.1 (the race, points, and the garage), v3.3 (real cars in the garage), and v3.7 (points in Chat, and Ask renamed Chat). Part 2 (v3.16–v3.28): [spec 09b](09b-harder-races.md).
+**Ships as:** v3.1 (the race, points, and the garage), v3.3 (real cars in the garage), and v3.7 (points in Chat, and Ask renamed Chat). Part 2 (v3.16–v3.31): [spec 09b](09b-harder-races.md).
 
 ## What people see
 
@@ -23,7 +23,7 @@ Approved in conversation on 2026-10-12. Requirements: [student PRD, Version 3](.
   - A car they can't afford yet shows only its picture, name, and price; its ⚡ and facts come once it's in reach.
   - Owned cars say **Drive**; others **Buy · 140 ⭐**, or "60 more ⭐" (not tappable).
   - Buying asks nothing more: it takes the price off their points, and the car is theirs for good.
-- **Starting a race** is quick: the next race's questions are written ahead, at sign-in, at server start, and after each race, and unused ones are kept past midnight (v3.27). Writing a set takes about a minute, so when nothing is held the note says so ("Pumping the tires… New questions can take a minute to write.").
+- **Starting a race** is quick: the next race's questions are written ahead, at sign-in, at server start, and after each race, and unused ones are kept past midnight (v3.27). Writing a set takes about a minute; Race! always shows "Pumping the tires… New questions can take a minute to write." until the race appears. Held sets are used oldest first, so a goal added today reaches races once those are used.
 - **Limits:**
   - After 10 races in a day: "The track is closed for today 🌙 Come back tomorrow."
   - While Lerni is resting (usage limits): "Lerni is resting until Mon 6:00 pm."

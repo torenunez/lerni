@@ -431,12 +431,15 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
         viewer = viewer_of(request)
         if desk is None:
             return screen(viewer, None, NO_CLAUDE)
-        driving = points.get(viewer.username).car if viewer else STARTER
-        try:  # the driven car's gas; a car gone from the garage file drives like the starter
-            gas = boost(garage.car(driving))
-        except KeyError:
-            gas = 1.0
-        rivals = rival_pairs(garage, points.get(viewer.username)) if viewer else BOT_RIVALS
+        try:  # anything odd here: the Race button comes back, never a stuck waiting note
+            driving = points.get(viewer.username).car if viewer else STARTER
+            try:  # the driven car's gas; a car gone from the garage file drives like the starter
+                gas = boost(garage.car(driving))
+            except KeyError:
+                gas = 1.0
+            rivals = rival_pairs(garage, points.get(viewer.username)) if viewer else BOT_RIVALS
+        except Exception:  # noqa: BLE001 - never show what went wrong inside
+            return screen(viewer, None, NOT_READY)
         race, message = start_race(desk, viewer, gas, driving, rivals)
         return screen(viewer, race, message)
 
