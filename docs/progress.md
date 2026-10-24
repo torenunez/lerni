@@ -4,15 +4,19 @@ Where things really stand, then a dated log, newest first. Completed work is rec
 
 Record each kind of "done" only when it actually happens, with the date: code built, content approved, app ready, a student session held. Passing tests show code behaves as specified; they don't make anything ready for a student.
 
-## Current state (2026-10-24, v3.25 on the home server: Versions 1 and 2 built: the conversation, MentalMaps, HTTPS, and voice; Version 3's race, garage, and Chat points)
+## Current state (2026-10-24, v3.26 on the home server: Versions 1 and 2 built: the conversation, MentalMaps, HTTPS, and voice; Version 3's race, garage, and Chat points)
 
-- **Built:** the student app's core (student accounts, sign-in, Lerni's conversations, the MentalMap with its tagger and logs kept a year, Upload and educator feedback, and the educator agent); `lerni serve` with a sign-in page and one app with a ☰ menu by role: an independent student's Chat, My MentalMap (an editable list, the picture, and Upload), and Settings; an educator's student page (a Suggest a goal box, racing this week, the folded list, and the picture), opened at sign-in, with Students in Settings; a supervised student's Chat, full screen, and Games (a race for points spent on real cars; educators race too); good answers in Chat earn points too. Hold to talk with spoken answers; a Claude usage warning and rest. Both servers run as LaunchAgents (`lerni service`). The admin tool (`lerni`, with `lerni student`, `lerni logs`, and `lerni feedback`). A [code manifest](code-manifest.md) of every file. Tests: 198 passed.
+- **Built:** the student app's core (student accounts, sign-in, Lerni's conversations, the MentalMap with its tagger and logs kept a year, Upload and educator feedback, and the educator agent); `lerni serve` with a sign-in page and one app with a ☰ menu by role: an independent student's Chat, My MentalMap (an editable list, the picture, and Upload), and Settings; an educator's student page (a Suggest a goal box, racing this week, the folded list, and the picture), opened at sign-in, with Students in Settings; a supervised student's Chat, full screen, and Games (a race for points spent on real cars; educators race too); good answers in Chat earn points too. Hold to talk with spoken answers; a Claude usage warning and rest. Both servers run as LaunchAgents (`lerni service`). The admin tool (`lerni`, with `lerni student`, `lerni logs`, and `lerni feedback`). A [code manifest](code-manifest.md) of every file. Tests: 199 passed.
 - **Designed:** the interest map, goals, the tagger, upload, feedback, and the supervised conversation ([specs/04-interest-map.md](../plans/specs/04-interest-map.md)); approved with PR #12. Harder races, practice on the map, and probes ([spec 09b](../plans/specs/09b-harder-races.md)).
 - **Not yet:** a recorded supervised session (the supervised student has used it informally).
 
 When something changes, update this section and add a log entry below.
 
 ## Log
+
+### 2026-10-24 (the race starts fast; v3.27 built)
+
+- The student waited over a minute after tapping Race!, with "processing" on every garage car. Measured on the real map: one set of questions takes 60 seconds to write (the blind check 3 more); held questions lived in memory and were dropped at midnight, so the first race after a restart or on a new day waited. Now unused questions last past midnight (checked against the map at the start), the next race's are written at sign-in and at server start, and the wait says why. Gradio 6 still showed "processing" on HTML and Markdown with `show_progress="hidden"` on a chained step; pointing it at the hidden Race button (`show_progress_on`) shows none. The student's box now reads "Suggest or change a goal". The admin's decisions: goal spacing and areas become v3.28, read-aloud questions v3.29 (a 🔊 button and an auto switch), One Chat v3.30, probes v3.31. Checked on a throwaway server right after a restart: the note showed with nothing processing, the race waited for the startup write instead of starting a second, and the next race started in 0.1 s. Tests: 199 passed.
 
 ### 2026-10-24 (the student's page, tidied; v3.26 built)
 

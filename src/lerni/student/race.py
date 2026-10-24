@@ -586,7 +586,7 @@ class Checker(Protocol):
 
 
 class RaceDesk:
-    """Today's questions per person, written ahead, and each person's race in progress."""
+    """Questions per person, written ahead and kept until raced, and each race in progress."""
 
     def __init__(self, quizzer: Quizzer, maps: MapStore, points: PointsStore,
                  concepts: ConceptStore | None = None, checker: Checker | None = None,
@@ -600,8 +600,8 @@ class RaceDesk:
         self.checker = checker  # answers each question blind; a disagreement drops it
         self.results = results  # how each answer went, as labels and numbers
         self._asked: dict[str, deque[str]] = {}  # recent question texts, normalized; memory only
-        self._sets: dict[str, tuple[str, list[Question]]] = {}  # username: (day, questions)
-        self._bonuses: dict[str, tuple[str, list[Bonus]]] = {}  # the day's bonus questions
+        self._sets: dict[str, tuple[str, list[Question]]] = {}  # username: (day written, questions)
+        self._bonuses: dict[str, tuple[str, list[Bonus]]] = {}  # bonus questions written ahead
         self._grading: set[str] = set()  # a bonus answer being graded now, per race
         self.rng = random.Random()  # the 1-in-4 bonus draw; tests may replace it
         self._races: dict[str, Race] = {}
@@ -698,14 +698,17 @@ class RaceDesk:
         raise RaceUnavailable(NOT_READY)
 
     def _held(self, username: str, today: date) -> list[Question]:
-        day, held = self._sets.get(username, ("", []))
-        return held if day == today.isoformat() else []  # a new day starts fresh
+        _, held = self._sets.get(username, ("", []))
+        return held  # kept past midnight: each is checked against the map at the start
 
     def prefill(self, username: str, supervised: bool) -> None:
         """Write the next questions in the background if fewer than a race are held."""
         today = date.today()
+        m = self.maps.get(username)
         with self._lock:
-            if len(self._held(username, today)) >= QUESTIONS_PER_RACE or username in self._busy:
+            held = self._held(username, today)
+            held[:] = [q for q in held if fits(q, m)]  # set aside or gone since: not counted
+            if len(held) >= QUESTIONS_PER_RACE or username in self._busy:
                 return
             if self.points.races_left(username, today) <= 0:
                 return  # no race left today to use them
@@ -751,21 +754,23 @@ class RaceDesk:
             if writing is not None:  # opening Games already asked: wait for that, not a second call
                 writing.wait(QUIZ_WAIT_SECONDS)
             m = self.maps.get(username)
-            with self._lock:
+            with self._lock:  # one step: count, and claim the writing, so no one writes twice
                 before = {id(q) for q in self._held(username, day)}
                 held = [q for q in self._held(username, day) if fits(q, m)]  # set aside since
-            if len(held) < QUESTIONS_PER_RACE:
-                with self._lock:  # so opening Games meanwhile waits rather than writes too
-                    mine = None if username in self._busy else threading.Event()
-                    if mine is not None:
-                        self._busy[username] = mine
+                short = len(held) < QUESTIONS_PER_RACE
+                still = username in self._busy  # the wait ran out: theirs is still writing
+                mine = threading.Event() if short and not still else None
+                if mine is not None:
+                    self._busy[username] = mine
+            if short and still:
+                raise RaceUnavailable(NOT_READY)  # never a second call beside the first
+            if mine is not None:
                 try:
                     held = spread(held + self._write(username, supervised, day))  # waits for Claude
                 finally:
-                    if mine is not None:
-                        with self._lock:
-                            self._busy.pop(username, None)
-                        mine.set()
+                    with self._lock:
+                        self._busy.pop(username, None)
+                    mine.set()
             m = self.maps.get(username)  # a person may have set something aside meanwhile
             held = [q for q in held if fits(q, m)]
             if len(held) < QUESTIONS_PER_RACE:
@@ -830,8 +835,7 @@ class RaceDesk:
 
     def _keep_bonus(self, username: str, day: date, new: list[Bonus]) -> None:
         with self._lock:
-            when, held = self._bonuses.get(username, ("", []))
-            held = held if when == day.isoformat() else []
+            _, held = self._bonuses.get(username, ("", []))
             known = {normalize(b.concept) for b in held}
             held += [b for b in new if normalize(b.concept) not in known]
             self._bonuses[username] = (day.isoformat(), held[-2 * BONUS_PER_SET:])
@@ -840,8 +844,8 @@ class RaceDesk:
         # the oldest held bonus that still fits the map (a goal or a set-aside may have changed)
         goals = {e.name.casefold() for e in m.entries if e.kind == "goal"}
         with self._lock:
-            when, held = self._bonuses.get(username, ("", []))
-            fit = [b for b in (held if when == day.isoformat() else [])
+            _, held = self._bonuses.get(username, ("", []))
+            fit = [b for b in held  # kept past midnight, like the questions
                    if (not goals or b.goal.casefold() in goals)
                    and not mentions_set_aside(m, " ".join([b.question, b.concept, *b.key_ideas]))]
             if fit:
@@ -887,9 +891,8 @@ class RaceDesk:
             with self._lock:  # dropped or replaced while grading: it no longer counts
                 turn = bonus_move(race, tier, line) if self._races.get(username) is race else None
                 if turn is not None:  # the question it replaced goes back for another race
-                    when, held = self._sets.get(username, ("", []))
-                    if when == date.today().isoformat():
-                        held.append(race.questions[BONUS_AT])
+                    self._sets.setdefault(username, (date.today().isoformat(), []))[1].append(
+                        race.questions[BONUS_AT])
                     self._last_tap[username] = self.clock()
         finally:
             with self._lock:
