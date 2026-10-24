@@ -227,7 +227,7 @@ def test_a_supervised_student_signs_in_to_the_conversation(tmp_path):
     labels = [c["props"].get("label") for c in config["components"] if c.get("type") == "tabitem"]
     assert "Chat" in labels
     chats = [c for c in config["components"] if c.get("type") == "chatbot"]
-    assert len(chats) == 3
+    assert len(chats) == 2  # the two Chats; the student page has none since v3.26
     assert "Get ready to explore" not in client.get("/app/config").text  # no waiting screen
 
 
@@ -380,9 +380,12 @@ def test_putting_an_item_in_a_group_checks_the_map_on_screen(tmp_path):
 
 
 def test_games_are_for_players_and_each_player_spends_only_their_own_points(tmp_path):
+    from datetime import date
+
     from lerni.student.garage import Garage
     from lerni.student.points import PointsStore
-    from lerni.student.web.games import garage_tap, require_player, student_points
+    from lerni.student.results import ResultsLog
+    from lerni.student.web.games import garage_tap, require_player, student_progress
 
     students, points, garage = StudentStore(tmp_path), PointsStore(tmp_path), Garage(tmp_path)
     students.add("lee", "Lee", Kind.SUPERVISED, "1234")
@@ -394,8 +397,13 @@ def test_games_are_for_players_and_each_player_spends_only_their_own_points(tmp_
     points.buy("lee", "rally", 30)
     assert garage_tap(points, garage, lee, "rally").startswith("Driving")
     assert points.get("lee").balance == 10 and points.get("alba").balance == 0
-    assert "⭐ 10" in student_points(points, garage, students, EDUCATOR, "lee")
-    assert student_points(points, garage, students, SAM, "lee") == ""  # only an educator reads them
+    results, today = ResultsLog(tmp_path), date.today().isoformat()
+    for right in (True, True, True, False, False):
+        results.add("lee", {"day": today, "goal": "a<b", "right": right})
+    card = student_progress(points, garage, students, EDUCATOR, "lee", results)
+    assert "⭐ 10" in card and garage.car("rally").name in card and "3 of 5" in card
+    assert "a&lt;b" in card and "a<b" not in card  # names are escaped
+    assert student_progress(points, garage, students, SAM, "lee", results) == ""  # educators only
 
 
 def test_a_tap_on_a_race_that_ended_offers_a_new_one():

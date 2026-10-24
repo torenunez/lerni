@@ -1,4 +1,4 @@
-"""MentalMaps for educators: a student's picture and list, then a chat with the educator agent.
+"""MentalMaps for educators: suggest a goal, then racing this week, the list, and the picture.
 
 :func:`educator_send` and :func:`educator_add` are plain functions over the
 server-resolved viewer, so the role checks can be tested without a browser;
@@ -25,13 +25,10 @@ from lerni.student.signin import SignIn, Viewer
 from lerni.student.students import StudentStore
 from lerni.student.upload import UploadError, extract_upload
 from lerni.student.web.accounts import PRIVATE, NotAllowed, require_educator
-from lerni.student.web.games import student_points
+from lerni.student.web.games import student_progress
 from lerni.student.web.mapdraw import map_svg, owner_key
 from lerni.student.web.maps import REFRESH_SECONDS, map_owner, save_feedback
 from lerni.student.web.mentallist import bump, mental_list
-
-NOTES_MARK = "\n\nAttached notes"  # where a message's attached notes begin
-EMPTY = "Tell me what you'd like for this student, or attach notes with 📎."
 
 
 def educator_send(
@@ -98,17 +95,6 @@ def educator_add(
     return "\n\n".join(lines) or "⚠️ Nothing was added."
 
 
-def chat_messages(chats: EducatorChats, educator: str, owner: str) -> list[dict[str, str]]:
-    """The chat in the Chatbot's format; attached notes show as one short line."""
-    shown = []
-    for t in chats.history(educator, owner):
-        text = t.text
-        if t.role == "user" and NOTES_MARK in text:
-            text = text.split(NOTES_MARK)[0] + "\n\n📎 notes attached"
-        shown.append({"role": t.role, "content": text})
-    return shown
-
-
 def preticked(found: list[Any]) -> list[str]:
     """The suggestions ticked on arrival: additions and tidying, never a removal or feedback."""
     return [p.label for p in found if p.kind not in ("remove", "feedback")]
@@ -129,14 +115,14 @@ def educator_tab(
     garage: Garage | None = None,
     results: ResultsLog | None = None,
 ) -> tuple[gr.Tab, gr.Dropdown]:
-    """The student's page: suggest a goal first, then their map and list, and the talk below.
+    """The student's page: suggest a goal first, then racing this week, the list, and the picture.
 
     With one supervised student it opens on them (main.py picks and hides the dropdown).
     """
     with gr.Tab("MentalMaps", id="maps", visible=False) as tab:
         who = gr.Dropdown(label="Student", choices=[], value=None)  # filled on load
-        points_line = gr.Markdown()  # their ⭐, cars, and this week
         # suggest a goal: first on the page, so the phone keyboard never pushes it around
+        gr.Markdown("### Suggest a new goal")
         with gr.Row(elem_classes="lerni-type"):
             text = gr.Textbox(
                 show_label=False,
@@ -163,20 +149,13 @@ def educator_tab(
         ticks = gr.CheckboxGroup(show_label=False, choices=[], visible=False)
         add = gr.Button("Add to the map", variant="primary", visible=False)
         status = gr.Markdown()
-        picture = gr.HTML(elem_id="lerni-map-maps", elem_classes="lerni-map")
+        points_line = gr.HTML()  # their racing this week, ⭐, and car
         list_owner, version = gr.State(""), gr.State(0)  # set only after map_owner's check
         # edits go to the student the list shows, never a newer dropdown pick
         mental_list(signin, students, maps, list_owner, list_owner, version, "lerni-pick-maps",
-                    "Pick a student, or add one in Settings.", results, folded=True)
-        with gr.Accordion("Conversation with Lerni", open=False):
-            chat = gr.Chatbot(
-                show_label=False,
-                placeholder=EMPTY,
-                buttons=[],
-                feedback_options=None,
-                elem_id="lerni-edu-chat",
-                height=360,
-            )
+                    "Pick a student, or add one in Settings.", results, folded=True,
+                    add_form=False)
+        picture = gr.HTML(elem_id="lerni-map-maps", elem_classes="lerni-map")  # last
         held_file = gr.State(None)  # an attached file's temp path, until it's sent
         owner_state = gr.State("")  # whose map the shown proposals are for
 
@@ -187,6 +166,11 @@ def educator_tab(
             except NotAllowed:
                 return ""
             return map_svg(maps.get(who), date.today(), owner_key(who))
+
+        def progress(requested: str | None, request: gr.Request) -> str:
+            viewer = signin.viewer(request.username)  # re-read on every request
+            return (student_progress(points, garage or Garage(), students, viewer, requested,
+                                     results) if points else "")
 
         def checked_owner(requested: str | None, request: gr.Request) -> str:
             try:  # whose list to draw: only after the check
@@ -203,9 +187,8 @@ def educator_tab(
             if path:
                 Path(path).unlink(missing_ok=True)  # notes attached for the last student
             hidden = gr.update(choices=[], value=[], visible=False)
-            stars = (student_points(points, garage or Garage(), students, viewer, requested,
-                                    results) if points else "")
-            return [draw(requested, request), checked_owner(requested, request), bump(), [], hidden,
+            stars = progress(requested, request)
+            return [draw(requested, request), checked_owner(requested, request), bump(), hidden,
                     gr.update(visible=False), "", "", None, stars, ""]
 
         def on_attach(path: str | None) -> list[Any]:
@@ -217,14 +200,9 @@ def educator_tab(
             viewer = signin.viewer(request.username)
             hidden = gr.update(choices=[], value=[], visible=False)
             if chats is None or viewer is None:
-                yield [gr.update(), hidden, gr.update(visible=False), "", "", message, path, ""]
+                yield [hidden, gr.update(visible=False), "", "", message, path, ""]
                 return
-            shown = chat_messages(chats, viewer.username, requested or "")
-            shown += [
-                {"role": "user", "content": message or "📎 notes attached"},
-                {"role": "assistant", "content": "…"},
-            ]
-            yield [shown, hidden, gr.update(visible=False), "", "", "", None, "…"]
+            yield [hidden, gr.update(visible=False), "", "", "", None, "…"]  # the box clears
             try:
                 data = Path(path).read_bytes() if path else None
                 answer = ""
@@ -238,16 +216,13 @@ def educator_tab(
                     data,
                 ):
                     answer += piece
-                    shown[-1]["content"] = answer or "…"
-                    yield [shown, hidden, gr.update(visible=False), "", "", "", None, answer or "…"]
+                    yield [hidden, gr.update(visible=False), "", "", "", None, answer or "…"]
             except (NotAllowed, UploadError, ConversationUnavailable) as exc:
-                shown[-1]["content"] = f"⚠️ {exc}"
-                yield [shown, hidden, gr.update(visible=False), "", "", message, None, f"⚠️ {exc}"]
+                yield [hidden, gr.update(visible=False), "", "", message, None, f"⚠️ {exc}"]
                 return
             except Exception:  # noqa: BLE001 - never echo the text in errors
-                shown[-1]["content"] = "⚠️ Claude didn't answer. Try again in a moment."
-                yield [shown, hidden, gr.update(visible=False), "", "", message, None,
-                       shown[-1]["content"]]
+                yield [hidden, gr.update(visible=False), "", "", message, None,
+                       "⚠️ Claude didn't answer. Try again in a moment."]
                 return
             finally:
                 if path:
@@ -255,12 +230,11 @@ def educator_tab(
             try:
                 owner = map_owner(students, viewer, requested or "")
             except NotAllowed:  # archived or no longer theirs while it answered
-                yield [shown, hidden, gr.update(visible=False), "", "", "", None, answer]
+                yield [hidden, gr.update(visible=False), "", "", "", None, answer]
                 return
             found = chats.proposals(viewer.username, owner)
             labels = [p.label for p in found]
             yield [
-                shown,
                 gr.update(choices=labels, value=preticked(found), visible=bool(labels)),
                 add_button(len(preticked(found))),
                 "",
@@ -288,14 +262,14 @@ def educator_tab(
             [send.click, text.submit],
             on_send,
             [text, held_file, who],
-            [chat, ticks, add, status, owner_state, text, held_file, reply],
+            [ticks, add, status, owner_state, text, held_file, reply],
             **PRIVATE,
         )
         # a new student stops a reply still coming for the last one, and drops its notes
         who.change(
             on_pick,
             [who, owner_state, held_file, version],
-            [picture, list_owner, version, chat, ticks, add, status, owner_state, held_file,
+            [picture, list_owner, version, ticks, add, status, owner_state, held_file,
              points_line, reply],
             cancels=[sending],
             **PRIVATE,
@@ -305,6 +279,7 @@ def educator_tab(
                   **PRIVATE)
         ticks.change(lambda picked: add_button(len(picked or [])), ticks, add, **PRIVATE)
         tab.select(bump, None, version, **PRIVATE)  # opening redraws the picture and the list
+        tab.select(progress, who, points_line, **PRIVATE)  # and racing, while races go on
         version.change(draw, who, picture, **PRIVATE)  # a list edit redraws it
         # the picture only: redrawing the list would wipe a half-typed rename
         gr.Timer(REFRESH_SECONDS).tick(draw, who, picture, **PRIVATE)

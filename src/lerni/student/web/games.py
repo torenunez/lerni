@@ -38,7 +38,7 @@ from lerni.student.race import (
     place,
     public,
 )
-from lerni.student.results import ResultsLog, week_line
+from lerni.student.results import ResultsLog
 from lerni.student.signin import Role, SignIn, Viewer
 from lerni.student.students import StudentStore
 from lerni.student.voice import ClipRefused, Speech, SpeechUnavailable, heard
@@ -113,19 +113,28 @@ def garage_tap(points: PointsStore, garage: Garage, viewer: Viewer | None, car_i
         return "⚠️ No such car."
 
 
-def student_points(points: PointsStore, garage: Garage, students: StudentStore,
-                   viewer: Viewer | None, requested: str | None,
-                   results: ResultsLog | None = None) -> str:
-    """A supervised student's points, cars, and this week's race results, for their educator."""
+def student_progress(points: PointsStore, garage: Garage, students: StudentStore,
+                     viewer: Viewer | None, requested: str | None,
+                     results: ResultsLog | None = None) -> str:
+    """A supervised student's racing this week, ⭐, and the car they drive, as HTML for their
+    educator ("" for anyone else)."""
     try:
         owner = map_owner(students, viewer, requested or "")
     except NotAllowed:
         return ""
     p = points.get(owner)
-    known = {c.id: c.name for c in garage.cars}
-    names = ", ".join(known[c] for c in p.cars if c in known)
-    week = week_line(results, owner, date.today()) if results else ""
-    return f"⭐ {p.balance} · cars: {names}" + (f"  \n{week}" if week else "")
+    week = results.week(owner, date.today()) if results else []
+    rows = [f'<div class="lerni-week-row"><span>{html.escape(goal)}</span>'
+            f'<span class="lerni-week-bar"><i style="width:{round(100 * right / asked)}%"></i></span>'
+            f'<span class="lerni-of">{right} of {asked}</span></div>'
+            for goal, right, asked in week if asked]
+    try:  # a car gone from the garage file gets no chip
+        car = f'<span class="lerni-chip">🚗 {html.escape(garage.car(p.car).name)}</span>'
+    except KeyError:
+        car = ""
+    body = "".join(rows) or '<p class="lerni-of">No races this week.</p>'
+    return (f'<div class="lerni-week"><h3>Racing this week</h3>{body}'
+            f'<div><span class="lerni-chip">⭐ {p.balance}</span>{car}</div></div>')
 
 
 def rival_pairs(garage: Garage, p: Points) -> tuple[tuple[str, str], ...]:
