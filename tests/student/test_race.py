@@ -428,7 +428,7 @@ def test_answers_are_logged_as_labels_and_numbers(tmp_path):
     # the results log, kept for good: what was practiced and how it went, never any text
     import json
 
-    from lerni.student.results import ResultsLog, week_line
+    from lerni.student.results import ResultsLog
 
     maps, points, results = MapStore(tmp_path), PointsStore(tmp_path), ResultsLog(tmp_path)
     maps.change("sam", lambda m: add_goal(m, "Fractions"))
@@ -447,7 +447,6 @@ def test_answers_are_logged_as_labels_and_numbers(tmp_path):
     assert "What is" not in json.dumps(lines)  # never the question's words
     assert finish["place"] in (1, 2, 3) and finish["points"] > 0
     assert results.week("sam", date.today()) == [("Fractions", 3, 5)]
-    assert week_line(results, "sam", date.today()) == "This week: Fractions 3/5"
     # a goal's Practice line: read from the log each time, never stored
     today, goal_id = date.today(), maps.get("sam").find("Fractions").id
     practice = results.practice("sam", goal_id, today)

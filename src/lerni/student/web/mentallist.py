@@ -214,6 +214,7 @@ def mental_list(
     empty: str = "",
     results: ResultsLog | None = None,
     folded: bool = False,
+    add_form: bool = True,
 ) -> None:
     """The add form, then 🎯 Goals and 💚 Interests as rows to open, rename, or remove.
 
@@ -226,11 +227,12 @@ def mental_list(
         empty: What shows before there's a map to draw.
         results: The race results, for each goal's Practice line (None: no line).
         folded: Goals and Interests in closed sections (the educator's student page).
+        add_form: The Goal/Interest add row (the student's page adds through Lerni instead).
     """
     opened = gr.State(None)  # the open item's id
     confirm = gr.State(None)  # (map owner, removed name) waiting for a second Delete tap
     unfolded = gr.State([])  # the folded sections the viewer opened, kept across redraws
-    with gr.Row(elem_classes="lerni-add"):
+    with gr.Row(elem_classes="lerni-add", visible=add_form):
         kind = gr.Radio(["Goal", "Interest"], value="Goal", show_label=False, scale=0)
         name = gr.Textbox(show_label=False, placeholder="Name", max_length=MAX_NAME, scale=2)
         notes = gr.Textbox(

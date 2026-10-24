@@ -109,8 +109,3 @@ class ResultsLog:
                         sum(bool(r["right"]) for r in recent), len(recent),
                         list(missed.values())[:MAX_MISSED])
 
-
-def week_line(results: ResultsLog, username: str, today: date) -> str:
-    """ "This week: Fractions 7/10 · Acceleration 4/5", or "" with no races this week."""
-    week = results.week(username, today)
-    return ("This week: " + " · ".join(f"{g} {r}/{a}" for g, r, a in week)) if week else ""
