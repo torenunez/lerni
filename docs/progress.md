@@ -4,7 +4,7 @@ Where things really stand, then a dated log, newest first. Completed work is rec
 
 Record each kind of "done" only when it actually happens, with the date: code built, content approved, app ready, a student session held. Passing tests show code behaves as specified; they don't make anything ready for a student.
 
-## Current state (2026-10-23, v3.23 on the home server: Versions 1 and 2 built: the conversation, MentalMaps, HTTPS, and voice; Version 3's race, garage, and Chat points)
+## Current state (2026-10-23, v3.24 on the home server: Versions 1 and 2 built: the conversation, MentalMaps, HTTPS, and voice; Version 3's race, garage, and Chat points)
 
 - **Built:** the student app's core (student accounts, sign-in, Lerni's conversations, the MentalMap with its tagger and logs kept a year, Upload and educator feedback, and the educator agent); `lerni serve` with a sign-in page and one app with a ☰ menu by role: an independent student's Chat, My MentalMap (an editable list, the picture, and Upload), and My account; an educator's MentalMaps (a student's list and picture, with a chat) and Students on top; a supervised student's Chat, full screen, and Games (a race for points spent on real cars; educators race too); good answers in Chat earn points too. Hold to talk with spoken answers; a Claude usage warning and rest. Both servers run as LaunchAgents (`lerni service`). The admin tool (`lerni`, with `lerni student`, `lerni logs`, and `lerni feedback`). A [code manifest](code-manifest.md) of every file. Tests: 196 passed.
 - **Designed:** the interest map, goals, the tagger, upload, feedback, and the supervised conversation ([specs/04-interest-map.md](../plans/specs/04-interest-map.md)); approved with PR #12. Harder races, practice on the map, and probes ([spec 09b](../plans/specs/09b-harder-races.md)).
@@ -13,6 +13,10 @@ Record each kind of "done" only when it actually happens, with the date: code bu
 When something changes, update this section and add a log entry below.
 
 ## Log
+
+### 2026-10-23 (the educator's page; the plan)
+
+- Suggesting one goal took picking the student, scrolling past the picture and about 37 list rows to the chat at the bottom, typing while the iPhone keyboard moved the page, and ticking each suggestion. The admin's decisions: a Suggest a goal box at the top of the student's page, suggestions ticked already, and one Settings section for Students and My account, with the screens shaped around the one supervised student; as v3.25, before probes (now v3.26).
 
 ### 2026-10-23 (the bonus round; v3.24 built)
 
