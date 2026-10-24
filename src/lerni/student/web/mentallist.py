@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import re
 import time
+from contextlib import nullcontext
 from datetime import date
 from typing import Any
 
@@ -211,6 +212,7 @@ def mental_list(
     pick_id: str,
     empty: str = "",
     results: ResultsLog | None = None,
+    folded: bool = False,
 ) -> None:
     """The add form, then 🎯 Goals and 💚 Interests as rows to open, rename, or remove.
 
@@ -222,6 +224,7 @@ def mental_list(
         pick_id: The hidden field the picture writes a tapped item's id to (mapview.js).
         empty: What shows before there's a map to draw.
         results: The race results, for each goal's Practice line (None: no line).
+        folded: Goals and Interests in closed sections (the educator's student page).
     """
     opened = gr.State(None)  # the open item's id
     confirm = gr.State(None)  # (map owner, removed name) waiting for a second Delete tap
@@ -342,78 +345,87 @@ def mental_list(
         m, today = maps.get(who), date.today()
         for title, kind_ in (("🎯 Goals", "goal"), ("💚 Interests", "interest")):
             items = [e for e in m.entries if e.kind == kind_]
-            gr.Markdown(f"**{title}**" + ("" if items else ": none yet"), key=f"h-{kind_}")
-            for e, depth in _tree(m, items):
-                with gr.Row(elem_classes="lerni-item"):
-                    label = "↳ " * depth + f"{e.name} · {STRENGTH_LABELS[strength(e, today, m)]}"
-                    row = gr.Button(label, scale=1, key=f"open-{e.id}")
-                    trash = gr.Button("🗑", scale=0, min_width=48, key=f"rm-{e.id}")
-                if open_id != e.id:
-                    wire(who, e.id, row, trash)
-                    continue
-                d = details(m, e.id, today)  # the open item: its facts, then edits and links
-                facts = [
-                    STRENGTH_LABELS[d.strength],
-                    f"came up on {_plural(d.days, 'day')}"
-                    + (f" (counting {', '.join(d.through[:3])})" if d.through else "")
-                    + (f", last on {d.last}" if d.last else ""),
-                ]
-                if e.kind == "goal":
-                    facts.append(f"explained on {_plural(d.explained, 'day')} (Lerni's guess)")
-                    facts += ["Lerni is giving it a rest"] if d.resting else []
-                    # read for the open goal only, never on every redraw
-                    p = results.practice(who, e.id, today) if results else None
-                    if p is not None:  # how racing on it is going, read-only
-                        parts = [f"raced {p.last}"] + ([f"this week {p.right}/{p.asked}"]
-                                                       if p.asked else [])
-                        # Claude's labels, shown as plain text
-                        missed = ", ".join(_md(c) for c in p.missed)
-                        parts += [f"missed lately: {missed}"] if p.missed else []
-                        facts.append("Practice: " + " · ".join(parts))
-                with gr.Column(elem_classes="lerni-detail", key=f"d-{e.id}"):
-                    gr.Markdown(" · ".join(facts), key=f"facts-{e.id}")
-                    notes_box = notes_btn = None
+            # folded (the student's page): each list in a closed section, open while editing
+            opened = folded and any(e.id == open_id for e in items)
+            with (gr.Accordion(f"{title} ({len(items)})", open=opened, key=f"fold-{kind_}")
+                  if folded else nullcontext()):
+                if not folded:  # open lists keep their heading
+                    gr.Markdown(f"**{title}**" + ("" if items else ": none yet"),
+                                key=f"h-{kind_}")
+                for e, depth in _tree(m, items):
+                    with gr.Row(elem_classes="lerni-item"):
+                        alive = STRENGTH_LABELS[strength(e, today, m)]
+                        label = "↳ " * depth + f"{e.name} · {alive}"
+                        row = gr.Button(label, scale=1, key=f"open-{e.id}")
+                        trash = gr.Button("🗑", scale=0, min_width=48, key=f"rm-{e.id}")
+                    if open_id != e.id:
+                        wire(who, e.id, row, trash)
+                        continue
+                    d = details(m, e.id, today)  # the open item: its facts, then edits and links
+                    facts = [
+                        STRENGTH_LABELS[d.strength],
+                        f"came up on {_plural(d.days, 'day')}"
+                        + (f" (counting {', '.join(d.through[:3])})" if d.through else "")
+                        + (f", last on {d.last}" if d.last else ""),
+                    ]
                     if e.kind == "goal":
-                        notes_box = gr.Textbox(
-                            e.notes,
-                            label="Notes for Lerni",
-                            max_length=MAX_NOTES,
-                            key=f"notes-{e.id}",
-                        )
-                        notes_btn = gr.Button("Save notes", size="sm", key=f"save-{e.id}")
-                    name_box = gr.Textbox(
-                        e.name, label="Name", max_length=MAX_NAME, key=f"name-{e.id}"
-                    )
-                    rename_btn = gr.Button("Rename", size="sm", key=f"ren-{e.id}")
-                    if e.aliases:  # other names the student used: one item, split if wrong
-                        gr.Markdown("**Also called** " + ", ".join(e.aliases), key=f"aka-{e.id}")
-                        wire_splits(who, e.id, [
-                            (a, gr.Button(f"Not the same: {a}", size="sm", key=f"ns-{e.id}-{i}"))
-                            for i, a in enumerate(e.aliases)])
-                    if e.kind == "interest":  # its groups: put it under one, or take it out
-                        mine = {x.id for x in family(m, e)} | set(parents(m, e.id))
-                        options = [x.name for x in m.entries
-                                   if x.kind == "interest" and x.id not in mine]
-                        with gr.Row(key=f"g-{e.id}"):
-                            pick_group = gr.Dropdown(options, value=None, label="Kind of",
-                                                     key=f"gp-{e.id}", scale=2)
-                            put = gr.Button("Put under", size="sm", scale=1, key=f"gu-{e.id}")
-                        outs = [(gid, gr.Button(f"Not under {gname}", size="sm",
-                                                key=f"go-{e.id}-{gid}"))
-                                for gid, gname in d.groups]
-                        wire_groups(who, e.id, pick_group, put, outs)
-                    for heading, ends in (("Kinds", d.kinds), ("Bridges", d.bridges),
-                                          ("Related", d.related)):
-                        if ends:
-                            gr.Markdown(f"**{heading}**", key=f"{heading}-{e.id}")
-                        for other_id, other in ends:  # a tap opens the other end
-                            tie = d.ties.get((LINK_KINDS.get(heading, ""), other_id))
-                            jump = gr.Button(
-                                f"→ {other}" + _tie(tie, heading == "Bridges"),
-                                size="sm", key=f"j-{e.id}-{heading}-{other_id}"
+                        facts.append(f"explained on {_plural(d.explained, 'day')} (Lerni's guess)")
+                        facts += ["Lerni is giving it a rest"] if d.resting else []
+                        # read for the open goal only, never on every redraw
+                        p = results.practice(who, e.id, today) if results else None
+                        if p is not None:  # how racing on it is going, read-only
+                            parts = [f"raced {p.last}"] + ([f"this week {p.right}/{p.asked}"]
+                                                           if p.asked else [])
+                            # Claude's labels, shown as plain text
+                            missed = ", ".join(_md(c) for c in p.missed)
+                            parts += [f"missed lately: {missed}"] if p.missed else []
+                            facts.append("Practice: " + " · ".join(parts))
+                    with gr.Column(elem_classes="lerni-detail", key=f"d-{e.id}"):
+                        gr.Markdown(" · ".join(facts), key=f"facts-{e.id}")
+                        notes_box = notes_btn = None
+                        if e.kind == "goal":
+                            notes_box = gr.Textbox(
+                                e.notes,
+                                label="Notes for Lerni",
+                                max_length=MAX_NOTES,
+                                key=f"notes-{e.id}",
                             )
-                            jump.click(lambda i=other_id: i, None, opened, **PRIVATE)
-                wire(who, e.id, row, trash, (name_box, rename_btn, notes_box, notes_btn))
+                            notes_btn = gr.Button("Save notes", size="sm", key=f"save-{e.id}")
+                        name_box = gr.Textbox(
+                            e.name, label="Name", max_length=MAX_NAME, key=f"name-{e.id}"
+                        )
+                        rename_btn = gr.Button("Rename", size="sm", key=f"ren-{e.id}")
+                        if e.aliases:  # other names the student used: one item, split if wrong
+                            gr.Markdown("**Also called** " + ", ".join(e.aliases),
+                                        key=f"aka-{e.id}")
+                            wire_splits(who, e.id, [
+                                (a, gr.Button(f"Not the same: {a}", size="sm",
+                                              key=f"ns-{e.id}-{i}"))
+                                for i, a in enumerate(e.aliases)])
+                        if e.kind == "interest":  # its groups: put it under one, or take it out
+                            mine = {x.id for x in family(m, e)} | set(parents(m, e.id))
+                            options = [x.name for x in m.entries
+                                       if x.kind == "interest" and x.id not in mine]
+                            with gr.Row(key=f"g-{e.id}"):
+                                pick_group = gr.Dropdown(options, value=None, label="Kind of",
+                                                         key=f"gp-{e.id}", scale=2)
+                                put = gr.Button("Put under", size="sm", scale=1, key=f"gu-{e.id}")
+                            outs = [(gid, gr.Button(f"Not under {gname}", size="sm",
+                                                    key=f"go-{e.id}-{gid}"))
+                                    for gid, gname in d.groups]
+                            wire_groups(who, e.id, pick_group, put, outs)
+                        for heading, ends in (("Kinds", d.kinds), ("Bridges", d.bridges),
+                                              ("Related", d.related)):
+                            if ends:
+                                gr.Markdown(f"**{heading}**", key=f"{heading}-{e.id}")
+                            for other_id, other in ends:  # a tap opens the other end
+                                tie = d.ties.get((LINK_KINDS.get(heading, ""), other_id))
+                                jump = gr.Button(
+                                    f"→ {other}" + _tie(tie, heading == "Bridges"),
+                                    size="sm", key=f"j-{e.id}-{heading}-{other_id}"
+                                )
+                                jump.click(lambda i=other_id: i, None, opened, **PRIVATE)
+                    wire(who, e.id, row, trash, (name_box, rename_btn, notes_box, notes_btn))
         if m.removed:
             with gr.Accordion(
                 f"Removed ({len(m.removed)})", open=sure_of is not None, key="removed"

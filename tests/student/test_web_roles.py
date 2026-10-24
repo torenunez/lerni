@@ -60,10 +60,23 @@ def test_each_role_opens_on_a_tab_it_can_see():
     from lerni.student.web.main import opening_tab, visible_tabs
 
     lee = Viewer("lee", "Lee", Role.SUPERVISED)
-    assert visible_tabs(EDUCATOR) == ("games", "ask", "mymap", "maps", "students", "account")
+    assert visible_tabs(EDUCATOR) == ("games", "ask", "mymap", "maps", "account")
     assert visible_tabs(lee) == ("home", "games")
     assert visible_tabs(SAM) == ("ask", "mymap", "account")
     assert (opening_tab(EDUCATOR), opening_tab(lee), opening_tab(SAM)) == ("ask", "home", "ask")
+
+
+def test_the_educator_opens_on_their_student_by_name(tmp_path):
+    # with one supervised student, the menu names them and sign-in opens their page
+    from lerni.student.web.main import menu_label, opening_tab
+
+    store = StudentStore(tmp_path)
+    assert opening_tab(EDUCATOR, store) == "ask"  # no student yet: their own Chat
+    store.add("lee", "Lee", Kind.SUPERVISED, "1234")
+    assert opening_tab(EDUCATOR, store) == "maps" and menu_label("maps", EDUCATOR, store) == "Lee"
+    store.add("kim", "Kim", Kind.SUPERVISED, "1234")
+    assert menu_label("maps", EDUCATOR, store) == "MentalMaps"  # two: a picker again
+    assert menu_label("account", SAM, store) == "Settings"
 
 
 def test_sign_out_is_a_same_tab_button(tmp_path):

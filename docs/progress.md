@@ -6,13 +6,18 @@ Record each kind of "done" only when it actually happens, with the date: code bu
 
 ## Current state (2026-10-23, v3.24 on the home server: Versions 1 and 2 built: the conversation, MentalMaps, HTTPS, and voice; Version 3's race, garage, and Chat points)
 
-- **Built:** the student app's core (student accounts, sign-in, Lerni's conversations, the MentalMap with its tagger and logs kept a year, Upload and educator feedback, and the educator agent); `lerni serve` with a sign-in page and one app with a ☰ menu by role: an independent student's Chat, My MentalMap (an editable list, the picture, and Upload), and My account; an educator's MentalMaps (a student's list and picture, with a chat) and Students on top; a supervised student's Chat, full screen, and Games (a race for points spent on real cars; educators race too); good answers in Chat earn points too. Hold to talk with spoken answers; a Claude usage warning and rest. Both servers run as LaunchAgents (`lerni service`). The admin tool (`lerni`, with `lerni student`, `lerni logs`, and `lerni feedback`). A [code manifest](code-manifest.md) of every file. Tests: 196 passed.
+- **Built:** the student app's core (student accounts, sign-in, Lerni's conversations, the MentalMap with its tagger and logs kept a year, Upload and educator feedback, and the educator agent); `lerni serve` with a sign-in page and one app with a ☰ menu by role: an independent student's Chat, My MentalMap (an editable list, the picture, and Upload), and My account; an educator's MentalMaps (a student's list and picture, with a chat) and Students on top; a supervised student's Chat, full screen, and Games (a race for points spent on real cars; educators race too); good answers in Chat earn points too. Hold to talk with spoken answers; a Claude usage warning and rest. Both servers run as LaunchAgents (`lerni service`). The admin tool (`lerni`, with `lerni student`, `lerni logs`, and `lerni feedback`). A [code manifest](code-manifest.md) of every file. Tests: 197 passed.
 - **Designed:** the interest map, goals, the tagger, upload, feedback, and the supervised conversation ([specs/04-interest-map.md](../plans/specs/04-interest-map.md)); approved with PR #12. Harder races, practice on the map, and probes ([spec 09b](../plans/specs/09b-harder-races.md)).
 - **Not yet:** a recorded supervised session (the supervised student has used it informally).
 
 When something changes, update this section and add a log entry below.
 
 ## Log
+
+### 2026-10-23 (the educator's page; v3.25 built)
+
+- An educator with one supervised student sees them by name in the menu and opens on their page at sign-in; the picker is hidden. The page leads with a Suggest a goal box; Lerni's suggestions arrive ticked under one "Add N to the map" button; the map follows, the lists are folded (open while editing an item), and the conversation sits at the bottom. Students and My account became one Settings section.
+- In the screen check a short idea ("Korean numbers 11 to 20") got a question back instead of a goal, so the educator agent now proposes a named goal at once and states any choice it made in the notes; the educator eval gains that case (4 of 4). Checked at phone size on a throwaway server right after a restart: sign-in opened the student's page, a suggestion came ticked and was added in one tap, the lists folded, Settings showed Students, and My MentalMap drew alongside. Tests: 197 passed.
 
 ### 2026-10-23 (the educator's page; the plan)
 

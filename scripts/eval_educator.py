@@ -31,7 +31,10 @@ def main() -> None:
                 "reading clocks.")
     app = ask("The talk button is too small on the iPad.")
     leaked = any(w in (p.name + p.notes) for p in named for w in ("Mateo", "Rivera"))
+    # regression (v3.25): a short idea got a question back instead of a goal to tick
+    short = ask("Korean numbers 11 to 20")
     results = [
+        ("a short idea becomes a goal at once", any(p.kind == "goal" for p in short)),
         ("a goal explained in words becomes a goal",
          any(p.kind == "goal" and "fraction" in p.name.lower() for p in goal)),
         ("a real name never lands in a proposal", bool(named) and not leaked),

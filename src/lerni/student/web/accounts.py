@@ -128,9 +128,10 @@ def students_action(
     return _run(fn, students, viewer, *args), rows_for(students, viewer)
 
 
-def students_tab(signin: SignIn, students: StudentStore) -> tuple[gr.Tab, gr.Dataframe]:
-    """The educator's Students tab (hidden for everyone else)."""
-    with gr.Tab("Students", id="students", visible=False) as tab:
+def _students_section(signin: SignIn, students: StudentStore) -> tuple[gr.Column, gr.Dataframe]:
+    """Students, inside Settings: shown to educators only (main.py sets it on load)."""
+    with gr.Column(visible=False) as box:
+        gr.Markdown("### Students")
         table = gr.Dataframe(headers=STUDENT_COLUMNS, interactive=False, type="array")
         gr.Markdown("### Add a student")
         username = gr.Textbox(label="Username (lowercase, e.g. sam)")
@@ -176,12 +177,17 @@ def students_tab(signin: SignIn, students: StudentStore) -> tuple[gr.Tab, gr.Dat
             on_reset, [who, new_password], [status, table, who, new_password], **PRIVATE
         )
         archive_btn.click(on_archive, who, [status, table], **PRIVATE)
-    return tab, table  # main.py fills the table on page load
+    return box, table  # main.py fills the table on page load
 
 
-def account_tab(signin: SignIn, students: StudentStore) -> gr.Tab:
-    """An independent student's My account tab (hidden for everyone else)."""
-    with gr.Tab("My account", id="account", visible=False) as tab:
+def settings_tab(signin: SignIn, students: StudentStore) -> tuple[gr.Tab, gr.Dataframe, gr.Column]:
+    """Settings for an independent account: their own account, then (educators) Students.
+
+    Returns:
+        The tab, the students table (filled on load), and the Students section to show.
+    """
+    with gr.Tab("Settings", id="account", visible=False) as tab:
+        gr.Markdown("### Your account")
         name = gr.Textbox(label="Display name")
         name_btn = gr.Button("Change name")
         current = gr.Textbox(label="Current password", type="password")
@@ -197,4 +203,5 @@ def account_tab(signin: SignIn, students: StudentStore) -> gr.Tab:
 
         name_btn.click(on_name, name, status, **PRIVATE)
         pw_btn.click(on_password, [current, new], status, **PRIVATE)
-    return tab
+        box, table = _students_section(signin, students)
+    return tab, table, box

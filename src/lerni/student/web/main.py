@@ -8,6 +8,7 @@ every signed-in browser the same page config.
 from __future__ import annotations
 
 import html
+from collections.abc import Callable
 from datetime import date
 from typing import Any
 
@@ -25,7 +26,7 @@ from lerni.student.students import StudentStore
 from lerni.student.upload import Uploader
 from lerni.student.usage import Usage
 from lerni.student.voice import Speech
-from lerni.student.web.accounts import account_tab, student_rows, students_tab
+from lerni.student.web.accounts import settings_tab, student_rows
 from lerni.student.web.ask import ask_tab, messages
 from lerni.student.web.educator import educator_tab
 from lerni.student.web.games import games_tab, require_player
@@ -34,15 +35,14 @@ from lerni.student.web.maps import map_tab, supervised_choices
 
 # Tab ids in page order. A supervised student gets Home (their conversation,
 # full screen, shown as Chat) and Games; independent students get Chat, My MentalMap,
-# and My account;
-# educators also get MentalMaps, Students, and Games.
-_TAB_IDS = ("home", "games", "ask", "mymap", "maps", "students", "account")
+# and Settings; educators also get their student's page (maps) and Games, and Settings
+# holds Students for them.
+_TAB_IDS = ("home", "games", "ask", "mymap", "maps", "account")
 _SUPERVISED_TABS = {"home", "games"}
-_EDUCATOR_TABS = {"maps", "students", "games"}
+_EDUCATOR_TABS = {"maps", "games"}
 _INDEPENDENT_TABS = {"ask", "mymap", "account"}
 _LABELS = {"home": "Chat", "games": "Games", "ask": "Chat", "mymap": "My MentalMap",
-           "maps": "MentalMaps",
-           "students": "Students", "account": "My account"}  # the menu's names for the tabs
+           "maps": "MentalMaps", "account": "Settings"}  # the menu's names for the tabs
 EARN = ("**How to earn ⭐**\n\n🏁 **Race** in Games: get answers right to win.\n\n"
         "💬 **Chat** with Lerni: answer its questions in your own words. "
         "⭐ +3 for a right answer, ⭐ +1 for a good try.")
@@ -60,10 +60,28 @@ def visible_tabs(viewer: Viewer | None) -> tuple[str, ...]:
     return tuple(tab for tab in _TAB_IDS if tab in shown)
 
 
-def opening_tab(viewer: Viewer | None) -> str | None:
-    """The tab selected on load: Chat for independent students, Home for supervised ones."""
+def opening_tab(viewer: Viewer | None, students: StudentStore | None = None) -> str | None:
+    """The tab selected on load: an educator's student page when they have a supervised
+    student, Chat for other independent accounts, Home for supervised ones."""
     shown = visible_tabs(viewer)
+    if "maps" in shown and students is not None and supervised_choices(students, viewer):
+        return "maps"
     return ("ask" if "ask" in shown else shown[0]) if shown else None
+
+
+def picker(choices: list[tuple[str, str]]) -> Any:
+    """The student dropdown: with one supervised student, already on them and out of sight."""
+    only = choices[0][1] if len(choices) == 1 else None
+    return gr.update(choices=choices, value=only, visible=len(choices) != 1)
+
+
+def menu_label(tab: str, viewer: Viewer | None, students: StudentStore | None = None) -> str:
+    """A section's name in the menu: the student's own name for their page, when there's one."""
+    if tab == "maps" and students is not None:
+        picks = supervised_choices(students, viewer)
+        if len(picks) == 1:
+            return picks[0][0]  # their display name, from the account
+    return _LABELS[tab]
 
 
 def build_main_view(
@@ -133,8 +151,7 @@ def build_main_view(
                                                       races.results if races else None)
             maps_tab, who = educator_tab(signin, students, maps, educator_chats, feedback, points,
                                          garage or Garage(), races.results if races else None)
-            students_tab_, students_table = students_tab(signin, students)
-            account = account_tab(signin, students)
+            account, students_table, students_box = settings_tab(signin, students)
 
         def on_load(request: gr.Request) -> list[Any]:
             viewer = signin.viewer(request.username)
@@ -149,15 +166,17 @@ def build_main_view(
             if viewer is not None and "mymap" in shown:
                 me = viewer.username
                 own = [map_svg(maps.get(me), date.today(), owner_key(me)), me, 1]
-            opening = opening_tab(viewer)
+            opening = opening_tab(viewer, students)
             return [
                 f"Signed in as **{name}**",
-                f"**{_LABELS[opening]}**" if opening else "",
+                f"**{menu_label(opening, viewer, students)}**" if opening else "",
                 gr.update(selected=opening),  # open a tab they can see
                 *(gr.update(visible=tab in shown) for tab in _TAB_IDS),
                 # the menu lists their sections; one section needs no list
-                *(gr.update(visible=tab in shown and len(shown) > 1) for tab in _TAB_IDS),
+                *(gr.update(visible=tab in shown and len(shown) > 1,
+                            value=menu_label(tab, viewer, students)) for tab in _TAB_IDS),
                 student_rows(students) if is_edu else [],
+                gr.update(visible=is_edu),  # Students, inside Settings
                 # one ongoing conversation per student: pick up where they left off
                 messages(conversations, viewer.username)
                 if conversations is not None and viewer is not None and "ask" in shown else [],
@@ -165,7 +184,7 @@ def build_main_view(
                 if conversations is not None and viewer is not None and "home" in shown else [],
                 gr.update(visible=is_edu, value=False),  # educators can try the supervised voice
                 *own,  # My MentalMap: picture, whose list, its version
-                gr.update(choices=supervised_choices(students, viewer), value=None),  # MentalMaps
+                picker(supervised_choices(students, viewer)),  # the student's page
             ]
 
         blocks.load(
@@ -173,9 +192,9 @@ def build_main_view(
             None,
             # order matches on_load: header, title, tabs, the _TAB_IDS tabs, their menu
             # buttons, then the rest
-            [header, title, tabs, home, games, ask, mymap, maps_tab, students_tab_, account,
+            [header, title, tabs, home, games, ask, mymap, maps_tab, account,
              *nav.values(),
-             students_table, chat, home_chat, voice, picture, owner, version, who],
+             students_table, students_box, chat, home_chat, voice, picture, owner, version, who],
             api_visibility="private",
         )
         if games_refresh is not None:  # the ⭐, the track, and the garage on page load
@@ -211,9 +230,15 @@ def build_main_view(
         watch.tick(on_tick, [before, ticks], [stars, watch, ticks], api_visibility="private")
 
         # a menu button opens its section and closes the menu
+        def opener(tab: str) -> Callable[..., list[Any]]:
+            def open_tab(request: gr.Request) -> list[Any]:  # the title says the menu's name
+                label = menu_label(tab, signin.viewer(request.username), students)
+                return [gr.update(selected=tab), f"**{label}**"]
+            return open_tab
+
         for tab, button in nav.items():
             button.click(
-                lambda tab=tab: [gr.update(selected=tab), f"**{_LABELS[tab]}**"],
+                opener(tab),
                 None,
                 [tabs, title],
                 js="() => { window.lerniMenu?.(false); }",

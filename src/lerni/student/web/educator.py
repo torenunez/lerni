@@ -109,6 +109,11 @@ def chat_messages(chats: EducatorChats, educator: str, owner: str) -> list[dict[
     return shown
 
 
+def add_button(n: int) -> Any:
+    """The Add button for ``n`` ticked suggestions: "Add 2 to the map", hidden for none."""
+    return gr.update(value=f"Add {n} to the map", visible=n > 0)
+
+
 def educator_tab(
     signin: SignIn,
     students: StudentStore,
@@ -119,30 +124,18 @@ def educator_tab(
     garage: Garage | None = None,
     results: ResultsLog | None = None,
 ) -> tuple[gr.Tab, gr.Dropdown]:
-    """MentalMaps: pick a supervised student, see and edit their list, and plan it by talking."""
+    """The student's page: suggest a goal first, then their map and list, and the talk below.
+
+    With one supervised student it opens on them (main.py picks and hides the dropdown).
+    """
     with gr.Tab("MentalMaps", id="maps", visible=False) as tab:
         who = gr.Dropdown(label="Student", choices=[], value=None)  # filled on load
-        points_line = gr.Markdown()  # their ⭐ and cars
-        picture = gr.HTML(elem_id="lerni-map-maps", elem_classes="lerni-map")
-        list_owner, version = gr.State(""), gr.State(0)  # set only after map_owner's check
-        # edits go to the student the list shows, never a newer dropdown pick
-        mental_list(signin, students, maps, list_owner, list_owner, version, "lerni-pick-maps",
-                    "Pick a student.", results)
-        chat = gr.Chatbot(
-            show_label=False,
-            placeholder=EMPTY,
-            buttons=[],
-            feedback_options=None,
-            elem_id="lerni-edu-chat",
-            height=360,
-        )
-        ticks = gr.CheckboxGroup(label="Tick what to add", choices=[], visible=False)
-        add = gr.Button("Add to MentalMap", variant="primary", visible=False)
-        status = gr.Markdown()
+        points_line = gr.Markdown()  # their ⭐, cars, and this week
+        # suggest a goal: first on the page, so the phone keyboard never pushes it around
         with gr.Row(elem_classes="lerni-type"):
             text = gr.Textbox(
                 show_label=False,
-                placeholder="Tell me about a goal…",
+                placeholder="Suggest a goal…",
                 lines=1,
                 max_lines=4,
                 max_length=MAX_MESSAGE,
@@ -159,6 +152,25 @@ def educator_tab(
             )
             send = gr.Button(
                 "Send", variant="primary", scale=1, min_width=70, interactive=chats is not None
+            )
+        reply = gr.Markdown()  # Lerni's answer, right under the box
+        # suggestions come ticked: untick any, then one tap adds them (nothing before it)
+        ticks = gr.CheckboxGroup(show_label=False, choices=[], visible=False)
+        add = gr.Button("Add to the map", variant="primary", visible=False)
+        status = gr.Markdown()
+        picture = gr.HTML(elem_id="lerni-map-maps", elem_classes="lerni-map")
+        list_owner, version = gr.State(""), gr.State(0)  # set only after map_owner's check
+        # edits go to the student the list shows, never a newer dropdown pick
+        mental_list(signin, students, maps, list_owner, list_owner, version, "lerni-pick-maps",
+                    "Pick a student.", results, folded=True)
+        with gr.Accordion("Conversation with Lerni", open=False):
+            chat = gr.Chatbot(
+                show_label=False,
+                placeholder=EMPTY,
+                buttons=[],
+                feedback_options=None,
+                elem_id="lerni-edu-chat",
+                height=360,
             )
         held_file = gr.State(None)  # an attached file's temp path, until it's sent
         owner_state = gr.State("")  # whose map the shown proposals are for
@@ -189,7 +201,7 @@ def educator_tab(
             stars = (student_points(points, garage or Garage(), students, viewer, requested,
                                     results) if points else "")
             return [draw(requested, request), checked_owner(requested, request), bump(), [], hidden,
-                    gr.update(visible=False), "", "", None, stars]
+                    gr.update(visible=False), "", "", None, stars, ""]
 
         def on_attach(path: str | None) -> list[Any]:
             return [path, f"📎 {Path(path).name}, sent with your next message" if path else ""]
@@ -200,14 +212,14 @@ def educator_tab(
             viewer = signin.viewer(request.username)
             hidden = gr.update(choices=[], value=[], visible=False)
             if chats is None or viewer is None:
-                yield [gr.update(), hidden, gr.update(visible=False), "", "", message, path]
+                yield [gr.update(), hidden, gr.update(visible=False), "", "", message, path, ""]
                 return
             shown = chat_messages(chats, viewer.username, requested or "")
             shown += [
                 {"role": "user", "content": message or "📎 notes attached"},
                 {"role": "assistant", "content": "…"},
             ]
-            yield [shown, hidden, gr.update(visible=False), "", "", "", None]
+            yield [shown, hidden, gr.update(visible=False), "", "", "", None, "…"]
             try:
                 data = Path(path).read_bytes() if path else None
                 answer = ""
@@ -222,14 +234,15 @@ def educator_tab(
                 ):
                     answer += piece
                     shown[-1]["content"] = answer or "…"
-                    yield [shown, hidden, gr.update(visible=False), "", "", "", None]
+                    yield [shown, hidden, gr.update(visible=False), "", "", "", None, answer or "…"]
             except (NotAllowed, UploadError, ConversationUnavailable) as exc:
                 shown[-1]["content"] = f"⚠️ {exc}"
-                yield [shown, hidden, gr.update(visible=False), "", "", message, None]
+                yield [shown, hidden, gr.update(visible=False), "", "", message, None, f"⚠️ {exc}"]
                 return
             except Exception:  # noqa: BLE001 - never echo the text in errors
                 shown[-1]["content"] = "⚠️ Claude didn't answer. Try again in a moment."
-                yield [shown, hidden, gr.update(visible=False), "", "", message, None]
+                yield [shown, hidden, gr.update(visible=False), "", "", message, None,
+                       shown[-1]["content"]]
                 return
             finally:
                 if path:
@@ -237,18 +250,19 @@ def educator_tab(
             try:
                 owner = map_owner(students, viewer, requested or "")
             except NotAllowed:  # archived or no longer theirs while it answered
-                yield [shown, hidden, gr.update(visible=False), "", "", "", None]
+                yield [shown, hidden, gr.update(visible=False), "", "", "", None, answer]
                 return
             found = chats.proposals(viewer.username, owner)
             labels = [p.label for p in found]
             yield [
                 shown,
-                gr.update(choices=labels, value=[], visible=bool(labels)),
-                gr.update(visible=bool(labels)),
+                gr.update(choices=labels, value=labels, visible=bool(labels)),  # all ticked
+                add_button(len(labels)),
                 "",
                 owner,
                 "",
                 None,
+                answer,
             ]
 
         def on_add(picked: list[str], owner: str, v: int, request: gr.Request) -> list[Any]:
@@ -259,8 +273,8 @@ def educator_tab(
             left = [p.label for p in chats.proposals(viewer.username, owner)] if viewer else []
             return [
                 message,
-                gr.update(choices=left, value=[], visible=bool(left)),
-                gr.update(visible=bool(left)),
+                gr.update(choices=left, value=left, visible=bool(left)),
+                add_button(len(left)),
                 draw(owner, request),
                 bump(),  # the list shows what was added
             ]
@@ -269,7 +283,7 @@ def educator_tab(
             [send.click, text.submit],
             on_send,
             [text, held_file, who],
-            [chat, ticks, add, status, owner_state, text, held_file],
+            [chat, ticks, add, status, owner_state, text, held_file, reply],
             **PRIVATE,
         )
         # a new student stops a reply still coming for the last one, and drops its notes
@@ -277,13 +291,14 @@ def educator_tab(
             on_pick,
             [who, owner_state, held_file, version],
             [picture, list_owner, version, chat, ticks, add, status, owner_state, held_file,
-             points_line],
+             points_line, reply],
             cancels=[sending],
             **PRIVATE,
         )
         attach.upload(on_attach, attach, [held_file, status], **PRIVATE)
         add.click(on_add, [ticks, owner_state, version], [status, ticks, add, picture, version],
                   **PRIVATE)
+        ticks.change(lambda picked: add_button(len(picked or [])), ticks, add, **PRIVATE)
         tab.select(bump, None, version, **PRIVATE)  # opening redraws the picture and the list
         version.change(draw, who, picture, **PRIVATE)  # a list edit redraws it
         # the picture only: redrawing the list would wipe a half-typed rename

@@ -60,7 +60,7 @@ Grades mean blackout (0), recognition after seeing the answer (1), apparent ease
 
 ## Running the student app
 
-`lerni serve` runs the student app on the home server (Version 1: sign-in; Chat, My MentalMap, and My account for independent students; MentalMaps, Students, and Games for educators; Chat, full screen, and Games for a supervised student).
+`lerni serve` runs the student app on the home server (Version 1: sign-in; Chat, My MentalMap, and Settings for independent students; the student's page (named after them when there's one) and Games for educators, with Students inside Settings; Chat, full screen, and Games for a supervised student).
 
 ```bash
 pip install -e ".[student]"                # once: installs Gradio
@@ -68,7 +68,7 @@ lerni serve                                 # binds 0.0.0.0:7860
 ```
 
 - Every device opens `http://<home-server>:7860/` and signs in at `/signin`; the app itself is at `/app/`.
-- **First start:** add the first educator on the home server, then that educator adds everyone else in **Students** (☰ menu):
+- **First start:** add the first educator on the home server, then that educator adds everyone else in **Settings → Students** (☰ menu):
 
   ```bash
   lerni student add USERNAME --name NAME --kind independent --educator   # asks for the password
