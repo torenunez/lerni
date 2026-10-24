@@ -95,7 +95,7 @@ These notes are for the admin and educator, not the app; the in-app text stays s
 ## Version 3: play and points
 
 - WHEN the educator opens Games THE SYSTEM SHALL let them race too, to rehearse; their points are their own.
-- WHEN the educator picks a supervised student on MentalMaps THE SYSTEM SHALL show that student's points and cars.
+- WHEN the educator opens a supervised student's page THE SYSTEM SHALL show their racing this week (a bar per goal, right of asked), their points, and the car they drive.
 - WHEN the educator taps a goal THE SYSTEM SHALL show how racing on it is going (last raced, this week's right answers, ideas missed lately), read from the race results and never written into the map.
 - Race questions come from the student's goals and interests, so the goals on MentalMaps are what the race practices. Whether Lerni's questions now get real answers instead of emojis is noted privately.
 
