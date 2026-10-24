@@ -6,10 +6,9 @@ Approved in conversation on 2026-10-11 (approach A). Requirements: [educator PRD
 
 On **Maps**, for one student at a time:
 
-- **Top:** the student picker and their map picture. Since v2.19 the whole picture shows, and a tap on an item opens it in the list.
-- **Middle:** a chat with the **educator agent** about that student. Switching students starts a fresh chat.
-- **Under the agent's latest reply:** its proposals as a **tick list**, and **Add to map**. Feedback items save to the admin's list instead of the map.
-- **Bottom:** the message box with 📎 (notes as .txt, .md, or .docx; a PDF gets "paste its text", since the chat's Claude call takes text only) and Send.
+- **Top:** the student (picked for them when there's only one; since v3.25), then the message box for the **educator agent**, with 📎 (notes as .txt, .md, or .docx; a PDF gets "paste its text", since the chat's Claude call takes text only) and Send. Switching students starts a fresh chat.
+- **Under it:** the agent's latest reply, its proposals as a **tick list** (additions arrive ticked), and **Add N to the map**. Feedback items save to the admin's list instead of the map.
+- **Then:** the whole map picture (a tap on an item opens it in the list), the folded list, and the conversation, folded.
 
 The four Maps panels go away: Add a goal, Rename or remove, Upload notes, and Feedback for the admin. My map keeps its panels; it gets the chat in a later version, once this one has been used.
 

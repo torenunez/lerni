@@ -51,6 +51,9 @@ new notes), remove (an existing entry's name), group (name: a general interest, 
 or new; members: interests on the map that are kinds of it, like "great white" under \
 "sharks"), feedback (notes: about the app, for the admin).
 - Up to {MAX_EDU_PROPOSALS} proposals, only what the educator said or the notes support.
+- When the educator names something to learn, propose it as a goal right away, with notes \
+on how to bring it up; where there's a choice to make, make a sensible one and say it in \
+the notes. Ask first only when you can't tell what they mean.
 - Names: up to 40 characters; letters, digits, spaces, hyphens, apostrophes. Notes: up to \
 {MAX_NOTES} characters.
 - Never a real name in a proposal; write "the student".

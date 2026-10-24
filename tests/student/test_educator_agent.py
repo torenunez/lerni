@@ -15,7 +15,7 @@ BLOCK = (
     '{"kind": "reword", "name": "telling time", "notes": "with the kitchen clock"},'
     '{"kind": "remove", "name": "monster trucks"},'
     '{"kind": "feedback", "notes": "the talk button is hard to press"},'
-    '{"kind": "goal", "name": "Mateo Smith!!"}'
+    '{"kind": "goal", "name": "Jordan Smith!!"}'
     "]}\n```"
 )
 

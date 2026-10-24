@@ -60,10 +60,23 @@ def test_each_role_opens_on_a_tab_it_can_see():
     from lerni.student.web.main import opening_tab, visible_tabs
 
     lee = Viewer("lee", "Lee", Role.SUPERVISED)
-    assert visible_tabs(EDUCATOR) == ("games", "ask", "mymap", "maps", "students", "account")
+    assert visible_tabs(EDUCATOR) == ("games", "ask", "mymap", "maps", "account")
     assert visible_tabs(lee) == ("home", "games")
     assert visible_tabs(SAM) == ("ask", "mymap", "account")
     assert (opening_tab(EDUCATOR), opening_tab(lee), opening_tab(SAM)) == ("ask", "home", "ask")
+
+
+def test_the_educator_opens_on_their_student_by_name(tmp_path):
+    # with one supervised student, the menu names them and sign-in opens their page
+    from lerni.student.web.main import menu_label, opening_tab
+
+    store = StudentStore(tmp_path)
+    assert opening_tab(EDUCATOR, store) == "ask"  # no student yet: their own Chat
+    store.add("lee", "Lee", Kind.SUPERVISED, "1234")
+    assert opening_tab(EDUCATOR, store) == "maps" and menu_label("maps", EDUCATOR, store) == "Lee"
+    store.add("kim", "Kim", Kind.SUPERVISED, "1234")
+    assert menu_label("maps", EDUCATOR, store) == "MentalMaps"  # two: a picker again
+    assert menu_label("account", SAM, store) == "Settings"
 
 
 def test_sign_out_is_a_same_tab_button(tmp_path):
@@ -271,7 +284,7 @@ def test_educator_chat_is_for_educators_and_applies_only_ticked_items(tmp_path):
     from lerni.student.educator_agent import EducatorChats
     from lerni.student.feedback import FeedbackStore
     from lerni.student.interests import MapStore
-    from lerni.student.web.educator import educator_add, educator_send
+    from lerni.student.web.educator import educator_add, educator_send, preticked
 
     class Model:
         def stream(self, system, turns):
@@ -289,6 +302,8 @@ def test_educator_chat_is_for_educators_and_applies_only_ticked_items(tmp_path):
     shown = "".join(educator_send(chats, students, EDUCATOR, "lee", "fractions please"))
     assert shown.strip() == "Ideas."
     labels = [p.label for p in chats.proposals("alba", "lee")]
+    # review: feedback (and removals) wait for a tick of their own under "Add"
+    assert preticked(chats.proposals("alba", "lee")) == labels[:2]
     assert educator_add(chats, maps, store, students, SAM, "lee", labels).startswith("⚠️")
     # the student picked meanwhile doesn't matter: the held owner is used
     msg = educator_add(chats, maps, store, students, EDUCATOR, "lee", [labels[0], labels[2]])
@@ -318,6 +333,23 @@ def test_list_draws_run_one_at_a_time(tmp_path):
     draws = [f for f in blocks.fns.values() if getattr(f, "renderable", None) is not None]
     assert len(draws) == 2
     assert {(f.concurrency_id, f.concurrency_limit) for f in draws} == {("mental-list", 1)}
+
+
+def test_an_open_item_with_links_draws_on_both_lists(tmp_path):
+    # regression: v3.25's folded flag hid the open-item state, so a jump button broke the draw
+    import gradio as gr
+
+    from lerni.student.interests import MapStore, add_interest, group
+
+    StudentStore(tmp_path).add("ann", "Ann", Kind.INDEPENDENT, "long enough")
+    MapStore(tmp_path).change("ann", lambda m: [add_interest(m, "sharks"),
+                                                add_interest(m, "great white"),
+                                                group(m, "e2", "e1")])
+    app = build_app(data_root=tmp_path)
+    blocks = next(r.app for r in app.routes if getattr(r, "path", "") == "/app").get_blocks()
+    for f in [f for f in blocks.fns.values() if getattr(f, "renderable", None) is not None]:
+        with gr.Blocks():
+            f.renderable.fn("ann", 0, "e1", None, [])  # sharks open, great white under Kinds
 
 
 def test_an_edit_only_reaches_the_map_on_screen(tmp_path):

@@ -55,7 +55,7 @@ As an educator, I want to add and manage the students who use the app, so that e
 
 As an educator, I want to add what I'd like the student to explore, so that Lerni bridges toward it from what they love.
 
-- WHEN the educator tells the educator agent on MentalMaps what they'd like for a supervised student (in words, or with notes attached as .txt, .md, or .docx) THE SYSTEM SHALL propose changes, each labeled (a goal with notes for Lerni, an interest, new notes for a goal, or removing an entry), and change that student's map only with the ones the educator ticks.
+- WHEN the educator tells the educator agent on the student's page what they'd like for a supervised student (a goal idea in the Suggest box at the top, in words, or with notes attached as .txt, .md, or .docx) THE SYSTEM SHALL propose changes at once, each labeled (a goal with notes for Lerni, an interest, new notes for a goal, or removing an entry) and already ticked, and change that student's map only with the ones still ticked when the educator taps Add.
 - WHEN the educator taps an item in the MentalMap's picture THE SYSTEM SHALL light up its links and open it in the list.
 - WHEN the educator adds, renames, or removes a goal or an interest in the MentalMap's list THE SYSTEM SHALL change the map at once. A removed entry waits in Removed, where Put back restores it with its history; Lerni never adds it back on its own, stops steering toward a removed goal, and never brings up a removed interest (if the student does, Lerni acknowledges it briefly and turns to something they love).
 
@@ -63,7 +63,7 @@ As an educator, I want to add what I'd like the student to explore, so that Lern
 
 As an educator, I want to see a supervised student's map, so that I know what they love and whether my goals are landing.
 
-- WHEN the educator opens MentalMaps and picks a supervised student THE SYSTEM SHALL draw their map: interests in green and goals in coral, each sized by its strength (a group counts its kinds), goals outlined until they come up, linked items drawn together, and bridges as dashed lines.
+- WHEN the educator signs in with one supervised student THE SYSTEM SHALL open that student's page, named after them in the menu (with several, a picker on MentalMaps), and draw their map: interests in green and goals in coral, each sized by its strength (a group counts its kinds), goals outlined until they come up, linked items drawn together, and bridges as dashed lines.
 - WHEN the educator taps an item in the list THE SYSTEM SHALL show its strength (strong, growing, faint, or not yet, from the days it came up in the last 30), the facts behind it, and its bridges and related items, each a tap away with the link's own strength (a bridge also says how it held).
 - WHEN an interest is a kind of another (a Great White is a kind of shark) THE SYSTEM SHALL list it under that group and count the group's strength from the days any of its kinds came up, each day once; the tagger may group names already on the map, and the educator can put an item under a group, take it out (it stays out), or tick a group the MentalMaps chat proposes.
 
