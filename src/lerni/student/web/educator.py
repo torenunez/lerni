@@ -120,13 +120,14 @@ def educator_tab(
     With one supervised student it opens on them (main.py picks and hides the dropdown).
     """
     with gr.Tab("MentalMaps", id="maps", visible=False) as tab:
-        who = gr.Dropdown(label="Student", choices=[], value=None)  # filled on load
+        # any value: a page open across a restart sends its old pick; map_owner checks it
+        who = gr.Dropdown(label="Student", choices=[], value=None, allow_custom_value=True)
         # suggest a goal: first on the page, so the phone keyboard never pushes it around
-        gr.Markdown("### Suggest a new goal")
+        gr.Markdown("### Suggest or change a goal")
         with gr.Row(elem_classes="lerni-type"):
             text = gr.Textbox(
                 show_label=False,
-                placeholder="Suggest a goal…",
+                placeholder="New goal, or 'easier notes for Fractions'…",
                 lines=1,
                 max_lines=4,
                 max_length=MAX_MESSAGE,

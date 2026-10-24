@@ -277,6 +277,10 @@ def build_app(
                       log=log)  # a worrying bonus answer is kept where Chat's are
              if quizzer is not None else None)
     log.purge()  # at startup; then once a day as exchanges are logged
+    if races is not None:  # a restart loses held questions: write the next race's now
+        for s in students.list_students():
+            if s.kind is Kind.SUPERVISED and not s.archived:
+                races.prefill(s.username, supervised=True)  # in the background
     def plays(username: str) -> bool:  # supervised students and educators earn ⭐
         try:
             student = students.get(username)

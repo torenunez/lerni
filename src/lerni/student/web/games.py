@@ -50,6 +50,7 @@ LANES = (12, 55, 98)  # the student's lane, then the fast and slow rivals'
 BOT_COLORS = {"Zippy": "#7F77DD", "Bolt": "#888780"}  # the bots' own paint
 START, END = 8, 248  # a car's left edge at the start and at the finish, in track units
 MAX_LABEL = 18  # characters of a car's name on the track
+WAIT_LINE = "Pumping the tires… 🛞 New questions can take a minute to write."
 SOUNDS = ("roar", "sputter", "finish")  # <data>/sounds/<name>.mp3, played by race.js
 EDGE = ('<defs><filter id="lerni-edge" x="-10%" y="-10%" width="120%" height="120%">'
         '<feDropShadow dx="0" dy="0" stdDeviation="0.7" flood-color="#2C2C2A" '
@@ -125,7 +126,8 @@ def student_progress(points: PointsStore, garage: Garage, students: StudentStore
     p = points.get(owner)
     week = results.week(owner, date.today()) if results else []
     rows = [f'<div class="lerni-week-row"><span>{html.escape(goal)}</span>'
-            f'<span class="lerni-week-bar"><i style="width:{round(100 * right / asked)}%"></i></span>'
+            f'<span class="lerni-week-bar">'
+            f'<i style="width:{round(100 * right / asked)}%"></i></span>'
             f'<span class="lerni-of">{right} of {asked}</span></div>'
             for goal, right, asked in week if asked]
     try:  # a car gone from the garage file gets no chip
@@ -485,9 +487,12 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
 
     tab.select(on_open, None, outputs, **PRIVATE)
     # Race hides while questions are written, so extra taps can't start more races
-    go.click(lambda: ["Pumping the tires… 🛞", gr.update(visible=False)], None, [note, go],
+    # the note says why it waits; progress only on the hidden Race button, so no "processing"
+    # over the hero, the card, and every garage car ("hidden" still shows it on HTML)
+    go.click(lambda: [WAIT_LINE, gr.update(visible=False)], None, [note, go], queue=False,
              **PRIVATE).then(
-        on_go, None, outputs, concurrency_limit=MAX_AT_ONCE, **PRIVATE)  # side by side
+        on_go, None, outputs, concurrency_limit=MAX_AT_ONCE, show_progress_on=[go],
+        **PRIVATE)  # side by side
     for i, button in enumerate(choices):
         button.click(on_choice(i), shown, outputs, concurrency_limit=MAX_AT_ONCE, **PRIVATE)
     next_btn.click(on_next, None, outputs, concurrency_limit=MAX_AT_ONCE, **PRIVATE)

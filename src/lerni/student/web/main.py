@@ -167,6 +167,9 @@ def build_main_view(
                 me = viewer.username
                 own = [map_svg(maps.get(me), date.today(), owner_key(me)), me, 1]
             opening = opening_tab(viewer, students)
+            if races is not None and viewer is not None and "games" in shown:
+                # write the next race's questions now, in the background, not at the Race tap
+                races.prefill(viewer.username, supervised=viewer.role is Role.SUPERVISED)
             return [
                 f"Signed in as **{name}**",
                 f"**{menu_label(opening, viewer, students)}**" if opening else "",

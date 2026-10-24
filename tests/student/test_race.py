@@ -710,3 +710,21 @@ def test_a_bonus_answer_is_graded_safely(tmp_path):
 
     assert any("hurting me" in r.get("answer", "") for r in ConversationLog(tmp_path).read("sam"))
     assert '"care": true' in (tmp_path / "results" / "sam.jsonl").read_text()
+
+
+def test_held_questions_last_past_midnight(tmp_path):
+    # regression: held questions were dropped at midnight, so a day's first race waited a minute
+    quizzer = FakeQuizzer()
+    desk, _ = desk_for(tmp_path, quizzer)
+    desk.prefill = lambda *args: None
+    ticks = iter(range(0, 1000, 10))
+    desk.clock = lambda: float(next(ticks))
+    desk.start("sam", supervised=True, today=TODAY)  # ten written: five race, five held
+    desk.start("sam", supervised=True, today=TODAY + timedelta(days=1))
+    assert quizzer.calls == 1
+    desk.start("sam", supervised=True, today=TODAY + timedelta(days=2))  # none held: a new set
+    assert quizzer.calls == 2
+    desk.maps.change("sam", lambda m: [add_goal(m, "Decimals"),  # Fractions gone overnight
+                                       remove(m, m.find("Fractions").id)])
+    with pytest.raises(RaceUnavailable):
+        desk.start("sam", supervised=True, today=TODAY + timedelta(days=3))

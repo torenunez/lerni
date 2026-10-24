@@ -698,8 +698,8 @@ class RaceDesk:
         raise RaceUnavailable(NOT_READY)
 
     def _held(self, username: str, today: date) -> list[Question]:
-        day, held = self._sets.get(username, ("", []))
-        return held if day == today.isoformat() else []  # a new day starts fresh
+        _, held = self._sets.get(username, ("", []))
+        return held  # kept past midnight: each is checked against the map at the start
 
     def prefill(self, username: str, supervised: bool) -> None:
         """Write the next questions in the background if fewer than a race are held."""
@@ -830,8 +830,7 @@ class RaceDesk:
 
     def _keep_bonus(self, username: str, day: date, new: list[Bonus]) -> None:
         with self._lock:
-            when, held = self._bonuses.get(username, ("", []))
-            held = held if when == day.isoformat() else []
+            _, held = self._bonuses.get(username, ("", []))
             known = {normalize(b.concept) for b in held}
             held += [b for b in new if normalize(b.concept) not in known]
             self._bonuses[username] = (day.isoformat(), held[-2 * BONUS_PER_SET:])
@@ -840,8 +839,8 @@ class RaceDesk:
         # the oldest held bonus that still fits the map (a goal or a set-aside may have changed)
         goals = {e.name.casefold() for e in m.entries if e.kind == "goal"}
         with self._lock:
-            when, held = self._bonuses.get(username, ("", []))
-            fit = [b for b in (held if when == day.isoformat() else [])
+            _, held = self._bonuses.get(username, ("", []))
+            fit = [b for b in held  # kept past midnight, like the questions
                    if (not goals or b.goal.casefold() in goals)
                    and not mentions_set_aside(m, " ".join([b.question, b.concept, *b.key_ideas]))]
             if fit:
@@ -887,9 +886,8 @@ class RaceDesk:
             with self._lock:  # dropped or replaced while grading: it no longer counts
                 turn = bonus_move(race, tier, line) if self._races.get(username) is race else None
                 if turn is not None:  # the question it replaced goes back for another race
-                    when, held = self._sets.get(username, ("", []))
-                    if when == date.today().isoformat():
-                        held.append(race.questions[BONUS_AT])
+                    self._sets.setdefault(username, (date.today().isoformat(), []))[1].append(
+                        race.questions[BONUS_AT])
                     self._last_tap[username] = self.clock()
         finally:
             with self._lock:
