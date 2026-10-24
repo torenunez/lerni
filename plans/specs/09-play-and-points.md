@@ -23,7 +23,7 @@ Approved in conversation on 2026-10-12. Requirements: [student PRD, Version 3](.
   - A car they can't afford yet shows only its picture, name, and price; its ⚡ and facts come once it's in reach.
   - Owned cars say **Drive**; others **Buy · 140 ⭐**, or "60 more ⭐" (not tappable).
   - Buying asks nothing more: it takes the price off their points, and the car is theirs for good.
-- **Starting a race** waits a few seconds while Claude writes the questions ("Pumping the tires…"). The next race's questions are written ahead, so Race again is quick.
+- **Starting a race** is quick: the next race's questions are written ahead, at sign-in, at server start, and after each race, and unused ones are kept past midnight (v3.27). Writing a set takes about a minute, so when nothing is held the note says so ("Pumping the tires… New questions can take a minute to write.").
 - **Limits:**
   - After 10 races in a day: "The track is closed for today 🌙 Come back tomorrow."
   - While Lerni is resting (usage limits): "Lerni is resting until Mon 6:00 pm."

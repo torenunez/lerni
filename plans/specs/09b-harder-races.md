@@ -10,9 +10,9 @@ Approved in conversation on 2026-10-20. Builds on [spec 09](09-play-and-points.m
 - v3.18: pitched right;
 - v3.22: missed ideas come back;
 - v3.24: the bonus round;
-- v3.28: probes.
+- v3.31: probes.
 
-v3.19 (race questions from the garage), v3.20 (a map journal and nightly backups), and v3.21 (Next after a wrong answer) sit between v3.18 and v3.22, v3.23 (Chat's goals take turns) between v3.22 and v3.24, v3.25 and v3.26 (the educator's page) and v3.27 (one Chat) between v3.24 and v3.28; each is designed in its own plan, not here. Each version's plan file (`plans/v3.NN-*.md`) is written when it starts, from this spec.
+v3.19 (race questions from the garage), v3.20 (a map journal and nightly backups), and v3.21 (Next after a wrong answer) sit between v3.18 and v3.22, v3.23 (Chat's goals take turns) between v3.22 and v3.24, v3.25 and v3.26 (the educator's page), v3.27 (the race starts fast), v3.28 (goal spacing and areas), v3.29 (read-aloud questions), and v3.30 (one Chat) between v3.24 and v3.31; each is designed in its own plan, not here. Each version's plan file (`plans/v3.NN-*.md`) is written when it starts, from this spec.
 
 ## What people see
 
@@ -60,7 +60,7 @@ v3.19 (race questions from the garage), v3.20 (a map journal and nightly backups
   - the car moves.
 - **Skip or a blank answer** takes a small step and earns 0. It's never called wrong.
 
-### "Want to find out more?" (v3.28)
+### "Want to find out more?" (v3.31)
 
 - **At the finish,** under the place, there are up to two topic buttons, such as "🌋 Earthquakes".
 - **A tap** opens Chat, where Lerni starts on that topic. The topic joins the map only if the student then talks about it.
@@ -206,7 +206,7 @@ v3.19 (race questions from the garage), v3.20 (a map journal and nightly backups
 - **Speaking:** the card reuses Chat's Hold to talk (`talk.js`, `voice.py`). Whisper turns the speech into text, and the text is graded.
 - **Cost:** one small-model call per bonus.
 
-### Probes (v3.28, `race.py`, `results.py`, `web/games.py`)
+### Probes (v3.31, `race.py`, `results.py`, `web/games.py`)
 
 - **What the server gives Claude:** "Nearby ideas to try", built from:
   - the strong interests, with their groups and those groups' other kinds;
@@ -243,7 +243,7 @@ v3.19 (race questions from the garage), v3.20 (a map journal and nightly backups
 ## Not in this version
 
 - An engine sound loop, or music.
-- Read-aloud questions.
+- Read-aloud questions (planned as v3.29, after this spec: the admin's decision of 2026-10-24).
 - Games and probes for independent students.
 - Goal suggestions (Version 5).
 - FSRS or SM-2 (Version 4).
@@ -266,7 +266,7 @@ v3.19 (race questions from the garage), v3.20 (a map journal and nightly backups
   - last after question 3 gets the bonus;
   - each tier moves the car and awards once;
   - the answer is on disk nowhere.
-- **v3.28 (`test_race.py`):**
+- **v3.31 (`test_race.py`):**
   - a probe on the map or set aside is dropped;
   - a probe answer leaves the level alone;
   - a tap is logged.
