@@ -18,6 +18,7 @@ from lerni.student.race import (
     CHECK_SYSTEM,
     QUIZ_SYSTEM,
     Question,
+    check_bonus,
     check_input,
     check_questions,
     quiz_input,
@@ -116,6 +117,13 @@ def main() -> None:
     results.append(("a due idea comes back", bool(back)))
     results.append(("in new words", all(SequenceMatcher(None, normalize(q.question), normalize(
         missed.question)).ratio() < 0.9 for q in back)))
+    # the bonus (v3.24): each set brings 1 or 2 explain-it questions, each with 2 or 3 key ideas
+    raw = ClaudeCodeQuizzer().write(QUIZ_SYSTEM, quiz_input(one, date.today(), True))
+    bonuses = check_bonus(raw, one)
+    for b in bonuses:
+        print(f"[bonus · {b.goal}] {b.question} → {b.key_ideas}")
+    results.append(("a set brings 1 or 2 bonus questions that pass the checks",
+                    1 <= len(bonuses) <= 2))
     for name, ok in results:
         print("PASS" if ok else "FAIL", name)
 

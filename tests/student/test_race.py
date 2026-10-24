@@ -606,3 +606,108 @@ def test_a_right_key_written_as_a_mixed_number_races(tmp_path):
     odd = fresh("Fractions", question="Half of 7 scoops?", math="7 / 2",
                 choices=["3 and a half scoops", "2 scoops", "7 scoops"], answer=0)
     assert len(check_questions({"questions": [odd]}, m)) == 1
+
+
+def test_the_bonus_comes_when_behind_or_lucky_and_counts_once():
+    from lerni.student.race import Bonus, bonus_move, check_bonus
+
+    b = Bonus("Fractions", "why two halves make a whole", "Explain why two halves make a whole.",
+              ("two equal parts", "together they make one"))
+    m = InterestMap()
+    add_goal(m, "Fractions")
+    good = {"goal": "Fractions", "concept": b.concept, "question": b.question,
+            "key_ideas": list(b.key_ideas)}
+    raw = {"bonus": [good, {**good, "key_ideas": ["a"]}, {**good, "goal": "Spelling"}]}
+    assert check_bonus(raw, m) == [b]  # one key idea, or a goal not on the map: dropped
+
+    def race_with(rights, lucky=False):
+        race = new_race([Q] * QUESTIONS_PER_RACE)
+        race.bonus, race.lucky = b, lucky
+        for n, ok in enumerate(rights):
+            answer(race, n, 0 if ok else 1)
+        return race
+
+    behind = race_with([False] * 3)  # last after question 3: question 4 is the bonus
+    assert behind.bonus_live and public(behind)["bonus"] == b.question
+    assert "equal parts" not in str(public(behind))  # the page never sees the key ideas
+    assert answer(behind, 3, 0) is None  # multiple choice waits for the bonus
+    me = behind.me
+    turn = bonus_move(behind, "nailed", "Nailed it!")
+    assert turn.right and behind.me > me and behind.answered == 4 and behind.right == 1
+    assert bonus_move(behind, "nailed", "again") is None and not behind.bonus_live  # once only
+    assert race_with([True] * 3, lucky=True).bonus_live  # or a lucky draw at the start
+    ahead = race_with([True] * 3)
+    assert not ahead.bonus_live and answer(ahead, 3, 0) is not None  # otherwise, as before
+    tried = race_with([False] * 3)
+    me = tried.me
+    assert not bonus_move(tried, "tried", "Good try.").right and tried.me - me == pytest.approx(0.7)
+
+
+def test_a_bonus_answer_is_graded_safely(tmp_path):
+    from lerni.student.race import BONUS_POINTS, CARE_LINE
+    from lerni.student.results import ResultsLog
+
+    class Writer(FakeQuizzer):  # five questions and one bonus a call, so each race writes
+        def write(self, system, prompt):
+            self.calls += 1
+            return {"questions": [fresh("Fractions") for _ in range(QUESTIONS_PER_RACE)],
+                    "bonus": [{"goal": "Fractions", "concept": f"why halves {self.calls}",
+                               "question": "Explain why two halves make a whole.",
+                               "key_ideas": ["two equal parts", "together they make one"]}]}
+
+    class Grader:
+        def __init__(self):
+            self.calls, self.reply = [], {"tier": "nailed", "line": "Nailed it!", "care": False}
+
+        def write(self, system, prompt, schema=None, timeout=None):
+            self.calls.append(prompt)
+            if self.reply is None:
+                raise TimeoutError("too slow")
+            return self.reply
+
+    maps, points = MapStore(tmp_path), PointsStore(tmp_path)
+    goal = maps.change("sam", lambda m: add_goal(m, "Fractions"))
+    grader = Grader()
+    from lerni.student.logs import ConversationLog as Log
+
+    desk = RaceDesk(Writer(), maps, points, ConceptStore(tmp_path), results=ResultsLog(tmp_path),
+                    grader=grader, log=Log(tmp_path))
+    desk.prefill = lambda *args: None
+    ticks = iter(range(0, 10_000, 10))
+    desk.clock = lambda: float(next(ticks))
+
+    def at_bonus():
+        race = desk.start("sam", supervised=True)
+        for n in range(3):  # three wrong: last, so question 4 is the bonus
+            desk.pick("sam", race.id, n, (race.questions[n].answer + 1) % 3)
+        assert race.bonus_live
+        return race
+
+    race = at_bonus()  # blank or emojis: nothing to grade, never called wrong
+    _, turn, awarded = desk.answer_bonus("sam", race.id, 3, " 🙂🙂 ")
+    assert (race.bonus_tier, awarded, grader.calls) == ("none", 0, []) and not turn.right
+
+    race = at_bonus()
+    secret = "Because 2 equal parts fit together into 1 whole pizza, xyzzy"
+    _, turn, awarded = desk.answer_bonus("sam", race.id, 3, secret)
+    assert turn.right and awarded == BONUS_POINTS["nailed"] and len(grader.calls) == 1
+    assert desk.answer_bonus("sam", race.id, 3, secret)[2] == 0  # a double send: once only
+    assert date.today().isoformat() in maps.get("sam").get(goal.id).explained
+    assert not any("xyzzy" in p.read_text(errors="ignore")  # the answer is never on disk
+                   for p in tmp_path.rglob("*") if p.is_file())
+
+    grader.reply = None  # the grader fails: a real try, never a zero
+    race = at_bonus()
+    _, turn, awarded = desk.answer_bonus("sam", race.id, 3, "halves are the same size")
+    assert race.bonus_tier == "tried" and awarded == BONUS_POINTS["tried"]
+    assert "couldn't read" in turn.why and "+2" not in turn.why  # the ⭐ is said once, below
+
+    grader.reply = {"tier": "nailed", "line": "Great!", "care": True}  # worry comes first
+    race = at_bonus()
+    _, turn, awarded = desk.answer_bonus("sam", race.id, 3, "someone keeps hurting me")
+    assert race.bonus_tier == "care" and turn.why == CARE_LINE and awarded == 0  # no reward
+    # regression (review): a worry left no trace; like Chat's, it's kept in the conversation log
+    from lerni.student.logs import ConversationLog
+
+    assert any("hurting me" in r.get("answer", "") for r in ConversationLog(tmp_path).read("sam"))
+    assert '"care": true' in (tmp_path / "results" / "sam.jsonl").read_text()

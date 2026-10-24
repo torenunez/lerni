@@ -201,7 +201,7 @@
 
   // wire each talk button once Gradio draws it (tabs appear after sign-in)
   setInterval(() => {
-    for (const suffix of ['ask', 'home']) {
+    for (const suffix of ['ask', 'home', 'bonus']) {
       const btn = document.getElementById(`lerni-talk-${suffix}`);
       if (!btn || btn.dataset.wired) continue;
       btn.dataset.wired = '1';

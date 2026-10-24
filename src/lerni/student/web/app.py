@@ -262,7 +262,8 @@ def build_app(
 
     races = (RaceDesk(quizzer, maps, points, ConceptStore(root), results=ResultsLog(root),
                       checker=quizzer,  # the same small model answers each question blind
-                      garage=garage)
+                      garage=garage, grader=quizzer,  # and grades bonus answers
+                      log=log)  # a worrying bonus answer is kept where Chat's are
              if quizzer is not None else None)
     log.purge()  # at startup; then once a day as exchanges are logged
     def plays(username: str) -> bool:  # supervised students and educators earn ⭐
