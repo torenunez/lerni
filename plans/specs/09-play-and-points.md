@@ -4,7 +4,7 @@ Approved in conversation on 2026-10-12. Requirements: [student PRD, Version 3](.
 
 **Why.** The supervised student answers Lerni's goal questions with random emojis. Points they can spend on cars give those questions a reason, from two places: a race in Games and real answers in Chat. Points never go down for a wrong answer, are never compared between students, and stay apart from the map.
 
-**Ships as:** v3.1 (the race, points, and the garage), v3.3 (real cars in the garage), and v3.7 (points in Chat, and Ask renamed Chat). Part 2 (v3.16–v3.26): [spec 09b](09b-harder-races.md).
+**Ships as:** v3.1 (the race, points, and the garage), v3.3 (real cars in the garage), and v3.7 (points in Chat, and Ask renamed Chat). Part 2 (v3.16–v3.28): [spec 09b](09b-harder-races.md).
 
 ## What people see
 
@@ -112,7 +112,7 @@ At about 50 ⭐ a day, a $100,000 car comes on day 1 and a $5 million one after 
   - the goal isn't on the map (when the map has goals);
   - **its key is wrong (v3.14):** Claude's `math` for a worked-out number ("400 / 2") gives another value than the keyed choice (the server works it out with an `ast` walk, never `eval`), or a blind second call that sees only the questions and choices (lettered A to C, with a few words of working before each pick) picks another answer (one more small call per set, 20 seconds at most; if it fails, or disagrees with most of a set, the set races, since the check is then the likelier fault); a sum that won't read is ignored;
   - **it repeats (v3.9):** its concept matches one asked in the last 14 days or one held, or its words are nearly the same (a `difflib` ratio of 0.9) as one of the last 60 asked since the server started, held, or earlier in the set. If Claude can only repeat, the race tops up with repeats (never one question twice), since a race beats no race.
-- **The results log (v3.14):** each answer goes into `<data>/results/<user>.jsonl`, kept for good: day, race, goal, concept, a 12-character hash of the question (never its words), right or wrong, and seconds; each finish adds place, points, and version. The educator's MentalMaps line shows this week per goal ("This week: Fractions 7/10").
+- **The results log (v3.14):** each answer goes into `<data>/results/<user>.jsonl`, kept for good: day, race, goal, concept, a 12-character hash of the question (never its words), right or wrong, and seconds; each finish adds place, points, and version. The educator's student page shows this week per goal as Racing this week (a bar per goal, "7 of 10").
 - **What's remembered:** when a race starts, its 5 concepts go into `<data>/concepts/<user>.json`, a ledger kept for good (label, goal, first and last date, times asked and right, and from v3.22 a review due date and step; never question text; v3.10), and the question texts stay in memory only. "Asked lately" is the last 40 asked within 14 days.
 - **Then it shuffles the choices**, so the right one isn't always first, and a race takes turns across the goals. A goal's notes, if Claude copies them into `goal`, are ignored when matching. If fewer than 5 survive, it asks again once and keeps the good ones from both; then: "The track needs a minute. Try again soon."
 - **Writing ahead:** the next set is written in the background when Games opens, and after each race, but not once the day's races are used. A set is kept in memory for the day only, and checked against the map again when a race starts, so a goal or set-aside changed since still counts.

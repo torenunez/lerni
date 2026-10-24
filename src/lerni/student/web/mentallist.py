@@ -394,7 +394,9 @@ def mental_list(
                             missed = ", ".join(_md(c) for c in p.missed)
                             parts += [f"missed lately: {missed}"] if p.missed else []
                             facts.append("Practice: " + " · ".join(parts))
-                    with gr.Column(elem_classes="lerni-detail", key=f"d-{e.id}"):
+                    # the list and item in a class, so a picture tap can scroll to it (mapview.js)
+                    with gr.Column(elem_classes=["lerni-detail", f"{pick_id}-{e.id}"],
+                                   key=f"d-{e.id}"):
                         gr.Markdown(" · ".join(facts), key=f"facts-{e.id}")
                         notes_box = notes_btn = None
                         if e.kind == "goal":

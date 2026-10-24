@@ -12,6 +12,14 @@
     input.value = id;
     input.dispatchEvent(new Event('input', {bubbles: true}));
     setTimeout(() => document.getElementById(`${field}-go`)?.click(), 50);  // as talk.js does
+    if (id) show(`${field}-${id}`);
+  }
+
+  // the opened item may be above the picture, off screen: scroll to it once it's drawn
+  function show(cls, tries = 30) {
+    const el = document.querySelector(`.${CSS.escape(cls)}`);
+    if (el) el.scrollIntoView({behavior: 'smooth', block: 'center'});
+    else if (tries) setTimeout(() => show(cls, tries - 1), 100);
   }
 
   // dim everything but the tapped item and what it links to

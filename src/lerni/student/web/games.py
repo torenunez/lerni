@@ -125,7 +125,7 @@ def student_progress(points: PointsStore, garage: Garage, students: StudentStore
     p = points.get(owner)
     week = results.week(owner, date.today()) if results else []
     rows = [f'<div class="lerni-week-row"><span>{html.escape(goal)}</span>'
-            f'<span class="lerni-bar"><i style="width:{round(100 * right / asked)}%"></i></span>'
+            f'<span class="lerni-week-bar"><i style="width:{round(100 * right / asked)}%"></i></span>'
             f'<span class="lerni-of">{right} of {asked}</span></div>'
             for goal, right, asked in week if asked]
     try:  # a car gone from the garage file gets no chip

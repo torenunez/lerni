@@ -93,9 +93,10 @@ _CSS = """
 .lerni-week h3 { margin: 4px 0 6px; }
 .lerni-week-row { display: grid; grid-template-columns: minmax(0, 1fr) 72px 60px; gap: 8px;
   align-items: center; padding: 5px 0; border-bottom: 1px solid var(--border-color-primary); }
-.lerni-bar { height: 8px; border-radius: 4px; background: var(--border-color-primary);
+.lerni-week-row > span:first-child { overflow-wrap: anywhere; }
+.lerni-week-bar { height: 8px; border-radius: 4px; background: var(--border-color-primary);
   overflow: hidden; }
-.lerni-bar i { display: block; height: 8px; background: #1d9e75; }
+.lerni-week-bar i { display: block; height: 8px; background: #1d9e75; }
 .lerni-of { text-align: right; color: var(--body-text-color-subdued); font-size: 14px; }
 .lerni-chip { display: inline-block; margin: 8px 6px 0 0; padding: 2px 10px; border-radius: 8px;
   background: var(--color-accent-soft); font-size: 14px; }
@@ -183,9 +184,8 @@ def _head(speech: bool) -> str:
     from importlib.resources import files
 
     names = ["nav.js", "mapview.js", "race.js"] + (["talk.js"] if speech else [])
-    return "".join(
-        f"<script>{files('lerni.student.web').joinpath(n).read_text()}</script>" for n in names
-    )
+    return "".join(f"<script>{files('lerni.student.web').joinpath(n).read_text()}</script>"
+                   for n in names)
 
 
 def _theme() -> gr.themes.Base:
@@ -268,29 +268,15 @@ def build_app(
         path = root / "sounds" / f"{name}.mp3"
         if name not in SOUNDS or not path.is_file():
             return PlainTextResponse("Not found.", status_code=404)
-        return FileResponse(
-            path,
-            media_type="audio/mpeg",  # revalidated, so a swapped clip plays
-            headers={"Cache-Control": "private, no-cache"},
-        )
+        return FileResponse(path, media_type="audio/mpeg",  # revalidated, so a swapped clip plays
+                            headers={"Cache-Control": "private, no-cache"})
 
-    races = (
-        RaceDesk(
-            quizzer,
-            maps,
-            points,
-            ConceptStore(root),
-            results=ResultsLog(root),
-            checker=quizzer,  # the same small model answers each question blind
-            garage=garage,
-            grader=quizzer,  # and grades bonus answers
-            log=log,
-        )  # a worrying bonus answer is kept where Chat's are
-        if quizzer is not None
-        else None
-    )
+    races = (RaceDesk(quizzer, maps, points, ConceptStore(root), results=ResultsLog(root),
+                      checker=quizzer,  # the same small model answers each question blind
+                      garage=garage, grader=quizzer,  # and grades bonus answers
+                      log=log)  # a worrying bonus answer is kept where Chat's are
+             if quizzer is not None else None)
     log.purge()  # at startup; then once a day as exchanges are logged
-
     def plays(username: str) -> bool:  # supervised students and educators earn ⭐
         try:
             student = students.get(username)

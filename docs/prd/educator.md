@@ -57,7 +57,7 @@ As an educator, I want to add what I'd like the student to explore, so that Lern
 
 - WHEN the educator tells the educator agent on the student's page what they'd like for a supervised student (a goal idea in the Suggest box at the top, in words, or with notes attached as .txt, .md, or .docx) THE SYSTEM SHALL propose changes at once, each labeled (a goal with notes for Lerni, an interest, new notes for a goal, or removing an entry) and already ticked, and change that student's map only with the ones still ticked when the educator taps Add.
 - WHEN the educator taps an item in the MentalMap's picture THE SYSTEM SHALL light up its links and open it in the list.
-- WHEN the educator adds, renames, or removes a goal or an interest in the MentalMap's list THE SYSTEM SHALL change the map at once. A removed entry waits in Removed, where Put back restores it with its history; Lerni never adds it back on its own, stops steering toward a removed goal, and never brings up a removed interest (if the student does, Lerni acknowledges it briefly and turns to something they love).
+- WHEN the educator renames or removes a goal or an interest in the MentalMap's list THE SYSTEM SHALL change the map at once (on the student's page, goals and interests are added through the Suggest box). A removed entry waits in Removed, where Put back restores it with its history; Lerni never adds it back on its own, stops steering toward a removed goal, and never brings up a removed interest (if the student does, Lerni acknowledges it briefly and turns to something they love).
 
 ### Story: See the map
 

@@ -30,8 +30,6 @@ from lerni.student.web.mapdraw import map_svg, owner_key
 from lerni.student.web.maps import REFRESH_SECONDS, map_owner, save_feedback
 from lerni.student.web.mentallist import bump, mental_list
 
-NOTES_MARK = "\n\nAttached notes"  # where a message's attached notes begin
-
 
 def educator_send(
     chats: EducatorChats,
@@ -117,7 +115,7 @@ def educator_tab(
     garage: Garage | None = None,
     results: ResultsLog | None = None,
 ) -> tuple[gr.Tab, gr.Dropdown]:
-    """The student's page: suggest a goal first, then their map and list, and the talk below.
+    """The student's page: suggest a goal first, then racing this week, the list, and the picture.
 
     With one supervised student it opens on them (main.py picks and hides the dropdown).
     """
@@ -169,6 +167,11 @@ def educator_tab(
                 return ""
             return map_svg(maps.get(who), date.today(), owner_key(who))
 
+        def progress(requested: str | None, request: gr.Request) -> str:
+            viewer = signin.viewer(request.username)  # re-read on every request
+            return (student_progress(points, garage or Garage(), students, viewer, requested,
+                                     results) if points else "")
+
         def checked_owner(requested: str | None, request: gr.Request) -> str:
             try:  # whose list to draw: only after the check
                 return map_owner(students, signin.viewer(request.username), requested or "")
@@ -184,8 +187,7 @@ def educator_tab(
             if path:
                 Path(path).unlink(missing_ok=True)  # notes attached for the last student
             hidden = gr.update(choices=[], value=[], visible=False)
-            stars = (student_progress(points, garage or Garage(), students, viewer, requested,
-                                    results) if points else "")
+            stars = progress(requested, request)
             return [draw(requested, request), checked_owner(requested, request), bump(), hidden,
                     gr.update(visible=False), "", "", None, stars, ""]
 
@@ -277,6 +279,7 @@ def educator_tab(
                   **PRIVATE)
         ticks.change(lambda picked: add_button(len(picked or [])), ticks, add, **PRIVATE)
         tab.select(bump, None, version, **PRIVATE)  # opening redraws the picture and the list
+        tab.select(progress, who, points_line, **PRIVATE)  # and racing, while races go on
         version.change(draw, who, picture, **PRIVATE)  # a list edit redraws it
         # the picture only: redrawing the list would wipe a half-typed rename
         gr.Timer(REFRESH_SECONDS).tick(draw, who, picture, **PRIVATE)
