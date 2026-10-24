@@ -109,6 +109,11 @@ def chat_messages(chats: EducatorChats, educator: str, owner: str) -> list[dict[
     return shown
 
 
+def preticked(found: list[Any]) -> list[str]:
+    """The suggestions ticked on arrival: additions and tidying, never a removal or feedback."""
+    return [p.label for p in found if p.kind not in ("remove", "feedback")]
+
+
 def add_button(n: int) -> Any:
     """The Add button for ``n`` ticked suggestions: "Add 2 to the map", hidden for none."""
     return gr.update(value=f"Add {n} to the map", visible=n > 0)
@@ -162,7 +167,7 @@ def educator_tab(
         list_owner, version = gr.State(""), gr.State(0)  # set only after map_owner's check
         # edits go to the student the list shows, never a newer dropdown pick
         mental_list(signin, students, maps, list_owner, list_owner, version, "lerni-pick-maps",
-                    "Pick a student.", results, folded=True)
+                    "Pick a student, or add one in Settings.", results, folded=True)
         with gr.Accordion("Conversation with Lerni", open=False):
             chat = gr.Chatbot(
                 show_label=False,
@@ -256,8 +261,8 @@ def educator_tab(
             labels = [p.label for p in found]
             yield [
                 shown,
-                gr.update(choices=labels, value=labels, visible=bool(labels)),  # all ticked
-                add_button(len(labels)),
+                gr.update(choices=labels, value=preticked(found), visible=bool(labels)),
+                add_button(len(preticked(found))),
                 "",
                 owner,
                 "",
@@ -273,8 +278,8 @@ def educator_tab(
             left = [p.label for p in chats.proposals(viewer.username, owner)] if viewer else []
             return [
                 message,
-                gr.update(choices=left, value=left, visible=bool(left)),
-                add_button(len(left)),
+                gr.update(choices=left, value=[], visible=bool(left)),  # left out on purpose
+                add_button(0),
                 draw(owner, request),
                 bump(),  # the list shows what was added
             ]

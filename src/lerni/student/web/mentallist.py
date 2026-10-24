@@ -16,6 +16,7 @@ from datetime import date
 from typing import Any
 
 import gradio as gr
+from gradio.context import get_blocks_context
 
 from lerni.student.interests import (
     MAX_NAME,
@@ -228,6 +229,7 @@ def mental_list(
     """
     opened = gr.State(None)  # the open item's id
     confirm = gr.State(None)  # (map owner, removed name) waiting for a second Delete tap
+    unfolded = gr.State([])  # the folded sections the viewer opened, kept across redraws
     with gr.Row(elem_classes="lerni-add"):
         kind = gr.Radio(["Goal", "Interest"], value="Goal", show_label=False, scale=0)
         name = gr.Textbox(show_label=False, placeholder="Name", max_length=MAX_NAME, scale=2)
@@ -337,18 +339,28 @@ def mental_list(
 
         back.click(on_back, [requested, version], [status, version], **PRIVATE)
 
-    @gr.render(inputs=[owner, version, opened, confirm], **DRAW_QUEUE)
-    def draw(who: str, _v: int, open_id: str | None, sure_of: tuple[str, str] | None) -> None:
+    # opening or closing a section isn't a redraw, so `unfolded` is read but doesn't trigger
+    root = get_blocks_context().root_block
+    triggers = [root.load, owner.change, version.change, opened.change, confirm.change]
+
+    @gr.render(inputs=[owner, version, opened, confirm, unfolded], triggers=triggers,
+               **DRAW_QUEUE)
+    def draw(who: str, _v: int, open_id: str | None, sure_of: tuple[str, str] | None,
+             shown: list[str]) -> None:
         if not who:
             gr.Markdown(empty)
             return
         m, today = maps.get(who), date.today()
         for title, kind_ in (("🎯 Goals", "goal"), ("💚 Interests", "interest")):
             items = [e for e in m.entries if e.kind == kind_]
-            # folded (the student's page): each list in a closed section, open while editing
-            opened = folded and any(e.id == open_id for e in items)
-            with (gr.Accordion(f"{title} ({len(items)})", open=opened, key=f"fold-{kind_}")
-                  if folded else nullcontext()):
+            # folded (the student's page): closed sections, open as left or while editing
+            unfold = kind_ in shown or any(e.id == open_id for e in items)
+            with (gr.Accordion(f"{title} ({len(items)})", open=unfold, key=f"fold-{kind_}")
+                  if folded else nullcontext()) as fold:
+                if fold:  # remember it open or shut for the next redraw
+                    fold.expand(lambda s, k=kind_: sorted({*s, k}), unfolded, unfolded, **PRIVATE)
+                    fold.collapse(lambda s, k=kind_: [x for x in s if x != k], unfolded,
+                                  unfolded, **PRIVATE)
                 if not folded:  # open lists keep their heading
                     gr.Markdown(f"**{title}**" + ("" if items else ": none yet"),
                                 key=f"h-{kind_}")

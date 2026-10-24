@@ -27,12 +27,12 @@ def ask(text: str) -> list:
 
 def main() -> None:
     goal = ask("I'd like them to get comfortable with fractions; they love baking.")
-    named = ask("Notes from Ms. Rivera: Mateo Rivera loves trains and needs help "
+    named = ask("Notes from Ms. Rivera: Jordan Rivera loves trains and needs help "
                 "reading clocks.")
     app = ask("The talk button is too small on the iPad.")
-    leaked = any(w in (p.name + p.notes) for p in named for w in ("Mateo", "Rivera"))
+    leaked = any(w in (p.name + p.notes) for p in named for w in ("Jordan", "Rivera"))
     # regression (v3.25): a short idea got a question back instead of a goal to tick
-    short = ask("Korean numbers 11 to 20")
+    short = ask("Spanish numbers 11 to 20")
     results = [
         ("a short idea becomes a goal at once", any(p.kind == "goal" for p in short)),
         ("a goal explained in words becomes a goal",
