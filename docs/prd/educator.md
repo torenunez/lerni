@@ -55,7 +55,7 @@ As an educator, I want to add and manage the students who use the app, so that e
 
 As an educator, I want to add what I'd like the student to explore, so that Lerni bridges toward it from what they love.
 
-- WHEN the educator tells the educator agent on the student's page what they'd like for a supervised student (a goal idea in the Suggest box at the top, in words, or with notes attached as .txt, .md, or .docx) THE SYSTEM SHALL propose changes at once, each labeled (a goal with notes for Lerni, an interest, new notes for a goal, or removing an entry) and already ticked, and change that student's map only with the ones still ticked when the educator taps Add.
+- WHEN the educator tells the educator agent on the student's page what they'd like for a supervised student (a goal idea in the Suggest box at the top, in words, or with notes attached as .txt, .md, or .docx) THE SYSTEM SHALL propose changes at once, each labeled (a goal with notes for Lerni and a subject area, an interest, new notes for a goal, a goal's area, or removing an entry) and additions already ticked, and change that student's map only with the ones still ticked when the educator taps Add.
 - WHEN the educator taps an item in the MentalMap's picture THE SYSTEM SHALL light up its links and open it in the list.
 - WHEN the educator renames or removes a goal or an interest in the MentalMap's list THE SYSTEM SHALL change the map at once (on the student's page, goals and interests are added through the Suggest box). A removed entry waits in Removed, where Put back restores it with its history; Lerni never adds it back on its own, stops steering toward a removed goal, and never brings up a removed interest (if the student does, Lerni acknowledges it briefly and turns to something they love).
 
@@ -95,7 +95,7 @@ These notes are for the admin and educator, not the app; the in-app text stays s
 ## Version 3: play and points
 
 - WHEN the educator opens Games THE SYSTEM SHALL let them race too, to rehearse; their points are their own.
-- WHEN the educator opens a supervised student's page THE SYSTEM SHALL show their racing this week (a bar per goal, right of asked), their points, and the car they drive.
+- WHEN the educator opens a supervised student's page THE SYSTEM SHALL show their goal progress this week by subject area (a bar per goal, right of asked), their points, and the car they drive, and list their goals under their areas.
 - WHEN the educator taps a goal THE SYSTEM SHALL show how racing on it is going (last raced, this week's right answers, ideas missed lately), read from the race results and never written into the map.
 - Race questions come from the student's goals and interests, so the goals on MentalMaps are what the race practices. Whether Lerni's questions now get real answers instead of emojis is noted privately.
 

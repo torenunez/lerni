@@ -35,8 +35,9 @@ The four Maps panels go away: Add a goal, Rename or remove, Upload notes, and Fe
    - `interest`: a name;
    - `reword`: new notes for an existing goal, named as it is on the map;
    - `remove`: an existing entry, by its map name;
-   - `feedback`: a short note for the admin.
-5. **The tick list shows them,** each labelled: 🎯 goal, 💚 interest, ✏️ reword, 🗑️ remove, 📨 feedback. **Add to map** applies only the ticked map items, through the map's own functions in one `MapStore.change`. Ticked feedback items save to `FeedbackStore` with the student's username as the map owner. A ticked item that no longer fits, for example because the entry was removed meanwhile, is skipped and named.
+   - `feedback`: a short note for the admin;
+   - `area` (v3.28): a subject area for an existing goal; a `goal` carries one too, and an area not on the map or among the starters is flagged as new. Sorting a map's goals proposes one per goal, beyond the cap of 8.
+5. **The tick list shows them,** each labelled: 🎯 goal, 💚 interest, ✏️ reword, 🗑️ remove, 📨 feedback, 📚 area. **Add to map** applies only the ticked map items, through the map's own functions in one `MapStore.change`. Ticked feedback items save to `FeedbackStore` with the student's username as the map owner. A ticked item that no longer fits, for example because the entry was removed meanwhile, is skipped and named.
 6. **The picture redraws,** and the agent's next turn sees the updated map.
 
 ## The agent's rules (in code, after the persona, like the student rules)
