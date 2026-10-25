@@ -24,6 +24,7 @@ from lerni.student.garage import (
     family_cars,
     next_goal,
 )
+from lerni.student.interests import MapStore
 from lerni.student.points import STARTER, Points, PointsError, PointsStore
 from lerni.student.race import (
     BOT_RIVALS,
@@ -116,26 +117,47 @@ def garage_tap(points: PointsStore, garage: Garage, viewer: Viewer | None, car_i
 
 def student_progress(points: PointsStore, garage: Garage, students: StudentStore,
                      viewer: Viewer | None, requested: str | None,
-                     results: ResultsLog | None = None) -> str:
-    """A supervised student's racing this week, ⭐, and the car they drive, as HTML for their
-    educator ("" for anyone else)."""
+                     results: ResultsLog | None = None, maps: MapStore | None = None) -> str:
+    """A supervised student's goal progress this week, grouped by area (the most practiced
+    first, no area last), then ⭐ and the car they drive, as HTML for their educator ("" for
+    anyone else)."""
     try:
         owner = map_owner(students, viewer, requested or "")
     except NotAllowed:
         return ""
     p = points.get(owner)
     week = results.week(owner, date.today()) if results else []
-    rows = [f'<div class="lerni-week-row"><span>{html.escape(goal)}</span>'
-            f'<span class="lerni-week-bar">'
-            f'<i style="width:{round(100 * right / asked)}%"></i></span>'
-            f'<span class="lerni-of">{right} of {asked}</span></div>'
-            for _, goal, right, asked in week if asked]
+    m = maps.get(owner) if maps else None
+
+    def area(goal_id: str, name: str) -> str:  # by id first, so a renamed goal keeps its area
+        if m is None:
+            return ""
+        e = next((x for x in m.entries if goal_id and x.id == goal_id), None) or m.find(name)
+        return e.area if e is not None and e.kind == "goal" else ""
+
+    groups: dict[str, list[tuple[str, int, int]]] = {}
+    for goal_id, goal, right, asked in week:
+        if asked:
+            groups.setdefault(area(goal_id, goal), []).append((goal, right, asked))
+    order = sorted(groups, key=lambda a: (a == "", -sum(n for *_, n in groups[a])))
+    rows = []
+    for a in order:
+        items = sorted(groups[a], key=lambda g: -g[2])
+        if len(groups) > 1 or a:  # an area heading with its total, unless there are no areas
+            right, asked = sum(g[1] for g in items), sum(g[2] for g in items)
+            rows.append(f'<div class="lerni-week-area"><span>{html.escape(a or "Other")}</span>'
+                        f'<span class="lerni-of">{right} of {asked}</span></div>')
+        rows += [f'<div class="lerni-week-row"><span>{html.escape(goal)}</span>'
+                 f'<span class="lerni-week-bar">'
+                 f'<i style="width:{round(100 * right / asked)}%"></i></span>'
+                 f'<span class="lerni-of">{right} of {asked}</span></div>'
+                 for goal, right, asked in items]
     try:  # a car gone from the garage file gets no chip
         car = f'<span class="lerni-chip">🚗 {html.escape(garage.car(p.car).name)}</span>'
     except KeyError:
         car = ""
     body = "".join(rows) or '<p class="lerni-of">No races this week.</p>'
-    return (f'<div class="lerni-week"><h3>Racing this week</h3>{body}'
+    return (f'<div class="lerni-week"><h3>Goal progress this week</h3>{body}'
             f'<div><span class="lerni-chip">⭐ {p.balance}</span>{car}</div></div>')
 
 

@@ -404,6 +404,23 @@ def test_games_are_for_players_and_each_player_spends_only_their_own_points(tmp_
     assert "⭐ 10" in card and garage.car("rally").name in card and "3 of 5" in card
     assert "a&lt;b" in card and "a<b" not in card  # names are escaped
     assert student_progress(points, garage, students, SAM, "lee", results) == ""  # educators only
+    # v3.28: grouped by area, the most practiced area and goal first, no area last
+    from lerni.student.interests import MapStore, add_goal, by_area
+
+    maps = MapStore(tmp_path)
+    maps.change("lee", lambda m: [setattr(add_goal(m, g), "area", a) for g, a in (
+        ("Nouns", "Language"), ("Fractions", "Math"), ("Rain", "Math"), ("Verbs", "Language"),
+        ("Planets", "Language"))])
+    for goal, n in (("Nouns", 2), ("Fractions", 4), ("Rain", 1)):
+        for _ in range(n):
+            results.add("lee", {"day": today, "goal_id": maps.get("lee").find(goal).id,
+                                "goal": goal, "right": True})
+    card = student_progress(points, garage, students, EDUCATOR, "lee", results, maps)
+    order = [card.index(x) for x in ("Math", "Fractions", "Rain", "Language", "Nouns", "Other")]
+    assert order == sorted(order) and "5 of 5" in card  # Math's total
+    assert [(a, [e.name for e in es]) for a, es in by_area(
+        [e for e in maps.get("lee").entries if e.kind == "goal"])] == [
+        ("Language", ["Nouns", "Verbs", "Planets"]), ("Math", ["Fractions", "Rain"])]
 
 
 def test_a_tap_on_a_race_that_ended_offers_a_new_one():

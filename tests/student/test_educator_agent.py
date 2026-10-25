@@ -87,7 +87,7 @@ def test_the_agent_sees_the_whole_map_even_interests_not_talked_about_yet():
     add_interest(m, "baking")
     add_goal(m, "telling time", "with the kitchen clock")
     text = educator_map_text(m)
-    assert "baking" in text and "telling time (with the kitchen clock)" in text
+    assert "baking" in text and "telling time [no area] (with the kitchen clock)" in text
 
 
 def test_loose_blocks_still_parse_and_odd_items_are_dropped():
@@ -127,3 +127,26 @@ def test_a_ticked_group_proposal_names_a_group_and_puts_kinds_under_it():
     apply_educator_proposals(m, found)
     sharks = m.find("sharks")
     assert parents(m, bull.id) == [sharks.id] and parents(m, white.id) == [sharks.id]
+
+
+def test_areas_are_proposed_with_goals_and_set_only_when_ticked():
+    # v3.28: a goal's subject area is Lerni's proposal until a person ticks it
+    from lerni.student.interests import put_back, remove
+
+    m = InterestMap()
+    add_goal(m, "fractions")
+    add_goal(m, "nouns").area = "Language"
+    raw = ('```proposals\n{"proposals": ['
+           '{"kind": "area", "name": "fractions", "area": "math"},'
+           '{"kind": "goal", "name": "verbs", "area": "language"},'
+           '{"kind": "goal", "name": "rhythm", "area": "Dance moves"},'
+           '{"kind": "area", "name": "not on the map", "area": "Math"}]}\n```')
+    found = parse_educator_proposals(raw, m)
+    assert [p.label for p in found] == [  # the map's spelling; a new area is flagged
+        "📚 fractions → Math", "🎯 verbs · Language", "🎯 rhythm · new area: Dance moves"]
+    assert m.find("fractions").area == ""  # nothing set before the tick
+    apply_educator_proposals(m, found)
+    assert [m.find(n).area for n in ("fractions", "verbs", "rhythm")] == [
+        "Math", "Language", "Dance moves"]
+    remove(m, m.find("fractions").id)
+    assert put_back(m, "fractions").area == "Math"  # Put back keeps it

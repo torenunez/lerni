@@ -171,7 +171,7 @@ def educator_tab(
         def progress(requested: str | None, request: gr.Request) -> str:
             viewer = signin.viewer(request.username)  # re-read on every request
             return (student_progress(points, garage or Garage(), students, viewer, requested,
-                                     results) if points else "")
+                                     results, maps) if points else "")
 
         def checked_owner(requested: str | None, request: gr.Request) -> str:
             try:  # whose list to draw: only after the check

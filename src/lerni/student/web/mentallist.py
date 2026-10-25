@@ -28,6 +28,7 @@ from lerni.student.interests import (
     MapStore,
     add_goal,
     add_interest,
+    by_area,
     children,
     delete_for_good,
     details,
@@ -366,7 +367,16 @@ def mental_list(
                 if not folded:  # open lists keep their heading
                     gr.Markdown(f"**{title}**" + ("" if items else ": none yet"),
                                 key=f"h-{kind_}")
-                for e, depth in _tree(m, items):
+                rows, headings = _tree(m, items), {}  # headings: entry id → its area's title
+                if kind_ == "goal" and any(e.area for e in items):  # goals under their areas
+                    rows = []
+                    for area, under in by_area(items):
+                        headings[under[0].id] = f"{area} ({len(under)})"
+                        rows += [(e, 0) for e in under]
+                for e, depth in rows:
+                    if e.id in headings:
+                        gr.Markdown(f"**{headings[e.id]}**", key=f"area-{e.id}",
+                                    elem_classes="lerni-area")
                     with gr.Row(elem_classes="lerni-item"):
                         alive = STRENGTH_LABELS[strength(e, today, m)]
                         label = "↳ " * depth + f"{e.name} · {alive}"
@@ -383,6 +393,7 @@ def mental_list(
                         + (f", last on {d.last}" if d.last else ""),
                     ]
                     if e.kind == "goal":
+                        facts += [f"Area: {e.area}"] if e.area else []
                         facts.append(f"explained on {_plural(d.explained, 'day')} (Lerni's guess)")
                         facts += ["Lerni is giving it a rest"] if d.resting else []
                         # read for the open goal only, never on every redraw
