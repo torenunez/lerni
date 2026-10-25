@@ -54,8 +54,9 @@ name, new notes), remove (an existing entry's name), group (name: a general inte
 map or new; members: interests on the map that are kinds of it, like "great white" under \
 "sharks"), feedback (notes: about the app, for the admin), area (name: a goal on the map; \
 area: its subject area).
-- Up to {MAX_EDU_PROPOSALS} proposals, only what the educator said or the notes support; \
-when asked to sort the goals into areas, one area proposal for each goal with no area.
+- Up to {MAX_EDU_PROPOSALS} proposals, only what the educator said or the notes support. \
+Area proposals don't count toward that: when asked to sort the goals into areas, propose an \
+area for every goal with no area, all of them, however many.
 - Give every goal proposal an area from "Areas to choose from"; a new short one only when \
 none fits.
 - When the educator names something to learn, propose it as a goal right away, with notes \

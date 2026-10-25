@@ -282,6 +282,7 @@ def educator_tab(
         tab.select(bump, None, version, **PRIVATE)  # opening redraws the picture and the list
         tab.select(progress, who, points_line, **PRIVATE)  # and racing, while races go on
         version.change(draw, who, picture, **PRIVATE)  # a list edit redraws it
+        version.change(progress, who, points_line, **PRIVATE)  # and the card: areas may move
         # the picture only: redrawing the list would wipe a half-typed rename
         gr.Timer(REFRESH_SECONDS).tick(draw, who, picture, **PRIVATE)
     return tab, who
