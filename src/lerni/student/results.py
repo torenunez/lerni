@@ -82,6 +82,7 @@ class ResultsLog:
             if "right" in r and str(r.get("day", "")) >= since and r.get("goal"):
                 key = str(r.get("goal_id") or r["goal"])
                 counts = tally.pop(key, [str(r.get("goal_id", "")), str(r["goal"]), 0, 0])
+                counts[1] = str(r["goal"])  # the newest name, after a rename
                 counts[2] += bool(r["right"])  # re-inserted below: newest last
                 counts[3] += 1
                 tally[key] = counts

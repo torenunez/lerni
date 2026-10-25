@@ -173,8 +173,8 @@ v3.19 (race questions from the garage), v3.20 (a map journal and nightly backups
 ### Goal spacing (v3.28, `concepts.py`, `race.py`)
 
 - **Each goal has a box,** kept beside its level: 1, 3, 7, or 14 days. A goal never raced is due now.
-- **After a race,** for each goal it asked: all right moves it up a box; half or fewer back to box 0 (tomorrow); otherwise it stays. Bonus answers don't move boxes.
-- **Each set of 10** goes to about 5 goals (2 questions each): due ones first, most overdue then least practiced in 14 days, one subject area at a time, then the soonest due. Due ideas (v3.22) add their goals.
+- **After a race,** for each goal it asked: all right on a due goal moves it up a box; half or fewer back to box 0 (tomorrow); otherwise, or when it was asked early (a set's second race), it stays. Bonus answers don't move boxes.
+- **Each set of 10** goes to about 5 goals (about 2 each, one in each of its two races): due ones first, most overdue then least practiced in 14 days, one subject area at a time, then the soonest due. Due ideas (v3.22) add their goals.
 
 ### The bonus round (v3.24, `race.py`, `web/games.py`, `web/talk.js`)
 

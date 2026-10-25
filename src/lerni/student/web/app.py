@@ -89,7 +89,7 @@ _CSS = """
 /* the chat fills the screen above the dock (talk.js sizes it exactly) */
 #lerni-ask-chat, #lerni-home-chat { height: calc(100dvh - 330px) !important;
   min-height: 160px; }
-/* the student's racing this week: a row per goal with a bar, then ⭐ and car chips */
+/* goal progress this week, by area: a row per goal with a bar, then ⭐ and car chips */
 .lerni-week h3 { margin: 4px 0 6px; }
 .lerni-week-row { display: grid; grid-template-columns: minmax(0, 1fr) 72px 60px; gap: 8px;
   align-items: center; padding: 5px 0; border-bottom: 1px solid var(--border-color-primary); }

@@ -788,6 +788,11 @@ def test_each_set_goes_to_due_goals_mixed_by_area(tmp_path):
     schedule = concepts.schedule("sam")
     assert schedule[ids["Rain"]] == (TODAY + timedelta(days=3), 1)
     assert schedule[ids["Nouns"]] == (TODAY + timedelta(days=1), 0)
+    concepts.raced("sam", {ids["Rain"]: (1, 1)}, TODAY)  # review: early, so no second box
+    assert concepts.schedule("sam")[ids["Rain"]] == (TODAY + timedelta(days=3), 1)
+    from lerni.student.interests import set_area  # review: one spelling per area
+
+    assert set_area(m, ids["Rain"], "math").area == "Math"
     # today: Fractions and Place value were never raced; Math waits while Language is due
     picked = pick_goals(m, schedule, {}, TODAY + timedelta(days=1), k=2)
     assert [e.name for e in picked] in (["Fractions", "Nouns"], ["Place value", "Nouns"])

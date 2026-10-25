@@ -140,8 +140,9 @@ class ConceptStore:
 
     def raced(self, username: str, per_goal: dict[str, tuple[int, int]],
               today: date | None = None) -> None:
-        """Move each goal a finished race asked by how it went: all right, one box up (a longer
-        gap); half or fewer, back to box 0 (tomorrow); otherwise the same box."""
+        """Move each goal a finished race asked by how it went: all right on a due goal, one box
+        up (a longer gap); half or fewer, back to box 0 (tomorrow); otherwise it stays, so a
+        goal raced again early (the same set's second race) never skips a box."""
         day = today or date.today()
 
         def apply(by_goal: dict[str, dict[str, Any]]) -> None:
@@ -151,10 +152,15 @@ class ConceptStore:
                 v = by_goal.setdefault(goal_id, {"level": START_LEVEL, "right": 0, "asked": 0})
                 box = v.get("box") if isinstance(v.get("box"), int) else 0
                 box = min(max(box, 0), len(GOAL_DAYS) - 1)  # a hand edit stays in range
-                if right >= asked:
-                    box = min(box + 1, len(GOAL_DAYS) - 1)
-                elif right * 2 <= asked:
+                was_due = _day(v.get("due"))
+                if right * 2 <= asked:
                     box = 0
+                elif right < asked or (was_due is not None and was_due > day):
+                    continue  # partly right, or early: box and date stay
+                elif "due" in v or box:
+                    box = min(box + 1, len(GOAL_DAYS) - 1)
+                else:
+                    box = 1  # first race, all right
                 v.update(box=box, due=(day + timedelta(days=GOAL_DAYS[box])).isoformat())
 
         self._change(username, levels=apply)

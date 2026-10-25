@@ -375,7 +375,8 @@ def set_area(m: InterestMap, entry_id: str, area: str) -> Entry:
     entry = m.get(entry_id)
     if entry.kind != "goal":
         raise MapError("Only goals have an area.")
-    entry.area = check_name(area)
+    wanted = check_name(area)
+    entry.area = {a.casefold(): a for a in areas(m)}.get(wanted.casefold(), wanted)  # one spelling
     m.edits += 1
     return entry
 

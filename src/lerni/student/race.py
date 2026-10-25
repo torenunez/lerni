@@ -699,10 +699,15 @@ class RaceDesk:
             schedule = self.concepts.schedule(username) if self.concepts else {}
             asked = (self.results.asked_since(username, today - timedelta(days=PICK_DAYS - 1))
                      if self.results else {})
-        except Exception:  # noqa: BLE001 - a broken file never stops a race
+        except Exception as exc:  # noqa: BLE001 - a broken file never stops a race
+            print(f"Goal picking skipped ({type(exc).__name__}); every goal counts as due.",
+                  flush=True)
             schedule, asked = {}, {}
         picked = [e.name for e in pick_goals(m, schedule, asked, today)]
-        picked += [g for g, _ in due if g.casefold() not in {x.casefold() for x in picked}]
+        for g, _ in due:  # a due idea's goal, in the map's spelling, once
+            name = getattr(m.find(g), "name", "")
+            if name and name.casefold() not in {x.casefold() for x in picked}:
+                picked.append(name)
         p = self.points.get(username)
         cars = self.garage.in_reach(p.cars, p.balance) if self.garage else []
         kept: list[Question] = []
@@ -886,8 +891,8 @@ class RaceDesk:
                     right, asked = per_goal.get(goal.id, (0, 0))
                     per_goal[goal.id] = (right + mark, asked + 1)
             self.concepts.raced(username, per_goal)
-        except Exception:  # noqa: BLE001 - a broken map or a full disk
-            pass
+        except Exception as exc:  # noqa: BLE001 - a broken map or a full disk
+            print(f"Goal boxes not moved ({type(exc).__name__}).", flush=True)
 
     def _keep_bonus(self, username: str, day: date, new: list[Bonus]) -> None:
         with self._lock:

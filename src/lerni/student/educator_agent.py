@@ -108,12 +108,12 @@ def educator_map_text(m: InterestMap) -> str:
     loves = [tree(e) for e in m.entries if e.kind == "interest" and not parents(m, e.id)]
     goals = [e.name + f" [{e.area or 'no area'}]" + (f" ({e.notes})" if e.notes else "")
              for e in m.entries if e.kind == "goal"]
-    if not loves and not goals and not m.removed:
-        return f"{MAP_HEADER}\n(empty so far)"
+    if not loves and not goals and not m.removed:  # the starters, for a first goal's area
+        return f"{MAP_HEADER}\n(empty so far)\nAreas to choose from: {', '.join(areas(m))}"
     lines = [MAP_HEADER]
     lines += [f"They love: {', '.join(loves)}"] if loves else []
     lines += ["Goals [area]:", *(f"- {g}" for g in goals)] if goals else []
-    lines += [f"Areas to choose from: {', '.join(areas(m))}"] if goals else []
+    lines += [f"Areas to choose from: {', '.join(areas(m))}"]
     # the latest, so the prompt doesn't grow; not ones deleted for good (no history kept)
     gone = [r for r in m.removed if "id" in m.removed_info.get(r.casefold(), {"id": ""})][-20:]
     lines += [f"Removed (don't propose again): {', '.join(gone)}"] if gone else []
@@ -201,11 +201,15 @@ def parse_educator_proposals(raw_block: str, m: InterestMap) -> list[EducatorPro
                 wanted = check_name(str(raw.get("area") or ""))
             except MapError:
                 wanted = ""
+            if wanted.casefold() == "other":
+                wanted = ""  # "Other" is where goals with no area are shown
             known = {a.casefold(): a for a in areas(m)}
             area, new_area = known.get(wanted.casefold(), wanted), wanted.casefold() not in known
             new_area = new_area and bool(wanted)
             if kind == "area" and not area:
                 continue
+            if kind == "area" and entry.area.casefold() == area.casefold():
+                continue  # already in that area: nothing to tick
             if kind == "area":
                 name = entry.name  # the map's spelling
         key = (kind, name.casefold() or notes)

@@ -115,7 +115,7 @@ def educator_tab(
     garage: Garage | None = None,
     results: ResultsLog | None = None,
 ) -> tuple[gr.Tab, gr.Dropdown]:
-    """The student's page: suggest or change a goal, then racing this week, the list, the picture.
+    """The student's page: suggest or change a goal, then goal progress, the list, the picture.
 
     With one supervised student it opens on them (main.py picks and hides the dropdown).
     """
@@ -150,7 +150,7 @@ def educator_tab(
         ticks = gr.CheckboxGroup(show_label=False, choices=[], visible=False)
         add = gr.Button("Add to the map", variant="primary", visible=False)
         status = gr.Markdown()
-        points_line = gr.HTML()  # their racing this week, ⭐, and car
+        points_line = gr.HTML()  # their goal progress this week, ⭐, and car
         list_owner, version = gr.State(""), gr.State(0)  # set only after map_owner's check
         # edits go to the student the list shows, never a newer dropdown pick
         mental_list(signin, students, maps, list_owner, list_owner, version, "lerni-pick-maps",
