@@ -26,6 +26,7 @@ START_LEVEL, MIN_LEVEL, MAX_LEVEL = 3, 1, 5  # 3 is the questions before levels
 LEVEL_WINDOW = 5  # answers on a goal between level checks
 REVIEW_DAYS = (1, 3, 7)  # a missed idea comes back after these gaps, one per right answer
 UP_AT, DOWN_AT = 4, 2  # this many right of 5 or more: harder; this many or fewer: easier
+GOAL_DAYS = (1, 3, 7, 14)  # a goal's boxes: days until it comes back (v3.28)
 
 
 def normalize(text: str) -> str:
@@ -97,7 +98,7 @@ class ConceptStore:
         ]
         return asked[:KEEP_RECENT]
 
-    def _levels(self, username: str) -> dict[str, dict[str, int]]:
+    def _levels(self, username: str) -> dict[str, dict[str, Any]]:
         raw = self._read(username).get("levels", {})
         return {str(g): v for g, v in raw.items() if isinstance(v, dict)} if isinstance(
             raw, dict) else {}
@@ -136,6 +137,37 @@ class ConceptStore:
                 v.update(level=_level({"level": _level(v) + step}), right=0, asked=0)
 
         self._change(username, levels=apply)
+
+    def raced(self, username: str, per_goal: dict[str, tuple[int, int]],
+              today: date | None = None) -> None:
+        """Move each goal a finished race asked by how it went: all right, one box up (a longer
+        gap); half or fewer, back to box 0 (tomorrow); otherwise the same box."""
+        day = today or date.today()
+
+        def apply(by_goal: dict[str, dict[str, Any]]) -> None:
+            for goal_id, (right, asked) in per_goal.items():
+                if not goal_id or asked <= 0:
+                    continue
+                v = by_goal.setdefault(goal_id, {"level": START_LEVEL, "right": 0, "asked": 0})
+                box = v.get("box") if isinstance(v.get("box"), int) else 0
+                box = min(max(box, 0), len(GOAL_DAYS) - 1)  # a hand edit stays in range
+                if right >= asked:
+                    box = min(box + 1, len(GOAL_DAYS) - 1)
+                elif right * 2 <= asked:
+                    box = 0
+                v.update(box=box, due=(day + timedelta(days=GOAL_DAYS[box])).isoformat())
+
+        self._change(username, levels=apply)
+
+    def schedule(self, username: str) -> dict[str, tuple[date, int]]:
+        """Each raced goal's (due date, box) by goal id; a goal not listed is due now."""
+        out = {}
+        for goal_id, v in self._levels(username).items():
+            due = _day(v.get("due"))
+            if due is not None:
+                box = v.get("box") if isinstance(v.get("box"), int) else 0
+                out[goal_id] = (due, min(max(box, 0), len(GOAL_DAYS) - 1))
+        return out
 
     def add(self, username: str, items: list[tuple[str, str]], today: date | None = None) -> None:
         """Note (goal, concept) pairs asked today; each moves to the end, as the newest."""

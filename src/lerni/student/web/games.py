@@ -129,7 +129,7 @@ def student_progress(points: PointsStore, garage: Garage, students: StudentStore
             f'<span class="lerni-week-bar">'
             f'<i style="width:{round(100 * right / asked)}%"></i></span>'
             f'<span class="lerni-of">{right} of {asked}</span></div>'
-            for goal, right, asked in week if asked]
+            for _, goal, right, asked in week if asked]
     try:  # a car gone from the garage file gets no chip
         car = f'<span class="lerni-chip">🚗 {html.escape(garage.car(p.car).name)}</span>'
     except KeyError:

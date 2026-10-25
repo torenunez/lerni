@@ -54,6 +54,7 @@ class Entry:
     explained: list[str] = field(default_factory=list)
     bounces: list[str] = field(default_factory=list)
     aliases: list[str] = field(default_factory=list)  # other names the student used for it
+    area: str = ""  # goals only: a subject area a person chose (Math, Language…)
 
 
 @dataclass
@@ -374,7 +375,7 @@ def remove(m: InterestMap, entry_id: str) -> None:
     m.removed_info[entry.name.casefold()] = {
         "kind": entry.kind, "notes": entry.notes, "id": entry.id, "days": entry.days,
         "mentions": entry.mentions, "explained": entry.explained, "bounces": entry.bounces,
-        "links": links, "aliases": entry.aliases,  # set aside too
+        "links": links, "aliases": entry.aliases, "area": entry.area,  # set aside too
     }
     m.edits += 1
 
@@ -413,6 +414,7 @@ def put_back(m: InterestMap, name: str) -> Entry:
     if old and old not in {e.id for e in m.entries}:
         entry.id = old  # ids are never reused, so links removed with it still point here
     entry.days, entry.explained = list(info.get("days", [])), list(info.get("explained", []))
+    entry.area = str(info.get("area", ""))  # its subject area, as it was
     entry.mentions, entry.bounces = int(info.get("mentions", 0)), list(info.get("bounces", []))
     entry.aliases = [a for a in info.get("aliases", []) if m.find(a) is None]  # one name, one item
     ids = {e.id for e in m.entries}
