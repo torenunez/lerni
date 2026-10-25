@@ -23,20 +23,23 @@ from lerni.student.interests import (
     MapStore,
     add_goal,
     add_interest,
+    areas,
     check_name,
     family,
     group,
     parents,
     remove,
+    set_area,
     set_notes,
 )
 from lerni.student.logs import ConversationLog
 
 MARKER = "```proposals"
 MAX_EDU_PROPOSALS = 8
-Kind = Literal["goal", "interest", "reword", "remove", "group", "feedback"]
-KINDS = ("goal", "interest", "reword", "remove", "group", "feedback")
-_ON_MAP = ("reword", "remove")  # kinds that name an entry already on the map
+Kind = Literal["goal", "interest", "reword", "remove", "group", "feedback", "area"]
+KINDS = ("goal", "interest", "reword", "remove", "group", "feedback", "area")
+_ON_MAP = ("reword", "remove", "area")  # kinds that name an entry already on the map
+MAX_AREA_PROPOSALS = 40  # sorting a whole map's goals into areas: one each
 
 # Rules the persona file can't change, kept in code like the student rules.
 EDUCATOR_RULES = f"""\
@@ -46,11 +49,16 @@ Always:
 {MARKER}
 {{"proposals": [{{"kind": "goal", "name": "fractions", "notes": "through baking"}}]}}
 ```
-- kinds: goal (name, notes for Lerni), interest (name), reword (an existing goal's name, \
-new notes), remove (an existing entry's name), group (name: a general interest, on the map \
-or new; members: interests on the map that are kinds of it, like "great white" under \
-"sharks"), feedback (notes: about the app, for the admin).
-- Up to {MAX_EDU_PROPOSALS} proposals, only what the educator said or the notes support.
+- kinds: goal (name, notes for Lerni, area), interest (name), reword (an existing goal's \
+name, new notes), remove (an existing entry's name), group (name: a general interest, on the \
+map or new; members: interests on the map that are kinds of it, like "great white" under \
+"sharks"), feedback (notes: about the app, for the admin), area (name: a goal on the map; \
+area: its subject area).
+- Up to {MAX_EDU_PROPOSALS} proposals, only what the educator said or the notes support. \
+Area proposals don't count toward that: when asked to sort the goals into areas, propose an \
+area for every goal with no area, all of them, however many.
+- Give every goal proposal an area from "Areas to choose from"; a new short one only when \
+none fits.
 - When the educator names something to learn, propose it as a goal right away, with notes \
 on how to bring it up; where there's a choice to make, make a sensible one and say it in \
 the notes. Ask first only when you can't tell what they mean.
@@ -71,19 +79,24 @@ class EducatorProposal:
     name: str = ""
     notes: str = ""
     members: tuple[str, ...] = ()  # group: the kinds going under it
+    area: str = ""  # goal and area: the subject area, in the map's spelling
+    new_area: bool = False  # an area not on the map or among the starters yet
 
     @property
     def label(self) -> str:
         """How it's shown to tick."""
         icon = {"goal": "🎯", "interest": "💚", "reword": "✏️", "remove": "🗑️", "group": "🧺",
-                "feedback": "📨"}[self.kind]
+                "feedback": "📨", "area": "📚"}[self.kind]
         if self.kind == "feedback":
             return f"{icon} For the admin: {self.notes}"
         if self.kind == "remove":
             return f"{icon} Remove {self.name}"
         if self.kind == "group":
             return f"{icon} Under {self.name}: {', '.join(self.members)}"
-        return f"{icon} {self.name}" + (f": {self.notes}" if self.notes else "")
+        if self.kind == "area":
+            return f"{icon} {self.name} → {self.area}" + (" (new area)" if self.new_area else "")
+        area = f" · {'new area: ' if self.new_area else ''}{self.area}" if self.area else ""
+        return f"{icon} {self.name}{area}" + (f": {self.notes}" if self.notes else "")
 
 
 def educator_map_text(m: InterestMap) -> str:
@@ -93,12 +106,14 @@ def educator_map_text(m: InterestMap) -> str:
         return e.name + (f" (kinds: {', '.join(kinds)})" if kinds else "")
 
     loves = [tree(e) for e in m.entries if e.kind == "interest" and not parents(m, e.id)]
-    goals = [e.name + (f" ({e.notes})" if e.notes else "") for e in m.entries if e.kind == "goal"]
-    if not loves and not goals and not m.removed:
-        return f"{MAP_HEADER}\n(empty so far)"
+    goals = [e.name + f" [{e.area or 'no area'}]" + (f" ({e.notes})" if e.notes else "")
+             for e in m.entries if e.kind == "goal"]
+    if not loves and not goals and not m.removed:  # the starters, for a first goal's area
+        return f"{MAP_HEADER}\n(empty so far)\nAreas to choose from: {', '.join(areas(m))}"
     lines = [MAP_HEADER]
     lines += [f"They love: {', '.join(loves)}"] if loves else []
-    lines += ["Goals:", *(f"- {g}" for g in goals)] if goals else []
+    lines += ["Goals [area]:", *(f"- {g}" for g in goals)] if goals else []
+    lines += [f"Areas to choose from: {', '.join(areas(m))}"]
     # the latest, so the prompt doesn't grow; not ones deleted for good (no history kept)
     gone = [r for r in m.removed if "id" in m.removed_info.get(r.casefold(), {"id": ""})][-20:]
     lines += [f"Removed (don't propose again): {', '.join(gone)}"] if gone else []
@@ -167,8 +182,8 @@ def parse_educator_proposals(raw_block: str, m: InterestMap) -> list[EducatorPro
             entry = m.find(name)
             if kind in _ON_MAP and entry is None:
                 continue  # can't reword or remove what isn't there
-            if kind == "reword" and entry.kind != "goal":
-                continue  # only goals have notes
+            if kind in ("reword", "area") and entry.kind != "goal":
+                continue  # only goals have notes and areas
         elif not notes:
             continue
         members: tuple[str, ...] = ()
@@ -180,13 +195,37 @@ def parse_educator_proposals(raw_block: str, m: InterestMap) -> list[EducatorPro
                                           and e.name.casefold() != name.casefold()))
             if not members:
                 continue
+        area, new_area = "", False
+        if kind in ("goal", "area"):  # in the map's spelling; anything odd: no area
+            try:
+                wanted = check_name(str(raw.get("area") or ""))
+            except MapError:
+                wanted = ""
+            if wanted.casefold() == "other":
+                wanted = ""  # "Other" is where goals with no area are shown
+            known = {a.casefold(): a for a in areas(m)}
+            area, new_area = known.get(wanted.casefold(), wanted), wanted.casefold() not in known
+            new_area = new_area and bool(wanted)
+            if kind == "area" and not area:
+                continue
+            if kind == "area" and entry.area.casefold() == area.casefold():
+                continue  # already in that area: nothing to tick
+            if kind == "area":
+                name = entry.name  # the map's spelling
         key = (kind, name.casefold() or notes)
         if key in seen:
             continue
         seen.add(key)
-        keep_notes = notes if kind not in ("interest", "group") else ""
-        found.append(EducatorProposal(kind, name, keep_notes, members))
-    return found[:MAX_EDU_PROPOSALS]
+        keep_notes = notes if kind not in ("interest", "group", "area") else ""
+        found.append(EducatorProposal(kind, name, keep_notes, members, area, new_area))
+    n = {True: 0, False: 0}  # in order: up to 8 changes, and one area per goal when sorting
+    capped = []
+    for p in found:
+        sorting = p.kind == "area"
+        n[sorting] += 1
+        if n[sorting] <= (MAX_AREA_PROPOSALS if sorting else MAX_EDU_PROPOSALS):
+            capped.append(p)
+    return capped
 
 
 def apply_educator_proposals(
@@ -201,7 +240,9 @@ def apply_educator_proposals(
     for p in chosen:
         try:
             if p.kind == "goal":
-                add_goal(m, p.name, p.notes)
+                added = add_goal(m, p.name, p.notes)
+                if p.area:  # the area ticked with it
+                    set_area(m, added.id, p.area)
             elif p.kind == "interest":
                 add_interest(m, p.name)
             elif p.kind == "group":  # a person's tick names the group
@@ -216,6 +257,8 @@ def apply_educator_proposals(
                     raise MapError("it's no longer on the map")
                 if p.kind == "reword":
                     set_notes(m, entry.id, p.notes)
+                elif p.kind == "area":
+                    set_area(m, entry.id, p.area)
                 else:
                     remove(m, entry.id)
             else:

@@ -115,7 +115,7 @@ def educator_tab(
     garage: Garage | None = None,
     results: ResultsLog | None = None,
 ) -> tuple[gr.Tab, gr.Dropdown]:
-    """The student's page: suggest or change a goal, then racing this week, the list, the picture.
+    """The student's page: suggest or change a goal, then goal progress, the list, the picture.
 
     With one supervised student it opens on them (main.py picks and hides the dropdown).
     """
@@ -150,7 +150,7 @@ def educator_tab(
         ticks = gr.CheckboxGroup(show_label=False, choices=[], visible=False)
         add = gr.Button("Add to the map", variant="primary", visible=False)
         status = gr.Markdown()
-        points_line = gr.HTML()  # their racing this week, ⭐, and car
+        points_line = gr.HTML()  # their goal progress this week, ⭐, and car
         list_owner, version = gr.State(""), gr.State(0)  # set only after map_owner's check
         # edits go to the student the list shows, never a newer dropdown pick
         mental_list(signin, students, maps, list_owner, list_owner, version, "lerni-pick-maps",
@@ -171,7 +171,7 @@ def educator_tab(
         def progress(requested: str | None, request: gr.Request) -> str:
             viewer = signin.viewer(request.username)  # re-read on every request
             return (student_progress(points, garage or Garage(), students, viewer, requested,
-                                     results) if points else "")
+                                     results, maps) if points else "")
 
         def checked_owner(requested: str | None, request: gr.Request) -> str:
             try:  # whose list to draw: only after the check
@@ -282,6 +282,7 @@ def educator_tab(
         tab.select(bump, None, version, **PRIVATE)  # opening redraws the picture and the list
         tab.select(progress, who, points_line, **PRIVATE)  # and racing, while races go on
         version.change(draw, who, picture, **PRIVATE)  # a list edit redraws it
+        version.change(progress, who, points_line, **PRIVATE)  # and the card: areas may move
         # the picture only: redrawing the list would wipe a half-typed rename
         gr.Timer(REFRESH_SECONDS).tick(draw, who, picture, **PRIVATE)
     return tab, who

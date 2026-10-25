@@ -89,7 +89,7 @@ _CSS = """
 /* the chat fills the screen above the dock (talk.js sizes it exactly) */
 #lerni-ask-chat, #lerni-home-chat { height: calc(100dvh - 330px) !important;
   min-height: 160px; }
-/* the student's racing this week: a row per goal with a bar, then ⭐ and car chips */
+/* goal progress this week, by area: a row per goal with a bar, then ⭐ and car chips */
 .lerni-week h3 { margin: 4px 0 6px; }
 .lerni-week-row { display: grid; grid-template-columns: minmax(0, 1fr) 72px 60px; gap: 8px;
   align-items: center; padding: 5px 0; border-bottom: 1px solid var(--border-color-primary); }
@@ -97,6 +97,9 @@ _CSS = """
 .lerni-week-bar { height: 8px; border-radius: 4px; background: var(--border-color-primary);
   overflow: hidden; }
 .lerni-week-bar i { display: block; height: 8px; background: #1d9e75; }
+.lerni-week-area { display: flex; justify-content: space-between; font-weight: 600;
+  margin: 10px 0 2px; }
+.lerni-area p { margin: 10px 0 0 !important; color: var(--body-text-color-subdued); }
 .lerni-of { text-align: right; color: var(--body-text-color-subdued); font-size: 14px; }
 .lerni-chip { display: inline-block; margin: 8px 6px 0 0; padding: 2px 10px; border-radius: 8px;
   background: var(--color-accent-soft); font-size: 14px; }

@@ -54,6 +54,7 @@ class Entry:
     explained: list[str] = field(default_factory=list)
     bounces: list[str] = field(default_factory=list)
     aliases: list[str] = field(default_factory=list)  # other names the student used for it
+    area: str = ""  # goals only: a subject area a person chose (Math, Language…)
 
 
 @dataclass
@@ -343,6 +344,43 @@ def rename(m: InterestMap, entry_id: str, name: str) -> Entry:
     return entry
 
 
+# generic subject areas Lerni may propose; any other area lives only on a map (v3.28)
+STARTER_AREAS = ("Math", "Science", "Language", "Music", "Feelings", "Thinking")
+
+
+def areas(m: InterestMap) -> list[str]:
+    """The areas on this map's goals, then the starters not used yet, each once."""
+    seen: dict[str, str] = {}
+    for name in [e.area for e in m.entries if e.kind == "goal" and e.area] + list(STARTER_AREAS):
+        seen.setdefault(name.casefold(), name)
+    return list(seen.values())
+
+
+def by_area(goals: list[Entry]) -> list[tuple[str, list[Entry]]]:
+    """Goals under their areas: the areas with the most goals first, then by name; no area
+    ("Other") last."""
+    groups: dict[str, list[Entry]] = {}
+    for e in goals:
+        groups.setdefault(e.area, []).append(e)
+    named = sorted((a for a in groups if a), key=lambda a: (-len(groups[a]), a.casefold()))
+    return [(a, groups[a]) for a in named] + ([("Other", groups[""])] if "" in groups else [])
+
+
+def set_area(m: InterestMap, entry_id: str, area: str) -> Entry:
+    """A person sets a goal's subject area (Lerni proposes; a tick decides).
+
+    Raises:
+        MapError: Unknown entry, not a goal, or not a plain name.
+    """
+    entry = m.get(entry_id)
+    if entry.kind != "goal":
+        raise MapError("Only goals have an area.")
+    wanted = check_name(area)
+    entry.area = {a.casefold(): a for a in areas(m)}.get(wanted.casefold(), wanted)  # one spelling
+    m.edits += 1
+    return entry
+
+
 def set_notes(m: InterestMap, entry_id: str, notes: str) -> Entry:
     """A person rewrites a goal's notes for Lerni.
 
@@ -374,7 +412,7 @@ def remove(m: InterestMap, entry_id: str) -> None:
     m.removed_info[entry.name.casefold()] = {
         "kind": entry.kind, "notes": entry.notes, "id": entry.id, "days": entry.days,
         "mentions": entry.mentions, "explained": entry.explained, "bounces": entry.bounces,
-        "links": links, "aliases": entry.aliases,  # set aside too
+        "links": links, "aliases": entry.aliases, "area": entry.area,  # set aside too
     }
     m.edits += 1
 
@@ -413,6 +451,7 @@ def put_back(m: InterestMap, name: str) -> Entry:
     if old and old not in {e.id for e in m.entries}:
         entry.id = old  # ids are never reused, so links removed with it still point here
     entry.days, entry.explained = list(info.get("days", [])), list(info.get("explained", []))
+    entry.area = str(info.get("area", ""))  # its subject area, as it was
     entry.mentions, entry.bounces = int(info.get("mentions", 0)), list(info.get("bounces", []))
     entry.aliases = [a for a in info.get("aliases", []) if m.find(a) is None]  # one name, one item
     ids = {e.id for e in m.entries}

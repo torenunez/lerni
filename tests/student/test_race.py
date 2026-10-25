@@ -446,7 +446,8 @@ def test_answers_are_logged_as_labels_and_numbers(tmp_path):
     assert all(a["goal"] == "Fractions" and a["seconds"] > 0 and len(a["q"]) == 12 for a in answers)
     assert "What is" not in json.dumps(lines)  # never the question's words
     assert finish["place"] in (1, 2, 3) and finish["points"] > 0
-    assert results.week("sam", date.today()) == [("Fractions", 3, 5)]
+    goal_id = maps.get("sam").find("Fractions").id
+    assert results.week("sam", date.today()) == [(goal_id, "Fractions", 3, 5)]
     # a goal's Practice line: read from the log each time, never stored
     today, goal_id = date.today(), maps.get("sam").find("Fractions").id
     practice = results.practice("sam", goal_id, today)
@@ -768,3 +769,43 @@ def test_a_race_tap_never_writes_while_another_write_runs(tmp_path, monkeypatch)
     release.set()
     desk._busy.get("sam", threading.Event()).wait(5)
     assert quizzer.calls == 1
+
+
+def test_each_set_goes_to_due_goals_mixed_by_area(tmp_path):
+    # v3.28: goals come back on a spaced schedule; a set mixes areas
+    from lerni.student.concepts import ConceptStore
+    from lerni.student.race import pick_goals, quiz_input
+
+    m = InterestMap()
+    added = {name: add_goal(m, name) for name in ("Fractions", "Place value", "Nouns", "Rain")}
+    for name, area in (("Fractions", "Math"), ("Place value", "Math"), ("Nouns", "Language"),
+                       ("Rain", "Science")):
+        added[name].area = area
+    concepts = ConceptStore(tmp_path)
+    ids = {n: e.id for n, e in added.items()}
+    concepts.raced("sam", {ids["Rain"]: (2, 2)}, TODAY)  # all right: 3 days
+    concepts.raced("sam", {ids["Nouns"]: (1, 2)}, TODAY)  # half: back tomorrow
+    schedule = concepts.schedule("sam")
+    assert schedule[ids["Rain"]] == (TODAY + timedelta(days=3), 1)
+    assert schedule[ids["Nouns"]] == (TODAY + timedelta(days=1), 0)
+    concepts.raced("sam", {ids["Rain"]: (1, 1)}, TODAY)  # review: early, so no second box
+    assert concepts.schedule("sam")[ids["Rain"]] == (TODAY + timedelta(days=3), 1)
+    from lerni.student.interests import set_area  # review: one spelling per area
+
+    assert set_area(m, ids["Rain"], "math").area == "Math"
+    # today: Fractions and Place value were never raced; Math waits while Language is due
+    picked = pick_goals(m, schedule, {}, TODAY + timedelta(days=1), k=2)
+    assert [e.name for e in picked] in (["Fractions", "Nouns"], ["Place value", "Nouns"])
+    prompt = quiz_input(m, TODAY, True, goals=[e.name for e in picked])
+    assert "Nouns" in prompt and "Rain" not in prompt
+    # a finished race moves its goal's box
+    desk, _ = desk_for(tmp_path / "desk", FakeQuizzer())
+    desk.concepts = ConceptStore(tmp_path / "desk")
+    desk.prefill = lambda *args: None
+    ticks = iter(range(0, 1000, 10))
+    desk.clock = lambda: float(next(ticks))
+    race = desk.start("sam", supervised=True, today=TODAY)
+    for n in range(QUESTIONS_PER_RACE):
+        desk.pick("sam", race.id, n, race.questions[n].answer)
+    goal_id = desk.maps.get("sam").find("Fractions").id
+    assert desk.concepts.schedule("sam")[goal_id][1] == 1  # all right: one box up

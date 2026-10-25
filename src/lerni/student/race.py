@@ -19,7 +19,7 @@ import uuid
 from collections import deque
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field, replace
-from datetime import date
+from datetime import date, timedelta
 from difflib import SequenceMatcher
 from importlib import metadata
 from typing import Any, Protocol
@@ -46,6 +46,8 @@ BOT_RIVALS = (("Zippy", "formula"), ("Bolt", "muscle"))  # (name, car) when the 
 SLOW = 0.4  # each rival moves this much less on a turn the student gets right
 PLACE_POINTS = {1: 15, 2: 10, 3: 5}
 BONUS_PER_SET = 2  # explain-it questions written with each set of 10
+GOALS_PER_SET = 5  # goals a set of 10 covers, about 2 questions each (v3.28)
+PICK_DAYS = 14  # "least practiced" counts questions over this many days
 BONUS_AT = 3  # the bonus takes question 4's place (0-based)
 BONUS_ODDS = 4  # when not last, about 1 race in this many has one
 BONUS_POINTS = {"nailed": 15, "partly": 7, "tried": 2, "none": 0, "care": 0}
@@ -90,8 +92,8 @@ Return only the JSON asked for.
 - Each question practices one goal from the list, set in one of their interests \
 (halves with pizza slices); "goal" is that goal's name exactly, without its level or notes. \
 With no goals, ask how things in their interests work, never dates or numbers to memorize. \
-Spread the questions \
-evenly across the goals.
+Spread the questions evenly across the listed goals (about 2 each); a goal that's hard to ask \
+as multiple choice (feelings, values) gets 1, and a bonus question if one fits.
 - Every question tests a different idea; "concept" names it in a few words \
 (under {MAX_CONCEPT} characters, e.g. "top speed vs acceleration"). Never an idea listed as \
 recently asked, except ideas due for review. Vary the angle: how it works, compare two \
@@ -141,13 +143,15 @@ def _facts(c: Car) -> str:
 
 def quiz_input(m: InterestMap, today: date, supervised: bool, recent: Sequence[str] = (),
                levels: Mapping[str, int] | None = None, cars: Sequence[Car] = (),
-               due: Sequence[tuple[str, str]] = ()) -> str:
+               due: Sequence[tuple[str, str]] = (), goals: Sequence[str] | None = None) -> str:
     """What Claude needs to write questions: goals at their levels, interests, set-asides,
-    recent ideas, and the cars in reach."""
+    recent ideas, and the cars in reach. ``goals`` (names) narrows the goals to this set's."""
+    picked = {g.casefold() for g in goals} if goals else None
     # "Fractions (level 4; notes: …)": a copied level or note is cut off at " (" when checked
     goals = [f"{e.name} (level {(levels or {}).get(e.id, START_LEVEL)}"
              + (f"; notes: {e.notes})" if e.notes else ")")
-             for e in m.entries if e.kind == "goal"]
+             for e in m.entries if e.kind == "goal"
+             and (picked is None or e.name.casefold() in picked)]
     tops = [e for e in m.entries if e.kind == "interest" and not parents(m, e.id)
             and group_days(m, e) and not faded(e, today, m)]
     tops.sort(key=lambda e: len(group_days(m, e)), reverse=True)
@@ -375,6 +379,30 @@ def check_bonus(raw: Any, m: InterestMap, concepts: Sequence[str] = ()) -> list[
     return kept
 
 
+def pick_goals(m: InterestMap, schedule: Mapping[str, tuple[date, int]],
+               asked: Mapping[str, int], today: date, k: int = GOALS_PER_SET) -> list[Any]:
+    """The goals a set covers: those due (never raced is due now) before the rest, the most
+    overdue and then the least practiced first, taking one area at a time so a set mixes
+    subjects."""
+    def due(e: Any) -> date:
+        return schedule.get(e.id, (date.min, 0))[0]
+
+    goals = sorted((e for e in m.entries if e.kind == "goal"),
+                   key=lambda e: (due(e), asked.get(e.id, 0), e.id))
+
+    def mixed(es: list[Any]) -> list[Any]:  # one from each area in turn, in order
+        areas: dict[str, list[Any]] = {}
+        for e in es:
+            areas.setdefault(e.area.casefold(), []).append(e)
+        out: list[Any] = []
+        while any(areas.values()):
+            out += [q.pop(0) for q in areas.values() if q]
+        return out
+
+    ready = [e for e in goals if due(e) <= today]
+    return (mixed(ready) + mixed([e for e in goals if due(e) > today]))[:k]
+
+
 def fits(q: Question, m: InterestMap) -> bool:
     """Whether a question may still race on this map: its goal is there, nothing set aside."""
     goals = {e.name.casefold() for e in m.entries if e.kind == "goal"}
@@ -423,6 +451,7 @@ class Race:
     lucky: bool = False  # drawn at the start: offered even when not last
     bonus_live: bool = False  # question 4 is the bonus now
     bonus_tier: str = ""  # how it went, once answered
+    marks: list[bool | None] = field(default_factory=list)  # each answer; None: the bonus
 
     @property
     def done(self) -> bool:
@@ -467,6 +496,7 @@ def answer(race: Race, number: int, choice: int) -> Turn | None:
         race.at[i] += rival.step - (SLOW if right else 0)  # a right answer slows both rivals
     race.answered += 1
     race.right += right
+    race.marks.append(right)
     _offer_bonus(race)
     return Turn(right, q.choices[q.answer], q.why, named)
 
@@ -494,6 +524,7 @@ def bonus_move(race: Race, tier: str, line: str) -> Turn | None:
     race.answered += 1
     race.right += right
     race.bonus_live, race.bonus_tier = False, tier
+    race.marks.append(None)  # the bonus never moves a goal's box
     return Turn(right, "", line, named)
 
 
@@ -664,6 +695,19 @@ class RaceDesk:
         concepts = [c for c in concepts if normalize(c) not in labels]  # due ideas may come back
         recent = list(dict.fromkeys(concepts))  # what Claude hears, each once
         levels = self.concepts.levels(username) if self.concepts else {}
+        try:  # best effort: without the schedule or the log, every goal is due
+            schedule = self.concepts.schedule(username) if self.concepts else {}
+            asked = (self.results.asked_since(username, today - timedelta(days=PICK_DAYS - 1))
+                     if self.results else {})
+        except Exception as exc:  # noqa: BLE001 - a broken file never stops a race
+            print(f"Goal picking skipped ({type(exc).__name__}); every goal counts as due.",
+                  flush=True)
+            schedule, asked = {}, {}
+        picked = [e.name for e in pick_goals(m, schedule, asked, today)]
+        for g, _ in due:  # a due idea's goal, in the map's spelling, once
+            name = getattr(m.find(g), "name", "")
+            if name and name.casefold() not in {x.casefold() for x in picked}:
+                picked.append(name)
         p = self.points.get(username)
         cars = self.garage.in_reach(p.cars, p.balance) if self.garage else []
         kept: list[Question] = []
@@ -671,7 +715,8 @@ class RaceDesk:
         for _ in range(2):  # one more try if too few questions pass the checks
             try:
                 raw = self.quizzer.write(QUIZ_SYSTEM, quiz_input(m, today, supervised, recent,
-                                                                 levels, cars, due))
+                                                                 levels, cars, due,
+                                                                 picked or None))
             except RaceUnavailable:
                 raise
             except Exception as exc:  # never show what went wrong inside
@@ -829,9 +874,25 @@ class RaceDesk:
         awarded = 0
         if turn is not None and race.done:
             awarded = self.points.award(username, race.id, "race", race_points(race))
+            self._spaced(username, race)
         if turn is not None:
             self._log(username, race, number, turn.right, took)
         return race, turn, awarded
+
+    def _spaced(self, username: str, race: Race) -> None:
+        """Move each goal this race asked to its next box (bonus answers aside)."""
+        if self.concepts is None:
+            return
+        try:  # best effort: the race and its award stand regardless
+            m, per_goal = self.maps.get(username), {}
+            for q, mark in zip(race.questions, race.marks, strict=False):
+                goal = m.find(q.goal) if mark is not None else None
+                if goal is not None and goal.kind == "goal":
+                    right, asked = per_goal.get(goal.id, (0, 0))
+                    per_goal[goal.id] = (right + mark, asked + 1)
+            self.concepts.raced(username, per_goal)
+        except Exception as exc:  # noqa: BLE001 - a broken map or a full disk
+            print(f"Goal boxes not moved ({type(exc).__name__}).", flush=True)
 
     def _keep_bonus(self, username: str, day: date, new: list[Bonus]) -> None:
         with self._lock:

@@ -170,6 +170,12 @@ v3.19 (race questions from the garage), v3.20 (a map journal and nightly backups
   - A question whose concept matches a due one counts as its review.
 - **Unanswered reviews:** if Claude skips a due concept, it stays due. Nothing is lost for being overdue.
 
+### Goal spacing (v3.28, `concepts.py`, `race.py`)
+
+- **Each goal has a box,** kept beside its level: 1, 3, 7, or 14 days. A goal never raced is due now.
+- **After a race,** for each goal it asked: all right on a due goal moves it up a box; half or fewer back to box 0 (tomorrow); otherwise, or when it was asked early (a set's second race), it stays. Bonus answers don't move boxes.
+- **Each set of 10** goes to about 5 goals (about 2 each, one in each of its two races): due ones first, most overdue then least practiced in 14 days, one subject area at a time, then the soonest due. Due ideas (v3.22) add their goals.
+
 ### The bonus round (v3.24, `race.py`, `web/games.py`, `web/talk.js`)
 
 - **Writing:** the same call that writes 10 questions writes up to 2 bonus questions (`bonus`: goal, concept, question, `key_ideas` of 2 or 3 short phrases).

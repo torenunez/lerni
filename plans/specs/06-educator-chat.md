@@ -8,7 +8,7 @@ On **Maps**, for one student at a time:
 
 - **Top:** the student (picked for them when there's only one; since v3.25), then the message box for the **educator agent**, with 📎 (notes as .txt, .md, or .docx; a PDF gets "paste its text", since the chat's Claude call takes text only) and Send. Switching students starts a fresh chat.
 - **Under it:** the agent's latest reply, its proposals as a **tick list** (additions arrive ticked), and **Add N to the map**. Feedback items save to the admin's list instead of the map.
-- **Then:** racing this week (a bar per goal, ⭐, and the car they drive; since v3.26), the folded list (no add form: goals start in the box), and the whole map picture last (a tap on an item opens it in the list). The conversation itself isn't shown; the agent keeps it for follow-ups.
+- **Then:** goal progress this week (by area since v3.28: a bar per goal, ⭐, and the car they drive; since v3.26), the folded list (no add form: goals start in the box), and the whole map picture last (a tap on an item opens it in the list). The conversation itself isn't shown; the agent keeps it for follow-ups.
 
 The four Maps panels go away: Add a goal, Rename or remove, Upload notes, and Feedback for the admin. My map keeps its panels; it gets the chat in a later version, once this one has been used.
 
@@ -35,8 +35,9 @@ The four Maps panels go away: Add a goal, Rename or remove, Upload notes, and Fe
    - `interest`: a name;
    - `reword`: new notes for an existing goal, named as it is on the map;
    - `remove`: an existing entry, by its map name;
-   - `feedback`: a short note for the admin.
-5. **The tick list shows them,** each labelled: 🎯 goal, 💚 interest, ✏️ reword, 🗑️ remove, 📨 feedback. **Add to map** applies only the ticked map items, through the map's own functions in one `MapStore.change`. Ticked feedback items save to `FeedbackStore` with the student's username as the map owner. A ticked item that no longer fits, for example because the entry was removed meanwhile, is skipped and named.
+   - `feedback`: a short note for the admin;
+   - `area` (v3.28): a subject area for an existing goal; a `goal` carries one too, and an area not on the map or among the starters is flagged as new. Sorting a map's goals proposes one per goal, beyond the cap of 8.
+5. **The tick list shows them,** each labelled: 🎯 goal, 💚 interest, ✏️ reword, 🗑️ remove, 📨 feedback, 📚 area. **Add to map** applies only the ticked map items, through the map's own functions in one `MapStore.change`. Ticked feedback items save to `FeedbackStore` with the student's username as the map owner. A ticked item that no longer fits, for example because the entry was removed meanwhile, is skipped and named.
 6. **The picture redraws,** and the agent's next turn sees the updated map.
 
 ## The agent's rules (in code, after the persona, like the student rules)

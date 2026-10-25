@@ -73,17 +73,28 @@ class ResultsLog:
                 out.append(record)
         return out
 
-    def week(self, username: str, today: date) -> list[tuple[str, int, int]]:
-        """Per goal over the last 7 days: (goal, right, asked), most recently practiced first."""
+    def week(self, username: str, today: date) -> list[tuple[str, str, int, int]]:
+        """Per goal over the last 7 days: (goal id, goal, right, asked), most recently
+        practiced first; by id when the line has one, so a renamed goal keeps its rows."""
         since = (today - timedelta(days=WEEK_DAYS - 1)).isoformat()
-        tally: dict[str, list[int]] = {}
+        tally: dict[str, list[Any]] = {}
         for r in self.read(username):
             if "right" in r and str(r.get("day", "")) >= since and r.get("goal"):
-                counts = tally.pop(str(r["goal"]), [0, 0])  # re-inserted: newest last
-                counts[0] += bool(r["right"])
-                counts[1] += 1
-                tally[str(r["goal"])] = counts
-        return [(goal, right, asked) for goal, (right, asked) in reversed(tally.items())]
+                key = str(r.get("goal_id") or r["goal"])
+                counts = tally.pop(key, [str(r.get("goal_id", "")), str(r["goal"]), 0, 0])
+                counts[1] = str(r["goal"])  # the newest name, after a rename
+                counts[2] += bool(r["right"])  # re-inserted below: newest last
+                counts[3] += 1
+                tally[key] = counts
+        return [tuple(c) for c in reversed(tally.values())]  # type: ignore[misc]
+
+    def asked_since(self, username: str, since: date) -> dict[str, int]:
+        """Questions per goal id since ``since``, for picking the least practiced goals."""
+        counts: dict[str, int] = {}
+        for r in self.read(username):
+            if "right" in r and r.get("goal_id") and str(r.get("day", "")) >= since.isoformat():
+                counts[str(r["goal_id"])] = counts.get(str(r["goal_id"]), 0) + 1
+        return counts
 
     def practice(self, username: str, goal_id: str, today: date) -> Practice | None:
         """One goal's Practice line, or None if it was never raced."""
