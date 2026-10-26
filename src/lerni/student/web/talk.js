@@ -157,7 +157,7 @@
     S.player.pause();
   }
 
-  window.lerniTalk = {play, stop};
+  window.lerniTalk = {play, stop, unlock};  // race.js unlocks it on a tap, to read aloud
 
   // Talk or Type: switch every dock, and remember it on this device (just the choice)
   function mode(m, keep = true) {
