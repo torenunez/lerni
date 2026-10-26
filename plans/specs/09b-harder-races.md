@@ -117,7 +117,7 @@ v3.19 (race questions from the garage), v3.20 (a map journal and nightly backups
 
 ### Read aloud (v3.29, `race.py`, `web/games.py`, `web/race.js`)
 
-- **🔊 beside the question** reads it with the server's voice: "Question 2. … A: … B: … C: …", or "Bonus question. …". Only the question on screen can be read; each is spoken once and kept in memory with the race.
+- **🔊 beside the question** reads it with the server's voice: "Question 2. … 9, 8, or 6?" (the buttons have no letters), or "Bonus question. …". Only the question on screen can be read; each is spoken once and kept in memory with the race.
 - **📖 Read aloud: on/off,** beside 🔇 and remembered on the device, reads each new question by itself. 🔇 silences the race sounds only.
 - **A tap that moves on** stops a reading; the Race!, answer, and Next taps keep iPad Safari's player unlocked.
 - Added after this spec (the admin's decision of 2026-10-24): for a student who listens more easily than they read.

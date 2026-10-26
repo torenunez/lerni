@@ -533,7 +533,9 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
             return gr.update()
         return json.dumps([time.monotonic(), base64.b64encode(audio).decode()])
 
-    speak.click(on_speak, shown, read_clip, concurrency_limit=MAX_AT_ONCE, **PRIVATE)
+    # "multiple": a tap while an older reading is still being made isn't ignored (Read aloud)
+    speak.click(on_speak, shown, read_clip, concurrency_limit=MAX_AT_ONCE,
+                trigger_mode="multiple", **PRIVATE)
     read_clip.change(None, read_clip, None,  # one reading at a time: a new one replaces it
                      js="(v) => { window.lerniTalk?.stop(); window.lerniTalk?.play(v); }")
     tab.select(on_open, None, outputs, **PRIVATE)

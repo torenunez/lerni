@@ -95,7 +95,8 @@
     // a tap that moves on stops a reading; any tap here lets the next one play on the iPad
     if (event.target.closest?.('.lerni-go, .lerni-choice, #lerni-read-go, #lerni-read')) {
       if (!event.target.closest('#lerni-read-go')) window.lerniTalk?.stop();
-      window.lerniTalk?.unlock();
+      // only when reading: otherwise the player stays untouched (an iPad's music keeps playing)
+      if (readOn() || event.target.closest('#lerni-read-go, #lerni-read')) window.lerniTalk?.unlock();
     }
     if (event.target.closest?.('#lerni-read')) {
       try { localStorage.setItem('lerni-read', readOn() ? 'off' : 'on'); } catch {}

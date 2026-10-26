@@ -554,8 +554,10 @@ def spoken_question(race: Race) -> str:
     if race.bonus_live and race.bonus is not None:
         return for_speaking(f"Bonus question. {race.bonus.question}")
     q = race.questions[race.answered]
-    letters = " ".join(f"{letter}: {c}." for letter, c in zip("ABC", q.choices, strict=True))
-    return for_speaking(f"Question {race.answered + 1}. {q.question} {letters}")
+    choices = f"{q.choices[0]}, {q.choices[1]}, or {q.choices[2]}?"  # as the buttons show them
+    said = f"Question {race.answered + 1}. {q.question} {choices}"
+    said = said.replace(" > ", " is more than ").replace(" < ", " is less than ")  # not dropped
+    return for_speaking(said)
 
 
 NOT_READY = "The track needs a minute. Try again soon."
@@ -1000,6 +1002,9 @@ class RaceDesk:
         except SpeechUnavailable:
             return None
         with self._lock:
+            if (self._races.get(username) is not race or race.done
+                    or number != race.answered):
+                return None  # answered or dropped while speaking: never over the next card
             race_of, clips = self._spoken.get(username, ("", {}))
             self._spoken[username] = (race.id, {**(clips if race_of == race.id else {}),
                                                 number: audio})  # a new race starts fresh
@@ -1065,3 +1070,4 @@ class RaceDesk:
         """Leaving Games drops a race in progress: no points."""
         with self._lock:
             self._races.pop(username, None)
+            self._spoken.pop(username, None)  # its readings go with it

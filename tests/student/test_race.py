@@ -824,8 +824,8 @@ def test_a_question_is_read_aloud_once_and_only_on_screen(tmp_path):
     race = desk.start("sam", supervised=True, today=TODAY)
     q = race.questions[0]
     assert desk.read_aloud("sam", race.id, 0) == b"audio"
-    assert speech.spoken == [f"Question 1. {q.question} A: {q.choices[0]}. "
-                             f"B: {q.choices[1]}. C: {q.choices[2]}."]
+    assert speech.spoken == [f"Question 1. {q.question} {q.choices[0]}, {q.choices[1]}, "
+                             f"or {q.choices[2]}?"]
     assert desk.read_aloud("sam", race.id, 0) == b"audio" and len(speech.spoken) == 1  # cached
     assert desk.read_aloud("sam", race.id, 1) is None  # not on screen yet
     assert desk.read_aloud("sam", "another-race", 0) is None
@@ -834,3 +834,21 @@ def test_a_question_is_read_aloud_once_and_only_on_screen(tmp_path):
     race.answered, race.bonus_live = 3, True
     desk.read_aloud("sam", race.id, 3)
     assert speech.spoken[-1] == "Bonus question. Why are halves equal?"
+
+
+def test_a_reading_that_finishes_after_an_answer_is_dropped(tmp_path):
+    # review: a clip still being made when the student answered played over the next question
+    desk, _ = desk_for(tmp_path, FakeQuizzer())
+    desk.prefill = lambda *args: None
+    ticks = iter(range(0, 1000, 10))
+    desk.clock = lambda: float(next(ticks))
+    race = desk.start("sam", supervised=True, today=TODAY)
+
+    class Slow:
+        def speak(self, text):  # the student answers while the voice is still speaking
+            desk.pick("sam", race.id, 0, race.questions[0].answer)
+            return b"audio"
+
+    desk.speech = Slow()
+    assert desk.read_aloud("sam", race.id, 0) is None
+    assert desk._spoken.get("sam", ("", {}))[1].get(0) is None  # not kept for later either
