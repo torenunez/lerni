@@ -62,7 +62,7 @@ EDGE = ('<defs><filter id="lerni-edge" x="-10%" y="-10%" width="120%" height="12
 MUTE = ('<button type="button" id="lerni-mute" class="lerni-mute" '
         'aria-label="Sound on">🔊</button>')  # race.js handles it
 READ = ('<button type="button" id="lerni-read" class="lerni-read" '
-        'aria-pressed="false">📖 Read aloud</button>')  # race.js: each question reads itself
+        'aria-pressed="false">📖 Read aloud: off</button>')  # race.js: each question reads itself
 ORDINAL = {1: "1st", 2: "2nd", 3: "3rd"}
 NO_CLAUDE = "Games need Claude, which isn't set up on this server."
 

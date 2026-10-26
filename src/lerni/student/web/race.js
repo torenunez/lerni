@@ -75,8 +75,10 @@
   function readLabel() {
     const button = document.getElementById('lerni-read');
     if (!button) return;
-    const on = String(readOn());
-    if (button.getAttribute('aria-pressed') !== on) button.setAttribute('aria-pressed', on);
+    const on = readOn(), text = `📖 Read aloud: ${on ? 'on' : 'off'}`;
+    if (button.textContent === text) return;  // writing it anyway would wake the observer again
+    button.textContent = text;
+    button.setAttribute('aria-pressed', String(on));
   }
   function label() {
     readLabel();
