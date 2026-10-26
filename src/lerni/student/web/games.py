@@ -7,7 +7,10 @@ the question number, and which button, and the server decides.
 
 from __future__ import annotations
 
+import base64
 import html
+import json
+import time
 from collections.abc import Callable
 from datetime import date
 from typing import Any
@@ -58,6 +61,8 @@ EDGE = ('<defs><filter id="lerni-edge" x="-10%" y="-10%" width="120%" height="12
         'flood-opacity="0.9"/></filter></defs>')  # a thin dark edge, so a white car shows
 MUTE = ('<button type="button" id="lerni-mute" class="lerni-mute" '
         'aria-label="Sound on">🔊</button>')  # race.js handles it
+READ = ('<button type="button" id="lerni-read" class="lerni-read" '
+        'aria-pressed="false">📖 Read aloud</button>')  # race.js: each question reads itself
 ORDINAL = {1: "1st", 2: "2nd", 3: "3rd"}
 NO_CLAUDE = "Games need Claude, which isn't set up on this server."
 
@@ -175,8 +180,9 @@ def _label(text: str, y: int) -> str:
             f'fill="#085041">{html.escape(name)}</text>')
 
 
-def track_svg(race: Race | None, car_id: str, garage: Garage) -> str:
-    """The track: the student's car and two rivals, placed by how far each has come."""
+def track_svg(race: Race | None, car_id: str, garage: Garage, reads: bool = False) -> str:
+    """The track: the student's car and two rivals, placed by how far each has come; under it
+    🔇, and 📖 Read aloud when the server has a voice."""
 
     full = QUESTIONS_PER_RACE * STEP_RIGHT * (race.boost if race else 1.0)  # 5 right in this car
 
@@ -205,7 +211,8 @@ def track_svg(race: Race | None, car_id: str, garage: Garage) -> str:
     parts.append("</g>")
     names = ("You", *(r.name for r in rivals))
     parts += [_label(name, y) for name, y in zip(names, LANES, strict=False)]
-    return "".join(parts) + "</svg>" + MUTE
+    switches = f'<div class="lerni-switches">{READ if reads else ""}{MUTE}</div>'
+    return "".join(parts) + "</svg>" + switches
 
 
 def _picture(c: Car) -> str:
@@ -341,7 +348,12 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
     with gr.Tab("Games", id="games", visible=False) as tab:
         hero = gr.HTML(elem_id="lerni-hero")  # your car and the next goal, when not racing
         track = gr.HTML(elem_id="lerni-track", visible=False)  # once a race starts
-        question = gr.Markdown(elem_classes="lerni-question")
+        with gr.Row(elem_classes="lerni-qrow"):
+            question = gr.Markdown(elem_classes="lerni-question")
+            # 🔊 reads the question on screen; race.js presses it when Read aloud is on (v3.29)
+            speak = gr.Button("🔊", elem_id="lerni-read-go", scale=0, min_width=48, visible=False)
+        read_clip = gr.Textbox(elem_id="lerni-clip-read", elem_classes="lerni-hide",
+                               container=False)  # the clip for talk.js to play
         choices = [gr.Button(visible=False, elem_classes="lerni-choice") for _ in range(3)]
         talks = speech is not None
         # the bonus: typed or spoken, like Chat's dock (talk.js drives the "bonus" parts)
@@ -382,7 +394,7 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
     outputs = [header_stars, hero, track, question, *choices, dock, answer_box, send, note, go,
                next_btn, shown, mine_title,
                *(x for pair in mine.values() for x in pair),
-               *(x for parts in shop.values() for x in parts)]
+               *(x for parts in shop.values() for x in parts), speak]
 
     def garage_updates(p: Points | None) -> list[Any]:
         """The My cars title, then each car's tile and button in both lists."""
@@ -416,6 +428,7 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
             ask, buttons = "", [gr.update(visible=False) for _ in choices]
             go_update = gr.update(visible=True, value="Race again!" if race else "Race!")
             ref, waiting, live = (race.id, race.answered) if race else ("", 0), False, False
+            heard = False
         else:
             ask, show = question_card(race, last)
             # while the why shows, the hidden buttons don't get the next question yet
@@ -424,13 +437,15 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
             live = race.bonus_live and not _why_first(race, last)  # the dock, not Next
             go_update, ref, waiting = gr.update(visible=False), (race.id, race.answered), not (
                 show or live)
+            heard = show or live  # a question (or the bonus) is on the card: 🔊 can read it
         mine = stars(points, viewer)
         return [gr.update(value=mine, visible=bool(mine)),
                 gr.update(value=hero_html(garage, p), visible=race is None),
-                gr.update(value=track_svg(race, driving, garage), visible=race is not None),
+                gr.update(value=track_svg(race, driving, garage, reads=talks),
+                          visible=race is not None),
                 ask, *buttons, gr.update(visible=live), gr.update(value=""),
                 gr.update(interactive=True), line, go_update, gr.update(visible=waiting), ref,
-                *garage_updates(p)]
+                *garage_updates(p), gr.update(visible=talks and heard)]
 
     def viewer_of(request: gr.Request) -> Viewer | None:
         viewer = signin.viewer(request.username)  # re-read on every request
@@ -510,6 +525,17 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
             return screen(viewer, race, message)
         return handler
 
+    def on_speak(ref: tuple[str, int], request: gr.Request) -> Any:
+        # the question on screen, spoken; a fresh value each time, so a second tap replays it
+        viewer = viewer_of(request)
+        audio = desk.read_aloud(viewer.username, ref[0], ref[1]) if desk and viewer else None
+        if not audio:
+            return gr.update()
+        return json.dumps([time.monotonic(), base64.b64encode(audio).decode()])
+
+    speak.click(on_speak, shown, read_clip, concurrency_limit=MAX_AT_ONCE, **PRIVATE)
+    read_clip.change(None, read_clip, None,  # one reading at a time: a new one replaces it
+                     js="(v) => { window.lerniTalk?.stop(); window.lerniTalk?.play(v); }")
     tab.select(on_open, None, outputs, **PRIVATE)
     # Race hides while questions are written, so extra taps can't start more races
     # the note says why it waits; progress only on the hidden Race button, so no "processing"

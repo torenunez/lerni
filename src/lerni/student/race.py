@@ -38,6 +38,7 @@ from lerni.student.interests import (
 )
 from lerni.student.points import PointsStore
 from lerni.student.results import ResultsLog, question_hash
+from lerni.student.voice import SpeechUnavailable, for_speaking
 
 QUESTIONS_PER_RACE = 5
 SET_SIZE = 10  # questions per Claude call: two races' worth
@@ -548,6 +549,15 @@ def public(race: Race) -> dict[str, Any]:
             "choices": list(q.choices)}
 
 
+def spoken_question(race: Race) -> str:
+    """What 🔊 says for the question on screen: its number, words, and choices (or the bonus)."""
+    if race.bonus_live and race.bonus is not None:
+        return for_speaking(f"Bonus question. {race.bonus.question}")
+    q = race.questions[race.answered]
+    letters = " ".join(f"{letter}: {c}." for letter, c in zip("ABC", q.choices, strict=True))
+    return for_speaking(f"Question {race.answered + 1}. {q.question} {letters}")
+
+
 NOT_READY = "The track needs a minute. Try again soon."
 GRADE_TIMEOUT_SECONDS = 20  # a bonus answer waits at most this long for its grade
 MAX_ANSWER = 1000  # characters of a bonus answer sent to grade
@@ -622,10 +632,12 @@ class RaceDesk:
     def __init__(self, quizzer: Quizzer, maps: MapStore, points: PointsStore,
                  concepts: ConceptStore | None = None, checker: Checker | None = None,
                  results: ResultsLog | None = None, garage: Garage | None = None,
-                 grader: Checker | None = None, log: Any = None) -> None:
+                 grader: Checker | None = None, log: Any = None, speech: Any = None) -> None:
         self.quizzer, self.maps, self.points, self.concepts = quizzer, maps, points, concepts
         self.grader = grader  # grades bonus answers; with none, races have no bonus
         self.log = log  # the conversation log: only a worrying bonus answer goes there
+        self.speech = speech  # reads questions aloud (v3.29); None: no 🔊
+        self._spoken: dict[str, tuple[str, dict[int, bytes]]] = {}  # username: (race, clips)
         self._map_now: InterestMap = InterestMap()  # the map while grading, for set-asides
         self.garage = garage  # the cars in reach give questions real numbers (v3.19)
         self.checker = checker  # answers each question blind; a disagreement drops it
@@ -970,6 +982,28 @@ class RaceDesk:
             except OSError:
                 pass
         return race, turn, awarded
+
+    def read_aloud(self, username: str, race_id: str, number: int) -> bytes | None:
+        """The question on screen spoken (memory only, once per question), or None for a stale
+        or forged tap, no voice, or a voice that failed."""
+        with self._lock:
+            race = self._races.get(username)
+            if (self.speech is None or race is None or race.id != race_id or race.done
+                    or number != race.answered):
+                return None
+            race_of, clips = self._spoken.get(username, ("", {}))
+            if race_of == race.id and number in clips:
+                return clips[number]
+            text = spoken_question(race)
+        try:
+            audio = self.speech.speak(text)  # about a second on the Mac
+        except SpeechUnavailable:
+            return None
+        with self._lock:
+            race_of, clips = self._spoken.get(username, ("", {}))
+            self._spoken[username] = (race.id, {**(clips if race_of == race.id else {}),
+                                                number: audio})  # a new race starts fresh
+        return audio
 
     def grading(self, race_id: str) -> bool:
         """Whether this race's bonus answer is being graded right now."""

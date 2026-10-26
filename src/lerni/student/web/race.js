@@ -58,7 +58,28 @@
     if (!id || !before || step !== before.step + 1) return;
     play(step >= Number(svg.dataset.total) ? 'finish' : right > before.right ? 'roar' : 'sputter');
   }
+  // Read aloud (v3.29): this device's choice; when on, each new question presses 🔊 itself
+  function readOn() {
+    try { return localStorage.getItem('lerni-read') === 'on'; } catch { return false; }
+  }
+  let readKey = '';  // the question last read by itself, so a redraw doesn't read it again
+  function autoRead() {
+    const speak = document.getElementById('lerni-read-go');
+    const svg = document.querySelector('#lerni-track svg[data-race]');
+    if (!readOn() || !speak || !speak.offsetParent || !svg) return;
+    const key = `${svg.dataset.race}:${svg.dataset.step}`;
+    if (key === readKey) return;
+    readKey = key;
+    speak.click();
+  }
+  function readLabel() {
+    const button = document.getElementById('lerni-read');
+    if (!button) return;
+    const on = String(readOn());
+    if (button.getAttribute('aria-pressed') !== on) button.setAttribute('aria-pressed', on);
+  }
   function label() {
+    readLabel();
     const button = document.getElementById('lerni-mute');
     if (!button) return;
     const on = soundOn(), text = on ? '🔊' : '🔇';
@@ -69,6 +90,17 @@
   document.addEventListener('click', event => {
     // Race! unlocks sound; an answer tap wakes it again after the iPad paused it
     if (event.target.closest?.('.lerni-go, .lerni-choice')) unlock();
+    // a tap that moves on stops a reading; any tap here lets the next one play on the iPad
+    if (event.target.closest?.('.lerni-go, .lerni-choice, #lerni-read-go, #lerni-read')) {
+      if (!event.target.closest('#lerni-read-go')) window.lerniTalk?.stop();
+      window.lerniTalk?.unlock();
+    }
+    if (event.target.closest?.('#lerni-read')) {
+      try { localStorage.setItem('lerni-read', readOn() ? 'off' : 'on'); } catch {}
+      readKey = '';  // switched on: read the question showing now
+      readLabel();
+      autoRead();
+    }
     if (event.target.closest?.('#lerni-mute')) {
       try { localStorage.setItem('lerni-sound', soundOn() ? 'off' : 'on'); } catch {}
       unlock();
@@ -96,6 +128,7 @@
     const svg = document.querySelector('#lerni-track svg[data-race]');
     if (svg) listen(svg);
     label();
+    autoRead();
   }).observe(document.body, {childList: true, subtree: true, attributes: true,
                               attributeFilter: ['data-x', 'data-step']});
 })();

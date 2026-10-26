@@ -809,3 +809,28 @@ def test_each_set_goes_to_due_goals_mixed_by_area(tmp_path):
         desk.pick("sam", race.id, n, race.questions[n].answer)
     goal_id = desk.maps.get("sam").find("Fractions").id
     assert desk.concepts.schedule("sam")[goal_id][1] == 1  # all right: one box up
+
+
+def test_a_question_is_read_aloud_once_and_only_on_screen(tmp_path):
+    # v3.29: 🔊 reads the question on screen and its choices, from memory after the first time
+    from lerni.student.race import Bonus
+    from tests.student.test_voice import FakeSpeech
+
+    desk, _ = desk_for(tmp_path, FakeQuizzer())
+    desk.speech = speech = FakeSpeech()
+    desk.prefill = lambda *args: None
+    ticks = iter(range(0, 1000, 10))
+    desk.clock = lambda: float(next(ticks))
+    race = desk.start("sam", supervised=True, today=TODAY)
+    q = race.questions[0]
+    assert desk.read_aloud("sam", race.id, 0) == b"audio"
+    assert speech.spoken == [f"Question 1. {q.question} A: {q.choices[0]}. "
+                             f"B: {q.choices[1]}. C: {q.choices[2]}."]
+    assert desk.read_aloud("sam", race.id, 0) == b"audio" and len(speech.spoken) == 1  # cached
+    assert desk.read_aloud("sam", race.id, 1) is None  # not on screen yet
+    assert desk.read_aloud("sam", "another-race", 0) is None
+    assert desk.read_aloud("kim", race.id, 0) is None  # someone else's race
+    race.bonus = Bonus("Fractions", "halves", "Why are halves equal?", ("same size", "two"))
+    race.answered, race.bonus_live = 3, True
+    desk.read_aloud("sam", race.id, 3)
+    assert speech.spoken[-1] == "Bonus question. Why are halves equal?"

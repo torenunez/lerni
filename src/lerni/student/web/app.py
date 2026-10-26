@@ -150,8 +150,13 @@ _CSS = """
 .lerni-like, .lerni-card details { font-size: 14px; }
 .lerni-buy { min-height: 48px !important; font-size: 16px !important; }
 #lerni-track svg { max-width: 820px; display: block; margin: 0 auto; }
-.lerni-mute { display: block; margin: 2px 0 0 auto; min-width: 44px; min-height: 44px;
+.lerni-switches { display: flex; justify-content: flex-end; align-items: center; gap: 8px; }
+.lerni-mute { display: block; margin: 2px 0 0; min-width: 44px; min-height: 44px;
               font-size: 20px; background: none; border: none; cursor: pointer; }
+.lerni-read { min-height: 44px; padding: 0 12px; border-radius: 8px; font-size: 15px;
+              border: 1px solid var(--border-color-primary); background: none; cursor: pointer; }
+.lerni-read[aria-pressed="true"] { background: var(--color-accent-soft); }
+.lerni-qrow { align-items: center !important; flex-wrap: nowrap !important; }
 /* MentalMap pictures (mapview.js): a tapped item lights up its links; the rest fades */
 .lerni-map .lerni-node { cursor: pointer; }
 .lerni-map svg.lerni-focus .lerni-node:not(.lerni-near) { opacity: 0.15; }
@@ -277,7 +282,8 @@ def build_app(
     races = (RaceDesk(quizzer, maps, points, ConceptStore(root), results=ResultsLog(root),
                       checker=quizzer,  # the same small model answers each question blind
                       garage=garage, grader=quizzer,  # and grades bonus answers
-                      log=log)  # a worrying bonus answer is kept where Chat's are
+                      log=log,  # a worrying bonus answer is kept where Chat's are
+                      speech=speech)  # reads questions aloud
              if quizzer is not None else None)
     log.purge()  # at startup; then once a day as exchanges are logged
     # production only (a labelled server is development): a restart loses held questions
