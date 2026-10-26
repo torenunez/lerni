@@ -115,6 +115,13 @@ v3.19 (race questions from the garage), v3.20 (a map journal and nightly backups
   - **🔇:** the setting is kept in the browser's `localStorage` (a per-device setting, never text).
   - With reduced motion, sounds still play. With 🔇, nothing does.
 
+### Read aloud (v3.29, `race.py`, `web/games.py`, `web/race.js`)
+
+- **🔊 beside the question** reads it with the server's voice: "Question 2. … A: … B: … C: …", or "Bonus question. …". Only the question on screen can be read; each is spoken once and kept in memory with the race.
+- **📖 Read aloud: on/off,** beside 🔇 and remembered on the device, reads each new question by itself. 🔇 silences the race sounds only.
+- **A tap that moves on** stops a reading; the Race!, answer, and Next taps keep iPad Safari's player unlocked.
+- Added after this spec (the admin's decision of 2026-10-24): for a student who listens more easily than they read.
+
 ### Practice and link days (v3.17, `interests.py`, `results.py`, `web/mentallist.py`)
 
 - **Link days:**
@@ -249,7 +256,6 @@ v3.19 (race questions from the garage), v3.20 (a map journal and nightly backups
 ## Not in this version
 
 - An engine sound loop, or music.
-- Read-aloud questions (planned as v3.29, after this spec: the admin's decision of 2026-10-24).
 - Games and probes for independent students.
 - Goal suggestions (Version 5).
 - FSRS or SM-2 (Version 4).
