@@ -550,7 +550,8 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
     speak.click(on_speak, [shown, hear], read_clip, concurrency_limit=MAX_AT_ONCE,
                 trigger_mode="multiple", **PRIVATE)
     read_clip.change(None, read_clip, None,  # one reading at a time: a new one replaces it
-                     js="(v) => { window.lerniTalk?.say(v); }")
+                     js="(v) => { if (window.lerniRace?.wants() !== false) "
+                        "window.lerniTalk?.say(v); }")  # not after Sound off or moving on
     tab.select(on_open, None, outputs, **PRIVATE)
     # Race hides while questions are written, so extra taps can't start more races
     # the note says why it waits; progress only on the hidden Race button, so no "processing"

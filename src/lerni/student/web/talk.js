@@ -10,6 +10,7 @@
   function unlock() {
     if (!S.ctx) S.ctx = new (window.AudioContext || window.webkitAudioContext)();
     S.ctx.resume();
+    if (S.playing) return;  // already playing, so already allowed; swapping it would end it
     S.player.src = URL.createObjectURL(new Blob([wav(new Float32Array(1600))], {type: 'audio/wav'}));
     S.player.play().catch(() => {});
   }

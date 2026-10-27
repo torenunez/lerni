@@ -63,6 +63,9 @@
   // the right answer after a wrong one, said once per race and step; Next waits until it's done
   const HOLD_MS = 20000;  // never stuck: Next comes back after this, said or not
   let whyKey = '', holdTimer = 0;
+  // a reading asked for before Sound off or a tap that moved on is dropped when it arrives
+  let asked = 0, current = 0;
+  window.lerniRace = {wants: () => soundOn() && asked === current};
   function hold(on) {
     clearTimeout(holdTimer);
     holdTimer = on ? setTimeout(() => hold(false), HOLD_MS) : 0;
@@ -77,6 +80,7 @@
     if (key === whyKey) return;  // a redraw doesn't say it again
     whyKey = key;
     hold(true);
+    asked = current;
     reader.click();
   }
   function label() {
@@ -97,6 +101,7 @@
     // Race! unlocks sound; an answer tap wakes it again after the iPad paused it
     if (at('.lerni-go, .lerni-choice')) unlock();
     if (at('.lerni-go, .lerni-choice')) {  // moving on stops a reading
+      current++;
       window.lerniTalk?.stop();
       hold(false);
       // inside the tap, so the iPad lets the right answer play later; with sound off the
@@ -109,12 +114,13 @@
     const reader = document.getElementById('lerni-read-go');
     if (card && reader && soundOn() && !at('a, button, details')) {
       window.lerniTalk?.unlock();
+      asked = current;
       reader.click();
     }
     if (at('#lerni-mute')) {
       const on = !soundOn();
       try { localStorage.setItem('lerni-sound', on ? 'on' : 'off'); } catch {}
-      if (!on) { window.lerniTalk?.stop(); hold(false); }  // off silences a reading too
+      if (!on) { current++; window.lerniTalk?.stop(); hold(false); }  // off silences a reading too
       unlock();
       label();
     }
