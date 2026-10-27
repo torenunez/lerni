@@ -2,7 +2,7 @@
 
 Approved in conversation on 2026-10-20. Builds on [spec 09](09-play-and-points.md) (the race, points, the garage, the results log), the map ([spec 04](04-interest-map.md), [spec 08](08-kind-of.md)), and voice ([spec 05](05-voice.md)). Requirements: [student PRD, Version 3](../../docs/prd/student.md#version-3-play-and-points).
 
-**Why.** Since their first car upgrade, the supervised student has finished 1st in every race, with about 84% right. Races should be won by answers, pitched so about half to three quarters are right. Missed ideas should come back, and the student should sometimes explain an idea in their own words. What the race learns should show on the map, and the race should try ideas next to what the student loves, so Version 5 can suggest goals.
+**Why.** The races were too easy. Races should be won by answers, pitched so about half to three quarters are right. Missed ideas should come back, and the student should sometimes explain an idea in their own words. What the race learns should show on the map, and the race should try ideas next to what the student loves, so Version 5 can suggest goals.
 
 **Ships as**, one PR each, in this order:
 - v3.16: the race looks and sounds better;
