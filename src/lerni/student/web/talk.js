@@ -139,7 +139,7 @@
     S.playing = url;  // one sentence at a time
     const done = () => {
       URL.revokeObjectURL(url);
-      if (S.playing === url) { S.playing = null; next(); }
+      if (S.playing === url) { S.playing = null; next(); idle(); }
     };
     S.player.onended = done;
     S.player.src = url;
@@ -155,9 +155,23 @@
   function stop() {
     S.queue = []; S.playing = null;
     S.player.pause();
+    idle();
   }
 
-  window.lerniTalk = {play, stop, unlock};  // race.js unlocks it on a tap, to read aloud
+  // nothing left to say (ended, failed, or stopped): race.js lets Next go
+  function idle() {
+    if (!S.playing && !S.queue.length) document.dispatchEvent(new Event('lerni-talk-idle'));
+  }
+
+  // a race reading: replaces the one playing; an empty clip just says there's nothing to say
+  function say(v) {
+    if (!v) return;
+    S.queue = []; S.playing = null;
+    S.player.pause();
+    if (JSON.parse(v)[1]) play(v); else idle();
+  }
+
+  window.lerniTalk = {play, say, stop, unlock};  // race.js unlocks it on a tap, to read aloud
 
   // Talk or Type: switch every dock, and remember it on this device (just the choice)
   function mode(m, keep = true) {

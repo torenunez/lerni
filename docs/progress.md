@@ -4,15 +4,19 @@ Where things really stand, then a dated log, newest first. Completed work is rec
 
 Record each kind of "done" only when it actually happens, with the date: code built, content approved, app ready, a student session held. Passing tests show code behaves as specified; they don't make anything ready for a student.
 
-## Current state (2026-10-26, v3.28 on the home server: Versions 1 and 2 built: the conversation, MentalMaps, HTTPS, and voice; Version 3's race, garage, and Chat points)
+## Current state (2026-10-27, v3.29 on the home server: Versions 1 and 2 built: the conversation, MentalMaps, HTTPS, and voice; Version 3's race, garage, and Chat points)
 
-- **Built:** the student app's core (student accounts, sign-in, Lerni's conversations, the MentalMap with its tagger and logs kept a year, Upload and educator feedback, and the educator agent); `lerni serve` with a sign-in page and one app with a ☰ menu by role: an independent student's Chat, My MentalMap (an editable list, the picture, and Upload), and Settings; an educator's student page (a Suggest a goal box, goal progress this week by area, the folded list, and the picture), opened at sign-in, with Students in Settings; a supervised student's Chat, full screen, and Games (a race for points spent on real cars; educators race too); good answers in Chat earn points too. Hold to talk with spoken answers; a Claude usage warning and rest. Both servers run as LaunchAgents (`lerni service`). The admin tool (`lerni`, with `lerni student`, `lerni logs`, and `lerni feedback`). A [code manifest](code-manifest.md) of every file. Tests: 204 passed.
+- **Built:** the student app's core (student accounts, sign-in, Lerni's conversations, the MentalMap with its tagger and logs kept a year, Upload and educator feedback, and the educator agent); `lerni serve` with a sign-in page and one app with a ☰ menu by role: an independent student's Chat, My MentalMap (an editable list, the picture, and Upload), and Settings; an educator's student page (a Suggest a goal box, goal progress this week by area, the folded list, and the picture), opened at sign-in, with Students in Settings; a supervised student's Chat, full screen, and Games (a race for points spent on real cars; educators race too); good answers in Chat earn points too. Hold to talk with spoken answers; a Claude usage warning and rest. Both servers run as LaunchAgents (`lerni service`). The admin tool (`lerni`, with `lerni student`, `lerni logs`, and `lerni feedback`). A [code manifest](code-manifest.md) of every file. Tests: 206 passed.
 - **Designed:** the interest map, goals, the tagger, upload, feedback, and the supervised conversation ([specs/04-interest-map.md](../plans/specs/04-interest-map.md)); approved with PR #12. Harder races, practice on the map, and probes ([spec 09b](../plans/specs/09b-harder-races.md)).
 - **Not yet:** a recorded supervised session (the supervised student has used it informally).
 
 When something changes, update this section and add a log entry below.
 
 ## Log
+
+### 2026-10-27 (a focused race; v3.30 built)
+
+- Watching the student race, the admin saw the garage under the track pull their eyes away, and the right answer after a wrong one was small and easy to miss. Now the race keeps the screen: the track takes at most a third of its height, and My cars and the Showroom come back only after the finish. The question is bigger (22 px), the right answer and why 20 px. With sound on, a wrong answer's right answer is said by itself ("Not this time. It's 5. …"), on the last question too, and Next waits until it's said (20 seconds at most). The 🔊 button and the Read aloud switch are gone: a tap on the card reads it, and one "🔊 Sound: on/off" switch turns off every sound. Checked on a throwaway server at phone size: the garage hid within 0.3 s of Race again and came back at the finish; a wrong answer's why came back in about 1.5 s, Next was held while it played (about 4 s) and freed when it ended; with Sound off, nothing was said and Next wasn't held; a wrong last answer's why was said once, and a tap on the end note said it again. The iPad's own playback rules are the admin's check. Tests: 206 passed.
 
 ### 2026-10-26 (read-aloud questions; v3.29 built)
 

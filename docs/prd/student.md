@@ -109,7 +109,7 @@ The student doesn't always take Lerni's questions seriously; points give them a 
 
 As a student, I want to race my car by answering questions, so that I can win points for a cooler car.
 
-- WHEN the student opens Games and starts a race THE SYSTEM SHALL show their car and two rivals (cars from their garage and the Showroom, or silly bots), and 5 questions from their goals and interests, each with 3 choices to tap (now and then a bonus question is answered in their own words, typed or spoken, for more points); 🔊 reads a question and its choices aloud, and Read aloud reads each one by itself.
+- WHEN the student opens Games and starts a race THE SYSTEM SHALL show their car and two rivals (cars from their garage and the Showroom, or silly bots), and 5 questions from their goals and interests, each with 3 choices to tap (now and then a bonus question is answered in their own words, typed or spoken, for more points); a tap on the question reads it aloud, a wrong answer's right answer is said by itself before Next, one Sound switch silences it all, and the garage waits until the race is over.
 - WHEN they pick the right answer THE SYSTEM SHALL boost their car and slow a bot; WHEN they pick another THE SYSTEM SHALL slow their car and show the right answer with a short why.
 - WHEN the race ends THE SYSTEM SHALL award points by their place (4 or 5 right wins, in any car), once per race, and offer Race again.
 - WHEN questions are written THE SYSTEM SHALL avoid ideas asked recently, bring back missed ideas after a gap, and adjust difficulty per goal so the student gets about half to three quarters right.
