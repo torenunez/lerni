@@ -60,9 +60,9 @@ EDGE = ('<defs><filter id="lerni-edge" x="-10%" y="-10%" width="120%" height="12
         '<feDropShadow dx="0" dy="0" stdDeviation="0.7" flood-color="#2C2C2A" '
         'flood-opacity="0.9"/></filter></defs>')  # a thin dark edge, so a white car shows
 MUTE = ('<button type="button" id="lerni-mute" class="lerni-mute" '
-        'aria-label="Sound on">🔊</button>')  # race.js handles it
-READ = ('<button type="button" id="lerni-read" class="lerni-read" '
-        'aria-pressed="false">📖 Read aloud: off</button>')  # race.js: each question reads itself
+        'aria-pressed="true">🔊 Sound: on</button>')  # race.js: one switch for every sound
+WHY = ' data-why="1"'  # race.js says the right answer when it sees this
+HEAR = " · tap to hear"  # on a card the server can read aloud
 ORDINAL = {1: "1st", 2: "2nd", 3: "3rd"}
 NO_CLAUDE = "Games need Claude, which isn't set up on this server."
 
@@ -180,9 +180,9 @@ def _label(text: str, y: int) -> str:
             f'fill="#085041">{html.escape(name)}</text>')
 
 
-def track_svg(race: Race | None, car_id: str, garage: Garage, reads: bool = False) -> str:
+def track_svg(race: Race | None, car_id: str, garage: Garage, why: bool = False) -> str:
     """The track: the student's car and two rivals, placed by how far each has come; under it
-    🔇, and 📖 Read aloud when the server has a voice."""
+    the Sound switch. ``why``: a wrong answer's right answer is showing, for race.js to say."""
 
     full = QUESTIONS_PER_RACE * STEP_RIGHT * (race.boost if race else 1.0)  # 5 right in this car
 
@@ -195,7 +195,8 @@ def track_svg(race: Race | None, car_id: str, garage: Garage, reads: bool = Fals
     parts = [f'<svg viewBox="0 0 320 130" width="100%" role="img" aria-label="{where}" '
              f'data-race="{html.escape(race.id if race else "")}" '
              f'data-step="{race.answered if race else 0}" data-right="{race.right if race else 0}" '
-             f'data-total="{QUESTIONS_PER_RACE}" data-car="{html.escape(car_id)}">', EDGE,
+             f'data-total="{QUESTIONS_PER_RACE}" data-car="{html.escape(car_id)}"'
+             f'{WHY if why else ""}>', EDGE,
              '<rect width="320" height="130" rx="8" fill="#E1F5EE"/>',
              '<line x1="0" y1="43" x2="320" y2="43" stroke="#9FE1CB" stroke-dasharray="6 6"/>',
              '<line x1="0" y1="86" x2="320" y2="86" stroke="#9FE1CB" stroke-dasharray="6 6"/>',
@@ -211,8 +212,7 @@ def track_svg(race: Race | None, car_id: str, garage: Garage, reads: bool = Fals
     parts.append("</g>")
     names = ("You", *(r.name for r in rivals))
     parts += [_label(name, y) for name, y in zip(names, LANES, strict=False)]
-    switches = f'<div class="lerni-switches">{READ if reads else ""}{MUTE}</div>'
-    return "".join(parts) + "</svg>" + switches
+    return "".join(parts) + "</svg>" + f'<div class="lerni-switches">{MUTE}</div>'
 
 
 def _picture(c: Car) -> str:
@@ -289,18 +289,20 @@ def _why_first(race: Race, last: tuple[int, Turn] | None) -> bool:
             and last[0] == race.answered - 1)
 
 
-def question_card(race: Race, last: tuple[int, Turn] | None = None) -> tuple[str, bool]:
+def question_card(race: Race, last: tuple[int, Turn] | None = None,
+                  hear: str = "") -> tuple[str, bool]:
     """The question card, and whether its choices show: right after a wrong answer mid-race,
     the question just answered with its right answer and why (the next waits for Next);
-    otherwise the current question. The bonus shows its question alone, then its grade."""
+    otherwise the current question. The bonus shows its question alone, then its grade.
+    ``hear`` ends the first line of a card that can be heard."""
     if _why_first(race, last):  # a wrong answer's why comes before anything, the bonus too
         number, turn = last
-        return (f"Question {number + 1} of {QUESTIONS_PER_RACE}\n\n"
+        return (f"Question {number + 1} of {QUESTIONS_PER_RACE}{hear}\n\n"
                 f"**{race.questions[number].question}**\n\n"
                 f"Not this time: it's **{turn.answer}**. {turn.why}", False)
     if race.bonus_live and race.bonus is not None:  # typed or spoken: no choices
-        return (f"Question {race.answered + 1} of {QUESTIONS_PER_RACE}\n\n⭐ **Bonus: explain "
-                f"it in your own words!**\n\n**{race.bonus.question}**", False)
+        return (f"Question {race.answered + 1} of {QUESTIONS_PER_RACE}{hear}\n\n"
+                f"⭐ **Bonus: explain it in your own words!**\n\n**{race.bonus.question}**", False)
     if last is not None and not last[1].answer and race.bonus is not None and not race.done:
         number, turn = last  # a graded bonus waits for Next too, so its line is read
         return (f"Question {number + 1} of {QUESTIONS_PER_RACE}\n\n⭐ **{race.bonus.question}**"
@@ -311,7 +313,8 @@ def question_card(race: Race, last: tuple[int, Turn] | None = None) -> tuple[str
                 f"**{race.questions[number].question}**\n\n"
                 f"Not this time: it's **{turn.answer}**. {turn.why}", False)
     view = public(race)
-    return f"Question {view['number'] + 1} of {QUESTIONS_PER_RACE}\n\n**{view['question']}**", True
+    return (f"Question {view['number'] + 1} of {QUESTIONS_PER_RACE}{hear}\n\n"
+            f"**{view['question']}**", True)
 
 
 def _feedback(race: Race, turn: Turn, awarded: int, goal: str = "") -> str:
@@ -329,7 +332,8 @@ def _feedback(race: Race, turn: Turn, awarded: int, goal: str = "") -> str:
 def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
               header_stars: gr.Markdown, garage: Garage,
               speech: Speech | None = None) -> tuple[gr.Tab, Callable[..., list[Any]], list[Any]]:
-    """The Games tab: your car and the next goal, the race, then My cars and Showroom.
+    """The Games tab: your car and the next goal, the race, then My cars and Showroom
+    (between races only).
 
     Returns:
         The tab, a refresh for page load (no Claude call), and the components it fills.
@@ -348,10 +352,10 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
     with gr.Tab("Games", id="games", visible=False) as tab:
         hero = gr.HTML(elem_id="lerni-hero")  # your car and the next goal, when not racing
         track = gr.HTML(elem_id="lerni-track", visible=False)  # once a race starts
-        with gr.Row(elem_classes="lerni-qrow"):
-            question = gr.Markdown(elem_classes="lerni-question")
-            # 🔊 reads the question on screen; race.js presses it when Read aloud is on (v3.29)
-            speak = gr.Button("🔊", elem_id="lerni-read-go", scale=0, min_width=48, visible=False)
+        question = gr.Markdown(elem_classes="lerni-question")  # a tap reads it aloud (race.js)
+        # the hidden reader: race.js presses it for a tap on the card, or a wrong answer's why
+        speak = gr.Button(elem_id="lerni-read-go", elem_classes="lerni-hide")
+        hear = gr.State("")  # what it reads: "question", "why", or nothing
         read_clip = gr.Textbox(elem_id="lerni-clip-read", elem_classes="lerni-hide",
                                container=False)  # the clip for talk.js to play
         choices = [gr.Button(visible=False, elem_classes="lerni-choice") for _ in range(3)]
@@ -381,20 +385,22 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
             skip = gr.Button("Skip", size="sm")
         note = gr.Markdown(elem_id="lerni-note")
         go = gr.Button("Race!", variant="primary", elem_classes="lerni-go")
-        next_btn = gr.Button("Next", variant="primary", elem_classes="lerni-go", visible=False)
+        next_btn = gr.Button("Next", variant="primary", elem_classes="lerni-go", visible=False,
+                             elem_id="lerni-next")  # race.js holds it while the why is said
         shown = gr.State(("", 0))  # the race id and question number on screen
         # tiles are built once at startup, one per car in each list; each player sees theirs
-        mine_title = gr.Markdown("### 🅿️ My cars")
-        with gr.Row(elem_classes="lerni-tiles"):
-            mine = {c.id: tile(c) for c in garage.cars}
-        gr.Markdown("### 🛒 Showroom")
-        with gr.Row(elem_classes="lerni-tiles"):
-            shop = {c.id: shop_tile(c) for c in garage.cars}
+        with gr.Column() as garage_box:  # out of sight while racing, so the race has the screen
+            mine_title = gr.Markdown("### 🅿️ My cars")
+            with gr.Row(elem_classes="lerni-tiles"):
+                mine = {c.id: tile(c) for c in garage.cars}
+            gr.Markdown("### 🛒 Showroom")
+            with gr.Row(elem_classes="lerni-tiles"):
+                shop = {c.id: shop_tile(c) for c in garage.cars}
 
     outputs = [header_stars, hero, track, question, *choices, dock, answer_box, send, note, go,
                next_btn, shown, mine_title,
                *(x for pair in mine.values() for x in pair),
-               *(x for parts in shop.values() for x in parts), speak]
+               *(x for parts in shop.values() for x in parts), garage_box, hear]
 
     def garage_updates(p: Points | None) -> list[Any]:
         """The My cars title, then each car's tile and button in both lists."""
@@ -428,24 +434,28 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
             ask, buttons = "", [gr.update(visible=False) for _ in choices]
             go_update = gr.update(visible=True, value="Race again!" if race else "Race!")
             ref, waiting, live = (race.id, race.answered) if race else ("", 0), False, False
-            heard = False
+            # a wrong last answer: its right answer and why are in the note
+            why = race is not None and last is not None and bool(last[1].answer) and not (
+                last[1].right)
+            reads = "why" if why else ""
         else:
-            ask, show = question_card(race, last)
+            ask, show = question_card(race, last, HEAR if talks else "")
             # while the why shows, the hidden buttons don't get the next question yet
             buttons = ([gr.update(visible=True, value=c) for c in public(race)["choices"]] if show
                        else [gr.update(visible=False) for _ in choices])
             live = race.bonus_live and not _why_first(race, last)  # the dock, not Next
             go_update, ref, waiting = gr.update(visible=False), (race.id, race.answered), not (
                 show or live)
-            heard = show or live  # a question (or the bonus) is on the card: 🔊 can read it
+            why = _why_first(race, last)
+            reads = "why" if why else "question" if show or live else ""
         mine = stars(points, viewer)
         return [gr.update(value=mine, visible=bool(mine)),
                 gr.update(value=hero_html(garage, p), visible=race is None),
-                gr.update(value=track_svg(race, driving, garage, reads=talks),
+                gr.update(value=track_svg(race, driving, garage, why=talks and why),
                           visible=race is not None),
                 ask, *buttons, gr.update(visible=live), gr.update(value=""),
                 gr.update(interactive=True), line, go_update, gr.update(visible=waiting), ref,
-                *garage_updates(p), gr.update(visible=talks and heard)]
+                *garage_updates(p), gr.update(visible=race is None or race.done), reads]
 
     def viewer_of(request: gr.Request) -> Viewer | None:
         viewer = signin.viewer(request.username)  # re-read on every request
@@ -525,25 +535,29 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
             return screen(viewer, race, message)
         return handler
 
-    def on_speak(ref: tuple[str, int], request: gr.Request) -> Any:
-        # the question on screen, spoken; a fresh value each time, so a second tap replays it
+    def on_speak(ref: tuple[str, int], reads: str, request: gr.Request) -> Any:
+        # what the card shows, spoken; a fresh value each time, so a second tap replays it
         viewer = viewer_of(request)
-        audio = desk.read_aloud(viewer.username, ref[0], ref[1]) if desk and viewer else None
-        if not audio:
+        if desk is None or viewer is None or not reads:
             return gr.update()
+        audio = (desk.read_why(viewer.username, ref[0], ref[1] - 1) if reads == "why"
+                 else desk.read_aloud(viewer.username, ref[0], ref[1]))
+        if not audio:  # an empty clip for a why: Next stops waiting for it
+            return json.dumps([time.monotonic(), ""]) if reads == "why" else gr.update()
         return json.dumps([time.monotonic(), base64.b64encode(audio).decode()])
 
-    # "multiple": a tap while an older reading is still being made isn't ignored (Read aloud)
-    speak.click(on_speak, shown, read_clip, concurrency_limit=MAX_AT_ONCE,
+    # "multiple": a tap while an older reading is still being made isn't ignored
+    speak.click(on_speak, [shown, hear], read_clip, concurrency_limit=MAX_AT_ONCE,
                 trigger_mode="multiple", **PRIVATE)
     read_clip.change(None, read_clip, None,  # one reading at a time: a new one replaces it
-                     js="(v) => { window.lerniTalk?.stop(); window.lerniTalk?.play(v); }")
+                     js="(v) => { if (window.lerniRace?.wants() !== false) "
+                        "window.lerniTalk?.say(v); }")  # not after Sound off or moving on
     tab.select(on_open, None, outputs, **PRIVATE)
     # Race hides while questions are written, so extra taps can't start more races
     # the note says why it waits; progress only on the hidden Race button, so no "processing"
     # over the hero, the card, and every garage car ("hidden" still shows it on HTML)
-    go.click(lambda: [WAIT_LINE, gr.update(visible=False)], None, [note, go], queue=False,
-             **PRIVATE).then(
+    go.click(lambda: [WAIT_LINE, gr.update(visible=False), gr.update(visible=False)], None,
+             [note, go, garage_box], queue=False, **PRIVATE).then(
         on_go, None, outputs, concurrency_limit=MAX_AT_ONCE, show_progress_on=[go],
         **PRIVATE)  # side by side
     for i, button in enumerate(choices):

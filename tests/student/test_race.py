@@ -836,6 +836,30 @@ def test_a_question_is_read_aloud_once_and_only_on_screen(tmp_path):
     assert speech.spoken[-1] == "Bonus question. Why are halves equal?"
 
 
+def test_a_wrong_answer_is_said_out_loud_and_only_then(tmp_path):
+    # v3.30: after a wrong answer the right one and why are spoken, even on the last question
+    from tests.student.test_voice import FakeSpeech
+
+    desk, _ = desk_for(tmp_path, FakeQuizzer())
+    desk.speech = speech = FakeSpeech()
+    desk.prefill = lambda *args: None
+    ticks = iter(range(0, 1000, 10))
+    desk.clock = lambda: float(next(ticks))
+    race = desk.start("sam", supervised=True, today=TODAY)
+    q = race.questions[0]
+    desk.pick("sam", race.id, 0, (q.answer + 1) % 3)  # wrong
+    assert desk.read_why("sam", race.id, 0) == b"audio"
+    assert speech.spoken == [f"Not this time. It's {q.choices[q.answer]}. {q.why}"]
+    assert desk.read_why("sam", race.id, 0) == b"audio" and len(speech.spoken) == 1  # cached
+    desk.pick("sam", race.id, 1, race.questions[1].answer)  # right
+    assert desk.read_why("sam", race.id, 1) is None
+    assert desk.read_why("sam", race.id, 0) is None  # not the last answer any more
+    for n in range(2, QUESTIONS_PER_RACE):
+        last = race.questions[n]
+        desk.pick("sam", race.id, n, (last.answer + 1) % 3)  # the last one wrong: race over
+    assert race.done and desk.read_why("sam", race.id, QUESTIONS_PER_RACE - 1) == b"audio"
+
+
 def test_a_reading_that_finishes_after_an_answer_is_dropped(tmp_path):
     # review: a clip still being made when the student answered played over the next question
     desk, _ = desk_for(tmp_path, FakeQuizzer())

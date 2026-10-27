@@ -130,7 +130,12 @@ _CSS = """
   min-width: 0 !important; white-space: nowrap; }
 #lerni-earn { font-size: 16px; padding: 8px 12px !important; border-radius: 12px;
   background: var(--color-accent-soft); }
-.lerni-question p { font-size: 18px; }
+.lerni-question { cursor: pointer; }  /* a tap reads it aloud */
+.lerni-question p { font-size: 22px; }
+.lerni-question p:first-child { font-size: 16px; }  /* Question 2 of 5 · tap to hear */
+.lerni-question p + p + p { font-size: 20px; }  /* a wrong answer's right answer and why */
+#lerni-note p { font-size: 18px; }
+body[data-lerni-hold] #lerni-next { opacity: 0.5; pointer-events: none; }  /* while it's said */
 .lerni-choice, .lerni-go { min-height: 56px !important; font-size: 18px !important; }
 /* the garage: your car big at the top, then tiles, 2 across on a phone */
 #lerni-hero { text-align: center; font-size: 18px; }
@@ -149,14 +154,13 @@ _CSS = """
 .lerni-usd { font-size: 20px; font-weight: 700; }
 .lerni-like, .lerni-card details { font-size: 14px; }
 .lerni-buy { min-height: 48px !important; font-size: 16px !important; }
-#lerni-track svg { max-width: 820px; display: block; margin: 0 auto; }
-.lerni-switches { display: flex; justify-content: flex-end; align-items: center; gap: 8px; }
-.lerni-mute { display: block; margin: 2px 0 0; min-width: 44px; min-height: 44px;
-              font-size: 20px; background: none; border: none; cursor: pointer; }
-.lerni-read { min-height: 44px; padding: 0 12px; border-radius: 8px; font-size: 15px;
+/* the race in a third of the screen: shrunk to fit, its shape kept, centred */
+#lerni-track svg { width: 100%; max-width: 820px; max-height: 30dvh; display: block;
+  margin: 0 auto; }
+.lerni-switches { display: flex; justify-content: flex-end; align-items: center; }
+.lerni-mute { min-height: 44px; padding: 0 12px; border-radius: 8px; font-size: 15px;
               border: 1px solid var(--border-color-primary); background: none; cursor: pointer; }
-.lerni-read[aria-pressed="true"] { background: var(--color-accent-soft); }
-.lerni-qrow { align-items: center !important; flex-wrap: nowrap !important; }
+.lerni-mute[aria-pressed="true"] { background: var(--color-accent-soft); }
 /* MentalMap pictures (mapview.js): a tapped item lights up its links; the rest fades */
 .lerni-map .lerni-node { cursor: pointer; }
 .lerni-map svg.lerni-focus .lerni-node:not(.lerni-near) { opacity: 0.15; }

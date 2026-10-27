@@ -105,7 +105,7 @@ These notes are for the admin and educator, not the app; the in-app text stays s
 
 As an educator, I want to see and delete what the app remembers about a supervised student, so that I control what is kept.
 
-- WHEN the educator removes an entry THE SYSTEM SHALL keep it in Removed with its history, so Put back is a true undo; WHEN they press Delete for good THE SYSTEM SHALL delete that history from Lerni's storage, keeping only its name and kind so it isn't re-added; copies an outside service keeps follow that service's rules.
+- WHEN the educator removes an entry THE SYSTEM SHALL keep it in Removed with its history, so Put back is a true undo; WHEN they press Delete for good THE SYSTEM SHALL remove that history from the map, keeping only its name and kind so it isn't re-added, and say plainly that the change history and nightly copies still keep it (a full delete comes before anyone outside the family uses Lerni); copies an outside service keeps follow that service's rules.
 
 ## Settings (Versions 2, 4, and 6)
 
@@ -157,6 +157,7 @@ Running the admin tool. Editing app code or files directly.
 - 2026-10-11: The map is a **MentalMap** on screen (code and data keep `map`). Each MentalMap is an editable list: removing an interest steers Lerni away from it, Put back undoes a removal, and tapping an item shows its strength and bridges (v2.17, [spec 07](../../plans/specs/07-mentalmap-list.md)).
 - 2026-10-12: Interests can be grouped ("kind of"): a group's strength counts each day any of its kinds came up, so a specific shark never outgrows sharks. The tagger's groups count at once and a person can undo one; new group names come only from a person. Goals aren't grouped yet, and nothing rolls up into a mastery score.
 - 2026-10-12: Play and points are Version 3: a race in Games and answers in the conversation earn a student points to spend on cars; the educator can race to rehearse and sees a supervised student's points. Later versions move up one.
+- 2026-10-27: Delete for good says what it does: the change history and nightly copies keep the item; a full delete waits until before anyone outside the family uses Lerni (the admin's decision).
 
 ## Open questions
 

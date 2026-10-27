@@ -2,7 +2,7 @@
 
 Approved in conversation on 2026-10-20. Builds on [spec 09](09-play-and-points.md) (the race, points, the garage, the results log), the map ([spec 04](04-interest-map.md), [spec 08](08-kind-of.md)), and voice ([spec 05](05-voice.md)). Requirements: [student PRD, Version 3](../../docs/prd/student.md#version-3-play-and-points).
 
-**Why.** Since their first car upgrade, the supervised student has finished 1st in every race, with about 84% right. Races should be won by answers, pitched so about half to three quarters are right. Missed ideas should come back, and the student should sometimes explain an idea in their own words. What the race learns should show on the map, and the race should try ideas next to what the student loves, so Version 5 can suggest goals.
+**Why.** The races were too easy. Races should be won by answers, pitched so about half to three quarters are right. Missed ideas should come back, and the student should sometimes explain an idea in their own words. What the race learns should show on the map, and the race should try ideas next to what the student loves, so Version 5 can suggest goals.
 
 **Ships as**, one PR each, in this order:
 - v3.16: the race looks and sounds better;
@@ -10,9 +10,9 @@ Approved in conversation on 2026-10-20. Builds on [spec 09](09-play-and-points.m
 - v3.18: pitched right;
 - v3.22: missed ideas come back;
 - v3.24: the bonus round;
-- v3.31: probes.
+- v3.35: probes.
 
-v3.19 (race questions from the garage), v3.20 (a map journal and nightly backups), and v3.21 (Next after a wrong answer) sit between v3.18 and v3.22, v3.23 (Chat's goals take turns) between v3.22 and v3.24, v3.25 and v3.26 (the educator's page), v3.27 (the race starts fast), v3.28 (goal spacing and areas), v3.29 (read-aloud questions), and v3.30 (one Chat) between v3.24 and v3.31; each is designed in its own plan, not here. Each version's plan file (`plans/v3.NN-*.md`) is written when it starts, from this spec.
+v3.19 (race questions from the garage), v3.20 (a map journal and nightly backups), and v3.21 (Next after a wrong answer) sit between v3.18 and v3.22, v3.23 (Chat's goals take turns) between v3.22 and v3.24, v3.25 and v3.26 (the educator's page), v3.27 (the race starts fast), v3.28 (goal spacing and areas), v3.29 (read-aloud questions), v3.30 (a focused race), v3.31–v3.33 (review fixes), and v3.34 (one Chat) between v3.24 and v3.35; each is designed in its own plan, not here. Each version's plan file (`plans/v3.NN-*.md`) is written when it starts, from this spec.
 
 ## What people see
 
@@ -35,7 +35,7 @@ v3.19 (race questions from the garage), v3.20 (a map journal and nightly backups
   - a soft sputter on a wrong one;
   - a little fanfare at the finish, whatever the place.
 
-  A 🔇 button by the track turns them off on that device, and the choice is remembered there.
+  One Sound switch by the track turns them off on that device (and every spoken word), and the choice is remembered there.
 
 ### Practice on the map (v3.17)
 
@@ -60,7 +60,7 @@ v3.19 (race questions from the garage), v3.20 (a map journal and nightly backups
   - the car moves.
 - **Skip or a blank answer** takes a small step and earns 0. It's never called wrong.
 
-### "Want to find out more?" (v3.31)
+### "Want to find out more?" (v3.35)
 
 - **At the finish,** under the place, there are up to two topic buttons, such as "🌋 Earthquakes".
 - **A tap** opens Chat, where Lerni starts on that topic. The topic joins the map only if the student then talks about it.
@@ -112,15 +112,17 @@ v3.19 (race questions from the garage), v3.20 (a map journal and nightly backups
   - **Answers:** the roar or the sputter plays when the answer comes back.
   - **The finish:** the fanfare plays with the place.
   - **Length:** each clip plays from its start for at most its time in Numbers, then fades out over 0.3 s. The files aren't trimmed, since there's no audio tool on the home server and none is needed.
-  - **🔇:** the setting is kept in the browser's `localStorage` (a per-device setting, never text).
-  - With reduced motion, sounds still play. With 🔇, nothing does.
+  - **Sound:** the setting is kept in the browser's `localStorage` (a per-device setting, never text).
+  - With reduced motion, sounds still play. With Sound off, nothing does.
 
-### Read aloud (v3.29, `race.py`, `web/games.py`, `web/race.js`)
+### Read aloud and a focused race (v3.29–v3.30, `race.py`, `web/games.py`, `web/race.js`)
 
-- **🔊 beside the question** reads it with the server's voice: "Question 2. … 9, 8, or 6?" (the buttons have no letters), or "Bonus question. …". Only the question on screen can be read; each is spoken once and kept in memory with the race.
-- **📖 Read aloud: on/off,** beside 🔇 and remembered on the device, reads each new question by itself. 🔇 silences the race sounds only.
+- **A tap on the question card** reads it with the server's voice: "Question 2. … 9, 8, or 6?" (the buttons have no letters), or "Bonus question. …". The card says "· tap to hear". Only the question on screen can be read; each is spoken once and kept in memory with the race.
+- **After a wrong answer** the right answer and why are said by itself ("Not this time. It's 6. …"), on the last question too; Next waits until it's said (20 seconds at most). A tap on the card, or on the end note, says it again.
+- **🔊 Sound: on/off,** one switch under the track, remembered on the device, turns off the race sounds and every spoken word.
 - **A tap that moves on** stops a reading; the Race!, answer, and Next taps keep iPad Safari's player unlocked.
-- Added after this spec (the admin's decision of 2026-10-24): for a student who listens more easily than they read.
+- **The race has the screen:** the track takes at most a third of its height, and My cars and the Showroom show only between races.
+- Added after this spec (the admin's decisions of 2026-10-24 and 10-27): for a student who listens more easily than they read, and was distracted by the garage.
 
 ### Practice and link days (v3.17, `interests.py`, `results.py`, `web/mentallist.py`)
 
@@ -219,7 +221,7 @@ v3.19 (race questions from the garage), v3.20 (a map journal and nightly backups
 - **Speaking:** the card reuses Chat's Hold to talk (`talk.js`, `voice.py`). Whisper turns the speech into text, and the text is graded.
 - **Cost:** one small-model call per bonus.
 
-### Probes (v3.31, `race.py`, `results.py`, `web/games.py`)
+### Probes (v3.35, `race.py`, `results.py`, `web/games.py`)
 
 - **What the server gives Claude:** "Nearby ideas to try", built from:
   - the strong interests, with their groups and those groups' other kinds;
@@ -278,7 +280,7 @@ v3.19 (race questions from the garage), v3.20 (a map journal and nightly backups
   - last after question 3 gets the bonus;
   - each tier moves the car and awards once;
   - the answer is on disk nowhere.
-- **v3.31 (`test_race.py`):**
+- **v3.35 (`test_race.py`):**
   - a probe on the map or set aside is dropped;
   - a probe answer leaves the level alone;
   - a tap is logged.
@@ -286,7 +288,7 @@ v3.19 (race questions from the garage), v3.20 (a map journal and nightly backups
   - `eval_race.py` gains a level 1 vs level 5 case, a due-concept case, and a probe that stays clear of a set-aside;
   - a new `eval_bonus.py` has 3 cases: nailed, partly, and emojis graded none.
 - **Phone size:**
-  - a race with sound, 🔇, and a spoken bonus on the iPad;
+  - a race with sound, Sound off, and a spoken bonus on the iPad;
   - the Practice line on both MentalMap screens, as an educator with both lists right after a restart (rule 9).
 
 ## Decisions

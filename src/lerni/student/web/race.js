@@ -2,7 +2,9 @@
 // Gradio patches the same picture in place, so watch each car's data-x, and animate with
 // the Web Animations API, which leaves the style attribute Gradio rewrites alone.
 // Sounds: a roar for a right answer, a sputter for a wrong one, and a finish sound,
-// unlocked by the Race! tap (iPad Safari plays nothing before a tap), with a 🔇 button.
+// unlocked by the Race! tap (iPad Safari plays nothing before a tap), with one Sound switch.
+// With sound on, a wrong answer's right answer is said by itself (Next waits for it), and a
+// tap on the card reads it aloud.
 (() => {
   const last = {};  // "race id:lane" -> x
   const still = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -58,54 +60,67 @@
     if (!id || !before || step !== before.step + 1) return;
     play(step >= Number(svg.dataset.total) ? 'finish' : right > before.right ? 'roar' : 'sputter');
   }
-  // Read aloud (v3.29): this device's choice; when on, each new question presses 🔊 itself
-  function readOn() {
-    try { return localStorage.getItem('lerni-read') === 'on'; } catch { return false; }
+  // the right answer after a wrong one, said once per race and step; Next waits until it's done
+  const HOLD_MS = 20000;  // never stuck: Next comes back after this, said or not
+  let whyKey = '', holdTimer = 0;
+  // a reading asked for before Sound off or a tap that moved on is dropped when it arrives
+  let asked = 0, current = 0;
+  window.lerniRace = {wants: () => soundOn() && asked === current};
+  function hold(on) {
+    clearTimeout(holdTimer);
+    holdTimer = on ? setTimeout(() => hold(false), HOLD_MS) : 0;
+    if (on) document.body.dataset.lerniHold = '1'; else delete document.body.dataset.lerniHold;
   }
-  let readKey = '';  // the question last read by itself, so a redraw doesn't read it again
-  function autoRead() {
-    const speak = document.getElementById('lerni-read-go');
+  document.addEventListener('lerni-talk-idle', () => { if (holdTimer) hold(false); });
+  function autoWhy() {
+    const reader = document.getElementById('lerni-read-go');
     const svg = document.querySelector('#lerni-track svg[data-race]');
-    if (!readOn() || !speak || !speak.offsetParent || !svg) return;
+    if (!reader || !svg || !svg.dataset.why || !soundOn()) return;
     const key = `${svg.dataset.race}:${svg.dataset.step}`;
-    if (key === readKey) return;
-    readKey = key;
-    speak.click();
+    if (key === whyKey) return;  // a redraw doesn't say it again
+    whyKey = key;
+    hold(true);
+    asked = current;
+    reader.click();
   }
-  function readLabel() {
-    const button = document.getElementById('lerni-read');
+  function label() {
+    const button = document.getElementById('lerni-mute');
     if (!button) return;
-    const on = readOn(), text = `📖 Read aloud: ${on ? 'on' : 'off'}`;
+    const on = soundOn(), text = on ? '🔊 Sound: on' : '🔇 Sound: off';
     if (button.textContent === text) return;  // writing it anyway would wake the observer again
     button.textContent = text;
     button.setAttribute('aria-pressed', String(on));
   }
-  function label() {
-    readLabel();
-    const button = document.getElementById('lerni-mute');
-    if (!button) return;
-    const on = soundOn(), text = on ? '🔊' : '🔇';
-    if (button.textContent === text) return;  // writing it anyway would wake the observer again
-    button.textContent = text;
-    button.setAttribute('aria-label', on ? 'Sound on' : 'Sound off');
-  }
   document.addEventListener('click', event => {
+    const at = selector => event.target.closest?.(selector);
+    if (at('#lerni-next') && holdTimer) {  // still saying the right answer
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
     // Race! unlocks sound; an answer tap wakes it again after the iPad paused it
-    if (event.target.closest?.('.lerni-go, .lerni-choice')) unlock();
-    // a tap that moves on stops a reading; any tap here lets the next one play on the iPad
-    if (event.target.closest?.('.lerni-go, .lerni-choice, #lerni-read-go, #lerni-read')) {
-      if (!event.target.closest('#lerni-read-go')) window.lerniTalk?.stop();
-      // only when reading: otherwise the player stays untouched (an iPad's music keeps playing)
-      if (readOn() || event.target.closest('#lerni-read-go, #lerni-read')) window.lerniTalk?.unlock();
+    if (at('.lerni-go, .lerni-choice')) unlock();
+    if (at('.lerni-go, .lerni-choice')) {  // moving on stops a reading
+      current++;
+      window.lerniTalk?.stop();
+      hold(false);
+      // inside the tap, so the iPad lets the right answer play later; with sound off the
+      // player stays untouched (an iPad's music keeps playing)
+      if (soundOn()) window.lerniTalk?.unlock();
     }
-    if (event.target.closest?.('#lerni-read')) {
-      try { localStorage.setItem('lerni-read', readOn() ? 'off' : 'on'); } catch {}
-      readKey = '';  // switched on: read the question showing now
-      readLabel();
-      autoRead();
+    // a tap on the card (or on the note when it holds the right answer) reads it aloud
+    const svg = document.querySelector('#lerni-track svg[data-race]');
+    const card = at('.lerni-question') || (at('#lerni-note') && svg?.dataset.why);
+    const reader = document.getElementById('lerni-read-go');
+    if (card && reader && soundOn() && !at('a, button, details')) {
+      window.lerniTalk?.unlock();
+      asked = current;
+      reader.click();
     }
-    if (event.target.closest?.('#lerni-mute')) {
-      try { localStorage.setItem('lerni-sound', soundOn() ? 'off' : 'on'); } catch {}
+    if (at('#lerni-mute')) {
+      const on = !soundOn();
+      try { localStorage.setItem('lerni-sound', on ? 'on' : 'off'); } catch {}
+      if (!on) { current++; window.lerniTalk?.stop(); hold(false); }  // off silences a reading too
       unlock();
       label();
     }
@@ -131,7 +146,7 @@
     const svg = document.querySelector('#lerni-track svg[data-race]');
     if (svg) listen(svg);
     label();
-    autoRead();
+    autoWhy();
   }).observe(document.body, {childList: true, subtree: true, attributes: true,
-                              attributeFilter: ['data-x', 'data-step']});
+                              attributeFilter: ['data-x', 'data-step', 'data-why']});
 })();

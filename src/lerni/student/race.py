@@ -17,7 +17,7 @@ import threading
 import time
 import uuid
 from collections import deque
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field, replace
 from datetime import date, timedelta
 from difflib import SequenceMatcher
@@ -639,7 +639,7 @@ class RaceDesk:
         self.grader = grader  # grades bonus answers; with none, races have no bonus
         self.log = log  # the conversation log: only a worrying bonus answer goes there
         self.speech = speech  # reads questions aloud (v3.29); None: no 🔊
-        self._spoken: dict[str, tuple[str, dict[int, bytes]]] = {}  # username: (race, clips)
+        self._spoken: dict[str, tuple[str, dict[Any, bytes]]] = {}  # username: (race, clips)
         self._map_now: InterestMap = InterestMap()  # the map while grading, for set-asides
         self.garage = garage  # the cars in reach give questions real numbers (v3.19)
         self.checker = checker  # answers each question blind; a disagreement drops it
@@ -988,26 +988,42 @@ class RaceDesk:
     def read_aloud(self, username: str, race_id: str, number: int) -> bytes | None:
         """The question on screen spoken (memory only, once per question), or None for a stale
         or forged tap, no voice, or a voice that failed."""
+        return self._say(username, race_id, number,
+                         lambda r: not r.done and number == r.answered, spoken_question)
+
+    def read_why(self, username: str, race_id: str, number: int) -> bytes | None:
+        """The right answer and why, spoken after a wrong answer to question ``number`` (the
+        last one answered, even the race's last), or None otherwise."""
+        def wrong(r: Race) -> bool:  # the answer just given, and it was wrong
+            return number == r.answered - 1 and r.marks[number:number + 1] == [False]
+
+        def said(r: Race) -> str:
+            q = r.questions[number]
+            return for_speaking(f"Not this time. It's {q.choices[q.answer]}. {q.why}")
+
+        return self._say(username, race_id, ("why", number), wrong, said)
+
+    def _say(self, username: str, race_id: str, key: Any, still: Callable[[Race], bool],
+             text_of: Callable[[Race], str]) -> bytes | None:
+        # spoken once per race and key, kept in memory; checked again after speaking
         with self._lock:
             race = self._races.get(username)
-            if (self.speech is None or race is None or race.id != race_id or race.done
-                    or number != race.answered):
+            if self.speech is None or race is None or race.id != race_id or not still(race):
                 return None
             race_of, clips = self._spoken.get(username, ("", {}))
-            if race_of == race.id and number in clips:
-                return clips[number]
-            text = spoken_question(race)
+            if race_of == race.id and key in clips:
+                return clips[key]
+            text = text_of(race)
         try:
             audio = self.speech.speak(text)  # about a second on the Mac
         except SpeechUnavailable:
             return None
         with self._lock:
-            if (self._races.get(username) is not race or race.done
-                    or number != race.answered):
+            if self._races.get(username) is not race or not still(race):
                 return None  # answered or dropped while speaking: never over the next card
             race_of, clips = self._spoken.get(username, ("", {}))
             self._spoken[username] = (race.id, {**(clips if race_of == race.id else {}),
-                                                number: audio})  # a new race starts fresh
+                                                key: audio})  # a new race starts fresh
         return audio
 
     def grading(self, race_id: str) -> bool:
