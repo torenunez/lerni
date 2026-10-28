@@ -33,7 +33,7 @@ For admins: run these commands from a repository checkout with Python 3.11 or ne
 
 ```bash
 python3 -m venv .venv && source .venv/bin/activate
-pip install -e ".[dev,student]"   # [student] adds Gradio; without it, the web tests are skipped
+pip install -e ".[dev,student]"   # the tests need [student] (Gradio and the Claude SDK)
 pytest
 lerni --help
 ```

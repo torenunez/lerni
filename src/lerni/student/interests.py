@@ -142,21 +142,39 @@ NOT_PLURAL = frozenset({
     "chess", "gas", "bus", "lens", "plus", "yes", "this", "his", "has", "was", "does", "always",
 })
 ES_AFTER = ("s", "x", "z", "ch", "sh", "o")  # buses, boxes, volcanoes; never plan → planes
+IRREGULAR = {"child": "children", "mouse": "mice", "person": "people", "man": "men",
+             "woman": "women", "tooth": "teeth", "foot": "feet", "goose": "geese"}
+_SINGULAR = {many: one for one, many in IRREGULAR.items()}
 
 
 def _singulars(word: str) -> list[str]:
     """What a plural word could be one of: "cars" → car, "buses" → bus; never under 3 letters."""
     last = word.split(" ")[-1]
+    if last in _SINGULAR:  # children → child, mice → mouse
+        return [word[: -len(last)] + _SINGULAR[last]]
     if last in NOT_PLURAL or last.endswith("ss") or not word.endswith("s"):
         return []
     out = [word[:-2]] if word.endswith("es") and word[:-2].endswith(ES_AFTER) else []
+    if word.endswith("ies") and word[-4:-3] not in "aeiou":  # puppies → puppy
+        out.append(word[:-3] + "y")
+    if word.endswith("ves"):  # wolves → wolf, knives → knife
+        out += [word[:-3] + "f", word[:-3] + "fe"]
     out.append(word[:-1])
     return [w for w in out if len(w.split(" ")[-1]) >= 3]
 
 
 def _plurals(word: str) -> list[str]:
-    """The plural forms of a name: car → cars; bus → buses (and buss, harmless)."""
-    return [word + "s"] + ([word + "es"] if word.endswith(ES_AFTER) else [])
+    """The plural forms of a name: car → cars; bus → buses (and buss, harmless); puppy →
+    puppies; wolf → wolves; child → children."""
+    last = word.split(" ")[-1]
+    out = [word + "s"] + ([word + "es"] if word.endswith(ES_AFTER) else [])
+    if last in IRREGULAR:
+        out.append(word[: -len(last)] + IRREGULAR[last])
+    if word.endswith("y") and word[-2:-1] not in "aeiou":
+        out.append(word[:-1] + "ies")
+    if word.endswith(("f", "fe")):
+        out.append(word.removesuffix("e")[:-1] + "ves")
+    return out
 
 
 def _squash(name: str) -> str:
@@ -166,7 +184,7 @@ def _squash(name: str) -> str:
 
 def same_name(a: str, b: str) -> bool:
     """Whether two names are one, ignoring case, spacing and punctuation, and a plural
-    "s" or "es" (car, cars, buses; race cars, racecars)."""
+    (car, cars, buses, puppies, wolves, children; race cars, racecars)."""
     a, b = a.strip().casefold(), b.strip().casefold()
     sa, sb = _squash(a), _squash(b)
     if a == b or (sa and sa == sb):

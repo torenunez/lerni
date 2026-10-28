@@ -31,6 +31,7 @@ from claude_agent_sdk import (
 )
 
 from lerni.student.conversation import ConversationUnavailable, Turn
+from lerni.student.fence import fence
 from lerni.student.race import QUIZ_SCHEMA, RaceUnavailable
 from lerni.student.tagging import TAG_SCHEMA
 from lerni.student.upload import UPLOAD_SCHEMA, UploaderUnavailable, UploadSource
@@ -275,7 +276,7 @@ class ClaudeCodeUploader:
     async def _propose(self, system: str, source: UploadSource) -> dict[str, Any]:
         # empty working folder: no project files or settings in reach
         with tempfile.TemporaryDirectory(prefix="lerni-upload-") as workdir:
-            prompt = "Sort these notes into interests and goals.\n\n" + source.text
+            prompt = "Sort these notes into interests and goals.\n\n" + fence("notes", source.text)
             pdf_path: Path | None = None
             if source.pdf is not None:
                 pdf_path = Path(workdir) / "notes.pdf"

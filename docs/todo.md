@@ -12,8 +12,8 @@ Open tasks by who does the work. The educator and admin tracks run in parallel: 
 
 ### Later: Version 1 MVP
 
-- [ ] Talk with Lerni yourself for a few days and watch your own MentalMap; tell the admin what's confusing, or mention it in the MentalMaps chat.
-- [ ] Try the conversation with the supervised-student voice, then sit beside the supervised student for a short first conversation. Keep notes private, or mention them in the MentalMaps chat.
+- [ ] Talk with Lerni yourself for a few days and watch your own MentalMap; tell the admin what's confusing, or mention it in the Suggest box.
+- [ ] Try the conversation with the supervised-student voice, then sit beside the supervised student for a short first conversation. Keep notes private, or mention them in the Suggest box.
 
 ### Later: Version 4 Remembering
 
@@ -56,9 +56,9 @@ Versions 1 and 2 also need sessions, not code: the educator sets goals, rehearse
 ### Later
 
 - [ ] A second backup place for a broken disk: an external drive (`lerni backup run --to …` in the agent) or Time Machine. The nightly copies (v3.20) are on the same disk.
-- [ ] After a week of family use: compare each feature's Claude use (Chat, tagger, Upload, MentalMaps chat) and decide whether any can move to a cheaper model.
+- [ ] After a week of family use: compare each feature's Claude use (Chat, tagger, Upload, the Suggest box) and decide whether any can move to a cheaper model.
 - [ ] Try the voice with the students before deciding whether a hosted voice (Inworld, about $18 a month) is worth it; a hosted service means student audio leaves the house, so it needs the educator's agreement first.
-- [ ] MentalMaps chat: PDFs (its Claude call takes text only; Upload on My MentalMap still reads PDFs), and the same chat on My MentalMap once educators have used it.
+- [ ] Suggest box: PDFs (its Claude call takes text only; Upload on My MentalMap still reads PDFs).
 - [ ] `feedback.summarize` is unused since v2.14 (the chat writes the note); remove it with its test, or use it for chat feedback.
 - [ ] After the first supervised sessions, if useful: count redirects per session, and a "flag this reply" button for the adult nearby.
 - [ ] Try Chat on the iPad and a phone with the keyboard open; then a VoiceOver and keyboard-only pass.
@@ -99,7 +99,7 @@ Versions 1 and 2 also need sessions, not code: the educator sets goals, rehearse
 - [ ] **Tagging:** two quick answers' tags can land out of order, and a subject change counts against the newest bridge rather than the one in the answer before.
 - [ ] **MentalMap list:** a redraw trusts the owner set by the last checked handler and doesn't re-check the viewer (every edit does).
 - [ ] **Games:** v3.30 review: on a wrong last answer the finish fanfare and the spoken right answer overlap; turning Sound on with a why showing says it at once, which the iPad may refuse if no tap unlocked the player (Next still comes back). v3.21 review: tapping a garage tile while a wrong answer's why shows skips to the next question (the waiting card lives only on screen); a tap within 0.8 s is dropped silently; v3.16 review: with the driven car gone from the garage file, the starter can be both the drawn car and the slow rival; the Sound switch shows "on" for a frame after each redraw while off; an all-caps rival name of about 18 letters runs a little past its label pill; the MentalMaps points line refreshes only on picking a student. Garage file: a car removed from it disappears from its owners (add a `retired` flag instead, and say so in the admin reference); one route-test path is rewritten by the test client; the picture route serves any signed-in account, has no `nosniff`, and caches a replaced picture for a day. `lift_car.swift`: a bad crop number crashes it, it keeps every foreground object (a person beside the car), writes full size, and may ignore a photo's rotation.
-- [ ] **Groups:** a group ticked in the MentalMaps chat can bring back a removed name without Put back, and one failing member skips the rest; the tagger can link any two names on the map without seeing the existing groups, and "Not under" blocks one direction only.
+- [ ] **Groups:** a group ticked in the Suggest box can bring back a removed name without Put back, and one failing member skips the rest; the tagger can link any two names on the map without seeing the existing groups, and "Not under" blocks one direction only.
 - [ ] **Services (v3.11 review):** the crossed-data and port checks know only the default folders and ports (read the other agent file instead), and don't catch both servers run from one checkout.
 - [ ] **Names (v3.12 review):** spellings that differ only in spaces and punctuation count as one, so a set-aside "he'll" also blocks "hell" and "its" blocks "it's" (it errs toward blocking); a merge that finds a group loop keeps the first link it sees, which may not be the true one.
 - [ ] **Memory (v3.10 review):** a resting item named only in the tagger's `about` doesn't wake (harmless: the tagger sees only the map); the concept ledger rewrites its whole file on each right answer and is never trimmed (about 600 KB a year); the map block can keep "Goals to bridge toward" with every goal line too long to fit.

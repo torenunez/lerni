@@ -25,6 +25,7 @@ from importlib import metadata
 from typing import Any, Protocol
 
 from lerni.student.concepts import MAX_CONCEPT, START_LEVEL, ConceptStore, normalize
+from lerni.student.fence import fence
 from lerni.student.garage import Car, Garage
 from lerni.student.interests import (
     InterestMap,
@@ -50,7 +51,7 @@ BONUS_PER_SET = 2  # explain-it questions written with each set of 10
 GOALS_PER_SET = 5  # goals a set of 10 covers, about 2 questions each (v3.28)
 PICK_DAYS = 14  # "least practiced" counts questions over this many days
 BONUS_AT = 3  # the bonus takes question 4's place (0-based)
-BONUS_ODDS = 4  # when not last, about 1 race in this many has one
+BONUS_ODDS = 4  # about 1 race in this many has one, ahead or behind
 BONUS_POINTS = {"nailed": 15, "partly": 7, "tried": 2, "none": 0, "care": 0}
 CARE = "care"  # a worrying answer: the caring words, no points, kept in the conversation log
 MAX_KEY_IDEA = 60
@@ -449,7 +450,7 @@ class Race:
     boost: float = 1.0  # the car's gas boost (garage.boost)
     car: str = ""  # the car it started in
     bonus: Bonus | None = None  # an explain-it question this race may offer at question 4
-    lucky: bool = False  # drawn at the start: offered even when not last
+    lucky: bool = False  # drawn at the start: the only way a bonus comes
     bonus_live: bool = False  # question 4 is the bonus now
     bonus_tier: str = ""  # how it went, once answered
     marks: list[bool | None] = field(default_factory=list)  # each answer; None: the bonus
@@ -503,9 +504,9 @@ def answer(race: Race, number: int, choice: int) -> Turn | None:
 
 
 def _offer_bonus(race: Race) -> None:
-    # question 4 becomes the bonus when they're last, or the race drew it at the start
+    # question 4 becomes the bonus only when the race drew it: being last never pays more
     if (race.bonus is not None and not race.bonus_tier and race.answered == BONUS_AT
-            and not race.done and (place(race) == 3 or race.lucky)):
+            and not race.done and race.lucky):
         race.bonus_live = True
 
 
@@ -637,10 +638,9 @@ class RaceDesk:
                  grader: Checker | None = None, log: Any = None, speech: Any = None) -> None:
         self.quizzer, self.maps, self.points, self.concepts = quizzer, maps, points, concepts
         self.grader = grader  # grades bonus answers; with none, races have no bonus
-        self.log = log  # the conversation log: only a worrying bonus answer goes there
+        self.log = log  # the conversation log: only a worrying or ungraded bonus answer goes there
         self.speech = speech  # reads questions aloud (v3.29); None: no 🔊
         self._spoken: dict[str, tuple[str, dict[Any, bytes]]] = {}  # username: (race, clips)
-        self._map_now: InterestMap = InterestMap()  # the map while grading, for set-asides
         self.garage = garage  # the cars in reach give questions real numbers (v3.19)
         self.checker = checker  # answers each question blind; a disagreement drops it
         self.results = results  # how each answer went, as labels and numbers
@@ -692,10 +692,9 @@ class RaceDesk:
             return questions
         letters = [p.get("pick") if isinstance(p, dict) else p for p in picks]  # after its work
         agreed = [q for q, pick in zip(questions, letters, strict=True) if pick == "ABC"[q.answer]]
-        if len(agreed) * 2 < len(questions):  # most "wrong": the check is broken, not the set
+        if len(agreed) < len(questions):  # a doubted question never races (the admin, v3.31)
             print(f"Race check disagreed with {len(questions) - len(agreed)} of "
-                  f"{len(questions)}; kept them.", flush=True)
-            return questions
+                  f"{len(questions)}.", flush=True)
         return agreed
 
     def _write(self, username: str, supervised: bool, today: date) -> list[Question]:
@@ -927,27 +926,28 @@ class RaceDesk:
                 held.remove(fit[0])
             return fit[0] if fit else None
 
-    def _grade(self, bonus: Bonus, text: str, supervised: bool) -> tuple[str, str]:
-        """(tier, line) for a bonus answer; never raises."""
+    def _grade(self, bonus: Bonus, text: str, supervised: bool,
+               m: InterestMap) -> tuple[str, str, bool]:
+        """(tier, line, graded) for a bonus answer, checked against this student's map;
+        graded is False when the grader couldn't read it. Never raises."""
         if not re.search(r"[^\W_]", text):  # blank, or emojis only: nothing to grade
-            return "none", NO_BONUS
+            return "none", NO_BONUS, True
         voice = "Voice: simple, everyday words." if supervised else "Voice: clear and friendly."
-        answer = text[:MAX_ANSWER].replace("</answer>", "")  # fenced: information only
         prompt = (f"{voice}\nQuestion: {bonus.question}\nKey ideas: "
-                  f"{'; '.join(bonus.key_ideas)}\n<answer>\n{answer}\n</answer>")
+                  f"{'; '.join(bonus.key_ideas)}\n{fence('answer', text[:MAX_ANSWER])}")
         try:
             got = self.grader.write(GRADE_SYSTEM, prompt, GRADE_SCHEMA,
                                     timeout=GRADE_TIMEOUT_SECONDS) if self.grader else None
         except Exception:  # never show what went wrong inside
             got = None
-        if isinstance(got, dict) and got.get("care") is True:  # worry first, whatever else came
-            return CARE, CARE_LINE
+        if isinstance(got, dict) and (got.get("care") is True or got.get("tier") == CARE):
+            return CARE, CARE_LINE, True  # worry first, however it was said
         if not isinstance(got, dict) or got.get("tier") not in BONUS_POINTS:
-            return "tried", COULD_NOT_READ
+            return "tried", COULD_NOT_READ, False
         line = _plain(got.get("line"))
-        if not line or len(line) > MAX_WHY or mentions_set_aside(self._map_now, line):
+        if not line or len(line) > MAX_WHY or mentions_set_aside(m, line):
             line = "Thanks for explaining!"  # a long or off-limits line: a plain one instead
-        return str(got["tier"]), line
+        return str(got["tier"]), line, True
 
     def answer_bonus(self, username: str, race_id: str, number: int, text: str,
                      supervised: bool = True) -> tuple[Race | None, Turn | None, int]:
@@ -961,8 +961,8 @@ class RaceDesk:
             self._grading.add(race.id)
         try:
             bonus = race.bonus
-            self._map_now = self.maps.get(username)
-            tier, line = self._grade(bonus, text or "", supervised)  # waits for Claude
+            tier, line, graded = self._grade(bonus, text or "", supervised,
+                                             self.maps.get(username))  # waits for Claude
             with self._lock:  # dropped or replaced while grading: it no longer counts
                 turn = bonus_move(race, tier, line) if self._races.get(username) is race else None
                 if turn is not None:  # the question it replaced goes back for another race
@@ -977,10 +977,10 @@ class RaceDesk:
         awarded = self.points.award(username, f"{race.id}-bonus", "race", BONUS_POINTS[tier]) \
             if BONUS_POINTS[tier] else 0
         self._bonus_effects(username, race, bonus, tier)
-        if tier == CARE and self.log is not None:  # like Chat: the admin reads it in the logs
-            try:
+        if (tier == CARE or not graded) and self.log is not None:  # the admin reads it in the
+            try:  # logs: a worry, or one that couldn't be read and might be
                 self.log.write(username, {"question": bonus.question, "answer": text,
-                                          "tags": {"bonus": CARE}})
+                                          "tags": {"bonus": CARE if tier == CARE else "ungraded"}})
             except OSError:
                 pass
         return race, turn, awarded

@@ -65,20 +65,20 @@ As an educator, I want to see a supervised student's map, so that I know what th
 
 - WHEN the educator signs in with one supervised student THE SYSTEM SHALL open that student's page, named after them in the menu (with several, a picker on MentalMaps), and draw their map: interests in green and goals in coral, each sized by its strength (a group counts its kinds), goals outlined until they come up, linked items drawn together, and bridges as dashed lines.
 - WHEN the educator taps an item in the list THE SYSTEM SHALL show its strength (strong, growing, faint, or not yet, from the days it came up in the last 30), the facts behind it, and its bridges and related items, each a tap away with the link's own strength (a bridge also says how it held).
-- WHEN an interest is a kind of another (a Great White is a kind of shark) THE SYSTEM SHALL list it under that group and count the group's strength from the days any of its kinds came up, each day once; the tagger may group names already on the map, and the educator can put an item under a group, take it out (it stays out), or tick a group the MentalMaps chat proposes.
+- WHEN an interest is a kind of another (a Great White is a kind of shark) THE SYSTEM SHALL list it under that group and count the group's strength from the days any of its kinds came up, each day once; the tagger may group names already on the map, and the educator can put an item under a group, take it out (it stays out), or tick a group the Suggest box proposes.
 
 ### Story: Give feedback
 
 As an educator, I want to tell the admin what to change in plain words, so that the app improves without me learning anything technical.
 
-- WHEN the educator mentions something about the app in the MentalMaps chat THE SYSTEM SHALL propose it as a feedback item, and save it for the admin only when the educator ticks it.
+- WHEN the educator mentions something about the app in the Suggest box THE SYSTEM SHALL propose it as a feedback item, and save it for the admin only when the educator ticks it.
 - WHEN feedback is saved THE SYSTEM SHALL never act on it: no change to the map, the goals, or the app. The admin reads it in the terminal and makes changes by hand.
 
 ### What to watch for in the first sessions
 
 - The student uses the iPad with you beside them. Offer it in one sentence; they may say no or stop at any time.
 - Plan on 5–10 minutes. Finishing is not the goal.
-- Afterward, keep brief private notes, or tell the MentalMaps chat (it goes to the admin): what caught their interest, what confused them, what to change. Keep what happened separate from what you think it means.
+- Afterward, keep brief private notes, or tell the Suggest box (it goes to the admin): what caught their interest, what confused them, what to change. Keep what happened separate from what you think it means.
 
 | Watch for | It shapes |
 |---|---|

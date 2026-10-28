@@ -41,7 +41,7 @@ flowchart LR
     claude -- "4 answer" --> screen
     convo -. "5 the exchange" .-> tagger["Claude: tagger<br/>(small, background)"]
     tagger -. "6 interests, links, bridge" .-> check["Server checks"] --> maps
-    edev["MentalMaps chat"] -- "ticked proposals" --> maps
+    edev["Suggest box"] -- "ticked proposals" --> maps
 ```
 
 1. The student sends a question.
@@ -50,6 +50,14 @@ flowchart LR
 4. The answer is shown; the conversation stays in memory.
 5. In the background, a small call gets this exchange, Lerni's previous message, and the map's entries (never the username).
 6. It returns which entries the exchange was about, new interests, links, and whether a bridge happened. The server applies only the observations the [spec](../plans/specs/04-interest-map.md#the-agent) lists (people control goals), under one lock per map, and throws away a result that started before a person's edit. The exchange and what the tagger did go to the log. A failure is ignored.
+
+## How a race works
+
+1. **Pick:** up to 5 goals that are due (by their spacing boxes and subject areas), plus ideas due for review.
+2. **Write and check:** the small model writes questions at each goal's level, with the cars in reach. The server drops repeats, set-asides and off-map goals, and a blind second call answers each one. Only questions it agrees with race; with too few after two tries, the race isn't ready and isn't counted.
+3. **Hold:** checked questions wait in memory for the next race.
+4. **Answer:** each tap moves the cars; about 1 race in 4, question 4 is a bonus explained in the student's own words, graded by the small model.
+5. **Record:** points, results (labels and numbers), the concept ledger with its review dates, and each goal's level. Question text never reaches disk.
 
 ## Trust boundaries
 
@@ -67,7 +75,7 @@ flowchart LR
 
   No educator screen shows an independent student's map. That is privacy by default, not a protection: the educator can reset a password and sign in as that student, and the admin can read every file.
 - **Devices are a household rule:** a supervised student's iPad is signed in only as that student.
-- **Outbound:** all calls go to Claude (Anthropic) through the admin's Claude account, behind an adapter: the answers, the tagger, the upload, the educator agent, and the feedback themes (`lerni feedback --summary`). No account details are added, and Claude Code keeps no transcript on the server (Anthropic's retention still applies). A supervised student's conversation through this consumer account is a choice the admin made for the household; an API key is not planned, revisit before anyone outside the family uses the app ([spec](../plans/specs/04-interest-map.md#supervised-students)). Version 1 has no automatic reply check; the adult nearby and the logs are the check.
+- **Outbound:** all calls go to Claude (Anthropic) through the admin's Claude account, behind an adapter: the answers, the tagger, the upload, the educator agent, race questions with their blind answer check, bonus grading, and the feedback themes (`lerni feedback --summary`). Race questions are written ahead, at server start and sign-in, not only on a tap. No account details are added, and Claude Code keeps no transcript on the server (Anthropic's retention still applies). A supervised student's conversation through this consumer account is a choice the admin made for the household; an API key is not planned, revisit before anyone outside the family uses the app ([spec](../plans/specs/04-interest-map.md#supervised-students)). Version 1 has no automatic reply check; the adult nearby and the logs are the check.
 - **Files:** uploads are read and deleted at once; maps, feedback, and logs are written only by the server. Gradio serves cached files to anyone signed in, so nothing private is ever served as a file: the map picture is inline.
 
 ## Who owns each kind of data
@@ -76,7 +84,7 @@ flowchart LR
 |---|---|---|---|
 | Student accounts | Username, display name, kind, password hash, session version, educator flag, archived flag | Educator manages; an independent student changes their own name and password | `~/.lerni/student/students/` (built) |
 | Interest map | Entries (name, other names it was called, interest or goal, notes, days, mentions, explained and bounce dates) and links (related, bridge, or kind of; a group's strength counts its kinds' days, worked out on read), plus removed items' history, resting items, and name pairs a person split | Educators for a supervised student; an independent student for their own | `~/.lerni/student/maps/<username>.json` (built) |
-| Map journal | Every map change: who made it (the tagger, a person, Upload, the MentalMaps chat, the admin) and the items before and after, so any change can be undone and a map rebuilt | The server, at each map change; the admin reads and undoes with `lerni map` | `~/.lerni/student/maps/<username>.events.jsonl` |
+| Map journal | Every map change: who made it (the tagger, a person, Upload, the Suggest box, the admin) and the items before and after, so any change can be undone and a map rebuilt | The server, at each map change; the admin reads and undoes with `lerni map` | `~/.lerni/student/maps/<username>.events.jsonl` |
 | Conversation | The last 20 messages, one ongoing conversation per student | That student | Memory only; gone on New conversation or a server restart (built) |
 | Conversation logs | Each exchange and what the tagger did with it | The admin reads them (`lerni logs`) | `~/.lerni/student/logs/<username>/<date>.jsonl`, deleted after a year (built) |
 | Feedback | Date, who, which map, the note the educator ticked | The admin processes it | `~/.lerni/student/feedback.jsonl` (built) |
@@ -93,7 +101,7 @@ flowchart LR
 
 If a change would break one of these, stop and ask.
 
-1. **People decide goals; agents may propose them.** A goal and its notes are saved only from a person's tap, through the server: a signed-in educator for a supervised student, or an independent student for their own map. Claude's proposals (Upload, the MentalMaps chat, later suggestions) stay proposals until a person accepts them. The tagger can add interests, time, and links, never goals. Feedback is summarized, never acted on.
+1. **People decide goals; agents may propose them.** A goal and its notes are saved only from a person's tap, through the server: a signed-in educator for a supervised student, or an independent student for their own map. Claude's proposals (Upload, the Suggest box, later suggestions) stay proposals until a person accepts them. The tagger can add interests, time, and links, never goals. Feedback is summarized, never acted on.
 2. **Conversation text is kept only in the logs** on the home server, for a year while the family hosts it: never in other files, server output, or browser storage. Also saved: accounts; maps (short names drawn from the conversation, plus dates and links; a full map rests its least-seen interest, history and all, until it comes up again); feedback (an educator's own words and a summary).
 3. **The safety rules come last** in every prompt, after the persona and the map, and live in code, not in the editable persona files. That's how the prompt is built, not a guarantee of what Claude says; the evals check it.
 4. **Home network only.** See [trust boundaries](#trust-boundaries).
@@ -105,7 +113,7 @@ If a change would break one of these, stop and ask.
 
 Every code file, one line each: [code manifest](code-manifest.md).
 
-- `src/lerni/student/`: `students.py` (accounts and passwords), `signin.py` (the signed cookie, who's signed in), `jsonfiles.py` (atomic JSON writes), `conversation.py` (the prompt, in-memory conversations), `personas/` (one starting persona per kind of student), `interests.py` (the map, its rules, and its store), `tagging.py` (the tagger and the map keeper), `logs.py` (7-day conversation logs), `educator_agent.py` (the educator agent), `upload.py` (reading notes, checking and adding proposals), `points.py` (points and cars, each award once), `garage.py` (cartoon cars and the private garage file), `race.py` (race questions, rules, and the race desk), `concepts.py` (every idea asked and how it went, so questions don't repeat), `results.py` (each race answer and finish, as labels and numbers), `feedback.py` (educator feedback, summarized, never acted on), `service.py` (the LaunchAgents), `adapters/claude_code.py` (Claude through the Claude Code CLI, including the tagger; prototype).
+- `src/lerni/student/`: `students.py` (accounts and passwords), `signin.py` (the signed cookie, who's signed in), `jsonfiles.py` (atomic JSON writes), `conversation.py` (the prompt, in-memory conversations), `personas/` (one starting persona per kind of student), `interests.py` (the map, its rules, and its store), `tagging.py` (the tagger and the map keeper), `logs.py` (conversation logs, kept a year), `educator_agent.py` (the educator agent), `upload.py` (reading notes, checking and adding proposals), `points.py` (points and cars, each award once), `garage.py` (cartoon cars and the private garage file), `race.py` (race questions, rules, and the race desk), `concepts.py` (every idea asked and how it went, so questions don't repeat), `results.py` (each race answer and finish, as labels and numbers), `feedback.py` (educator feedback, summarized, never acted on), `service.py` (the LaunchAgents), `adapters/claude_code.py` (Claude through the Claude Code CLI, including the tagger; prototype).
 - `src/lerni/student/web/`: the Gradio screens: `signin_page.py`, `main.py` (a ☰ menu of sections by role), `ask.py`, `maps.py` (My MentalMap), `educator.py` (MentalMaps), `mapdraw.py` (the inline SVG picture: linked items cluster, goals in the middle), `mapview.js` (tap an item to light its links and open it in the list; pinch to zoom), `mentallist.py` (the MentalMap list), `games.py` and `race.js` (Games: the race and the garage), `accounts.py`.
 - `src/lerni/cli.py`, `commands/`, `db.py`, `sm2.py`: the admin tool, plus `commands/student.py`, `commands/logs.py`, and `commands/feedback.py` for the student app.
 - `tests/`: pytest, fakes only. `plans/`: build plans and specs.
