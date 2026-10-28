@@ -48,8 +48,7 @@ v3.19 (race questions from the garage), v3.20 (a map journal and nightly backups
 ### The bonus round (v3.24)
 
 - **When:**
-  - if the student is 3rd after question 3, question 4 is a bonus;
-  - otherwise about 1 race in 4 has one, as question 4;
+  - about 1 race in 4 has one, as question 4 (since v3.31, being 3rd alone doesn't bring it);
   - never more than one a race.
 - **The card:**
   - "⭐ Bonus: explain it in your own words!", then a question such as "Explain how a car's brakes slow it down";
@@ -207,7 +206,7 @@ v3.19 (race questions from the garage), v3.20 (a map journal and nightly backups
 - **Safety:**
   - The grader follows the supervised safety rules.
   - With `care`, the card shows Chat's caring words instead of feedback, with no points; that one answer goes to the conversation log, as a worrying message in Chat does, and the results log gets a `care` flag (changed in review).
-- **Failures:** if the call fails or takes over 20 seconds, the answer counts as tried: "Lerni couldn't read that one. ⭐ +2 for trying."
+- **Failures:** if the call fails or takes over 20 seconds, the answer counts as tried: "Lerni couldn't read that one. ⭐ +2 for trying." Since v3.31 the answer also goes to the conversation log, tagged ungraded, for the admin.
 - **Movement:**
   - nailed and partly move the car like a right answer, and count as right for the place;
   - nailed also slows both rivals a second time;
@@ -251,7 +250,7 @@ v3.19 (race questions from the garage), v3.20 (a map journal and nightly backups
 - **Only people set goals:**
   - levels, review, probes, and the Practice line never add or change a goal;
   - a probe topic joins the map only from the student's words in Chat.
-- **Text on disk:** the concept file holds labels, ids, dates, and numbers; the results log, labels and numbers. Question texts and bonus answers stay in memory.
+- **Text on disk:** the concept file holds labels, ids, dates, and numbers; the results log, labels and numbers. Question texts and bonus answers stay in memory, except a worrying or unread bonus answer, which goes to the conversation log (v3.31).
 - **Safety and set-asides:** the supervised safety rules cover questions, bonus questions, grading, and probes. Nothing set aside is asked, probed, or reviewed.
 - **Points:** no point is taken away for a wrong or skipped answer, and no screen compares one student with another.
 
@@ -279,7 +278,7 @@ v3.19 (race questions from the garage), v3.20 (a map journal and nightly backups
 - **v3.24 (`test_race.py`):**
   - a race that drew the bonus gets it at question 4 (since v3.31, being last alone doesn't);
   - each tier moves the car and awards once;
-  - the answer is on disk nowhere.
+  - the answer is on disk nowhere but the conversation log, and only when worrying or unread.
 - **v3.35 (`test_race.py`):**
   - a probe on the map or set aside is dropped;
   - a probe answer leaves the level alone;

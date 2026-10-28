@@ -741,6 +741,20 @@ def test_a_bonus_answer_is_graded_safely(tmp_path):
 
     assert any("hurting me" in r.get("answer", "") for r in ConversationLog(tmp_path).read("sam"))
     assert '"care": true' in (tmp_path / "results" / "sam.jsonl").read_text()
+    # regression (review): an unread answer was logged only after the points, so a failed
+    # award lost it
+    grader.reply = None
+    used, race = race.bonus, desk.start("sam", supervised=True)
+    race.bonus = used  # the writer's bonuses are used up: the last one again
+    for n in range(3):
+        desk.pick("sam", race.id, n, race.questions[n].answer)
+    assert race.bonus_live
+    real = desk.points.award
+    desk.points.award = lambda *args, **kwargs: (_ for _ in ()).throw(OSError("disk"))
+    with pytest.raises(OSError):
+        desk.answer_bonus("sam", race.id, 3, "nobody helps me qqmark")  # couldn't be read
+    desk.points.award = real
+    assert any("qqmark" in r.get("answer", "") for r in ConversationLog(tmp_path).read("sam"))
 
 
 def test_held_questions_last_past_midnight(tmp_path):

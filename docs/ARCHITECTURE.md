@@ -57,7 +57,7 @@ flowchart LR
 2. **Write and check:** the small model writes questions at each goal's level, with the cars in reach. The server drops repeats, set-asides and off-map goals, and a blind second call answers each one. Only questions it agrees with race; with too few after two tries, the race isn't ready and isn't counted.
 3. **Hold:** checked questions wait in memory for the next race.
 4. **Answer:** each tap moves the cars; about 1 race in 4, question 4 is a bonus explained in the student's own words, graded by the small model.
-5. **Record:** points, results (labels and numbers), the concept ledger with its review dates, and each goal's level. Question text never reaches disk.
+5. **Record:** points, results (labels and numbers), the concept ledger with its review dates, and each goal's level. Question text never reaches disk; a worrying or unread bonus answer goes to the conversation log for the admin.
 
 ## Trust boundaries
 

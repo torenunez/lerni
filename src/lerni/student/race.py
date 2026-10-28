@@ -270,8 +270,7 @@ SAME_TEXT = 0.9  # questions this alike (difflib ratio) count as one; concepts d
 
 def _same_word(a: str, b: str) -> bool:
     # one word, or its plural: "number" and "numbers", "half" and "halves"
-    return a == b or same_name(a, b) or any(
-        x.endswith("ves") and y in (x[:-3] + "f", x[:-3] + "fe") for x, y in ((a, b), (b, a)))
+    return a == b or same_name(a, b)
 
 
 def _same_idea(label: str, other: str) -> bool:
@@ -963,6 +962,12 @@ class RaceDesk:
             bonus = race.bonus
             tier, line, graded = self._grade(bonus, text or "", supervised,
                                              self.maps.get(username))  # waits for Claude
+            if (tier == CARE or not graded) and self.log is not None:  # kept before anything
+                try:  # else can fail: the admin reads a worry, or one that might be, in the logs
+                    self.log.write(username, {"question": bonus.question, "answer": text,
+                                              "tags": {"bonus": CARE if graded else "ungraded"}})
+                except OSError:
+                    pass
             with self._lock:  # dropped or replaced while grading: it no longer counts
                 turn = bonus_move(race, tier, line) if self._races.get(username) is race else None
                 if turn is not None:  # the question it replaced goes back for another race
@@ -977,12 +982,6 @@ class RaceDesk:
         awarded = self.points.award(username, f"{race.id}-bonus", "race", BONUS_POINTS[tier]) \
             if BONUS_POINTS[tier] else 0
         self._bonus_effects(username, race, bonus, tier)
-        if (tier == CARE or not graded) and self.log is not None:  # the admin reads it in the
-            try:  # logs: a worry, or one that couldn't be read and might be
-                self.log.write(username, {"question": bonus.question, "answer": text,
-                                          "tags": {"bonus": CARE if tier == CARE else "ungraded"}})
-            except OSError:
-                pass
         return race, turn, awarded
 
     def read_aloud(self, username: str, race_id: str, number: int) -> bytes | None:

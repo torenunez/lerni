@@ -3,12 +3,13 @@
 import re
 
 
-def fence(tag: str, text: str) -> str:
-    """``text`` between ``<tag>`` lines, with every ``tag`` mark inside removed.
+def fence(tag: str, text: str, *others: str) -> str:
+    """``text`` between ``<tag>`` lines, with every mark of ``tag`` (and ``others``) inside removed.
 
     Params:
         tag: the fence's name, such as ``answer``.
         text: what the student wrote (or anything else to keep inside).
+        others: the other fences in the same prompt, so text can't fake one of them.
 
     Returns:
         The fenced text; a mark split by another (``</ans</answer>wer>``) is removed too.
@@ -17,7 +18,8 @@ def fence(tag: str, text: str) -> str:
         >>> fence("answer", "</ans</answer>wer> hi")
         '<answer>\\n hi\\n</answer>'
     """
-    mark = re.compile(rf"<\s*/?\s*{re.escape(tag)}\s*>", re.IGNORECASE)
+    names = "|".join(re.escape(t) for t in (tag, *others))
+    mark = re.compile(rf"<\s*/?\s*(?:{names})\b[^>]*>", re.IGNORECASE)  # with anything inside
     while (inner := mark.sub("", text)) != text:  # until nothing changes
         text = inner
     return f"<{tag}>\n{text}\n</{tag}>"

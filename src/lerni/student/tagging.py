@@ -107,8 +107,9 @@ def tagger_input(m: InterestMap, previous: str, question: str, answer: str) -> s
         last = bridges[-1]  # links are in order of recency
         parts += [f"Last bridge: {m.get(last.a).name} → {m.get(last.b).name}", ""]
     if previous:
-        parts += ["Lerni's previous message:", fence("lerni", previous), ""]
-    parts += ["Student:", fence("student", question), "", "Lerni:", fence("lerni", answer)]
+        parts += ["Lerni's previous message:", fence("lerni", previous, "student"), ""]
+    parts += ["Student:", fence("student", question, "lerni"), "",
+              "Lerni:", fence("lerni", answer, "student")]  # neither can fake the other
     return "\n".join(parts)
 
 

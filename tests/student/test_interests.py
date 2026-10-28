@@ -605,3 +605,8 @@ def test_every_plural_meets_its_set_aside():
             remove(m, _interest(m, gone).id)
             assert mentions_set_aside(m, f"tell me about {said} today"), (gone, said)
     assert not same_name("toy", "ties") and not same_name("plan", "planes")
+    # regression (review): "ves" read as "fe" merged caves with cafe and saves with safe
+    assert not same_name("caves", "cafe") and not same_name("saves", "safe")
+    m = InterestMap()
+    remove(m, _interest(m, "cafe").id)
+    assert not mentions_set_aside(m, "bats live in caves")

@@ -145,6 +145,7 @@ ES_AFTER = ("s", "x", "z", "ch", "sh", "o")  # buses, boxes, volcanoes; never pl
 IRREGULAR = {"child": "children", "mouse": "mice", "person": "people", "man": "men",
              "woman": "women", "tooth": "teeth", "foot": "feet", "goose": "geese"}
 _SINGULAR = {many: one for one, many in IRREGULAR.items()}
+FE_WORDS = ("knife", "wife", "life")  # "ves" back to "fe" only here, never caves → cafe
 
 
 def _singulars(word: str) -> list[str]:
@@ -158,7 +159,9 @@ def _singulars(word: str) -> list[str]:
     if word.endswith("ies") and word[-4:-3] not in "aeiou":  # puppies → puppy
         out.append(word[:-3] + "y")
     if word.endswith("ves"):  # wolves → wolf, knives → knife
-        out += [word[:-3] + "f", word[:-3] + "fe"]
+        out.append(word[:-3] + "f")
+        if word.endswith(tuple(w[:-2] + "ves" for w in FE_WORDS)):
+            out.append(word[:-3] + "fe")
     out.append(word[:-1])
     return [w for w in out if len(w.split(" ")[-1]) >= 3]
 
@@ -172,7 +175,7 @@ def _plurals(word: str) -> list[str]:
         out.append(word[: -len(last)] + IRREGULAR[last])
     if word.endswith("y") and word[-2:-1] not in "aeiou":
         out.append(word[:-1] + "ies")
-    if word.endswith(("f", "fe")):
+    if word.endswith("f") or word.endswith(FE_WORDS):
         out.append(word.removesuffix("e")[:-1] + "ves")
     return out
 

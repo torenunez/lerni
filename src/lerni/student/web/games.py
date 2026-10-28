@@ -492,12 +492,17 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
 
     def recover(request: gr.Request) -> list[Any]:
         # after an error: the race as it stands, or the start; never "Lerni is reading…"
-        viewer = viewer_of(request)
+        oops = "Something went wrong. Tap Race! 🏁"
         try:
+            viewer = viewer_of(request)
             race = desk.current(viewer.username) if desk and viewer else None
-        except Exception:  # noqa: BLE001 - never show what went wrong inside
-            race = None
-        return screen(viewer, race, "" if race else "Something went wrong. Tap Race! 🏁")
+            return screen(viewer, race, "" if race else oops)
+        except Exception:  # noqa: BLE001 - the screen failed too: just the Race button
+            ups = [gr.update() for _ in outputs]
+            for part, up in ((note, gr.update(value=oops)), (go, gr.update(visible=True)),
+                             (send, gr.update(interactive=True))):
+                ups[next(n for n, c in enumerate(outputs) if c is part)] = up
+            return ups
 
     def on_choice(i: int) -> Callable[..., list[Any]]:
         def handler(ref: tuple[str, int], request: gr.Request) -> list[Any]:
