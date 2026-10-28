@@ -591,3 +591,22 @@ def test_tied_goals_take_turns_in_chat():
     assert shown(TODAY) == shown(TODAY) and len(shown(TODAY)) == 8  # steady all day
     seen = set().union(*(shown(TODAY + timedelta(days=n)) for n in range(14)))
     assert seen == {g.name for g in goals[1:]}  # every tied goal gets a turn; A has a bridge
+
+
+def test_every_plural_meets_its_set_aside():
+    # regression (review): wolves, puppies, knives, and children got past their set-asides
+    pairs = [("wolf", "wolves"), ("puppy", "puppies"), ("knife", "knives"), ("leaf", "leaves"),
+             ("child", "children"), ("mouse", "mice"), ("tooth", "teeth"),
+             ("race car", "race cars")]
+    for one, many in pairs:
+        assert same_name(one, many) and same_name(many, one), (one, many)
+        for gone, said in ((one, many), (many, one)):
+            m = InterestMap()
+            remove(m, _interest(m, gone).id)
+            assert mentions_set_aside(m, f"tell me about {said} today"), (gone, said)
+    assert not same_name("toy", "ties") and not same_name("plan", "planes")
+    # regression (review): "ves" read as "fe" merged caves with cafe and saves with safe
+    assert not same_name("caves", "cafe") and not same_name("saves", "safe")
+    m = InterestMap()
+    remove(m, _interest(m, "cafe").id)
+    assert not mentions_set_aside(m, "bats live in caves")

@@ -58,8 +58,9 @@ def test_the_bonus_card_asks_then_shows_its_grade():
     race = new_race([HALF] * QUESTIONS_PER_RACE)
     race.bonus = Bonus("Fractions", "halves", "Explain why two halves make a whole.",
                        ("two equal parts", "together they make one"))
+    race.lucky = True  # the race drew a bonus
     for n in range(3):
-        turn = answer(race, n, 1)  # last after three: the bonus
+        turn = answer(race, n, 1)
     # regression (review): a wrong third answer showed the bonus at once, never its why
     text, choices = question_card(race, (2, turn))
     assert "Question 3 of 5" in text and "it's **4**" in text and not choices  # then Next

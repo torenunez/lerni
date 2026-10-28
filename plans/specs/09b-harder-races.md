@@ -48,8 +48,7 @@ v3.19 (race questions from the garage), v3.20 (a map journal and nightly backups
 ### The bonus round (v3.24)
 
 - **When:**
-  - if the student is 3rd after question 3, question 4 is a bonus;
-  - otherwise about 1 race in 4 has one, as question 4;
+  - about 1 race in 4 has one, as question 4 (since v3.31, being 3rd alone doesn't bring it);
   - never more than one a race.
 - **The card:**
   - "⭐ Bonus: explain it in your own words!", then a question such as "Explain how a car's brakes slow it down";
@@ -75,7 +74,7 @@ v3.19 (race questions from the garage), v3.20 (a map journal and nightly backups
 | Level change | after 5 answers on a goal since its last change: 4 or 5 right goes one harder, 2 or fewer one easier |
 | Review | a miss is due in 1 day; then right answers move it to 3 days, then 7; a right answer at 7 days retires it |
 | Due ideas | at most 2 a race |
-| Bonus | about 1 race in 4, or when last after question 3; nailed 15 ⭐, partly 7, a real try 2, otherwise 0 |
+| Bonus | about 1 race in 4, drawn at the start (v3.31: never for being last); nailed 15 ⭐, partly 7, a real try 2, otherwise 0 |
 | Probes | 1 question per race; up to 2 topic buttons after it |
 
 ## How it works
@@ -190,7 +189,7 @@ v3.19 (race questions from the garage), v3.20 (a map journal and nightly backups
 - **Writing:** the same call that writes 10 questions writes up to 2 bonus questions (`bonus`: goal, concept, question, `key_ideas` of 2 or 3 short phrases).
   - **Checks:** like a question (lengths, goal on the map, set-asides, repeats); a key idea is at most 60 characters.
   - **Kept:** in memory only, like questions.
-- **When:** the server decides at question 4: the student is 3rd, or this race drew the 1-in-4 chance at its start.
+- **When:** at question 4, if this race drew the 1-in-4 chance at its start; being 3rd no longer brings it (v3.31), so losing on purpose never pays more.
   - The multiple-choice question it replaces goes back into the set.
   - With no bonus written, the race goes on as normal.
 - **Grading:** one small-model call (`GRADE_SYSTEM`, `GRADE_SCHEMA`) with:
@@ -207,7 +206,7 @@ v3.19 (race questions from the garage), v3.20 (a map journal and nightly backups
 - **Safety:**
   - The grader follows the supervised safety rules.
   - With `care`, the card shows Chat's caring words instead of feedback, with no points; that one answer goes to the conversation log, as a worrying message in Chat does, and the results log gets a `care` flag (changed in review).
-- **Failures:** if the call fails or takes over 20 seconds, the answer counts as tried: "Lerni couldn't read that one. ⭐ +2 for trying."
+- **Failures:** if the call fails or takes over 20 seconds, the answer counts as tried: "Lerni couldn't read that one. ⭐ +2 for trying." Since v3.31 the answer also goes to the conversation log, tagged ungraded, for the admin.
 - **Movement:**
   - nailed and partly move the car like a right answer, and count as right for the place;
   - nailed also slows both rivals a second time;
@@ -251,7 +250,7 @@ v3.19 (race questions from the garage), v3.20 (a map journal and nightly backups
 - **Only people set goals:**
   - levels, review, probes, and the Practice line never add or change a goal;
   - a probe topic joins the map only from the student's words in Chat.
-- **Text on disk:** the concept file holds labels, ids, dates, and numbers; the results log, labels and numbers. Question texts and bonus answers stay in memory.
+- **Text on disk:** the concept file holds labels, ids, dates, and numbers; the results log, labels and numbers. Question texts and bonus answers stay in memory, except a worrying or unread bonus answer, which goes to the conversation log (v3.31).
 - **Safety and set-asides:** the supervised safety rules cover questions, bonus questions, grading, and probes. Nothing set aside is asked, probed, or reviewed.
 - **Points:** no point is taken away for a wrong or skipped answer, and no screen compares one student with another.
 
@@ -277,9 +276,9 @@ v3.19 (race questions from the garage), v3.20 (a map journal and nightly backups
   - a due concept isn't refused as a repeat;
   - a right answer at 7 days retires it.
 - **v3.24 (`test_race.py`):**
-  - last after question 3 gets the bonus;
+  - a race that drew the bonus gets it at question 4 (since v3.31, being last alone doesn't);
   - each tier moves the car and awards once;
-  - the answer is on disk nowhere.
+  - the answer is on disk nowhere but the conversation log, and only when worrying or unread.
 - **v3.35 (`test_race.py`):**
   - a probe on the map or set aside is dropped;
   - a probe answer leaves the level alone;

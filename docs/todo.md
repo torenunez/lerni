@@ -12,8 +12,8 @@ Open tasks by who does the work. The educator and admin tracks run in parallel: 
 
 ### Later: Version 1 MVP
 
-- [ ] Talk with Lerni yourself for a few days and watch your own MentalMap; tell the admin what's confusing, or mention it in the MentalMaps chat.
-- [ ] Try the conversation with the supervised-student voice, then sit beside the supervised student for a short first conversation. Keep notes private, or mention them in the MentalMaps chat.
+- [ ] Talk with Lerni yourself for a few days and watch your own MentalMap; tell the admin what's confusing, or mention it in the Suggest box.
+- [ ] Try the conversation with the supervised-student voice, then sit beside the supervised student for a short first conversation. Keep notes private, or mention them in the Suggest box.
 
 ### Later: Version 4 Remembering
 
@@ -56,9 +56,9 @@ Versions 1 and 2 also need sessions, not code: the educator sets goals, rehearse
 ### Later
 
 - [ ] A second backup place for a broken disk: an external drive (`lerni backup run --to …` in the agent) or Time Machine. The nightly copies (v3.20) are on the same disk.
-- [ ] After a week of family use: compare each feature's Claude use (Chat, tagger, Upload, MentalMaps chat) and decide whether any can move to a cheaper model.
+- [ ] After a week of family use: compare each feature's Claude use (Chat, tagger, Upload, the Suggest box) and decide whether any can move to a cheaper model.
 - [ ] Try the voice with the students before deciding whether a hosted voice (Inworld, about $18 a month) is worth it; a hosted service means student audio leaves the house, so it needs the educator's agreement first.
-- [ ] MentalMaps chat: PDFs (its Claude call takes text only; Upload on My MentalMap still reads PDFs), and the same chat on My MentalMap once educators have used it.
+- [ ] Suggest box: PDFs (its Claude call takes text only; Upload on My MentalMap still reads PDFs).
 - [ ] `feedback.summarize` is unused since v2.14 (the chat writes the note); remove it with its test, or use it for chat feedback.
 - [ ] After the first supervised sessions, if useful: count redirects per session, and a "flag this reply" button for the adult nearby.
 - [ ] Try Chat on the iPad and a phone with the keyboard open; then a VoiceOver and keyboard-only pass.
@@ -99,7 +99,7 @@ Versions 1 and 2 also need sessions, not code: the educator sets goals, rehearse
 - [ ] **Tagging:** two quick answers' tags can land out of order, and a subject change counts against the newest bridge rather than the one in the answer before.
 - [ ] **MentalMap list:** a redraw trusts the owner set by the last checked handler and doesn't re-check the viewer (every edit does).
 - [ ] **Games:** v3.30 review: on a wrong last answer the finish fanfare and the spoken right answer overlap; turning Sound on with a why showing says it at once, which the iPad may refuse if no tap unlocked the player (Next still comes back). v3.21 review: tapping a garage tile while a wrong answer's why shows skips to the next question (the waiting card lives only on screen); a tap within 0.8 s is dropped silently; v3.16 review: with the driven car gone from the garage file, the starter can be both the drawn car and the slow rival; the Sound switch shows "on" for a frame after each redraw while off; an all-caps rival name of about 18 letters runs a little past its label pill; the MentalMaps points line refreshes only on picking a student. Garage file: a car removed from it disappears from its owners (add a `retired` flag instead, and say so in the admin reference); one route-test path is rewritten by the test client; the picture route serves any signed-in account, has no `nosniff`, and caches a replaced picture for a day. `lift_car.swift`: a bad crop number crashes it, it keeps every foreground object (a person beside the car), writes full size, and may ignore a photo's rotation.
-- [ ] **Groups:** a group ticked in the MentalMaps chat can bring back a removed name without Put back, and one failing member skips the rest; the tagger can link any two names on the map without seeing the existing groups, and "Not under" blocks one direction only.
+- [ ] **Groups:** a group ticked in the Suggest box can bring back a removed name without Put back, and one failing member skips the rest; the tagger can link any two names on the map without seeing the existing groups, and "Not under" blocks one direction only.
 - [ ] **Services (v3.11 review):** the crossed-data and port checks know only the default folders and ports (read the other agent file instead), and don't catch both servers run from one checkout.
 - [ ] **Names (v3.12 review):** spellings that differ only in spaces and punctuation count as one, so a set-aside "he'll" also blocks "hell" and "its" blocks "it's" (it errs toward blocking); a merge that finds a group loop keeps the first link it sees, which may not be the true one.
 - [ ] **Memory (v3.10 review):** a resting item named only in the tagger's `about` doesn't wake (harmless: the tagger sees only the map); the concept ledger rewrites its whole file on each right answer and is never trimmed (about 600 KB a year); the map block can keep "Goals to bridge toward" with every goal line too long to fit.
@@ -111,6 +111,7 @@ Versions 1 and 2 also need sessions, not code: the educator sets goals, rehearse
 - [ ] **Safety:** nothing tells the educator when a student says they're hurt (a content-free "check in with the student" flag would); a sad-but-not-harm message ("my dog died") isn't clearly covered; the disclosure eval runs each case once and checks keywords.
 - [ ] **Menu:** the closed drawer is still reachable by keyboard and VoiceOver.
 - [ ] **Accounts:** two educators archiving each other leaves none (recover with `lerni student add`); password hashing runs inside the account write lock; a live session can guess its current password in Settings without the sign-in delay; a non-ASCII cookie gives a 500; an archived account is detectable by timing; `/signin` has no Origin check and `/signout` is a GET; the data folder is created 0755; a password change doesn't sign out other devices.
+- [ ] **v3.31 review:** when the stricter answer check leaves too few questions, the agreed ones are thrown away and the next Race tap writes and checks a whole set again (hold them for the next try).
 - [ ] **v3.7–v3.29 reviews (small):** repeats match only the last 40 labels and a paraphrase gets through (Version 4's embeddings); a tagger `same_as` can fold an interest into a goal (allow interest to interest only); Chat's set-aside line lists 8 names and no aliases; journal lines grow large and nothing is trimmed; goal boxes, "missed lately", and reviews each define "got it" differently; `service status` exits 0 when stopped; `install` replaces the agent file before it starts; the educator's reword suggestion comes pre-ticked and hides the old notes; voice failures while running aren't logged, and Whisper's "Thank you." on near-silence reaches Claude; read-aloud: quick taps start several `say` runs, and `*` or `>` are read oddly; the race card still says more ⚡ moves the car farther; Rich markup in a log tail crashes the failure report; `usd: true` loads as $1.
 - [ ] **Tests:** the role check on each educator handler, cookie expiry, and a supervised cookie calling an educator event over HTTP.
 

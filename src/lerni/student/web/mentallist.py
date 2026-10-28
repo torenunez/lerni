@@ -87,14 +87,15 @@ def put_back_item(maps, students, viewer, requested, name: str, expected: str | 
 
 
 def delete_item(maps, students, viewer, requested, name: str, expected: str | None = None) -> str:
-    """Delete a removed item's history for good; its name stays so it's never re-added."""
+    """Delete a removed item's history from the map; its name stays so it's never re-added.
+    The change history and nightly copies still have it, and the toast says so."""
     return _act(
         maps,
         students,
         viewer,
         requested,
         lambda m: delete_for_good(m, name or ""),
-        "Deleted for good.",
+        "Removed from the map. Lerni's change history and nightly copies still have it.",
         expected,
     )
 

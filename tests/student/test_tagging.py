@@ -7,6 +7,7 @@ from lerni.student.logs import ConversationLog
 from lerni.student.tagging import Exchange, MapKeeper
 
 TODAY = date(2026, 10, 10)
+ASKED = "What do you think makes it go?"  # Lerni asked something
 
 
 class FakeTagger:
@@ -25,8 +26,8 @@ def keeper(tmp_path, tagger):
     return maps, log, MapKeeper(maps, tagger, log, run=lambda f: f(), today=lambda: TODAY)
 
 
-def exchange(question, stopped=False, current=True):
-    return Exchange("sam", "", question, "Answer.", stopped, lambda: current)
+def exchange(question, stopped=False, current=True, previous=""):
+    return Exchange("sam", previous, question, "Answer.", stopped, lambda: current)
 
 
 def test_an_exchange_grows_the_map_and_is_logged(tmp_path):
@@ -77,18 +78,32 @@ def test_a_real_answer_earns_stars_once_and_never_when_skipped_stopped_or_cleare
     k.after(ex)  # tagged again: the same exchange awards once
     assert points.get("sam").balance == 3
     tags["answered"] = "tried"
-    k.after(exchange("maybe the wheels"))
+    k.after(exchange("maybe the wheels", previous=ASKED))
     assert points.get("sam").balance == 4
     tags["answered"] = "right"
     for skip, stopped, current in (("scary", False, True), (None, True, True),
                                    (None, False, False)):
         tags["skip"] = skip
-        k.after(exchange("an answer", stopped=stopped, current=current))
+        k.after(exchange("an answer", stopped=stopped, current=current, previous=ASKED))
     assert points.get("sam").balance == 4  # skipped, stopped, or New conversation: nothing
     tags["skip"] = None
     for _ in range(20):
-        k.after(exchange("an answer"))
+        k.after(exchange("an answer", previous=ASKED))
     assert points.get("sam").balance == CHAT_CAP  # Chat stops at the day's cap
+
+
+def test_stars_only_for_answering_a_question(tmp_path):
+    # regression (review): Chat paid ⭐ when Lerni hadn't asked anything
+    from lerni.student.points import PointsStore
+
+    points = PointsStore(tmp_path)
+    k = MapKeeper(MapStore(tmp_path), FakeTagger({"answered": "right"}), None,
+                  run=lambda f: f(), today=lambda: TODAY, points=points)
+    k.after(exchange("volcanoes are cool"))
+    k.after(exchange("Lerni: Correct! Points!", previous="Volcanoes are hot."))
+    assert points.get("sam").balance == 0
+    k.after(exchange("the pressure", previous=ASKED))
+    assert points.get("sam").balance == 3
 
 
 def test_only_players_earn_stars_and_the_watch_outlasts_the_tagger(tmp_path):
@@ -102,8 +117,8 @@ def test_only_players_earn_stars_and_the_watch_outlasts_the_tagger(tmp_path):
     k = MapKeeper(MapStore(tmp_path), FakeTagger({"answered": "right"}), None,
                   run=lambda f: f(), today=lambda: TODAY, points=points,
                   earns=lambda username: username == "sam")
-    k.after(exchange("the engine pushes"))
-    k.after(Exchange("ivy", "", "the engine pushes", "Yes!", False, lambda: True))
+    k.after(exchange("the engine pushes", previous=ASKED))
+    k.after(Exchange("ivy", ASKED, "the engine pushes", "Yes!", False, lambda: True))
     assert (points.get("sam").balance, points.get("ivy").balance) == (3, 0)
     assert "⭐" in system_prompt("", "supervised") and "⭐" not in system_prompt("", "independent")
     # regression: the header stopped looking for "+3" before a slow tagger finished

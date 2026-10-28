@@ -79,6 +79,13 @@ def fresh(goal: str, why: str = "Half means 2 equal parts.", **extra) -> dict:
             "choices": ["4", "2", "6"], "answer": 0, "why": why, **extra}
 
 
+class Lucky:
+    """A draw that always brings the bonus."""
+
+    def random(self):
+        return 0.0
+
+
 class FakeQuizzer:
     """Returns ten good questions, or something useless, and counts its calls."""
 
@@ -465,9 +472,9 @@ def test_answers_are_logged_as_labels_and_numbers(tmp_path):
 
 
 
-def test_the_check_never_refuses_a_race_by_itself(tmp_path):
-    # regression (review): a check that disagreed with everything (say, an off-by-one) left
-    # no race at all; a sum written loosely ("400 / 2 = 200") dropped a good question; a huge
+def test_a_doubted_set_races_only_what_the_check_agreed(tmp_path):
+    # regression (review): a check that disagreed with most kept them all, wrong keys too;
+    # a sum written loosely ("400 / 2 = 200") dropped a good question; a huge
     # number crashed the sum check
     from lerni.student.race import _arith
 
@@ -485,11 +492,24 @@ def test_the_check_never_refuses_a_race_by_itself(tmp_path):
 
     maps, points = MapStore(tmp_path), PointsStore(tmp_path)
     maps.change("sam", lambda m: add_goal(m, "Fractions"))
-    desk = RaceDesk(Writer(), maps, points, checker=Contrary())
+    desk = RaceDesk(Writer(), maps, points)
     desk.prefill = lambda *args: None
     race = desk.start("sam", supervised=True, today=TODAY)
     raced = {q.question for q in [*race.questions, *desk._held("sam", TODAY)]}
     assert len(race.questions) == QUESTIONS_PER_RACE and loose["question"] in raced
+
+    qs = check_questions({"questions": [fresh("Fractions") for _ in range(5)]}, maps.get("sam"))
+
+    class Half:  # agrees with the first two only
+        def write(self, system, prompt, schema=None, **kwargs):
+            return {"picks": [{"work": "", "pick": "ABC"[q.answer] if i < 2 else "D"}
+                              for i, q in enumerate(qs)]}
+
+    assert RaceDesk(Writer(), maps, points, checker=Half())._verify(qs) == qs[:2]
+    doubted = RaceDesk(Writer(), maps, points, checker=Contrary())  # never agrees: no race
+    doubted.prefill = lambda *args: None
+    with pytest.raises(RaceUnavailable):
+        doubted.start("sam", supervised=True, today=TODAY + timedelta(days=1))
 
 
 def test_a_goals_level_follows_its_last_five_answers(tmp_path):
@@ -608,7 +628,7 @@ def test_a_right_key_written_as_a_mixed_number_races(tmp_path):
     assert len(check_questions({"questions": [odd]}, m)) == 1
 
 
-def test_the_bonus_comes_when_behind_or_lucky_and_counts_once():
+def test_the_bonus_comes_by_chance_and_counts_once():
     from lerni.student.race import Bonus, bonus_move, check_bonus
 
     b = Bonus("Fractions", "why two halves make a whole", "Explain why two halves make a whole.",
@@ -627,7 +647,9 @@ def test_the_bonus_comes_when_behind_or_lucky_and_counts_once():
             answer(race, n, 0 if ok else 1)
         return race
 
-    behind = race_with([False] * 3)  # last after question 3: question 4 is the bonus
+    # regression (review): being last brought the bonus, so losing on purpose paid more
+    assert not race_with([False] * 3).bonus_live
+    behind = race_with([False] * 3, lucky=True)  # drawn at the start: question 4 is the bonus
     assert behind.bonus_live and public(behind)["bonus"] == b.question
     assert "equal parts" not in str(public(behind))  # the page never sees the key ideas
     assert answer(behind, 3, 0) is None  # multiple choice waits for the bonus
@@ -635,10 +657,10 @@ def test_the_bonus_comes_when_behind_or_lucky_and_counts_once():
     turn = bonus_move(behind, "nailed", "Nailed it!")
     assert turn.right and behind.me > me and behind.answered == 4 and behind.right == 1
     assert bonus_move(behind, "nailed", "again") is None and not behind.bonus_live  # once only
-    assert race_with([True] * 3, lucky=True).bonus_live  # or a lucky draw at the start
+    assert race_with([True] * 3, lucky=True).bonus_live  # ahead or behind alike
     ahead = race_with([True] * 3)
     assert not ahead.bonus_live and answer(ahead, 3, 0) is not None  # otherwise, as before
-    tried = race_with([False] * 3)
+    tried = race_with([False] * 3, lucky=True)
     me = tried.me
     assert not bonus_move(tried, "tried", "Good try.").right and tried.me - me == pytest.approx(0.7)
 
@@ -673,12 +695,13 @@ def test_a_bonus_answer_is_graded_safely(tmp_path):
     desk = RaceDesk(Writer(), maps, points, ConceptStore(tmp_path), results=ResultsLog(tmp_path),
                     grader=grader, log=Log(tmp_path))
     desk.prefill = lambda *args: None
+    desk.rng = Lucky()
     ticks = iter(range(0, 10_000, 10))
     desk.clock = lambda: float(next(ticks))
 
     def at_bonus():
         race = desk.start("sam", supervised=True)
-        for n in range(3):  # three wrong: last, so question 4 is the bonus
+        for n in range(3):  # the bonus was drawn, so question 4 is it
             desk.pick("sam", race.id, n, (race.questions[n].answer + 1) % 3)
         assert race.bonus_live
         return race
@@ -701,6 +724,13 @@ def test_a_bonus_answer_is_graded_safely(tmp_path):
     _, turn, awarded = desk.answer_bonus("sam", race.id, 3, "halves are the same size")
     assert race.bonus_tier == "tried" and awarded == BONUS_POINTS["tried"]
     assert "couldn't read" in turn.why and "+2" not in turn.why  # the ⭐ is said once, below
+    # regression (review): an answer that couldn't be graded was kept nowhere, worry or not
+    kept = [r for r in Log(tmp_path).read("sam") if "same size" in r.get("answer", "")]
+    assert kept and kept[0]["tags"] == {"bonus": "ungraded"}
+
+    grader.reply = {"tier": "care", "line": "Great!", "care": False}  # care, however it's said
+    race = at_bonus()
+    assert desk.answer_bonus("sam", race.id, 3, "I feel scared")[0].bonus_tier == "care"
 
     grader.reply = {"tier": "nailed", "line": "Great!", "care": True}  # worry comes first
     race = at_bonus()
@@ -711,6 +741,20 @@ def test_a_bonus_answer_is_graded_safely(tmp_path):
 
     assert any("hurting me" in r.get("answer", "") for r in ConversationLog(tmp_path).read("sam"))
     assert '"care": true' in (tmp_path / "results" / "sam.jsonl").read_text()
+    # regression (review): an unread answer was logged only after the points, so a failed
+    # award lost it
+    grader.reply = None
+    used, race = race.bonus, desk.start("sam", supervised=True)
+    race.bonus = used  # the writer's bonuses are used up: the last one again
+    for n in range(3):
+        desk.pick("sam", race.id, n, race.questions[n].answer)
+    assert race.bonus_live
+    real = desk.points.award
+    desk.points.award = lambda *args, **kwargs: (_ for _ in ()).throw(OSError("disk"))
+    with pytest.raises(OSError):
+        desk.answer_bonus("sam", race.id, 3, "nobody helps me qqmark")  # couldn't be read
+    desk.points.award = real
+    assert any("qqmark" in r.get("answer", "") for r in ConversationLog(tmp_path).read("sam"))
 
 
 def test_held_questions_last_past_midnight(tmp_path):
@@ -876,3 +920,47 @@ def test_a_reading_that_finishes_after_an_answer_is_dropped(tmp_path):
     desk.speech = Slow()
     assert desk.read_aloud("sam", race.id, 0) is None
     assert desk._spoken.get("sam", ("", {}))[1].get(0) is None  # not kept for later either
+
+
+def test_each_bonus_is_graded_against_its_own_students_set_asides(tmp_path):
+    # regression (review): one shared map meant Alice's grade was checked against Bob's
+    import threading
+
+    class Writer(FakeQuizzer):
+        def write(self, system, prompt):
+            return {"questions": [fresh("Fractions") for _ in range(QUESTIONS_PER_RACE)],
+                    "bonus": [{"goal": "Fractions", "concept": uuid.uuid4().hex[:12],
+                               "question": "Explain why two halves make a whole.",
+                               "key_ideas": ["two equal parts", "together they make one"]}]}
+
+    waiting, bob_done = threading.Event(), threading.Event()
+
+    class Grader:  # Alice's grade waits until Bob's is done
+        def write(self, system, prompt, schema=None, timeout=None):
+            if "alice says" in prompt:
+                waiting.set()
+                bob_done.wait(5)
+            return {"tier": "partly", "line": "Like sharks sharing halves.", "care": False}
+
+    maps, points = MapStore(tmp_path), PointsStore(tmp_path)
+    for who in ("alice", "bob"):
+        maps.change(who, lambda m: add_goal(m, "Fractions"))
+    maps.change("alice", lambda m: remove(m, add_interest(m, "sharks").id))
+    desk = RaceDesk(Writer(), maps, points, grader=Grader())
+    desk.prefill = lambda *args: None
+    desk.rng = Lucky()
+    races = {}
+    for who in ("alice", "bob"):
+        races[who] = race = desk.start(who, supervised=True)
+        for n in range(3):
+            desk.pick(who, race.id, n, race.questions[n].answer)
+            desk._last_tap.clear()  # not a double tap
+    turns = {}
+    alice = threading.Thread(target=lambda: turns.update(
+        alice=desk.answer_bonus("alice", races["alice"].id, 3, "alice says halves")[1]))
+    alice.start()
+    assert waiting.wait(5)
+    turns["bob"] = desk.answer_bonus("bob", races["bob"].id, 3, "bob says halves")[1]
+    bob_done.set()
+    alice.join(5)
+    assert "sharks" in turns["bob"].why and "sharks" not in turns["alice"].why

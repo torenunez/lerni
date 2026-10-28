@@ -490,42 +490,65 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
         race, message = start_race(desk, viewer, gas, driving, rivals)
         return screen(viewer, race, message)
 
+    def recover(request: gr.Request) -> list[Any]:
+        # after an error: the race as it stands, or the start; never "Lerni is reading…"
+        oops = "Something went wrong. Tap Race! 🏁"
+        try:
+            viewer = viewer_of(request)
+            race = desk.current(viewer.username) if desk and viewer else None
+            return screen(viewer, race, "" if race else oops)
+        except Exception:  # noqa: BLE001 - the screen failed too: just the Race button
+            ups = [gr.update() for _ in outputs]
+            for part, up in ((note, gr.update(value=oops)), (go, gr.update(visible=True)),
+                             (send, gr.update(interactive=True))):
+                ups[next(n for n, c in enumerate(outputs) if c is part)] = up
+            return ups
+
     def on_choice(i: int) -> Callable[..., list[Any]]:
         def handler(ref: tuple[str, int], request: gr.Request) -> list[Any]:
-            viewer = viewer_of(request)
-            if desk is None or viewer is None:
-                return screen(viewer, None, "")
-            race, turn, awarded = pick(desk, viewer, ref[0], ref[1], i)
-            goal = goal_line(garage, points.get(viewer.username)) if race and race.done else ""
-            shown = after_tap(race, ref, turn, awarded, goal)
-            if shown is None:
-                return [gr.update() for _ in outputs]  # a repeat tap: nothing changes
-            return screen(viewer, *shown, last=(ref[1], turn) if turn else None)
+            try:  # anything odd: the race as it stands, never a stuck screen
+                viewer = viewer_of(request)
+                if desk is None or viewer is None:
+                    return screen(viewer, None, "")
+                race, turn, awarded = pick(desk, viewer, ref[0], ref[1], i)
+                goal = goal_line(garage, points.get(viewer.username)) if race and race.done else ""
+                shown = after_tap(race, ref, turn, awarded, goal)
+                if shown is None:
+                    return [gr.update() for _ in outputs]  # a repeat tap: nothing changes
+                return screen(viewer, *shown, last=(ref[1], turn) if turn else None)
+            except Exception:  # noqa: BLE001 - never show what went wrong inside
+                return recover(request)
         return handler
 
     def on_bonus(text: str, ref: tuple[str, int], request: gr.Request,
                  said: str = "") -> list[Any]:
-        # grade the answer once (it stays in memory), then show the grade until Next
-        viewer = viewer_of(request)
-        if desk is None or viewer is None:
-            return screen(viewer, None, "")
-        race, turn, awarded = desk.answer_bonus(viewer.username, ref[0], ref[1], text or "",
-                                                supervised=viewer.role is Role.SUPERVISED)
-        if turn is None and race is not None and desk.grading(race.id):
-            return [gr.update() for _ in outputs]  # the first answer is still being read
-        if turn is None:  # a double send, or the race ended
-            return screen(viewer, race, "" if race else "That race ended. Tap Race! 🏁")
-        line = (f"🎤 {said}\n\n" if said else "") + (f"⭐ +{awarded}" if awarded else "")
-        return screen(viewer, race, line, last=(ref[1], turn))
+        try:  # anything odd: the race as it stands, never a stuck screen
+            # grade the answer once (it stays in memory), then show the grade until Next
+            viewer = viewer_of(request)
+            if desk is None or viewer is None:
+                return screen(viewer, None, "")
+            race, turn, awarded = desk.answer_bonus(viewer.username, ref[0], ref[1], text or "",
+                                                    supervised=viewer.role is Role.SUPERVISED)
+            if turn is None and race is not None and desk.grading(race.id):
+                return [gr.update() for _ in outputs]  # the first answer is still being read
+            if turn is None:  # a double send, or the race ended
+                return screen(viewer, race, "" if race else "That race ended. Tap Race! 🏁")
+            line = (f"🎤 {said}\n\n" if said else "") + (f"⭐ +{awarded}" if awarded else "")
+            return screen(viewer, race, line, last=(ref[1], turn))
+        except Exception:  # noqa: BLE001 - never show what went wrong inside
+            return recover(request)
 
     def on_next(request: gr.Request) -> list[Any]:
-        # the next question, after the right answer and its why (a dropped race: the start)
-        viewer = viewer_of(request)
-        if desk and viewer and desk.just_answered(viewer.username):
-            return [gr.update() for _ in outputs]  # a double tap's second half: read the why
-        race = desk.current(viewer.username) if desk and viewer else None
-        ended = "" if race or viewer is None else "That race ended. Tap Race! 🏁"
-        return screen(viewer, race, ended)
+        try:  # anything odd: the race as it stands, never a stuck screen
+            # the next question, after the right answer and its why (a dropped race: the start)
+            viewer = viewer_of(request)
+            if desk and viewer and desk.just_answered(viewer.username):
+                return [gr.update() for _ in outputs]  # a double tap's second half: read the why
+            race = desk.current(viewer.username) if desk and viewer else None
+            ended = "" if race or viewer is None else "That race ended. Tap Race! 🏁"
+            return screen(viewer, race, ended)
+        except Exception:  # noqa: BLE001 - never show what went wrong inside
+            return recover(request)
 
     def on_garage(car_id: str) -> Callable[..., list[Any]]:
         def handler(request: gr.Request) -> list[Any]:
