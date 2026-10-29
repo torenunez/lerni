@@ -1,10 +1,11 @@
 // The race: each car glides from its last place to its new one when the track is redrawn.
 // Gradio patches the same picture in place, so watch each car's data-x, and animate with
 // the Web Animations API, which leaves the style attribute Gradio rewrites alone.
-// Sounds: a roar for a right answer, a sputter for a wrong one, and a finish sound,
-// unlocked by the Race! tap (iPad Safari plays nothing before a tap), with one Sound switch.
-// With sound on, a wrong answer's right answer is said by itself (Next waits for it), and a
-// tap on the card reads it aloud.
+// Sounds: the server names each answer's sound on the track (a roar, a sputter, the bonus's
+// by its grade, the finish), unlocked by the Race! tap (iPad Safari plays nothing before a
+// tap). One Sound switch in the top bar covers every sound in the app, Chat's voice too.
+// With sound on, each question and a wrong answer's right answer are said by themselves (Next
+// waits for the right answer), and a tap on the card reads it again.
 (() => {
   const last = {};  // "race id:lane" -> x
   const still = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -19,7 +20,11 @@
                 {duration: 600, easing: 'ease-out'});
   }
 
-  const SECONDS = {roar: 1.5, sputter: 1.5, finish: 2.5}, FADE = 0.3, VOLUME = 0.6;
+  // each sound: its clip, seconds, and volume; zoom plays the roar until its clip is there
+  const SOUNDS = {roar: ['roar', 1.5, 0.6], rev: ['roar', 0.8, 0.35], sputter: ['sputter', 1.5, 0.6],
+                  finish: ['finish', 2.5, 0.6], zoom: ['zoom', 2.5, 0.6]};
+  const FADE = 0.3;
+  let lastPlay = 0;  // when a sound last started, so a reading waits for it
   const clips = {};  // name -> decoded audio
   let audio = null;
   const heard = {};  // race id -> the step whose sound was played
@@ -32,7 +37,7 @@
     if (!Ctx) return;
     audio = new Ctx();
     audio.resume?.();
-    for (const name of Object.keys(SECONDS)) {  // a missing clip just stays silent
+    for (const name of ['roar', 'sputter', 'finish', 'zoom']) {  // a missing clip stays silent
       fetch(`/sounds/${name}`, {credentials: 'same-origin'})
         .then(r => (r.ok ? r.arrayBuffer() : Promise.reject()))
         .then(data => new Promise((ok, no) => audio.decodeAudioData(data, ok, no)?.catch?.(no)))
@@ -41,12 +46,16 @@
     }
   }
   function play(name) {
-    if (!audio || !clips[name] || !soundOn()) return;
+    if (!SOUNDS[name]) return;
+    let [clip, seconds, volume] = SOUNDS[name];
+    if (!clips[clip] && clip === 'zoom') clip = 'roar';
+    if (!audio || !clips[clip] || !soundOn()) return;
     const source = audio.createBufferSource(), gain = audio.createGain();
-    const now = audio.currentTime, end = now + Math.min(SECONDS[name], clips[name].duration);
-    source.buffer = clips[name];
-    gain.gain.setValueAtTime(VOLUME, now);  // full until the fade, then down to silence
-    gain.gain.setValueAtTime(VOLUME, Math.max(now, end - FADE));
+    const now = audio.currentTime, end = now + Math.min(seconds, clips[clip].duration);
+    source.buffer = clips[clip];
+    lastPlay = Date.now();
+    gain.gain.setValueAtTime(volume, now);  // full until the fade, then down to silence
+    gain.gain.setValueAtTime(volume, Math.max(now, end - FADE));
     gain.gain.linearRampToValueAtTime(0, end);
     source.connect(gain).connect(audio.destination);
     source.start(now);
@@ -54,11 +63,11 @@
   }
   function listen(svg) {
     // a new answer on the same race plays once; a refresh or a repeat tap plays nothing
-    const id = svg.dataset.race, step = Number(svg.dataset.step), right = Number(svg.dataset.right);
+    const id = svg.dataset.race, step = Number(svg.dataset.step);
     const before = heard[id];
-    heard[id] = {step, right};
-    if (!id || !before || step !== before.step + 1) return;
-    play(step >= Number(svg.dataset.total) ? 'finish' : right > before.right ? 'roar' : 'sputter');
+    heard[id] = step;
+    if (!id || before === undefined || step !== before + 1) return;
+    play(svg.dataset.sound);
   }
   // the right answer after a wrong one, said once per race and step; Next waits until it's done
   const HOLD_MS = 20000;  // never stuck: Next comes back after this, said or not
@@ -66,6 +75,7 @@
   // a reading asked for before Sound off or a tap that moved on is dropped when it arrives
   let asked = 0, current = 0;
   window.lerniRace = {wants: () => soundOn() && asked === current};
+  window.lerniSound = soundOn;  // talk.js: Chat's voice follows the same switch
   function hold(on) {
     clearTimeout(holdTimer);
     holdTimer = on ? setTimeout(() => hold(false), HOLD_MS) : 0;
@@ -75,21 +85,40 @@
   function autoWhy() {
     const reader = document.getElementById('lerni-read-go');
     const svg = document.querySelector('#lerni-track svg[data-race]');
-    if (!reader || !svg || !svg.dataset.why || !soundOn()) return;
+    if (!reader || !svg || !svg.dataset.why) return;
     const key = `${svg.dataset.race}:${svg.dataset.step}`;
     if (key === whyKey) return;  // a redraw doesn't say it again
-    whyKey = key;
+    whyKey = key;  // kept with sound off too, so turning it on later never says it
+    if (!soundOn()) return;
     hold(true);
     asked = current;
     reader.click();
   }
+  // a new question is read by itself once, after the sound for the last answer
+  let askKey = '', askTimer = 0;
+  function autoAsk() {
+    const reader = document.getElementById('lerni-read-go');
+    const svg = document.querySelector('#lerni-track svg[data-race]');
+    if (!reader || !svg || !svg.dataset.ask) return;
+    const key = `${svg.dataset.race}:${svg.dataset.step}`;
+    if (key === askKey) return;  // a redraw doesn't read it again
+    askKey = key;  // kept with sound off too, so turning it on later never reads it
+    if (!soundOn()) return;
+    const mine = current;
+    askTimer = setTimeout(() => {
+      if (mine !== current) return;  // answered or moved on meanwhile
+      asked = current;
+      reader.click();
+    }, Math.max(0, lastPlay + 1200 - Date.now()));
+  }
   function label() {
     const button = document.getElementById('lerni-mute');
     if (!button) return;
-    const on = soundOn(), text = on ? '🔊 Sound: on' : '🔇 Sound: off';
+    const on = soundOn(), text = on ? '🔊' : '🔇';
     if (button.textContent === text) return;  // writing it anyway would wake the observer again
     button.textContent = text;
     button.setAttribute('aria-pressed', String(on));
+    button.setAttribute('aria-label', on ? 'Sound on' : 'Sound off');
   }
   document.addEventListener('click', event => {
     const at = selector => event.target.closest?.(selector);
@@ -98,7 +127,7 @@
       event.stopPropagation();
       return;
     }
-    // Race! unlocks sound; an answer tap wakes it again after the iPad paused it
+    // Race! and Next unlock sound; an answer tap wakes it again after the iPad paused it
     if (at('.lerni-go, .lerni-choice')) unlock();
     if (at('.lerni-go, .lerni-choice')) {  // moving on stops a reading
       current++;
@@ -113,6 +142,7 @@
     const card = at('.lerni-question') || (at('#lerni-note') && svg?.dataset.why);
     const reader = document.getElementById('lerni-read-go');
     if (card && reader && soundOn() && !at('a, button, details')) {
+      clearTimeout(askTimer);  // this tap reads it: the reading by itself isn't needed
       window.lerniTalk?.unlock();
       asked = current;
       reader.click();
@@ -147,6 +177,7 @@
     if (svg) listen(svg);
     label();
     autoWhy();
+    autoAsk();
   }).observe(document.body, {childList: true, subtree: true, attributes: true,
-                              attributeFilter: ['data-x', 'data-step', 'data-why']});
+                              attributeFilter: ['data-x', 'data-step', 'data-why', 'data-ask']});
 })();

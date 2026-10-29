@@ -109,7 +109,7 @@ The student doesn't always take Lerni's questions seriously; points give them a 
 
 As a student, I want to race my car by answering questions, so that I can win points for a cooler car.
 
-- WHEN the student opens Games and starts a race THE SYSTEM SHALL show their car and two rivals (cars from their garage and the Showroom, or silly bots), and 5 questions from their goals and interests, each with 3 choices to tap (now and then a bonus question is answered in their own words, typed or spoken, for more points); a tap on the question reads it aloud, a wrong answer's right answer is said by itself before Next, one Sound switch silences it all, and the garage waits until the race is over.
+- WHEN the student opens Games and starts a race THE SYSTEM SHALL show their car and two rivals (cars from their garage and the Showroom, or silly bots), and 5 questions from their goals and interests, each with 3 choices to tap (now and then a bonus question is answered in their own words, typed or spoken, for more points); each question is read aloud by itself (a tap reads it again), a wrong answer's right answer is said by itself before Next, one Sound switch in the top bar silences every sound in the app, and the garage waits until the race is over.
 - WHEN they pick the right answer THE SYSTEM SHALL boost their car and slow a bot; WHEN they pick another THE SYSTEM SHALL slow their car and show the right answer with a short why.
 - WHEN the race ends THE SYSTEM SHALL award points by their place (4 or 5 right wins, in any car), once per race, and offer Race again.
 - WHEN questions are written THE SYSTEM SHALL avoid ideas asked recently, bring back missed ideas after a gap, and adjust difficulty per goal so the student gets about half to three quarters right.
@@ -185,6 +185,7 @@ Public access and a native iPad app.
 - 2026-10-19: The race gets harder and asks for explanations (the admin's decision, after the races proved too easy and questions repeated): questions don't repeat, difficulty adapts per goal, missed ideas come back, and an occasional bonus question is answered in their own words, typed or spoken, and graded with partial credit. This replaces "no typing, no chat" in the race and "no difficulty settings" in Version 3. The race also probes nearby ideas: the student's choice to explore one opens Chat, and probe results feed Version 5's suggested goals, never the map directly; practice shows on goals read-only, and a nailed explanation marks a goal explained.
 - 2026-10-20: Rivals are paced from the student's own car, so a win always takes 4 or 5 right; a faster car brings new rivals and ⚡, not easier wins (the admin's decision). A good bonus explanation moves the car, as a way back from last.
 - 2026-10-27: When the answer checker disagrees with most of a set, only the questions it agreed with race and Claude writes fresh ones for the rest; the bonus comes on a random draw only, so coming last never pays more (the admin's decisions, after two outside reviews).
+- 2026-10-29: Questions read themselves, one Sound switch covers the whole app (Chat's voice too), an honest bonus try earns 5 ⭐ with a cheer instead of the sputter, and a wrong answer's first words vary (the admin, after watching the student race).
 
 ## Open questions
 

@@ -4,7 +4,7 @@ Approved in conversation on 2026-10-12. Requirements: [student PRD, Version 3](.
 
 **Why.** The supervised student answers Lerni's goal questions with random emojis. Points they can spend on cars give those questions a reason, from two places: a race in Games and real answers in Chat. Points never go down for a wrong answer, are never compared between students, and stay apart from the map.
 
-**Ships as:** v3.1 (the race, points, and the garage), v3.3 (real cars in the garage), and v3.7 (points in Chat, and Ask renamed Chat). Part 2 (v3.16–v3.35): [spec 09b](09b-harder-races.md).
+**Ships as:** v3.1 (the race, points, and the garage), v3.3 (real cars in the garage), and v3.7 (points in Chat, and Ask renamed Chat). Part 2 (v3.16–v3.36): [spec 09b](09b-harder-races.md).
 
 ## What people see
 

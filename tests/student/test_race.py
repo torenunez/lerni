@@ -17,6 +17,7 @@ from lerni.student.race import (
     RaceUnavailable,
     answer,
     check_questions,
+    miss_opener,
     new_race,
     place,
     public,
@@ -723,7 +724,8 @@ def test_a_bonus_answer_is_graded_safely(tmp_path):
     race = at_bonus()
     _, turn, awarded = desk.answer_bonus("sam", race.id, 3, "halves are the same size")
     assert race.bonus_tier == "tried" and awarded == BONUS_POINTS["tried"]
-    assert "couldn't read" in turn.why and "+2" not in turn.why  # the ⭐ is said once, below
+    assert awarded == 5 and "couldn't read" in turn.why  # v3.32: an honest try earns 5 ⭐
+    assert "+5" not in turn.why  # the ⭐ is said once, below
     # regression (review): an answer that couldn't be graded was kept nowhere, worry or not
     kept = [r for r in Log(tmp_path).read("sam") if "same size" in r.get("answer", "")]
     assert kept and kept[0]["tags"] == {"bonus": "ungraded"}
@@ -893,7 +895,7 @@ def test_a_wrong_answer_is_said_out_loud_and_only_then(tmp_path):
     q = race.questions[0]
     desk.pick("sam", race.id, 0, (q.answer + 1) % 3)  # wrong
     assert desk.read_why("sam", race.id, 0) == b"audio"
-    assert speech.spoken == [f"Not this time. It's {q.choices[q.answer]}. {q.why}"]
+    assert speech.spoken == [f"{miss_opener(race, 0)} It's {q.choices[q.answer]}. {q.why}"]
     assert desk.read_why("sam", race.id, 0) == b"audio" and len(speech.spoken) == 1  # cached
     desk.pick("sam", race.id, 1, race.questions[1].answer)  # right
     assert desk.read_why("sam", race.id, 1) is None
@@ -902,6 +904,20 @@ def test_a_wrong_answer_is_said_out_loud_and_only_then(tmp_path):
         last = race.questions[n]
         desk.pick("sam", race.id, n, (last.answer + 1) % 3)  # the last one wrong: race over
     assert race.done and desk.read_why("sam", race.id, QUESTIONS_PER_RACE - 1) == b"audio"
+
+
+def test_wrong_answers_open_with_varied_words():
+    # v3.32: every wrong answer opened with "Not this time"
+    race = new_race([Q] * QUESTIONS_PER_RACE)
+    answer(race, 0, 1)
+    answer(race, 1, 1)
+    assert miss_opener(race, 0) != miss_opener(race, 1)  # never twice in a row
+    firsts = set()
+    for _ in range(30):
+        other = new_race([Q] * QUESTIONS_PER_RACE)
+        answer(other, 0, 1)
+        firsts.add(miss_opener(other, 0))
+    assert len(firsts) > 2  # races start in different places
 
 
 def test_a_reading_that_finishes_after_an_answer_is_dropped(tmp_path):

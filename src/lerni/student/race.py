@@ -16,6 +16,7 @@ import re
 import threading
 import time
 import uuid
+import zlib
 from collections import deque
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field, replace
@@ -52,7 +53,9 @@ GOALS_PER_SET = 5  # goals a set of 10 covers, about 2 questions each (v3.28)
 PICK_DAYS = 14  # "least practiced" counts questions over this many days
 BONUS_AT = 3  # the bonus takes question 4's place (0-based)
 BONUS_ODDS = 4  # about 1 race in this many has one, ahead or behind
-BONUS_POINTS = {"nailed": 15, "partly": 7, "tried": 2, "none": 0, "care": 0}
+BONUS_POINTS = {"nailed": 15, "partly": 7, "tried": 5, "none": 0, "care": 0}
+MISS_OPENERS = ("Good try!", "Tricky one!", "Nice guess!", "Not quite!", "Not this time.",
+                "Good thinking!")  # a wrong answer's first words, in turn
 CARE = "care"  # a worrying answer: the caring words, no points, kept in the conversation log
 MAX_KEY_IDEA = 60
 MAX_QUESTION, MAX_CHOICE, MAX_WHY = 140, 40, 120
@@ -529,6 +532,13 @@ def bonus_move(race: Race, tier: str, line: str) -> Turn | None:
     return Turn(right, "", line, named)
 
 
+def miss_opener(race: Race, number: int) -> str:
+    """The first words for a wrong answer to question ``number``: each race starts somewhere
+    of its own, and each later miss moves on one, so two misses never share them."""
+    misses = race.marks[:number].count(False)
+    return MISS_OPENERS[(zlib.crc32(race.id.encode()) + misses) % len(MISS_OPENERS)]
+
+
 def place(race: Race) -> int:
     """1, 2, or 3: one more than the rivals strictly ahead."""
     return 1 + sum(pos > race.me for pos in race.at)
@@ -578,8 +588,10 @@ GRADE_SYSTEM = """\
 You grade one short answer to an "explain it" question in Lerni, a learning \
 companion, against its key ideas. Return only the JSON asked for.
 - tier: "nailed" if the answer gets every key idea right, in any words; "partly" if it \
-gets at least one; "tried" if it's a real attempt in their own words that gets none; \
-"none" if it's blank, random, or off-topic.
+gets at least one; "tried" if it's any real attempt at the question that gets none; "none" \
+if it's blank, random, or off-topic.
+- Be generous: a key idea counts when it's said loosely, in everyday words, or half right. \
+When unsure between two tiers, choose the higher.
 - line: one kind sentence (under 120 characters) for them: say what they got, and for \
 "partly" add the missing idea simply. Never say "wrong", never anything scary or sad.
 - care: true only if the answer says they are hurt, unsafe, being hurt by someone, or want \
@@ -998,7 +1010,7 @@ class RaceDesk:
 
         def said(r: Race) -> str:
             q = r.questions[number]
-            return for_speaking(f"Not this time. It's {q.choices[q.answer]}. {q.why}")
+            return for_speaking(f"{miss_opener(r, number)} It's {q.choices[q.answer]}. {q.why}")
 
         return self._say(username, race_id, ("why", number), wrong, said)
 

@@ -149,7 +149,7 @@
 
   // the server sends [count, audio]; play each sentence in order
   function play(v) {
-    if (!v) return;
+    if (!v || window.lerniSound?.() === false) return;  // Sound off: the text still shows
     S.queue.push(JSON.parse(v)[1]); next();
   }
 
@@ -166,7 +166,7 @@
 
   // a race reading: replaces the one playing; an empty clip just says there's nothing to say
   function say(v) {
-    if (!v) return;
+    if (!v || S.on) return;  // never over the student while they hold to talk
     S.queue = []; S.playing = null;
     S.player.pause();
     if (JSON.parse(v)[1]) play(v); else idle();

@@ -157,10 +157,8 @@ body[data-lerni-hold] #lerni-next { opacity: 0.5; pointer-events: none; }  /* wh
 /* the race in a third of the screen: shrunk to fit, its shape kept, centred */
 #lerni-track svg { width: 100%; max-width: 820px; max-height: 30dvh; display: block;
   margin: 0 auto; }
-.lerni-switches { display: flex; justify-content: flex-end; align-items: center; }
-.lerni-mute { min-height: 44px; padding: 0 12px; border-radius: 8px; font-size: 15px;
-              border: 1px solid var(--border-color-primary); background: none; cursor: pointer; }
-.lerni-mute[aria-pressed="true"] { background: var(--color-accent-soft); }
+.lerni-mute { min-width: 44px; min-height: 44px; padding: 0 8px; font-size: 22px;
+              border: none; background: none; cursor: pointer; }
 /* MentalMap pictures (mapview.js): a tapped item lights up its links; the rest fades */
 .lerni-map .lerni-node { cursor: pointer; }
 .lerni-map svg.lerni-focus .lerni-node:not(.lerni-near) { opacity: 0.15; }
