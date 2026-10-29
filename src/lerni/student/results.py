@@ -1,7 +1,8 @@
 """Race results, kept for good: one line per answer and per finish, as labels and numbers.
 
-``<data root>/results/<user>.jsonl``: the day, the race, the goal, the idea it tested,
-a short hash of the question (never its words), right or wrong, and the seconds it took;
+``<data root>/results/<user>.jsonl``: the day, the race, the goal (id and name), the idea it
+tested, a short hash of the question (never its words), the level it was written at, its
+attempt (1: a new idea), right or wrong, and the seconds it took;
 then each finish's place and points. What later versions learn difficulty and spaced
 review from. Standard library only.
 """

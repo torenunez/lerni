@@ -54,6 +54,7 @@ Versions 1 and 2 also need sessions, not code: the educator sets goals, rehearse
 
 ### Later
 
+- [ ] **The win rate (after v3.33, about mid-November):** with about two weeks of results lines carrying `level`, compare right answers by level, and places, against the target (about 60% right, 1 race in 3 won); then decide whether to change the level steps (`UP_AT`, `DOWN_AT` in `concepts.py`) or the rivals' pace.
 - [ ] A second backup place for a broken disk: an external drive (`lerni backup run --to …` in the agent) or Time Machine. The nightly copies (v3.20) are on the same disk.
 - [ ] After a week of family use: compare each feature's Claude use (Chat, tagger, Upload, the Suggest box) and decide whether any can move to a cheaper model.
 - [ ] Try the voice with the students before deciding whether a hosted voice (Inworld, about $18 a month) is worth it; a hosted service means student audio leaves the house, so it needs the educator's agreement first.

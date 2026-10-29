@@ -440,7 +440,7 @@ def test_answers_are_logged_as_labels_and_numbers(tmp_path):
 
     maps, points, results = MapStore(tmp_path), PointsStore(tmp_path), ResultsLog(tmp_path)
     maps.change("sam", lambda m: add_goal(m, "Fractions"))
-    desk = RaceDesk(FakeQuizzer(), maps, points, results=results)
+    desk = RaceDesk(FakeQuizzer(), maps, points, ConceptStore(tmp_path), results=results)
     desk.prefill = lambda *args: None
     ticks = iter(range(0, 1000, 10))
     desk.clock = lambda: float(next(ticks))
@@ -452,6 +452,8 @@ def test_answers_are_logged_as_labels_and_numbers(tmp_path):
     answers, finish = lines[:5], lines[5]
     assert [a["right"] for a in answers] == [True, True, False, True, False]
     assert all(a["goal"] == "Fractions" and a["seconds"] > 0 and len(a["q"]) == 12 for a in answers)
+    # v3.33: the level it was written at, and how many times its idea has been asked
+    assert all(a["level"] == 3 and a["attempt"] == 1 for a in answers)
     assert "What is" not in json.dumps(lines)  # never the question's words
     assert finish["place"] in (1, 2, 3) and finish["points"] > 0
     goal_id = maps.get("sam").find("Fractions").id
@@ -569,11 +571,12 @@ def test_a_missed_idea_comes_back_on_schedule(tmp_path):
     d0 = date(2026, 10, 22)
     day = lambda n: d0 + timedelta(days=n)  # noqa: E731
     maps, points, concepts = MapStore(tmp_path), PointsStore(tmp_path), ConceptStore(tmp_path)
-    maps.change("sam", lambda m: add_goal(m, "Fractions"))
+    gid = maps.change("sam", lambda m: add_goal(m, "Fractions")).id
     idea = "halves of odd numbers"
-    concepts.add("sam", [("Fractions", idea)], d0)
-    concepts.answered("sam", idea, False, d0)
-    assert concepts.due("sam", d0) == [] and concepts.due("sam", day(1)) == [("Fractions", idea)]
+    concepts.add("sam", [(gid, "Fractions", idea)], d0)
+    concepts.answered("sam", gid, idea, False, d0)
+    assert concepts.due("sam", d0) == []
+    assert concepts.due("sam", day(1)) == [(gid, "Fractions", idea)]
 
     class Recording(FakeQuizzer):  # asks the due idea again, labelled a little differently
         prompts: list = []
@@ -590,18 +593,18 @@ def test_a_missed_idea_comes_back_on_schedule(tmp_path):
     assert idea in [q.concept for q in written]  # asked again within 14 days, under its label
 
     for n, after in ((1, day(4)), (4, day(11))):  # each right answer pushes it out
-        concepts.answered("sam", idea, True, day(n))
-        assert concepts.due("sam", after) == [("Fractions", idea)]
+        concepts.answered("sam", gid, idea, True, day(n))
+        assert concepts.due("sam", after) == [(gid, "Fractions", idea)]
         assert concepts.due("sam", after - timedelta(days=1)) == []
-    concepts.answered("sam", idea, True, day(11))
+    concepts.answered("sam", gid, idea, True, day(11))
     assert concepts.due("sam", day(60)) == []  # three right in a row: retired
 
     # regression (review): a right answer before the idea is due again doesn't move it, so two
     # questions on one idea in a day never step it twice
-    concepts.answered("sam", idea, False, day(20))
-    concepts.answered("sam", idea, True, day(21))  # due: step 1, back on day 24
-    concepts.answered("sam", idea, True, day(21))  # the same day again: no change
-    assert concepts.due("sam", day(24)) == [("Fractions", idea)]
+    concepts.answered("sam", gid, idea, False, day(20))
+    concepts.answered("sam", gid, idea, True, day(21))  # due: step 1, back on day 24
+    concepts.answered("sam", gid, idea, True, day(21))  # the same day again: no change
+    assert concepts.due("sam", day(24)) == [(gid, "Fractions", idea)]
     # regression (review): a different idea with a similar label never takes the due one's,
     # and one question at most takes it
     from lerni.student.race import Question, _as_due
@@ -639,7 +642,8 @@ def test_the_bonus_comes_by_chance_and_counts_once():
     good = {"goal": "Fractions", "concept": b.concept, "question": b.question,
             "key_ideas": list(b.key_ideas)}
     raw = {"bonus": [good, {**good, "key_ideas": ["a"]}, {**good, "goal": "Spelling"}]}
-    assert check_bonus(raw, m) == [b]  # one key idea, or a goal not on the map: dropped
+    kept = check_bonus(raw, m)  # one key idea, or a goal not on the map: dropped
+    assert [(k.question, k.goal_id) for k in kept] == [(b.question, m.find("Fractions").id)]
 
     def race_with(rights, lucky=False):
         race = new_race([Q] * QUESTIONS_PER_RACE)
@@ -980,3 +984,78 @@ def test_each_bonus_is_graded_against_its_own_students_set_asides(tmp_path):
     bob_done.set()
     alice.join(5)
     assert "sharks" in turns["bob"].why and "sharks" not in turns["alice"].why
+
+
+def stable_desk(tmp_path, quizzer=None):
+    from lerni.student.results import ResultsLog
+
+    maps = MapStore(tmp_path)
+    goal = maps.change("sam", lambda m: add_goal(m, "Fractions", "halves"))
+    desk = RaceDesk(quizzer or FakeQuizzer(), maps, PointsStore(tmp_path), ConceptStore(tmp_path),
+                    results=ResultsLog(tmp_path))
+    desk.prefill = lambda *args: None
+    ticks = iter(range(0, 10_000, 10))
+    desk.clock = lambda: float(next(ticks))
+    return desk, maps, goal
+
+
+def test_a_renamed_goal_keeps_its_history(tmp_path):
+    # review (v3.7-v3.29): a goal was found by name at answer time, so a rename lost the link
+    from lerni.student.interests import rename
+
+    desk, maps, goal = stable_desk(tmp_path)
+    race = desk.start("sam", supervised=True, today=TODAY)
+    maps.change("sam", lambda m: rename(m, goal.id, "Halves and quarters"))
+    for n in range(QUESTIONS_PER_RACE):
+        desk.pick("sam", race.id, n, race.questions[n].answer)
+    answers = [r for r in desk.results.read("sam") if "right" in r]
+    assert len(answers) == QUESTIONS_PER_RACE and {r["goal_id"] for r in answers} == {goal.id}
+    assert {r["goal"] for r in answers} == {"Halves and quarters"}  # today's name, for the week
+    assert desk.concepts.levels("sam") == {goal.id: 4}  # five right: one level up, on its id
+    assert {c["goal_id"] for c in desk.concepts.ledger("sam")} == {goal.id}
+
+
+def test_the_same_idea_under_two_goals_stays_two(tmp_path):
+    # review (v3.7-v3.29): the ledger was keyed by label alone
+    concepts = ConceptStore(tmp_path)
+    old = tmp_path / "concepts" / "sam.json"
+    old.parent.mkdir(parents=True)
+    old.write_text('{"schema": 3, "concepts": [{"concept": "speed", "goal": "Cars", '
+                   '"first": "2026-10-01", "last": "2026-10-01", "asked": 2, "right": 1}]}')
+    both = [("e1", "Cars", "Speed"), ("e2", "Running", "speed")]
+    assert concepts.add("sam", both, TODAY) == [3, 1]
+    concepts.answered("sam", "e2", "speed", False, TODAY)
+    ledger = {c["goal_id"]: c for c in concepts.ledger("sam")}
+    assert (ledger["e1"]["asked"], ledger["e1"]["right"]) == (3, 1)  # the old entry, adopted
+    assert "due" not in ledger["e1"] and ledger["e2"]["due"]  # each idea its own review
+    assert concepts.due("sam", TODAY + timedelta(days=1)) == [("e2", "Running", "speed")]
+
+
+def test_held_questions_follow_their_goals_notes(tmp_path):
+    # review (v3.7-v3.29): questions written ahead raced after the notes changed
+    from lerni.student.interests import set_notes
+    from lerni.student.race import fits
+
+    desk, maps, goal = stable_desk(tmp_path)
+    other = maps.change("sam", lambda m: add_goal(m, "Spelling", "short words"))
+    desk._write = lambda *args: [*[q for q in check_questions(
+        {"questions": [fresh("Fractions") for _ in range(5)] + [fresh("Spelling")]},
+        maps.get("sam"))]]
+    held = desk._write("sam", True, TODAY)
+    assert all(fits(q, maps.get("sam")) for q in held)
+    maps.change("sam", lambda m: set_notes(m, other.id, "long words"))
+    assert [fits(q, maps.get("sam")) for q in held] == [True] * 5 + [False]
+    maps.change("sam", lambda m: set_notes(m, goal.id, "quarters"))
+    assert not any(fits(q, maps.get("sam")) for q in held)
+
+
+def test_a_broken_concepts_file_is_moved_aside(tmp_path):
+    # review (v3.7-v3.29): a broken file read as empty, and the next race overwrote it
+    desk, maps, goal = stable_desk(tmp_path)
+    broken = tmp_path / "concepts" / "sam.json"
+    broken.parent.mkdir(parents=True)
+    broken.write_text('{"schema": 3, "concepts": [')
+    race = desk.start("sam", supervised=True, today=TODAY)
+    assert race is not None and len(desk.concepts.ledger("sam")) == QUESTIONS_PER_RACE
+    aside = list(broken.parent.glob("sam.broken-*.json"))
+    assert len(aside) == 1 and aside[0].read_text() == '{"schema": 3, "concepts": ['
