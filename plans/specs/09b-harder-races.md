@@ -35,7 +35,7 @@ v3.19 (race questions from the garage), v3.20 (a map journal and nightly backups
   - a soft sputter on a wrong one;
   - a little fanfare at the finish, whatever the place.
 
-  One Sound switch by the track turns them off on that device (and every spoken word), and the choice is remembered there.
+  One Sound switch in the top bar turns them off on that device (and every spoken word, Chat's too), and the choice is remembered there. A bonus never sputters: its sound follows its grade (v3.32).
 
 ### Practice on the map (v3.17)
 
@@ -74,7 +74,7 @@ v3.19 (race questions from the garage), v3.20 (a map journal and nightly backups
 | Level change | after 5 answers on a goal since its last change: 4 or 5 right goes one harder, 2 or fewer one easier |
 | Review | a miss is due in 1 day; then right answers move it to 3 days, then 7; a right answer at 7 days retires it |
 | Due ideas | at most 2 a race |
-| Bonus | about 1 race in 4, drawn at the start (v3.31: never for being last); nailed 15 ⭐, partly 7, a real try 2, otherwise 0 |
+| Bonus | about 1 race in 4, drawn at the start (v3.31: never for being last); nailed 15 ⭐, partly 7, a real try 5 (v3.32), otherwise 0 |
 | Probes | 1 question per race; up to 2 topic buttons after it |
 
 ## How it works
@@ -96,7 +96,7 @@ v3.19 (race questions from the garage), v3.20 (a map journal and nightly backups
 
 ### Sounds (v3.16, `web/race.js`, `web/games.py`)
 
-- **The clips are private, never in the repo:** `<data>/sounds/roar.mp3`, `sputter.mp3`, and `finish.mp3`, like the car pictures.
+- **The clips are private, never in the repo:** `<data>/sounds/roar.mp3`, `sputter.mp3`, `finish.mp3`, and `zoom.mp3` (v3.32, a nailed bonus; the roar until it's there), like the car pictures.
   - **Licence:** they come from Pixabay, whose licence allows them in the app with no credit, but not shared as the files themselves. So they're never committed.
   - **The admin's picks (downloaded 2026-10-20), to be checked by ear:**
     - the roar: "car engine roaring" (Dragon Studio);
@@ -105,10 +105,10 @@ v3.19 (race questions from the garage), v3.20 (a map journal and nightly backups
 
     Four more downloads are spares.
   - **Missing clips:** a missing file just stays silent, and nothing else stops.
-- **Serving:** a route serves only those three names, only to someone signed in, as the car pictures are.
+- **Serving:** a route serves only those names, only to someone signed in, as the car pictures are.
 - **Playback (`race.js`, Web Audio):**
   - **Unlocking:** iPad Safari plays sound only after a tap, so the Race! tap unlocks it.
-  - **Answers:** the roar or the sputter plays when the answer comes back.
+  - **Answers:** the server names each answer's sound on the track (v3.32): the roar or the sputter, and for the bonus zoom (nailed), the roar (partly), a short soft roar (a try), or nothing.
   - **The finish:** the fanfare plays with the place.
   - **Length:** each clip plays from its start for at most its time in Numbers, then fades out over 0.3 s. The files aren't trimmed, since there's no audio tool on the home server and none is needed.
   - **Sound:** the setting is kept in the browser's `localStorage` (a per-device setting, never text).
@@ -116,9 +116,9 @@ v3.19 (race questions from the garage), v3.20 (a map journal and nightly backups
 
 ### Read aloud and a focused race (v3.29–v3.30, `race.py`, `web/games.py`, `web/race.js`)
 
-- **A tap on the question card** reads it with the server's voice: "Question 2. … 9, 8, or 6?" (the buttons have no letters), or "Bonus question. …". The card says "· tap to hear". Only the question on screen can be read; each is spoken once and kept in memory with the race.
-- **After a wrong answer** the right answer and why are said by itself ("Not this time. It's 6. …"), on the last question too; Next waits until it's said (20 seconds at most). A tap on the card, or on the end note, says it again.
-- **🔊 Sound: on/off,** one switch under the track, remembered on the device, turns off the race sounds and every spoken word.
+- **Each question is read by itself** when it appears, with sound on (v3.32), and a tap on the card reads it again, with the server's voice: "Question 2. … 9, 8, or 6?" (the buttons have no letters), or "Bonus question. …". The card says "· tap to hear". Only the question on screen can be read; each is spoken once and kept in memory with the race.
+- **After a wrong answer** the right answer and why are said by itself ("Tricky one! It's 6. …"; the first words vary, never the same twice in a race), on the last question too; Next waits until it's said (20 seconds at most). A tap on the card, or on the end note, says it again.
+- **🔊 / 🔇,** one switch in the top bar (v3.32), remembered on the device, turns off the race sounds and every spoken word, Chat's included.
 - **A tap that moves on** stops a reading; the Race!, answer, and Next taps keep iPad Safari's player unlocked.
 - **The race has the screen:** the track takes at most a third of its height, and My cars and the Showroom show only between races.
 - Added after this spec (the admin's decisions of 2026-10-24 and 10-27): for a student who listens more easily than they read, and was distracted by the garage.

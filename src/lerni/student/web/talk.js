@@ -149,7 +149,7 @@
 
   // the server sends [count, audio]; play each sentence in order
   function play(v) {
-    if (!v) return;
+    if (!v || window.lerniSound?.() === false) return;  // Sound off: the text still shows
     S.queue.push(JSON.parse(v)[1]); next();
   }
 

@@ -39,6 +39,7 @@ from lerni.student.race import (
     RaceDesk,
     RaceUnavailable,
     Turn,
+    miss_opener,
     place,
     public,
 )
@@ -55,13 +56,12 @@ BOT_COLORS = {"Zippy": "#7F77DD", "Bolt": "#888780"}  # the bots' own paint
 START, END = 8, 248  # a car's left edge at the start and at the finish, in track units
 MAX_LABEL = 18  # characters of a car's name on the track
 WAIT_LINE = "Pumping the tires… 🛞 New questions can take a minute to write."
-SOUNDS = ("roar", "sputter", "finish")  # <data>/sounds/<name>.mp3, played by race.js
+SOUNDS = ("roar", "sputter", "finish", "zoom")  # <data>/sounds/<name>.mp3, played by race.js
+BONUS_SOUNDS = {"nailed": "zoom", "partly": "roar", "tried": "rev"}  # rev: a short, soft roar
 EDGE = ('<defs><filter id="lerni-edge" x="-10%" y="-10%" width="120%" height="120%">'
         '<feDropShadow dx="0" dy="0" stdDeviation="0.7" flood-color="#2C2C2A" '
         'flood-opacity="0.9"/></filter></defs>')  # a thin dark edge, so a white car shows
-MUTE = ('<button type="button" id="lerni-mute" class="lerni-mute" '
-        'aria-pressed="true">🔊 Sound: on</button>')  # race.js: one switch for every sound
-WHY = ' data-why="1"'  # race.js says the right answer when it sees this
+READS = {"why": ' data-why="1"', "question": ' data-ask="1"'}  # what race.js says by itself
 HEAR = " · tap to hear"  # on a card the server can read aloud
 ORDINAL = {1: "1st", 2: "2nd", 3: "3rd"}
 NO_CLAUDE = "Games need Claude, which isn't set up on this server."
@@ -180,9 +180,21 @@ def _label(text: str, y: int) -> str:
             f'fill="#085041">{html.escape(name)}</text>')
 
 
-def track_svg(race: Race | None, car_id: str, garage: Garage, why: bool = False) -> str:
-    """The track: the student's car and two rivals, placed by how far each has come; under it
-    the Sound switch. ``why``: a wrong answer's right answer is showing, for race.js to say."""
+def step_sound(race: Race) -> str:
+    """The sound for the answer just given: the finish, a roar or sputter, or for the bonus
+    one chosen by its grade (never a sputter); "" for none."""
+    if race.done:
+        return "finish"
+    if not race.marks:
+        return ""
+    if race.marks[-1] is None:  # the bonus
+        return BONUS_SOUNDS.get(race.bonus_tier, "")
+    return "roar" if race.marks[-1] else "sputter"
+
+
+def track_svg(race: Race | None, car_id: str, garage: Garage, reads: str = "") -> str:
+    """The track: the student's car and two rivals, placed by how far each has come, with the
+    sound for the answer just given. ``reads``: "why" or "question", for race.js to say."""
 
     full = QUESTIONS_PER_RACE * STEP_RIGHT * (race.boost if race else 1.0)  # 5 right in this car
 
@@ -195,8 +207,8 @@ def track_svg(race: Race | None, car_id: str, garage: Garage, why: bool = False)
     parts = [f'<svg viewBox="0 0 320 130" width="100%" role="img" aria-label="{where}" '
              f'data-race="{html.escape(race.id if race else "")}" '
              f'data-step="{race.answered if race else 0}" data-right="{race.right if race else 0}" '
-             f'data-total="{QUESTIONS_PER_RACE}" data-car="{html.escape(car_id)}"'
-             f'{WHY if why else ""}>', EDGE,
+             f'data-total="{QUESTIONS_PER_RACE}" data-car="{html.escape(car_id)}" '
+             f'data-sound="{step_sound(race) if race else ""}"{READS.get(reads, "")}>', EDGE,
              '<rect width="320" height="130" rx="8" fill="#E1F5EE"/>',
              '<line x1="0" y1="43" x2="320" y2="43" stroke="#9FE1CB" stroke-dasharray="6 6"/>',
              '<line x1="0" y1="86" x2="320" y2="86" stroke="#9FE1CB" stroke-dasharray="6 6"/>',
@@ -212,7 +224,7 @@ def track_svg(race: Race | None, car_id: str, garage: Garage, why: bool = False)
     parts.append("</g>")
     names = ("You", *(r.name for r in rivals))
     parts += [_label(name, y) for name, y in zip(names, LANES, strict=False)]
-    return "".join(parts) + "</svg>" + f'<div class="lerni-switches">{MUTE}</div>'
+    return "".join(parts) + "</svg>"
 
 
 def _picture(c: Car) -> str:
@@ -299,7 +311,7 @@ def question_card(race: Race, last: tuple[int, Turn] | None = None,
         number, turn = last
         return (f"Question {number + 1} of {QUESTIONS_PER_RACE}{hear}\n\n"
                 f"**{race.questions[number].question}**\n\n"
-                f"Not this time: it's **{turn.answer}**. {turn.why}", False)
+                f"{miss_opener(race, number)} It's **{turn.answer}**. {turn.why}", False)
     if race.bonus_live and race.bonus is not None:  # typed or spoken: no choices
         return (f"Question {race.answered + 1} of {QUESTIONS_PER_RACE}{hear}\n\n"
                 f"⭐ **Bonus: explain it in your own words!**\n\n**{race.bonus.question}**", False)
@@ -311,7 +323,7 @@ def question_card(race: Race, last: tuple[int, Turn] | None = None,
         number, turn = last
         return (f"Question {number + 1} of {QUESTIONS_PER_RACE}\n\n"
                 f"**{race.questions[number].question}**\n\n"
-                f"Not this time: it's **{turn.answer}**. {turn.why}", False)
+                f"{miss_opener(race, number)} It's **{turn.answer}**. {turn.why}", False)
     view = public(race)
     return (f"Question {view['number'] + 1} of {QUESTIONS_PER_RACE}{hear}\n\n"
             f"**{view['question']}**", True)
@@ -322,7 +334,7 @@ def _feedback(race: Race, turn: Turn, awarded: int, goal: str = "") -> str:
     if not turn.right and not race.done:
         return ""  # the card shows the right answer and its why, until Next
     line = (f"Right answer: boost! {slowed} 💨" if turn.right
-            else f"Not this time: it's **{turn.answer}**. {turn.why}")
+            else f"{miss_opener(race, race.answered - 1)} It's **{turn.answer}**. {turn.why}")
     if race.done:
         line += f"\n\nYou finished {ORDINAL[place(race)]}! ⭐ +{awarded}"
         line += f"\n\n{goal}" if goal else ""
@@ -451,7 +463,7 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
         mine = stars(points, viewer)
         return [gr.update(value=mine, visible=bool(mine)),
                 gr.update(value=hero_html(garage, p), visible=race is None),
-                gr.update(value=track_svg(race, driving, garage, why=talks and why),
+                gr.update(value=track_svg(race, driving, garage, reads if talks else ""),
                           visible=race is not None),
                 ask, *buttons, gr.update(visible=live), gr.update(value=""),
                 gr.update(interactive=True), line, go_update, gr.update(visible=waiting), ref,

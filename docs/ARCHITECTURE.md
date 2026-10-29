@@ -93,7 +93,7 @@ flowchart LR
 | Race concepts | Every idea race questions tested, kept for good: short labels, goals, first and last dates, times asked and right, review due dates for missed ideas, and each goal's level by goal id (never question text) | The server, at each race start and answer | `~/.lerni/student/concepts/<username>.json` |
 | Garage | Real cars: names, prices, stats, and cut-out pictures | The admin, by hand; players see them in Games (pictures only when signed in) | `~/.lerni/student/garage.json` and `cars/` (private: never in the repo) |
 | Nightly backups | A copy of the whole data folder each night at 03:00, the newest 30 kept (same disk: covers bad changes and deploys, not a broken disk) | `lerni backup` (a LaunchAgent) | `~/.lerni/backups/student/nightly-YYYY-MM-DD/` |
-| Race sounds | The roar, sputter, and finish clips (Pixabay; its licence forbids sharing the files) | The admin, by hand; played in races (served only when signed in) | `~/.lerni/student/sounds/` (private: never in the repo) |
+| Race sounds | The roar, sputter, finish, and zoom clips (Pixabay; its licence forbids sharing the files) | The admin, by hand; played in races (served only when signed in) | `~/.lerni/student/sounds/` (private: never in the repo) |
 | Sign-in | The signing secret; wrong-password delays | The app | `~/.lerni/student/secret.key`; delays in memory (built) |
 | Admin data | The admin's own questions, concepts, and reviews | Admin | SQLite at `~/.lerni/lerni.db` (built) |
 

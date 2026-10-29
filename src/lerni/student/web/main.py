@@ -112,6 +112,9 @@ def build_main_view(
             title = gr.Markdown(elem_classes="lerni-title")
             # a player's ⭐ (games.py); a tap says how to earn more
             stars = gr.Button(elem_classes="lerni-stars", size="sm", visible=False)
+            # one switch for every sound in the app (race.js keeps it on this device)
+            gr.HTML('<button type="button" id="lerni-mute" class="lerni-mute" aria-pressed="true"'
+                    ' aria-label="Sound on">🔊</button>', padding=False)
         with gr.Column(elem_id="lerni-earn", elem_classes="lerni-hide"):
             gr.Markdown(EARN)
             got_it = gr.Button("Got it", size="sm")
