@@ -85,25 +85,27 @@
   function autoWhy() {
     const reader = document.getElementById('lerni-read-go');
     const svg = document.querySelector('#lerni-track svg[data-race]');
-    if (!reader || !svg || !svg.dataset.why || !soundOn()) return;
+    if (!reader || !svg || !svg.dataset.why) return;
     const key = `${svg.dataset.race}:${svg.dataset.step}`;
     if (key === whyKey) return;  // a redraw doesn't say it again
-    whyKey = key;
+    whyKey = key;  // kept with sound off too, so turning it on later never says it
+    if (!soundOn()) return;
     hold(true);
     asked = current;
     reader.click();
   }
   // a new question is read by itself once, after the sound for the last answer
-  let askKey = '';
+  let askKey = '', askTimer = 0;
   function autoAsk() {
     const reader = document.getElementById('lerni-read-go');
     const svg = document.querySelector('#lerni-track svg[data-race]');
-    if (!reader || !svg || !svg.dataset.ask || !soundOn()) return;
+    if (!reader || !svg || !svg.dataset.ask) return;
     const key = `${svg.dataset.race}:${svg.dataset.step}`;
     if (key === askKey) return;  // a redraw doesn't read it again
-    askKey = key;
+    askKey = key;  // kept with sound off too, so turning it on later never reads it
+    if (!soundOn()) return;
     const mine = current;
-    setTimeout(() => {
+    askTimer = setTimeout(() => {
       if (mine !== current) return;  // answered or moved on meanwhile
       asked = current;
       reader.click();
@@ -125,10 +127,8 @@
       event.stopPropagation();
       return;
     }
-    // Race! unlocks sound; an answer tap wakes it again after the iPad paused it
+    // Race! and Next unlock sound; an answer tap wakes it again after the iPad paused it
     if (at('.lerni-go, .lerni-choice')) unlock();
-    // Next shows a question that reads itself: the tap lets the iPad play it
-    if (at('#lerni-next') && soundOn()) window.lerniTalk?.unlock();
     if (at('.lerni-go, .lerni-choice')) {  // moving on stops a reading
       current++;
       window.lerniTalk?.stop();
@@ -142,6 +142,7 @@
     const card = at('.lerni-question') || (at('#lerni-note') && svg?.dataset.why);
     const reader = document.getElementById('lerni-read-go');
     if (card && reader && soundOn() && !at('a, button, details')) {
+      clearTimeout(askTimer);  // this tap reads it: the reading by itself isn't needed
       window.lerniTalk?.unlock();
       asked = current;
       reader.click();
