@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import re
 import threading
+from collections.abc import Callable
 from datetime import date, timedelta
 from pathlib import Path
 from typing import Any
@@ -201,6 +202,20 @@ class ConceptStore:
 
         self._change(username, apply)
         return attempts
+
+    def adopt(self, username: str, goal_id_of: Callable[[str], str]) -> None:
+        """Give each idea from before goal ids its goal's id, found from its stored goal name
+        (an alias or a merged name too); written only when one is found."""
+        if not any(not c.get("goal_id") and goal_id_of(str(c.get("goal", "")))
+                   for c in self.ledger(username)):
+            return
+
+        def apply(ledger: list[dict[str, Any]]) -> None:
+            for c in ledger:
+                if not c.get("goal_id") and (found := goal_id_of(str(c.get("goal", "")))):
+                    c["goal_id"] = found
+
+        self._change(username, apply)
 
     def answered(self, username: str, goal_id: str, concept: str, right: bool,
                  today: date | None = None) -> None:

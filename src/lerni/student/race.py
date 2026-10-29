@@ -292,7 +292,8 @@ def _as_due(questions: list[Question], due: Sequence[tuple[str, str]]) -> list[Q
     answer moves that idea's review; each idea goes to one question at most."""
     out, taken = [], set()
     for q in questions:
-        label = next((idea for _, idea in due if idea not in taken and _same_idea(idea, q.concept)),
+        label = next((idea for goal, idea in due if idea not in taken
+                      and goal.casefold() == q.goal.casefold() and _same_idea(idea, q.concept)),
                      None)
         if label is not None:
             taken.add(label)
@@ -429,11 +430,12 @@ def goal_of(m: InterestMap, goal_id: str, name: str = "") -> Any:
 
 
 def _still_on(m: InterestMap, goal_id: str, key: str, name: str) -> bool:
-    # its goal is still there with the same notes; on a map without goals, anything goes
-    if not any(e.kind == "goal" for e in m.entries):
-        return True
-    e = goal_of(m, goal_id, name)
-    return e is not None and (not goal_id or notes_key(e.notes) == key)
+    # its goal is still there with the same notes; without an id, on a map without goals,
+    # anything goes
+    if goal_id:
+        e = goal_of(m, goal_id)
+        return e is not None and notes_key(e.notes) == key
+    return not any(e.kind == "goal" for e in m.entries) or goal_of(m, "", name) is not None
 
 
 def fits(q: Question, m: InterestMap) -> bool:
@@ -485,7 +487,7 @@ class Race:
     bonus_live: bool = False  # question 4 is the bonus now
     bonus_tier: str = ""  # how it went, once answered
     marks: list[bool | None] = field(default_factory=list)  # each answer; None: the bonus
-    attempts: list[int] = field(default_factory=list)  # each question's attempt, for the log
+    attempts: list[int | None] = field(default_factory=list)  # each question's, for the log
 
     @property
     def done(self) -> bool:
@@ -710,7 +712,8 @@ class RaceDesk:
         """Missed ideas to ask again: their goal still on the map, nothing set aside."""
         if self.concepts is None:
             return []
-        try:
+        try:  # ideas from before goal ids get theirs first, aliases and merges too
+            self.concepts.adopt(username, lambda name: getattr(goal_of(m, "", name), "id", ""))
             waiting = self.concepts.due(username, today)
         except OSError:
             return []  # best effort: the race goes on without reviews
@@ -881,11 +884,15 @@ class RaceDesk:
                 raise RaceUnavailable(NOT_READY)  # before the race is counted
             questions, rest = held[:QUESTIONS_PER_RACE], held[QUESTIONS_PER_RACE:]
             self.points.start_race(username, day)
-            attempts = self._remember(username, questions, day)
             race = new_race(questions, boost, car, rivals)
-            race.attempts = attempts
             race.bonus = self._take_bonus(username, day, m) if self.grader else None
             race.lucky = self.rng.random() < 1 / BONUS_ODDS  # drawn now, so a reload can't redraw
+            # the question the bonus will replace goes back unasked, so it isn't counted
+            skip = BONUS_AT if race.lucky and race.bonus is not None else None
+            counted = iter(self._remember(username, [q for i, q in enumerate(questions)
+                                                     if i != skip], day))
+            race.attempts = [None if i == skip else next(counted, None)
+                             for i in range(len(questions))]
             with self._lock:
                 later = [q for q in self._held(username, day) if id(q) not in before]  # meanwhile
                 self._sets[username] = (day.isoformat(), spread(rest + later))

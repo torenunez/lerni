@@ -39,13 +39,19 @@ def read_json(path: Path) -> dict[str, Any] | None:
         text = path.read_text(encoding="utf-8")
     except FileNotFoundError:
         return None
+    except OSError as exc:  # unreadable (permissions): left where it is
+        print(f"Couldn't read {path} ({type(exc).__name__}).", flush=True)
+        return None
     try:
         data = json.loads(text)
     except ValueError:
         data = None
     if isinstance(data, dict):
         return data
-    aside = path.with_name(f"{path.stem}.broken-{datetime.now():%Y%m%d-%H%M%S}.json")
-    os.replace(path, aside)  # kept for the admin, out of the next write's way
+    aside = path.with_name(f"{path.stem}.broken-{datetime.now():%Y%m%d-%H%M%S-%f}.json")
+    try:
+        os.replace(path, aside)  # kept for the admin, out of the next write's way
+    except FileNotFoundError:
+        return None  # another reader moved it aside first
     print(f"Moved aside a broken file: {aside}", flush=True)
     return None

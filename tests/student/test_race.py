@@ -1059,3 +1059,46 @@ def test_a_broken_concepts_file_is_moved_aside(tmp_path):
     assert race is not None and len(desk.concepts.ledger("sam")) == QUESTIONS_PER_RACE
     aside = list(broken.parent.glob("sam.broken-*.json"))
     assert len(aside) == 1 and aside[0].read_text() == '{"schema": 3, "concepts": ['
+
+
+def test_an_old_review_under_a_merged_goal_is_adopted(tmp_path):
+    # regression (review): an old entry under a name now an alias was never adopted, so its
+    # review never cleared
+    desk, maps, _ = stable_desk(tmp_path)
+
+    def insects(m):
+        e = add_goal(m, "Insects")
+        e.aliases.append("Bugs")
+        return e
+
+    goal = maps.change("sam", insects)
+    old = tmp_path / "concepts" / "sam.json"
+    old.parent.mkdir(parents=True)
+    old.write_text('{"schema": 3, "concepts": [{"concept": "metamorphosis", "goal": "Bugs", '
+                   '"first": "2026-10-01", "last": "2026-10-01", "asked": 1, "right": 0, '
+                   '"step": 0, "due": "2026-10-02"}]}')
+    assert desk._due("sam", maps.get("sam"), TODAY) == [("Insects", "metamorphosis")]
+    assert desk.concepts.add("sam", [(goal.id, "Insects", "metamorphosis")], TODAY) == [2]
+    desk.concepts.answered("sam", goal.id, "metamorphosis", True, TODAY)
+    assert len(desk.concepts.ledger("sam")) == 1 and desk.concepts.due("sam", TODAY) == []
+
+
+def test_the_question_the_bonus_replaces_is_not_counted_as_asked(tmp_path):
+    # regression (review): question 4 went back unasked but was counted, so it came back
+    # as attempt 2
+    from lerni.student.race import BONUS_AT
+
+    class Writer(FakeQuizzer):
+        def write(self, system, prompt):
+            return {"questions": [fresh("Fractions") for _ in range(10)],
+                    "bonus": [{"goal": "Fractions", "concept": "why halves",
+                               "question": "Explain why two halves make a whole.",
+                               "key_ideas": ["two equal parts", "together they make one"]}]}
+
+    desk, maps, _ = stable_desk(tmp_path, Writer())
+    desk.grader, desk.rng = object(), Lucky()
+    race = desk.start("sam", supervised=True, today=TODAY)
+    assert race.lucky and race.bonus is not None
+    asked = {c["concept"] for c in desk.concepts.ledger("sam")}
+    assert race.questions[BONUS_AT].concept not in asked and len(asked) == QUESTIONS_PER_RACE - 1
+    assert race.attempts[BONUS_AT] is None and race.attempts[0] == 1
