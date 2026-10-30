@@ -129,10 +129,13 @@ def serve(
 
     import uvicorn
 
-    from lerni.student.students import StudentStore
+    from lerni.student.jsonfiles import private
+    from lerni.student.students import StudentStore, default_data_dir
     from lerni.student.usage import Usage
     from lerni.student.web.app import build_app
 
+    os.umask(0o077)  # every file the server writes is this account's only
+    private(default_data_dir())  # and the ones written before v3.34
     usage = Usage()  # one for every Claude call: the warning and the pause
     (speech, why_off), chat, tagger = _speech(), _claude_chat(usage), _claude_tagger(usage)
     version = running_version()

@@ -4,7 +4,9 @@
 on development's data never replaces production's copy), made by ``lerni backup run``,
 which a LaunchAgent runs at 03:00. Other folders there (copies made by hand) are never
 touched. On the same disk: it covers a bad merge, edit, or deploy, not a broken disk
-(``--to`` makes a second copy elsewhere). Standard library only.
+(``--to`` makes a second copy elsewhere). The keys stay out of every copy, each map is
+copied with its journal under the map's lock, and ``restore`` puts a whole copy back.
+Standard library only.
 """
 
 from __future__ import annotations
@@ -13,23 +15,39 @@ import plistlib
 import re
 import shutil
 import subprocess
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 
+from lerni.student.journal import map_lock
+from lerni.student.jsonfiles import private
 from lerni.student.service import (
     DATA_ENV,
+    PORTS,
     Runner,
     ServiceError,
+    _same_folder,
     _uid,
     agent_label,
     agent_path,
+    agent_settings,
     log_path,
+    restart,
+    stop,
 )
+from lerni.student.students import USERNAME_RE
 
 NAME = "backup"  # com.lerni.backup
 KEEP = 30  # nightly copies kept
 NIGHTLY = re.compile(r"^nightly-\d{4}-\d{2}-\d{2}$")
 AT = {"Hour": 3, "Minute": 0}  # when the copy runs, while everyone's asleep
+KEYS = ("secret.key", "https-key.pem")  # never copied: a copy must not let anyone sign in
+CARRIED = (*KEYS, "https.pem")  # kept from the folder a restore replaces
+SKIP = shutil.ignore_patterns(".tmp-*", "*.lock", *KEYS)
+MAP_FILE = re.compile(r"^([a-z][a-z0-9-]{1,30})\.(json|events\.jsonl)$")
+
+
+class BackupError(Exception):
+    """A copy can't be restored; nothing was changed."""
 
 
 def prune(backups: Path, keep: int = KEEP) -> list[str]:
@@ -54,15 +72,88 @@ def run(data: Path, root: Path, today: date, keep: int = KEEP) -> Path:
     half = backups / f".partial-{today.isoformat()}"  # never counted as a copy
     shutil.rmtree(half, ignore_errors=True)
     try:
-        # maps and journals are written whole, so each copied file is whole
-        shutil.copytree(data, half, ignore=shutil.ignore_patterns(".tmp-*", "*.lock"))
+        # every file is written whole; maps wait for their journals (below)
+        shutil.copytree(data, half, ignore=lambda folder, names: {
+            *SKIP(folder, names), *(["maps"] if Path(folder) == data else [])})
+        _copy_maps(data / "maps", half / "maps")
     except OSError:
         shutil.rmtree(half, ignore_errors=True)
         raise
     shutil.rmtree(dest, ignore_errors=True)
     half.rename(dest)
     prune(backups, keep)
+    private(root)
     return dest
+
+
+def _copy_maps(src: Path, dest: Path) -> None:
+    # each map with its journal, holding that map's lock, so the two always agree
+    if not src.is_dir():
+        return
+    shutil.copytree(src, dest, ignore=lambda folder, names: {
+        *SKIP(folder, names), *(n for n in names if Path(folder) == src and MAP_FILE.match(n))})
+    users = sorted({m[1] for p in src.iterdir() if (m := MAP_FILE.match(p.name))})
+    for user in users:
+        if not USERNAME_RE.fullmatch(user):
+            continue
+        with map_lock(src, user):
+            for name in (f"{user}.json", f"{user}.events.jsonl"):
+                if (src / name).is_file():
+                    shutil.copy2(src / name, dest / name)
+
+
+def server_for(data: Path, home: Path) -> str | None:
+    """The installed server (prod or dev) whose agent uses this data folder, if any."""
+    for name in PORTS:
+        if agent_path(home, name).is_file():
+            folder = agent_settings(home, name).get(DATA_ENV) or home / ".lerni" / "student"
+            if _same_folder(Path(folder), data):
+                return name
+    return None
+
+
+def restore(data: Path, copy: Path, home: Path | None = None, run_: Runner = subprocess.run,
+            uid: int | None = None, now: datetime | None = None) -> tuple[Path, str | None]:
+    """Put a whole copy back as ``data``: stop the server that uses it, swap the folders
+    (keeping the keys and certificate), and start it again.
+
+    Returns:
+        The replaced folder, kept beside it, and the server started again (or None).
+
+    Raises:
+        BackupError: Not a copy of the data folder; nothing was changed.
+        OSError: The copy failed; nothing was changed and the server runs again.
+    """
+    if not (copy / "students").is_dir():
+        raise BackupError(f"{copy} isn't a copy of Lerni's data (it has no accounts).")
+    home, now = home or Path.home(), now or datetime.now()
+    server = server_for(data, home)
+    running = stop(server, run_, uid) if server else False
+    half = data.parent / f".restoring-{data.name}"
+    kept = data.parent / f"{data.name}.before-restore-{now:%Y%m%d-%H%M%S}"
+    try:
+        shutil.rmtree(half, ignore_errors=True)
+        shutil.copytree(copy, half)
+        for name in CARRIED:  # nobody signs out, and HTTPS keeps working
+            if (data / name).is_file():
+                shutil.copy2(data / name, half / name)
+        private(half)
+        if data.exists():
+            data.rename(kept)
+    except OSError:
+        shutil.rmtree(half, ignore_errors=True)
+        if running and server:
+            restart(server, run_, uid, home)
+        raise
+    try:
+        half.rename(data)
+    except OSError as exc:
+        raise BackupError(f"Stopped halfway: the copy is {half} and the old folder {kept}; "
+                          f"rename {kept.name} back to {data.name}.") from exc
+    if running and server:
+        restart(server, run_, uid, home)
+        return kept, server
+    return kept, None
 
 
 def backup_plist(lerni: Path, checkout: Path, home: Path, data: Path) -> bytes:
