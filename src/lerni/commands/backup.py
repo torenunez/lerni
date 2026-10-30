@@ -24,6 +24,9 @@ def _data(data: Path | None) -> Path:
 
     os.umask(0o077)  # anything written from here on is this account's only
     folder = (data or default_data_dir()).expanduser().resolve()
+    if data and not folder.is_dir():  # a typo never makes a new folder
+        console.print(f"[red]No such data folder: {folder}[/red]")
+        raise typer.Exit(1)
     private(folder)
     return folder
 
@@ -108,8 +111,11 @@ def restore_cmd(name: str = typer.Argument(
             raise typer.Exit(1)
     try:
         kept, server = restore(data, copy)
-    except (BackupError, ServiceError, OSError) as exc:
-        console.print(f"[red]Couldn't restore: {exc}[/red]")
+    except BackupError as exc:  # says itself whether anything changed
+        console.print(f"[red]{exc}[/red]")
+        raise typer.Exit(1) from None
+    except (ServiceError, OSError) as exc:
+        console.print(f"[red]Couldn't restore, nothing changed: {exc}[/red]")
         raise typer.Exit(1) from None
     console.print(f"Restored {copy.name}.\nThe folder it replaced: {kept}")
     if server:

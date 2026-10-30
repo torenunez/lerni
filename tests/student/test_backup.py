@@ -35,7 +35,7 @@ def test_nightly_backups_copy_everything_and_keep_thirty(tmp_path):
     # v3.34: the keys stay out, and the copies are private to this account
     assert not (copy / "secret.key").exists() and not (copy / "https-key.pem").exists()
     assert (copy / "https.pem").is_file()
-    assert (backups.stat().st_mode & 0o777, copy.stat().st_mode & 0o777) == (0o700, 0o700)
+    assert copy.stat().st_mode & 0o777 == 0o700
     assert (copy / "maps" / "sam.json").stat().st_mode & 0o777 == 0o600
     nights = sorted(p.name for p in (backups / "student").glob("nightly-*"))
     assert len(nights) == 30 and nights[-1] == "nightly-2026-10-21"
@@ -118,3 +118,25 @@ def test_restore_refuses_a_copy_with_no_accounts(tmp_path):
     with pytest.raises(BackupError):
         restore(data, empty, home=home, run_=_launchctl(calls), uid=501)
     assert calls == [] and (data / "secret.key").read_text() == "old"  # nothing changed
+
+
+def test_review_regressions_a_drive_stays_as_it_was_and_a_restart_failure_says_it_restored(
+        tmp_path):
+    drive = tmp_path / "drive"
+    drive.mkdir()
+    (drive / "photo.jpg").write_text("x")
+    (drive / "photo.jpg").chmod(0o644)
+    data, home, copy = _setup(tmp_path)
+    run(data, drive, date(2026, 10, 30))  # --to a drive: only Lerni's copies made private
+    assert (drive / "photo.jpg").stat().st_mode & 0o777 == 0o644
+
+    fake = _launchctl([])
+
+    def no_start(cmd, check=False, capture_output=False):  # stops, but won't start again
+        if cmd[1] == "bootstrap":
+            raise subprocess.CalledProcessError(1, cmd)
+        return fake(cmd, check, capture_output)
+
+    with pytest.raises(BackupError, match="before-restore"):  # names the kept folder
+        restore(data, copy, home=home, run_=no_start, uid=501)
+    assert next(tmp_path.glob("student.before-restore-*")).is_dir()  # and it did restore

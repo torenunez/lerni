@@ -34,7 +34,7 @@ from lerni.student.service import (
     restart,
     stop,
 )
-from lerni.student.students import USERNAME_RE
+from lerni.student.students import AccountError, check_username
 
 NAME = "backup"  # com.lerni.backup
 KEEP = 30  # nightly copies kept
@@ -82,7 +82,7 @@ def run(data: Path, root: Path, today: date, keep: int = KEEP) -> Path:
     shutil.rmtree(dest, ignore_errors=True)
     half.rename(dest)
     prune(backups, keep)
-    private(root)
+    private(backups)  # Lerni's copies only, never the rest of a drive
     return dest
 
 
@@ -94,7 +94,12 @@ def _copy_maps(src: Path, dest: Path) -> None:
         *SKIP(folder, names), *(n for n in names if Path(folder) == src and MAP_FILE.match(n))})
     users = sorted({m[1] for p in src.iterdir() if (m := MAP_FILE.match(p.name))})
     for user in users:
-        if not USERNAME_RE.fullmatch(user):
+        try:
+            check_username(user)
+        except AccountError:  # a reserved name can't have a lock: copy it as it is
+            for name in (f"{user}.json", f"{user}.events.jsonl"):
+                if (src / name).is_file():
+                    shutil.copy2(src / name, dest / name)
             continue
         with map_lock(src, user):
             for name in (f"{user}.json", f"{user}.events.jsonl"):
@@ -121,14 +126,19 @@ def restore(data: Path, copy: Path, home: Path | None = None, run_: Runner = sub
         The replaced folder, kept beside it, and the server started again (or None).
 
     Raises:
-        BackupError: Not a copy of the data folder; nothing was changed.
+        BackupError: Not a copy of the data folder, or the server wouldn't stop or start;
+            the message says whether anything changed.
         OSError: The copy failed; nothing was changed and the server runs again.
     """
     if not (copy / "students").is_dir():
         raise BackupError(f"{copy} isn't a copy of Lerni's data (it has no accounts).")
     home, now = home or Path.home(), now or datetime.now()
     server = server_for(data, home)
-    running = stop(server, run_, uid) if server else False
+    try:
+        running = stop(server, run_, uid) if server else False
+    except ServiceError as exc:
+        raise BackupError(f"{exc} Nothing changed; to start it: lerni service restart "
+                          f"{server}.") from None
     half = data.parent / f".restoring-{data.name}"
     kept = data.parent / f"{data.name}.before-restore-{now:%Y%m%d-%H%M%S}"
     try:
@@ -140,10 +150,13 @@ def restore(data: Path, copy: Path, home: Path | None = None, run_: Runner = sub
         private(half)
         if data.exists():
             data.rename(kept)
-    except OSError:
+    except OSError as exc:
         shutil.rmtree(half, ignore_errors=True)
         if running and server:
-            restart(server, run_, uid, home)
+            try:
+                restart(server, run_, uid, home)
+            except ServiceError as again:
+                raise BackupError(f"Nothing changed ({exc}), but {again}") from exc
         raise
     try:
         half.rename(data)
@@ -151,7 +164,10 @@ def restore(data: Path, copy: Path, home: Path | None = None, run_: Runner = sub
         raise BackupError(f"Stopped halfway: the copy is {half} and the old folder {kept}; "
                           f"rename {kept.name} back to {data.name}.") from exc
     if running and server:
-        restart(server, run_, uid, home)
+        try:
+            restart(server, run_, uid, home)
+        except ServiceError as exc:  # restored all the same: say where the old folder is
+            raise BackupError(f"Restored; the folder it replaced is {kept}. But {exc}") from None
         return kept, server
     return kept, None
 
