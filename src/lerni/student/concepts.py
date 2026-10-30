@@ -9,14 +9,14 @@ Standard library only.
 
 from __future__ import annotations
 
-import json
 import re
 import threading
+from collections.abc import Callable
 from datetime import date, timedelta
 from pathlib import Path
 from typing import Any
 
-from lerni.student.jsonfiles import write_json_atomic
+from lerni.student.jsonfiles import read_json, write_json_atomic
 from lerni.student.students import check_username, default_data_dir
 
 MAX_CONCEPT = 40  # characters in a label
@@ -62,14 +62,12 @@ class ConceptStore:
         return self.root / f"{check_username(username)}.json"
 
     def _read(self, username: str) -> dict[str, Any]:
-        try:
-            data = json.loads(self._path(username).read_text(encoding="utf-8"))
-        except (OSError, ValueError):
-            return {}  # missing or broken: nothing known, and the race still runs
-        return data if isinstance(data, dict) else {}
+        # missing or broken (moved aside, never overwritten): nothing known, the race still runs
+        return read_json(self._path(username)) or {}
 
     def ledger(self, username: str) -> list[dict[str, Any]]:
-        """Every idea asked, oldest-touched first: concept, goal, first, last, asked, right."""
+        """Every idea asked, oldest-touched first: concept, goal id, goal, first, last, asked,
+        right; an idea is its goal and label together (v3.33)."""
         data = self._read(username)
         if not data:
             return []
@@ -112,7 +110,7 @@ class ConceptStore:
             if levels is not None:
                 levels(by_goal)
             write_json_atomic(self._path(username),
-                              {"schema": 3, "concepts": ledger, "levels": by_goal})
+                              {"schema": 4, "concepts": ledger, "levels": by_goal})
 
     def levels(self, username: str) -> dict[str, int]:
         """Each goal's level by goal id; a goal not listed is at the start level."""
@@ -175,14 +173,17 @@ class ConceptStore:
                 out[goal_id] = (due, min(max(box, 0), len(GOAL_DAYS) - 1))
         return out
 
-    def add(self, username: str, items: list[tuple[str, str]], today: date | None = None) -> None:
-        """Note (goal, concept) pairs asked today; each moves to the end, as the newest."""
+    def add(self, username: str, items: list[tuple[str, str, str]],
+            today: date | None = None) -> list[int]:
+        """Note (goal id, goal, concept) triples asked today; each moves to the end, as the
+        newest. Returns each one's attempt: how many times it's been asked, this one included.
+        An entry from before goal ids, with the same label and goal name, is adopted."""
         day = (today or date.today()).isoformat()
+        attempts: list[int] = []
 
         def apply(ledger: list[dict[str, Any]]) -> None:
-            for goal, concept in items:
-                key = normalize(concept)
-                old = next((c for c in ledger if normalize(str(c["concept"])) == key), None)
+            for goal_id, goal, concept in items:
+                old = _find(ledger, goal_id, concept, goal)
                 if old is None:
                     old = {
                         "concept": concept,
@@ -194,12 +195,29 @@ class ConceptStore:
                     }
                 else:
                     ledger.remove(old)
-                old.update(goal=goal, last=day, asked=int(old.get("asked", 0)) + 1)
+                old.update(goal_id=goal_id, goal=goal, last=day,
+                           asked=int(old.get("asked", 0)) + 1)
                 ledger.append(old)
+                attempts.append(old["asked"])
+
+        self._change(username, apply)
+        return attempts
+
+    def adopt(self, username: str, goal_id_of: Callable[[str], str]) -> None:
+        """Give each idea from before goal ids its goal's id, found from its stored goal name
+        (an alias or a merged name too); written only when one is found."""
+        if not any(not c.get("goal_id") and goal_id_of(str(c.get("goal", "")))
+                   for c in self.ledger(username)):
+            return
+
+        def apply(ledger: list[dict[str, Any]]) -> None:
+            for c in ledger:
+                if not c.get("goal_id") and (found := goal_id_of(str(c.get("goal", "")))):
+                    c["goal_id"] = found
 
         self._change(username, apply)
 
-    def answered(self, username: str, concept: str, right: bool,
+    def answered(self, username: str, goal_id: str, concept: str, right: bool,
                  today: date | None = None) -> None:
         """Count an answer on this idea and move its review: a miss is due tomorrow; a right
         answer on a due idea pushes it to 3 days, then 7, then retires it."""
@@ -208,7 +226,7 @@ class ConceptStore:
         def apply(ledger: list[dict[str, Any]]) -> None:
             key = normalize(concept)
             for c in ledger:
-                if normalize(str(c["concept"])) != key:
+                if normalize(str(c["concept"])) != key or c.get("goal_id", "") != goal_id:
                     continue
                 if not right:
                     c.update(step=0, due=(day + timedelta(days=REVIEW_DAYS[0])).isoformat())
@@ -226,9 +244,24 @@ class ConceptStore:
 
         self._change(username, apply)
 
-    def due(self, username: str, today: date | None = None) -> list[tuple[str, str]]:
-        """(goal, idea) pairs due for review today or earlier, the longest waiting first."""
+    def due(self, username: str, today: date | None = None) -> list[tuple[str, str, str]]:
+        """(goal id, goal, idea) due for review today or earlier, the longest waiting first;
+        the id is "" for an idea from before goal ids."""
         day = today or date.today()
         waiting = [c for c in self.ledger(username) if (d := _day(c.get("due"))) and d <= day]
         waiting.sort(key=lambda c: c["due"])
-        return [(str(c.get("goal", "")), str(c["concept"])) for c in waiting]
+        return [(str(c.get("goal_id", "")), str(c.get("goal", "")), str(c["concept"]))
+                for c in waiting]
+
+
+def _find(ledger: list[dict[str, Any]], goal_id: str, concept: str,
+          goal: str) -> dict[str, Any] | None:
+    # this goal's idea; an entry without a goal id matches by its goal's name
+    key = normalize(concept)
+    for c in ledger:
+        if normalize(str(c["concept"])) != key:
+            continue
+        if c.get("goal_id") == goal_id or (
+                not c.get("goal_id") and str(c.get("goal", "")).casefold() == goal.casefold()):
+            return c
+    return None

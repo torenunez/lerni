@@ -9,6 +9,7 @@ clock or luck. Nothing here changes the MentalMap.
 from __future__ import annotations
 
 import ast
+import hashlib
 import math
 import operator
 import random
@@ -137,6 +138,9 @@ class Question:
     answer: int
     why: str
     concept: str = ""  # the idea it tests; never shown to the student (educators see misses)
+    goal_id: str = ""  # found once, when checked: a rename later keeps its history (v3.33)
+    notes_key: str = ""  # its goal's notes when written: a change drops it (v3.33)
+    level: int = START_LEVEL  # the goal's level it was written at
 
 
 def _facts(c: Car) -> str:
@@ -288,7 +292,8 @@ def _as_due(questions: list[Question], due: Sequence[tuple[str, str]]) -> list[Q
     answer moves that idea's review; each idea goes to one question at most."""
     out, taken = [], set()
     for q in questions:
-        label = next((idea for _, idea in due if idea not in taken and _same_idea(idea, q.concept)),
+        label = next((idea for goal, idea in due if idea not in taken
+                      and goal.casefold() == q.goal.casefold() and _same_idea(idea, q.concept)),
                      None)
         if label is not None:
             taken.add(label)
@@ -311,7 +316,7 @@ def check_questions(raw: Any, m: InterestMap, rng: random.Random | None = None,
     """
     rng = rng or random.Random()
     seen_ideas, seen_texts = {normalize(c) for c in concepts}, [*texts]
-    goals = {e.name.casefold(): e.name for e in m.entries if e.kind == "goal"}
+    goals = {e.name.casefold(): e for e in m.entries if e.kind == "goal"}
     items = raw.get("questions") if isinstance(raw, dict) else None
     kept: list[Question] = []
     for item in items if isinstance(items, list) else []:
@@ -336,9 +341,10 @@ def check_questions(raw: Any, m: InterestMap, rng: random.Random | None = None,
         if key is not None and value is not None and abs(value - key) > 1e-9:
             continue  # the keyed answer isn't what the sum gives (a sum that won't read: ignored)
         rng.shuffle(choices)  # the right one isn't always first
-        named = goals.get(goal.casefold(), goal)  # the map's spelling
-        question = Question(named, q, (choices[0], choices[1], choices[2]),
-                            choices.index(answer_text), why, concept)
+        e = goals.get(goal.casefold())  # the map's spelling, id, and notes
+        question = Question(e.name if e else goal, q, (choices[0], choices[1], choices[2]),
+                            choices.index(answer_text), why, concept,
+                            e.id if e else "", notes_key(e.notes) if e else "")
         if not fits(question, m):
             continue
         if repeat:  # asked recently, held already, or a twin in this set
@@ -359,11 +365,14 @@ class Bonus:
     concept: str
     question: str
     key_ideas: tuple[str, ...]
+    goal_id: str = ""
+    notes_key: str = ""
+    level: int = START_LEVEL
 
 
 def check_bonus(raw: Any, m: InterestMap, concepts: Sequence[str] = ()) -> list[Bonus]:
     """Keep only well-formed bonus questions on the map's goals, new, and clear of set-asides."""
-    goals = {e.name.casefold(): e.name for e in m.entries if e.kind == "goal"}
+    goals = {e.name.casefold(): e for e in m.entries if e.kind == "goal"}
     seen = {normalize(c) for c in concepts}
     items = raw.get("bonus") if isinstance(raw, dict) else None
     kept: list[Bonus] = []
@@ -378,7 +387,9 @@ def check_bonus(raw: Any, m: InterestMap, concepts: Sequence[str] = ()) -> list[
                 or (goals and goal.casefold() not in goals)
                 or mentions_set_aside(m, " ".join([q, concept, *ideas]))):
             continue
-        kept.append(Bonus(goals.get(goal.casefold(), goal), concept, q, tuple(ideas)))
+        e = goals.get(goal.casefold())
+        kept.append(Bonus(e.name if e else goal, concept, q, tuple(ideas), e.id if e else "",
+                          notes_key(e.notes) if e else ""))
         seen.add(normalize(concept))
     return kept
 
@@ -407,11 +418,31 @@ def pick_goals(m: InterestMap, schedule: Mapping[str, tuple[date, int]],
     return (mixed(ready) + mixed([e for e in goals if due(e) > today]))[:k]
 
 
+def notes_key(notes: str) -> str:
+    """A short fingerprint of a goal's notes, so a question knows when they've changed."""
+    return hashlib.sha256(notes.strip().encode()).hexdigest()[:12]
+
+
+def goal_of(m: InterestMap, goal_id: str, name: str = "") -> Any:
+    """The map's goal with this id (or, from before ids, this name), or None."""
+    e = next((e for e in m.entries if e.id == goal_id), None) if goal_id else m.find(name)
+    return e if e is not None and e.kind == "goal" else None
+
+
+def _still_on(m: InterestMap, goal_id: str, key: str, name: str) -> bool:
+    # its goal is still there with the same notes; without an id, on a map without goals,
+    # anything goes
+    if goal_id:
+        e = goal_of(m, goal_id)
+        return e is not None and notes_key(e.notes) == key
+    return not any(e.kind == "goal" for e in m.entries) or goal_of(m, "", name) is not None
+
+
 def fits(q: Question, m: InterestMap) -> bool:
-    """Whether a question may still race on this map: its goal is there, nothing set aside."""
-    goals = {e.name.casefold() for e in m.entries if e.kind == "goal"}
+    """Whether a question may still race on this map: its goal is there with the same notes,
+    nothing set aside."""
     shown = " ".join([q.question, *q.choices, q.why, q.concept])  # what's shown, and its idea
-    return (not goals or q.goal.casefold() in goals) and not mentions_set_aside(m, shown)
+    return _still_on(m, q.goal_id, q.notes_key, q.goal) and not mentions_set_aside(m, shown)
 
 
 @dataclass(frozen=True)
@@ -456,6 +487,7 @@ class Race:
     bonus_live: bool = False  # question 4 is the bonus now
     bonus_tier: str = ""  # how it went, once answered
     marks: list[bool | None] = field(default_factory=list)  # each answer; None: the bonus
+    attempts: list[int | None] = field(default_factory=list)  # each question's, for the log
 
     @property
     def done(self) -> bool:
@@ -617,7 +649,7 @@ def spread(questions: list[Question]) -> list[Question]:
     """Take turns across the goals, so a race isn't five questions about one of them."""
     by_goal: dict[str, list[Question]] = {}
     for q in questions:
-        by_goal.setdefault(q.goal.casefold(), []).append(q)
+        by_goal.setdefault(q.goal_id or q.goal.casefold(), []).append(q)
     turns = list(by_goal.values())
     return [q for round_ in range(max(map(len, turns), default=0))
             for queue in turns if round_ < len(queue) for q in [queue[round_]]]
@@ -680,13 +712,13 @@ class RaceDesk:
         """Missed ideas to ask again: their goal still on the map, nothing set aside."""
         if self.concepts is None:
             return []
-        try:
+        try:  # ideas from before goal ids get theirs first, aliases and merges too
+            self.concepts.adopt(username, lambda name: getattr(goal_of(m, "", name), "id", ""))
             waiting = self.concepts.due(username, today)
         except OSError:
             return []  # best effort: the race goes on without reviews
-        ok = [(goal, idea) for goal, idea in waiting
-              if (g := m.find(goal)) is not None and g.kind == "goal"
-              and not mentions_set_aside(m, idea)]
+        ok = [(g.name, idea) for goal_id, goal, idea in waiting  # the goal's name today
+              if (g := goal_of(m, goal_id, goal)) is not None and not mentions_set_aside(m, idea)]
         return ok[:MAX_DUE]
 
     def _verify(self, questions: list[Question]) -> list[Question]:
@@ -749,10 +781,14 @@ class RaceDesk:
             new_spare: list[Question] = []
             # due ideas may be a bonus too: only recent, held, and this set's ideas are out
             seen = [*concepts, *(q.concept for q in kept)]
-            self._keep_bonus(username, today, check_bonus(raw, m, seen))
+            self._keep_bonus(username, today, [replace(b, level=levels.get(b.goal_id, START_LEVEL))
+                                               for b in check_bonus(raw, m, seen)])
             new = check_questions(raw, m, concepts=[*concepts, *(q.concept for q in kept)],
                                   texts=[*texts, *(normalize(q.question) for q in kept)],
                                   spare=new_spare)
+            # each at the level its goal was written for, for the results log
+            new, new_spare = ([replace(q, level=levels.get(q.goal_id, START_LEVEL)) for q in qs]
+                              for qs in (new, new_spare))
             agreed = {id(q) for q in self._verify(new + new_spare)}  # one blind check per try
             kept += [q for q in new if id(q) in agreed]
             spare += [q for q in new_spare if id(q) in agreed]
@@ -848,10 +884,15 @@ class RaceDesk:
                 raise RaceUnavailable(NOT_READY)  # before the race is counted
             questions, rest = held[:QUESTIONS_PER_RACE], held[QUESTIONS_PER_RACE:]
             self.points.start_race(username, day)
-            self._remember(username, questions, day)
             race = new_race(questions, boost, car, rivals)
             race.bonus = self._take_bonus(username, day, m) if self.grader else None
             race.lucky = self.rng.random() < 1 / BONUS_ODDS  # drawn now, so a reload can't redraw
+            # the question the bonus will replace goes back unasked, so it isn't counted
+            skip = BONUS_AT if race.lucky and race.bonus is not None else None
+            counted = iter(self._remember(username, [q for i, q in enumerate(questions)
+                                                     if i != skip], day))
+            race.attempts = [None if i == skip else next(counted, None)
+                             for i in range(len(questions))]
             with self._lock:
                 later = [q for q in self._held(username, day) if id(q) not in before]  # meanwhile
                 self._sets[username] = (day.isoformat(), spread(rest + later))
@@ -860,16 +901,19 @@ class RaceDesk:
         self.prefill(username, supervised)  # the next race starts quickly
         return race
 
-    def _remember(self, username: str, questions: list[Question], day: date) -> None:
-        """Note what this race asks, so later questions ask about something else."""
+    def _remember(self, username: str, questions: list[Question], day: date) -> list[int]:
+        """Note what this race asks, so later questions ask about something else; each
+        question's attempt (1: a new idea), or none when it can't be noted."""
         with self._lock:
             asked = self._asked.setdefault(username, deque(maxlen=ASKED_IN_MEMORY))
             asked.extend(normalize(q.question) for q in questions)
         if self.concepts is not None:
             try:
-                self.concepts.add(username, [(q.goal, q.concept) for q in questions], day)
+                return self.concepts.add(
+                    username, [(q.goal_id, q.goal, q.concept) for q in questions], day)
             except OSError:
                 pass  # best effort: the race goes on without remembering its ideas
+        return []
 
     def pick(self, username: str, race_id: str, number: int,
              choice: int) -> tuple[Race | None, Turn | None, int]:
@@ -890,9 +934,8 @@ class RaceDesk:
         if turn is not None and self.concepts is not None:
             try:  # best effort: the long-term record of how each idea and goal went
                 q = race.questions[number]
-                self.concepts.answered(username, q.concept, turn.right)
-                goal = self.maps.get(username).find(q.goal)
-                self.concepts.practiced(username, goal.id if goal else "", turn.right)
+                self.concepts.answered(username, q.goal_id, q.concept, turn.right)
+                self.concepts.practiced(username, q.goal_id, turn.right)
             except Exception:  # a broken map or a full disk: the answer and award still count
                 pass
         awarded = 0
@@ -908,12 +951,11 @@ class RaceDesk:
         if self.concepts is None:
             return
         try:  # best effort: the race and its award stand regardless
-            m, per_goal = self.maps.get(username), {}
+            per_goal: dict[str, tuple[int, int]] = {}
             for q, mark in zip(race.questions, race.marks, strict=False):
-                goal = m.find(q.goal) if mark is not None else None
-                if goal is not None and goal.kind == "goal":
-                    right, asked = per_goal.get(goal.id, (0, 0))
-                    per_goal[goal.id] = (right + mark, asked + 1)
+                if mark is not None and q.goal_id:
+                    right, asked = per_goal.get(q.goal_id, (0, 0))
+                    per_goal[q.goal_id] = (right + mark, asked + 1)
             self.concepts.raced(username, per_goal)
         except Exception as exc:  # noqa: BLE001 - a broken map or a full disk
             print(f"Goal boxes not moved ({type(exc).__name__}).", flush=True)
@@ -927,11 +969,10 @@ class RaceDesk:
 
     def _take_bonus(self, username: str, day: date, m: InterestMap) -> Bonus | None:
         # the oldest held bonus that still fits the map (a goal or a set-aside may have changed)
-        goals = {e.name.casefold() for e in m.entries if e.kind == "goal"}
         with self._lock:
             _, held = self._bonuses.get(username, ("", []))
             fit = [b for b in held  # kept past midnight, like the questions
-                   if (not goals or b.goal.casefold() in goals)
+                   if _still_on(m, b.goal_id, b.notes_key, b.goal)
                    and not mentions_set_aside(m, " ".join([b.question, b.concept, *b.key_ideas]))]
             if fit:
                 held.remove(fit[0])
@@ -1048,18 +1089,22 @@ class RaceDesk:
         try:
             if tier == "nailed":
                 def explained(m: InterestMap) -> None:
-                    g = m.find(bonus.goal)
-                    if g is not None and g.kind == "goal" and day.isoformat() not in g.explained:
+                    g = goal_of(m, bonus.goal_id, bonus.goal)
+                    if g is not None and day.isoformat() not in g.explained:
                         g.explained.append(day.isoformat())
                 self.maps.change(username, explained, by="race bonus")
+            attempt = {}  # known when it counts toward reviews
             if self.concepts is not None and tier in ("nailed", "partly"):
-                self.concepts.add(username, [(bonus.goal, bonus.concept)], day)
-                self.concepts.answered(username, bonus.concept, tier == "nailed", day)
+                attempt["attempt"] = self.concepts.add(
+                    username, [(bonus.goal_id, bonus.goal, bonus.concept)], day)[0]
+                self.concepts.answered(username, bonus.goal_id, bonus.concept, tier == "nailed",
+                                       day)
             if self.results is not None:
-                goal = self.maps.get(username).find(bonus.goal)
+                goal = goal_of(self.maps.get(username), bonus.goal_id, bonus.goal)
                 self.results.add(username, {
-                    "day": day.isoformat(), "race": race.id, "goal_id": goal.id if goal else "",
-                    "goal": bonus.goal, "concept": bonus.concept,
+                    "day": day.isoformat(), "race": race.id, "goal_id": bonus.goal_id,
+                    "goal": goal.name if goal else bonus.goal, "concept": bonus.concept,
+                    "level": bonus.level, **attempt,
                     "q": question_hash(bonus.question), "bonus": tier,
                     **({"care": True} if tier == CARE else {})})
         except Exception:  # a broken map or a full disk: the bonus still counts
@@ -1071,10 +1116,13 @@ class RaceDesk:
             return
         q, day = race.questions[number], date.today().isoformat()
         try:  # best effort: the race never stops for its record
-            goal = self.maps.get(username).find(q.goal)
+            attempt = race.attempts[number] if number < len(race.attempts) else None
+            goal = goal_of(self.maps.get(username), q.goal_id, q.goal)  # its name today
             self.results.add(username, {
-                "day": day, "race": race.id, "goal_id": goal.id if goal else "",
-                "goal": q.goal, "concept": q.concept, "q": question_hash(q.question),
+                "day": day, "race": race.id, "goal_id": q.goal_id,
+                "goal": goal.name if goal else q.goal, "concept": q.concept,
+                "q": question_hash(q.question),
+                "level": q.level, **({"attempt": attempt} if attempt else {}),
                 "right": right, "seconds": round(max(took, 0.0), 1)})
             if race.done:
                 self.results.add(username, {"day": day, "race": race.id, "place": place(race),
