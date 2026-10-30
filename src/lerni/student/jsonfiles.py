@@ -1,5 +1,5 @@
-"""Atomic JSON writes, and reads that keep a broken file, shared by the stores. Standard
-library only."""
+"""Atomic JSON writes, reads that keep a broken file, and private folders, shared by the
+stores. Standard library only."""
 
 from __future__ import annotations
 
@@ -55,3 +55,17 @@ def read_json(path: Path) -> dict[str, Any] | None:
         return None  # another reader moved it aside first
     print(f"Moved aside a broken file: {aside}", flush=True)
     return None
+
+
+def private(root: Path) -> None:
+    """Make ``root`` and everything in it readable by this account only: folders 0700, files
+    0600. A file that can't be changed is skipped and logged."""
+    if not root.is_dir():
+        return
+    for folder, _dirs, files in os.walk(root):
+        for path, mode in [(Path(folder), 0o700), *((Path(folder) / f, 0o600) for f in files)]:
+            try:
+                if not path.is_symlink() and path.stat().st_mode & 0o777 != mode:
+                    path.chmod(mode)
+            except OSError as exc:
+                print(f"Couldn't make {path} private ({type(exc).__name__}).", flush=True)

@@ -7,7 +7,6 @@ conversation; goals and their notes come only from a person. See
 
 from __future__ import annotations
 
-import fcntl
 import hashlib
 import json
 import re
@@ -20,7 +19,7 @@ from datetime import date, timedelta
 from pathlib import Path
 from typing import Any, Literal, TypeVar
 
-from lerni.student.journal import JournalError, MapJournal, replay, undo
+from lerni.student.journal import JournalError, MapJournal, map_lock, replay, undo
 from lerni.student.jsonfiles import write_json_atomic
 from lerni.student.students import check_username, default_data_dir
 
@@ -581,14 +580,8 @@ class MapStore:
     @contextmanager
     def _locked(self, username: str) -> Iterator[None]:
         # this server's threads, then any other process (the lerni map commands), in that order
-        with self._lock(username):
-            self.root.mkdir(parents=True, exist_ok=True)
-            with (self.root / f"{check_username(username)}.lock").open("a") as handle:
-                fcntl.flock(handle, fcntl.LOCK_EX)
-                try:
-                    yield
-                finally:
-                    fcntl.flock(handle, fcntl.LOCK_UN)
+        with self._lock(username), map_lock(self.root, username):
+            yield
 
     def _save(self, username: str, before: dict[str, Any], m: InterestMap, by: str) -> None:
         after = _to_dict(_from_dict(_to_dict(m)))  # as a load would tidy it, so the journal agrees

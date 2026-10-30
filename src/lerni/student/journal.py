@@ -12,10 +12,13 @@ text. Works on map dicts, so it needs nothing from ``interests.py``. Standard li
 from __future__ import annotations
 
 import copy
+import fcntl
 import hashlib
 import json
 import threading
 from collections import Counter
+from collections.abc import Iterator
+from contextlib import contextmanager
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -168,6 +171,12 @@ def undo(current: dict[str, Any], events: list[dict[str, Any]], n: int) -> dict[
     event = next((e for e in events if e.get("n") == n and e.get("by") != "baseline"), None)
     if event is None:
         raise JournalError(f"There's no change {n} to undo.")
+    replaced = next((e["n"] for e in events if e.get("by") == "baseline" and e["n"] > n), None)
+    if replaced is not None:  # changed outside the journal since: it can't say what changed
+        raise JournalError(
+            f"The map was replaced after change {n} (line {replaced}), so it can't be undone. "
+            f"To return to before it, rebuild with --upto {n - 1}."
+        )
     changes = event.get("changes", {})
     mine_links, mine_fields = _link_pairs(changes), set(changes.get("fields", {})) - COUNTERS
     blocked = []
@@ -238,6 +247,19 @@ def summary(event: dict[str, Any]) -> str:
     parts += [f"{count} link{'s' if count != 1 else ''}"] if count else []
     parts += [f for f in changes.get("fields", {}) if f not in COUNTERS]
     return " ".join(parts) or "no visible change"
+
+
+@contextmanager
+def map_lock(maps: Path, username: str) -> Iterator[None]:
+    """Hold ``username``'s map file lock (``maps/<user>.lock``), shared by every process that
+    writes or copies the map and its journal."""
+    maps.mkdir(parents=True, exist_ok=True)
+    with (maps / f"{check_username(username)}.lock").open("a") as handle:
+        fcntl.flock(handle, fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(handle, fcntl.LOCK_UN)
 
 
 class MapJournal:

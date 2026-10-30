@@ -103,3 +103,20 @@ def test_review_regressions_undo_is_smart_and_safe_and_the_journal_stays_true(tm
     store.change("sam", tag({"new_interests": ["sharks"]}, "sharks", d[6]), by="tagger")
     store.change("sam", lambda m: remove(m, m.find("shark").id), by="person:ann")
     assert store.get("sam").find("sharks") is not None and store.rebuild("sam")
+
+
+def test_undo_stops_at_a_map_replaced_since(tmp_path):
+    store, journal = MapStore(tmp_path), MapJournal(tmp_path)
+    goal = store.change("sam", lambda m: add_goal(m, "Fractions"), by="person:ann")
+    store.change("sam", lambda m: set_notes(m, goal.id, "halves"), by="person:ann")  # change 3
+    path = tmp_path / "maps" / "sam.json"  # a restore puts other notes back
+    saved = json.loads(path.read_text())
+    saved["entries"][0]["notes"] = "quarters"
+    path.write_text(json.dumps(saved))
+    store.change("sam", lambda m: add_goal(m, "Saturn"), by="person:ann")  # a baseline, then 5
+    assert journal.read("sam")[-2]["by"] == "baseline"
+    with pytest.raises(JournalError, match="replaced"):  # never writes "" over "quarters"
+        store.undo("sam", 3)
+    assert store.get("sam").get(goal.id).notes == "quarters"
+    store.rebuild("sam", upto=2)  # going back before it still works
+    assert store.get("sam").get(goal.id).notes == ""
