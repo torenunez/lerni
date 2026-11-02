@@ -4,15 +4,19 @@ Where things really stand, then a dated log, newest first. Completed work is rec
 
 Record each kind of "done" only when it actually happens, with the date: code built, content approved, app ready, a student session held. Passing tests show code behaves as specified; they don't make anything ready for a student.
 
-## Current state (2026-10-30, v3.33 on the home server: Versions 1 and 2 built: the conversation, MentalMaps, HTTPS, and voice; Version 3's race, garage, and Chat points)
+## Current state (2026-11-01, v3.34 on the home server: Versions 1 and 2 built: the conversation, MentalMaps, HTTPS, and voice; Version 3's race, garage, and Chat points)
 
 - **Built:** the student app's core (student accounts, sign-in, Lerni's conversations, the MentalMap with its tagger and logs kept a year, Upload and educator feedback, and the educator agent); `lerni serve` with a sign-in page and one app with a ☰ menu by role: an independent student's Chat, My MentalMap (an editable list, the picture, and Upload), and Settings; an educator's student page (a Suggest a goal box, goal progress this week by area, the folded list, and the picture), opened at sign-in, with Students in Settings; a supervised student's Chat, full screen, and Games (a race for points spent on real cars; educators race too); good answers in Chat earn points too. Hold to talk with spoken answers; a Claude usage warning and rest. Both servers run as LaunchAgents (`lerni service`). The admin tool (`lerni`, with `lerni student`, `lerni logs`, and `lerni feedback`). A [code manifest](code-manifest.md) of every file. Tests: 223 passed.
-- **Designed:** the interest map, goals, the tagger, upload, feedback, and the supervised conversation ([specs/04-interest-map.md](../plans/specs/04-interest-map.md)); approved with PR #12. Harder races, practice on the map, and probes ([spec 09b](../plans/specs/09b-harder-races.md)).
+- **Designed:** the interest map, goals, the tagger, upload, feedback, and the supervised conversation ([specs/04-interest-map.md](../plans/specs/04-interest-map.md)); approved with PR #12. Harder races, practice on the map, and probes ([spec 09b](../plans/specs/09b-harder-races.md)). The order from here: probes, local embeddings, then Versions 4–7 ([roadmap](roadmap.md)).
 - **Not yet:** a recorded supervised session (the supervised student has used it informally).
 
 When something changes, update this section and add a log entry below.
 
 ## Log
+
+### 2026-11-01 (the new order; v3.35)
+
+- The admin's decisions (2026-10-30, [plan](../plans/v3.35-new-order.md)): probes, embeddings, remembering, and suggested goals matter most. Probes come next (v3.36), then local embeddings (v3.37–v3.38). Versions are renumbered to follow shipping order: 4 the educator's Chat, 5 suggested goals, 6 remembering, 7 without an educator present. The fact-card library is dropped: the educator gives goals and right answers through Chat and marks Claude's race questions right or wrong, like a labeler, and what's checked is the checked bank, the one exception to rule 6 (questions and answers an educator approved or wrote; never a student's words). One Chat is split: goal proposals and notes about any student go to Version 4 and 5, feedback and an independent student's own proposals in Chat to Later. Docs only.
 
 ### 2026-10-30 (backups you can restore; v3.34 built)
 
