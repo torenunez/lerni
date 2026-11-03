@@ -514,3 +514,16 @@ def test_a_car_out_of_reach_shows_only_its_picture_name_and_price(tmp_path):
     assert "Quick" in locked and "$100,000" in locked and "family car" in locked
     assert "⚡" not in locked and "Car facts" not in locked  # earned by saving up
     assert "⚡" in open_ and "Car facts" in open_ and "V8" in open_
+
+
+def test_a_person_moves_a_goal_to_another_area(tmp_path):
+    from lerni.student.interests import MapStore, add_goal
+    from lerni.student.web.mentallist import move_area
+
+    students, maps = StudentStore(tmp_path), MapStore(tmp_path)
+    students.add("ann", "Ann", Kind.INDEPENDENT, "long enough")
+    maps.change("ann", lambda m: add_goal(m, "Counting in Korean"))
+    ann = Viewer("ann", "Ann", Role.INDEPENDENT)
+    assert move_area(maps, students, ann, None, "e1", "Language", expected="ann").startswith("✅")
+    assert maps.get("ann").find("Counting in Korean").area == "Language"
+    assert maps.journal.read("ann")[-1]["by"] == "person:ann"

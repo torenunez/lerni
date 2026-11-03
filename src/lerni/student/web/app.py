@@ -9,6 +9,7 @@ handler re-resolves the viewer. See the trust boundaries in
 from __future__ import annotations
 
 import os
+import threading
 from pathlib import Path
 from typing import Any
 
@@ -19,6 +20,7 @@ import gradio as gr  # noqa: E402
 from fastapi import FastAPI, Request  # noqa: E402
 from fastapi.responses import FileResponse, PlainTextResponse, RedirectResponse  # noqa: E402
 
+from lerni.student.area_sorter import AreaSorter  # noqa: E402
 from lerni.student.concepts import ConceptStore  # noqa: E402
 from lerni.student.conversation import ChatModel, Conversations  # noqa: E402
 from lerni.student.educator_agent import EducatorChats
@@ -289,6 +291,12 @@ def build_app(
                       log=log,  # a worrying bonus answer is kept where Chat's are
                       speech=speech)  # reads questions aloud
              if quizzer is not None else None)
+    if quizzer is not None:  # Lerni sorts goals with no area after each save, and once now
+        sorter = AreaSorter(quizzer, maps)
+        maps.after_change = sorter.sort
+        threading.Thread(target=lambda: [sorter.sort(s.username) for s in
+                                         students.list_students() if not s.archived],
+                         daemon=True).start()
     log.purge()  # at startup; then once a day as exchanges are logged
     # production only (a labelled server is development): a restart loses held questions
     if races is not None and not label:

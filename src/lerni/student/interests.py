@@ -376,18 +376,23 @@ def areas(m: InterestMap) -> list[str]:
     return list(seen.values())
 
 
+def area_group(area: str) -> str:
+    """The heading a goal is shown under: a person's "Other" and no area are one group."""
+    return "" if area.casefold() == "other" else area
+
+
 def by_area(goals: list[Entry]) -> list[tuple[str, list[Entry]]]:
     """Goals under their areas: the areas with the most goals first, then by name; no area
     ("Other") last."""
     groups: dict[str, list[Entry]] = {}
     for e in goals:
-        groups.setdefault(e.area, []).append(e)
+        groups.setdefault(area_group(e.area), []).append(e)
     named = sorted((a for a in groups if a), key=lambda a: (-len(groups[a]), a.casefold()))
     return [(a, groups[a]) for a in named] + ([("Other", groups[""])] if "" in groups else [])
 
 
 def set_area(m: InterestMap, entry_id: str, area: str) -> Entry:
-    """A person sets a goal's subject area (Lerni proposes; a tick decides).
+    """Set a goal's subject area: Lerni's sort, or a person's Move ("Other": Lerni leaves it).
 
     Raises:
         MapError: Unknown entry, not a goal, or not a plain name.
@@ -396,7 +401,8 @@ def set_area(m: InterestMap, entry_id: str, area: str) -> Entry:
     if entry.kind != "goal":
         raise MapError("Only goals have an area.")
     wanted = check_name(area)
-    entry.area = {a.casefold(): a for a in areas(m)}.get(wanted.casefold(), wanted)  # one spelling
+    spelled = {a.casefold(): a for a in [*areas(m), "Other"]}  # one spelling each
+    entry.area = spelled.get(wanted.casefold(), wanted)
     m.edits += 1
     return entry
 
@@ -561,6 +567,7 @@ class MapStore:
         self._locks: dict[str, threading.Lock] = {}
         self._guard = threading.Lock()
         self.journal = MapJournal(root)  # every change, so any one can be undone (v3.20)
+        self.after_change: Callable[[str], Any] | None = None  # the area sorter (v3.37)
 
     def _path(self, username: str) -> Path:
         # canonical usernames only, so a name can never point outside the folder
@@ -595,14 +602,19 @@ class MapStore:
         """Read, change, and save ``username``'s map with no other change in between.
 
         ``by`` says who made the change, for the journal: ``tagger``, ``person:<username>``,
-        ``upload``, ``educator chat``, or ``admin``.
+        ``upload``, ``educator chat``, ``lerni`` (the area sorter), or ``admin``.
         """
         with self._locked(username):
             m = self.get(username)
             before = _to_dict(m)
             result = fn(m)
             self._save(username, before, m, by)
-            return result
+        if self.after_change is not None:  # after the lock, so it can change the map too
+            try:
+                self.after_change(username)
+            except Exception:  # noqa: BLE001 - never fails the save
+                pass
+        return result
 
     def undo(self, username: str, n: int, by: str = "admin") -> None:
         """Reverse change ``n`` as a new change, so the undo can be undone too.
