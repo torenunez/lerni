@@ -28,6 +28,7 @@ from lerni.student.interests import (
     MapStore,
     add_goal,
     add_interest,
+    areas,
     by_area,
     children,
     delete_for_good,
@@ -39,6 +40,7 @@ from lerni.student.interests import (
     put_back,
     remove,
     rename,
+    set_area,
     set_notes,
     strength,
     ungroup,
@@ -111,6 +113,21 @@ def rename_item(
         requested,
         lambda m: rename(m, entry_id or "", name),
         "Renamed.",
+        expected,
+    )
+
+
+def move_area(
+    maps, students, viewer, requested, entry_id: str, area: str, expected: str | None = None
+) -> str:
+    """Move a goal to another subject area (or a new one typed in)."""
+    return _act(
+        maps,
+        students,
+        viewer,
+        requested,
+        lambda m: set_area(m, entry_id or "", area or ""),
+        "Moved.",
         expected,
     )
 
@@ -284,6 +301,14 @@ def mental_list(
 
             btn.click(on_out, [requested, version], [status, version], **PRIVATE)
 
+    def wire_area(who: str, e_id: str, pick_area: Any, move: Any) -> None:
+        """An open goal's Move to the area picked or typed."""
+
+        def on_move(area: str, req: Any, v: int, request: gr.Request) -> list[Any]:
+            return done(run(move_area, req, who, e_id, area, request=request), v)
+
+        move.click(on_move, [pick_area, requested, version], [status, version], **PRIVATE)
+
     def wire_splits(who: str, e_id: str, splits: list[tuple[str, Any]]) -> None:
         """An open item's Not the same, one per other name."""
         for alias, btn in splits:
@@ -394,7 +419,6 @@ def mental_list(
                         + (f", last on {d.last}" if d.last else ""),
                     ]
                     if e.kind == "goal":
-                        facts += [f"Area: {e.area}"] if e.area else []
                         facts.append(f"explained on {_plural(d.explained, 'day')} (Lerni's guess)")
                         facts += ["Lerni is giving it a rest"] if d.resting else []
                         # read for the open goal only, never on every redraw
@@ -411,7 +435,14 @@ def mental_list(
                                    key=f"d-{e.id}"):
                         gr.Markdown(" · ".join(facts), key=f"facts-{e.id}")
                         notes_box = notes_btn = None
-                        if e.kind == "goal":
+                        if e.kind == "goal":  # its area: Lerni's pick, moved with a tap
+                            with gr.Row(key=f"a-{e.id}"):
+                                pick_area = gr.Dropdown(areas(m), value=e.area or None,
+                                                        label="Area", allow_custom_value=True,
+                                                        interactive=True,  # else drawn disabled
+                                                        key=f"ap-{e.id}", scale=2)
+                                move = gr.Button("Move", size="sm", scale=1, key=f"am-{e.id}")
+                            wire_area(who, e.id, pick_area, move)
                             notes_box = gr.Textbox(
                                 e.notes,
                                 label="Notes for Lerni",
@@ -420,7 +451,8 @@ def mental_list(
                             )
                             notes_btn = gr.Button("Save notes", size="sm", key=f"save-{e.id}")
                         name_box = gr.Textbox(
-                            e.name, label="Name", max_length=MAX_NAME, key=f"name-{e.id}"
+                            e.name, label="Name", max_length=MAX_NAME, key=f"name-{e.id}",
+                            interactive=True,  # else drawn disabled, and Rename did nothing
                         )
                         rename_btn = gr.Button("Rename", size="sm", key=f"ren-{e.id}")
                         if e.aliases:  # other names the student used: one item, split if wrong
@@ -436,7 +468,8 @@ def mental_list(
                                        if x.kind == "interest" and x.id not in mine]
                             with gr.Row(key=f"g-{e.id}"):
                                 pick_group = gr.Dropdown(options, value=None, label="Kind of",
-                                                         key=f"gp-{e.id}", scale=2)
+                                                         key=f"gp-{e.id}", scale=2,
+                                                         interactive=True)
                                 put = gr.Button("Put under", size="sm", scale=1, key=f"gu-{e.id}")
                             outs = [(gid, gr.Button(f"Not under {gname}", size="sm",
                                                     key=f"go-{e.id}-{gid}"))

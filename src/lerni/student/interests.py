@@ -561,6 +561,7 @@ class MapStore:
         self._locks: dict[str, threading.Lock] = {}
         self._guard = threading.Lock()
         self.journal = MapJournal(root)  # every change, so any one can be undone (v3.20)
+        self.after_change: Callable[[str], Any] | None = None  # the area sorter (v3.37)
 
     def _path(self, username: str) -> Path:
         # canonical usernames only, so a name can never point outside the folder
@@ -595,14 +596,19 @@ class MapStore:
         """Read, change, and save ``username``'s map with no other change in between.
 
         ``by`` says who made the change, for the journal: ``tagger``, ``person:<username>``,
-        ``upload``, ``educator chat``, or ``admin``.
+        ``upload``, ``educator chat``, ``lerni`` (the area sorter), or ``admin``.
         """
         with self._locked(username):
             m = self.get(username)
             before = _to_dict(m)
             result = fn(m)
             self._save(username, before, m, by)
-            return result
+        if self.after_change is not None:  # after the lock, so it can change the map too
+            try:
+                self.after_change(username)
+            except Exception:  # noqa: BLE001 - never fails the save
+                pass
+        return result
 
     def undo(self, username: str, n: int, by: str = "admin") -> None:
         """Reverse change ``n`` as a new change, so the undo can be undone too.
