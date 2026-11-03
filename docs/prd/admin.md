@@ -63,4 +63,4 @@ Use by educators or students.
 
 ## Open questions
 
-- [NEEDS CLARIFICATION] (Version 4) Does the companion's recall reuse the admin tool's scheduler (SM-2), given that the admin tool's database was not built for students' data?
+- [NEEDS CLARIFICATION] (Version 6) Does the companion's recall reuse the admin tool's scheduler (SM-2), given that the admin tool's database was not built for students' data?

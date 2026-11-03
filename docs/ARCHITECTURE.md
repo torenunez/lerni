@@ -101,8 +101,8 @@ flowchart LR
 
 If a change would break one of these, stop and ask.
 
-1. **People decide goals; agents may propose them.** A goal and its notes are saved only from a person's tap, through the server: a signed-in educator for a supervised student, or an independent student for their own map. Claude's proposals (Upload, the Suggest box, later suggestions) stay proposals until a person accepts them. The tagger can add interests, time, and links, never goals. Feedback is summarized, never acted on.
-2. **Conversation text is kept only in the logs** on the home server, for a year while the family hosts it: never in other files, server output, or browser storage. Also saved: accounts; maps (short names drawn from the conversation, plus dates and links; a full map rests its least-seen interest, history and all, until it comes up again); feedback (an educator's own words and a summary).
+1. **People decide goals; agents may propose them.** A goal and its notes are saved only from a person's tap, through the server: a signed-in educator for a supervised student, or an independent student for their own map. Claude's proposals (Upload, the Suggest box, later the educator's Chat and suggestions) stay proposals until a person accepts them. The tagger can add interests, time, and links, never goals. Feedback is summarized, never acted on.
+2. **Conversation text is kept only in the logs** on the home server, for a year while the family hosts it: never in other files, server output, or browser storage. Also saved: accounts; maps (short names drawn from the conversation, plus dates and links; a full map rests its least-seen interest, history and all, until it comes up again); feedback (an educator's own words and a summary); from Version 4, the checked bank.
 3. **The safety rules come last** in every prompt, after the persona and the map, and live in code, not in the editable persona files. That's how the prompt is built, not a guarantee of what Claude says; the evals check it.
 4. **Home network only.** See [trust boundaries](#trust-boundaries).
 5. **Every request resolves the signed-in account on the server** by re-reading its record. A student never reaches another student's map or conversation, or an educator action.
@@ -122,8 +122,8 @@ Every code file, one line each: [code manifest](code-manifest.md).
 
 | Piece | Version | Seam to leave room for now |
 |---|---|---|
-| Remembering preferences, recall | 4 | The map is the memory; preferences and recall build on it, with recall attempts kept apart from discussion. |
-| Suggested goals | 5 | Suggestions are shown for the educator to accept; they never become goals on their own (boundary 1). |
 | Local embeddings | 3 | A command run like `whisper-cli`, behind an adapter; it flags and shortlists, never changes the map. |
-| Fact cards (checked content) | 4 | An educator-approved library holding nothing about any student; it arrives as information in the map block, never as a separate path. |
-| Without an educator present | 6 | Needs a safety review first: checked replies for supervised students and consent for sensitive subjects. |
+| The checked bank | 4 | Questions and right answers per goal, saved as text only once an educator marks them ✓ or uploads them (boundary 2); never a student's words. Races mix them in. |
+| Suggested goals | 5 | Suggestions are shown for the educator to accept; they never become goals on their own (boundary 1). |
+| Remembering preferences, recall | 6 | The map is the memory; recall questions come only from the checked bank, with recall attempts kept apart from discussion. |
+| Without an educator present | 7 | Needs a safety review first: checked replies for supervised students and consent for sensitive subjects. |

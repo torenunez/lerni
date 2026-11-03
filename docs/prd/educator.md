@@ -14,9 +14,9 @@ The educator steers a supervised student's learning through what the student alr
 
 | Stage | Student app versions | The educator… |
 |---|---|---|
-| 1. Beside them | 1–3 | chooses goals, is beside the student in every session, and gives feedback |
-| 2. Accept suggestions | 4 | accepts or declines goals the agent suggests from the map |
-| 3. Occasional monitoring | 5 | glances at the map, removes what shouldn't be steered toward, and answers rare consent requests |
+| 1. Beside them | 1–4 | chooses goals, checks Claude's questions, is beside the student in every session, and gives feedback |
+| 2. Accept suggestions | 5–6 | accepts or declines goals the agent suggests from the map |
+| 3. Occasional monitoring | 7 | glances at the map, removes what shouldn't be steered toward, and answers rare consent requests |
 
 Each stage needs evidence from the one before.
 
@@ -99,15 +99,23 @@ These notes are for the admin and educator, not the app; the in-app text stays s
 - WHEN the educator taps a goal THE SYSTEM SHALL show how racing on it is going (last raced, this week's right answers, ideas missed lately), read from the race results and never written into the map.
 - Race questions come from the student's goals and interests, so the goals on MentalMaps are what the race practices. Whether Lerni's questions now get real answers instead of emojis is noted privately.
 
-## Version 4: remembering
+## Version 4: the educator's Chat
 
-### Story: See and delete what's remembered
+### Story: Give goals and right answers through Chat
 
-As an educator, I want to see and delete what the app remembers about a supervised student, so that I control what is kept.
+As an educator, I want to give Lerni a worksheet, an answer key, or what we're learning this week, so that races ask what I'm teaching, with answers I trust.
 
-- WHEN the educator removes an entry THE SYSTEM SHALL keep it in Removed with its history, so Put back is a true undo; WHEN they press Delete for good THE SYSTEM SHALL remove that history from the map, keeping only its name and kind so it isn't re-added, and say plainly that the change history and nightly copies still keep it (a full delete comes before anyone outside the family uses Lerni); copies an outside service keeps follow that service's rules.
+- WHEN the educator shares goals or questions with answers in Chat (typed, or attached with 📎) THE SYSTEM SHALL propose goals and question-and-answer pairs for the student they name, and save only what they tick.
+- WHEN the educator tells Chat something about any of their students THE SYSTEM SHALL propose the change to that student's map, saved only on a tap.
 
-## Settings (Versions 2, 4, and 6)
+### Story: Check Claude's questions
+
+As an educator, I want to mark Claude's race questions right or wrong, like a labeler, so that good questions come back and wrong ones never do.
+
+- WHEN the educator opens Check questions on a student's page THE SYSTEM SHALL list recent race questions with Claude's answer, each to mark ✓ right or ✗ wrong with an optional why.
+- WHEN a question is marked ✓ or a pair is uploaded THE SYSTEM SHALL keep it in that goal's checked bank, and races SHALL mix it in; WHEN one is marked ✗ THE SYSTEM SHALL never ask it again, and Claude SHALL see the why when writing that goal's questions.
+
+## Settings (Versions 2, 6, and 7)
 
 ### Story: Change a setting
 
@@ -117,9 +125,17 @@ As an educator, I want to turn voice, remembering, and conversation without me o
 
 ## Version 5: accept suggested goals
 
-- WHEN the agent suggests a goal from the map THE SYSTEM SHALL show it on MentalMaps for the educator to accept or decline.
+- WHEN Claude suggests a goal from the map or probe results THE SYSTEM SHALL show it in Chat and on the student's page for the educator to accept or decline.
 
-## Version 6: occasional monitoring
+## Version 6: remembering
+
+### Story: See and delete what's remembered
+
+As an educator, I want to see and delete what the app remembers about a supervised student, so that I control what is kept.
+
+- WHEN the educator removes an entry THE SYSTEM SHALL keep it in Removed with its history, so Put back is a true undo; WHEN they press Delete for good THE SYSTEM SHALL remove that history from the map, keeping only its name and kind so it isn't re-added, and say plainly that the change history and nightly copies still keep it (a full delete comes before anyone outside the family uses Lerni); copies an outside service keeps follow that service's rules.
+
+## Version 7: occasional monitoring
 
 ### Story: Consent to a sensitive subject
 
@@ -158,6 +174,7 @@ Running the admin tool. Editing app code or files directly.
 - 2026-10-12: Interests can be grouped ("kind of"): a group's strength counts each day any of its kinds came up, so a specific shark never outgrows sharks. The tagger's groups count at once and a person can undo one; new group names come only from a person. Goals aren't grouped yet, and nothing rolls up into a mastery score.
 - 2026-10-12: Play and points are Version 3: a race in Games and answers in the conversation earn a student points to spend on cars; the educator can race to rehearse and sees a supervised student's points. Later versions move up one.
 - 2026-10-27: Delete for good says what it does: the change history and nightly copies keep the item; a full delete waits until before anyone outside the family uses Lerni (the admin's decision).
+- 2026-10-30: Version 4 is the educator's Chat: goals and right answers given through Chat, and Claude's race questions marked right or wrong; what's checked is each goal's checked bank, which races and, in Version 6, recall draw from. This replaces the fact-card library (the admin's decision).
 
 ## Open questions
 

@@ -12,7 +12,7 @@ Approved in conversation on 2026-10-20. Builds on [spec 09](09-play-and-points.m
 - v3.24: the bonus round;
 - v3.36: probes.
 
-v3.19 (race questions from the garage), v3.20 (a map journal and nightly backups), and v3.21 (Next after a wrong answer) sit between v3.18 and v3.22, v3.23 (Chat's goals take turns) between v3.22 and v3.24, v3.25 and v3.26 (the educator's page), v3.27 (the race starts fast), v3.28 (goal spacing and areas), v3.29 (read-aloud questions), v3.30 (a focused race), v3.31 and v3.33–v3.34 (review fixes), v3.32 (a friendlier race), and v3.35 (one Chat) between v3.24 and v3.36; each is designed in its own plan, not here. Each version's plan file (`plans/v3.NN-*.md`) is written when it starts, from this spec.
+v3.19 (race questions from the garage), v3.20 (a map journal and nightly backups), and v3.21 (Next after a wrong answer) sit between v3.18 and v3.22, v3.23 (Chat's goals take turns) between v3.22 and v3.24, v3.25 and v3.26 (the educator's page), v3.27 (the race starts fast), v3.28 (goal spacing and areas), v3.29 (read-aloud questions), v3.30 (a focused race), v3.31 and v3.33–v3.34 (review fixes), v3.32 (a friendlier race), and v3.35 (the new order) between v3.24 and v3.36; each is designed in its own plan, not here. Each version's plan file (`plans/v3.NN-*.md`) is written when it starts, from this spec.
 
 ## What people see
 
@@ -259,7 +259,7 @@ v3.19 (race questions from the garage), v3.20 (a map journal and nightly backups
 - An engine sound loop, or music.
 - Games and probes for independent students.
 - Goal suggestions (Version 5).
-- FSRS or SM-2 (Version 4).
+- FSRS or SM-2 (Version 6).
 
 ## Testing (minimal, per rule 4)
 

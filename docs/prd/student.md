@@ -22,9 +22,10 @@ Both kinds share the same conversation and map, and the experience is simple and
 | 1 | A text conversation about what they love that gently bridges to goals, and grows their interest map |
 | 2 | A conversation they can hold by voice: one button, held to talk |
 | 3 | Play and points: a car race answered by multiple choice, and points from it and from answering in the conversation, spent on cars |
-| 4 | A companion that remembers what they like and checks they still remember earlier ideas |
+| 4 | Race questions their educator checked or wrote, with right answers the educator trusts |
 | 5 | New goals suggested from their map, for the educator to accept |
-| 6 | Conversation without an educator present |
+| 6 | A companion that remembers what they like and checks they still remember earlier ideas |
+| 7 | Conversation without an educator present |
 
 ## What makes it engaging
 
@@ -129,15 +130,19 @@ As a student, I want to spend my points on cars in the garage, so that I can rac
 - WHEN the student has enough points and taps Buy THE SYSTEM SHALL take the price off their points, once, and keep that car for them for good.
 - WHEN they pick a car they own THE SYSTEM SHALL race with it.
 
-## Version 4: a companion that remembers me
+## Version 4: the educator's Chat
 
-The companion learns what each student likes (how they like to be talked to, which examples land) and, after a gap, asks one quick recall question about an earlier idea from their map; a race-like trip along their map (Bridge Trip) is its front door. Stories to be written when Version 4 starts.
+Races mix in questions the educator checked or wrote, with right answers they approved; a question marked wrong never comes back. The educator's side: [educator PRD](educator.md#version-4-the-educators-chat).
 
 ## Version 5: new goals from the map
 
-The agent suggests goals that connect to what the student already loves, using race probes (nearby ideas the student chose to explore or was ready for); the educator accepts or declines each. Stories to be written after Version 4.
+The agent suggests goals that connect to what the student already loves, using race probes (nearby ideas the student chose to explore or was ready for), never one already on the map; the educator accepts or declines each. Stories to be written when Version 5 starts.
 
-## Version 6: conversation without an educator present
+## Version 6: a companion that remembers me
+
+The companion learns what each student likes (how they like to be talked to, which examples land) and, after a gap, asks one quick recall question about an earlier idea, only from the checked bank (questions and answers an educator marked right or wrote); a race-like trip along their map (Bridge Trip) is its front door. Stories to be written when Version 6 starts.
+
+## Version 7: conversation without an educator present
 
 ### Story: Talk about my interests for as long as I like
 
@@ -186,8 +191,9 @@ Public access and a native iPad app.
 - 2026-10-20: Rivals are paced from the student's own car, so a win always takes 4 or 5 right; a faster car brings new rivals and ⚡, not easier wins (the admin's decision). A good bonus explanation moves the car, as a way back from last.
 - 2026-10-27: When the answer checker disagrees with most of a set, only the questions it agreed with race and Claude writes fresh ones for the rest; the bonus comes on a random draw only, so coming last never pays more (the admin's decisions, after two outside reviews).
 - 2026-10-29: Questions read themselves, one Sound switch covers the whole app (Chat's voice too), an honest bonus try earns 5 ⭐ with a cheer instead of the sputter, and a wrong answer's first words vary (the admin, after watching the student race).
+- 2026-10-30: The new order (the admin's decision): probes and local embeddings finish Version 3; then 4 the educator's Chat, 5 suggested goals, 6 remembering, 7 without an educator present. The educator gives goals and right answers through Chat and marks Claude's race questions right or wrong, like a labeler; what they mark right or write is the checked bank, the only text saved besides the logs, and recall draws only from it. This replaces the educator-approved fact-card library. Decisions above keep their old numbers.
 
 ## Open questions
 
-- [NEEDS CLARIFICATION] (Version 4) Should a supervised student see their own map, as a way to feel progress? (Version 1: educators only.)
-- [NEEDS CLARIFICATION] (Version 6) How does a consent request reach the educator, and how long does the student wait?
+- [NEEDS CLARIFICATION] (Version 6) Should a supervised student see their own map, as a way to feel progress? (Version 1: educators only.)
+- [NEEDS CLARIFICATION] (Version 7) How does a consent request reach the educator, and how long does the student wait?

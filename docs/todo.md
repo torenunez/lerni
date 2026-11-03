@@ -15,9 +15,9 @@ Open tasks by who does the work. The educator and admin tracks run in parallel: 
 - [ ] Talk with Lerni yourself for a few days and watch your own MentalMap; tell the admin what's confusing, or mention it in the Suggest box.
 - [ ] Try the conversation with the supervised-student voice, then sit beside the supervised student for a short first conversation. Keep notes private, or mention them in the Suggest box.
 
-### Later: Version 4 Remembering
+### Later: Version 4 The educator's Chat
 
-- [ ] Pick one goal for the first fact cards (acceleration or fractions) and review a dozen short cards for it, with sources.
+- [ ] Pick one goal (acceleration or fractions) and gather a worksheet or answer key for it, to give Lerni through Chat when Version 4 arrives.
 
 ## Admin
 
@@ -32,13 +32,12 @@ Open tasks by who does the work. The educator and admin tracks run in parallel: 
 
 What ships next, in order, one PR each ([how versions work](roadmap.md#versions)):
 
-1. **v3.34: backups you can restore** ([plan](../plans/v3.34-restore.md)): the keys left out of the copies; data files 0600 and folders 0700; a map and its journal copied together under their lock; undo stops at a later baseline instead of overwriting it; `lerni backup restore` puts a whole nightly copy back, stopping and restarting the server, rehearsed during writes.
-2. **v3.35: one Chat that does it all:** the independent Chat proposes goals for your own map, takes feedback about the app, and, for an educator, takes notes about any student and proposes changes to their map; tick and Add as today, nothing saved without a tap. The student's page keeps its Suggest box.
-3. **v3.36: probes:** one question a race tries a nearby idea not on the map; never set aside, never counted toward the level; after the race, up to two "Want to find out more?" topics open Chat; probe answers and taps are kept as labels for Version 5.
-4. **v4.1: the Version 4 plan** (docs; Version 4 below), which also says where the embeddings fit.
-5. **v4.2: spec 10, local embeddings:** a local embedder run as a command like `whisper-cli` (llama.cpp `llama-embedding` with a small model in `~/.lerni/models/`, chosen by a bake-off on about 100 labelled name pairs; nothing hosted), behind an adapter with a fake for tests, vectors cached by name. Uses: shortlist "same as" candidates the tagger can't see (Older interests, long maps) for Claude to confirm; catch set-aside topics by meaning in race questions (beside the word match, never instead), and rank the map block by the current message (whole lines; safety lines first). It flags and shortlists only; it never changes the map. Lifts spec 08's "no embeddings" for these uses only; and the plan.
-6. **v4.3: local embeddings built,** per spec 10. Without the embedder, everything falls back to today's behavior.
-7. **Version 4, remembering:** opens with an educator-approved fact-card library for one goal (`~/.lerni/library/`, nothing about any student): race questions quote a card and the server checks the quote; cards go into the map block as information; recall questions come from cards, with recall attempts kept apart from discussion (building on v3.22's review schedule; FSRS or SM-2). Bridge Trip (a trip along their map with recall stops) is its front door; its first PR writes the plan.
+1. **v3.35: the new order** ([plan](../plans/v3.35-new-order.md), docs): probes and embeddings first, then Version 4 the educator's Chat, 5 suggested goals, 6 remembering, 7 without an educator present.
+2. **v3.36: probes:** one question a race tries a nearby idea not on the map; never set aside, never counted toward the level; after the race, up to two "Want to find out more?" topics open Chat; probe answers and taps are kept as labels for Version 5.
+3. **v3.37: spec 10, local embeddings:** a local embedder run as a command like `whisper-cli` (llama.cpp `llama-embedding` with a small model in `~/.lerni/models/`, chosen by a bake-off on about 100 labelled name pairs; nothing hosted), behind an adapter with a fake for tests, vectors cached by name. Uses: shortlist "same as" candidates the tagger can't see (Older interests, long maps) for Claude to confirm; catch set-aside topics by meaning in race questions (beside the word match, never instead); rank the map block by the current message (whole lines; safety lines first); and, in Version 5, keep a suggestion from repeating a goal already there. It flags and shortlists only; it never changes the map. Lifts spec 08's "no embeddings" for these uses only; and the plan.
+4. **v3.38: local embeddings built,** per spec 10. Without the embedder, everything falls back to today's behavior.
+5. **Version 4, the educator's Chat** (its first PR writes the plan): the educator gives goals and right answers through Chat (a worksheet, an answer key, what we're learning this week) and ticks what Claude proposes; a Check questions list on the student's page marks recent race questions ✓ right or ✗ wrong with an optional why; ✓ and uploaded pairs form each goal's checked bank (saved as text, rule 6's one exception), races mix them in, ✗ never comes back and its why steers Claude; Chat takes notes about any student and proposes changes to their map. Nothing saved without a tap.
+6. **Versions 5–7** ([roadmap](roadmap.md)): suggested goals (Version 4 and probe results first); remembering (recall only from the checked bank, on v3.22's review schedule, FSRS or SM-2; Bridge Trip its front door); without an educator present.
 
 How PRs are split:
 
@@ -54,6 +53,7 @@ Versions 1 and 2 also need sessions, not code: the educator sets goals, rehearse
 ### Later
 
 - [ ] **The win rate (after v3.33, about mid-November):** with about two weeks of results lines carrying `level`, compare right answers by level, and places, against the target (about 60% right, 1 race in 3 won); then decide whether to change the level steps (`UP_AT`, `DOWN_AT` in `concepts.py`) or the rivals' pace.
+- [ ] Chat for everyone (split from one Chat, 2026-10-30): an independent student's Chat proposes goals for their own map and takes feedback about the app.
 - [ ] A second backup place for a broken disk: an external drive (`lerni backup run --to …` in the agent) or Time Machine. The nightly copies (v3.20) are on the same disk.
 - [ ] After a week of family use: compare each feature's Claude use (Chat, tagger, Upload, the Suggest box) and decide whether any can move to a cheaper model.
 - [ ] Try the voice with the students before deciding whether a hosted voice (Inworld, about $18 a month) is worth it; a hosted service means student audio leaves the house, so it needs the educator's agreement first.
@@ -73,7 +73,7 @@ Versions 1 and 2 also need sessions, not code: the educator sets goals, rehearse
 - [ ] Two weeks after v3.18 (about 2026-11-03): read the results log; is each goal at about 50–75% right? If not, change `UP_AT`/`DOWN_AT` or the level descriptions in `QUIZ_SYSTEM`.
 - [ ] After a week of bonus rounds: read the results log's bonus tiers (how often nailed, partly, tried) and spot-check that grading is fair; tune `GRADE_SYSTEM` or the points if not.
 
-### Later: Version 4 Remembering
+### Later: Version 6 Remembering
 
 - [ ] Personal personas: Lerni learns what each student likes over time (topics, examples, answer length), starting from the persona for their kind; visible to the student, and to the educator for a supervised student.
 - [ ] Later, once the results log has months of data: embedding hints for proposals already on the map, "kind of" suggestions, and near-repeat race questions.
@@ -111,7 +111,7 @@ Versions 1 and 2 also need sessions, not code: the educator sets goals, rehearse
 - [ ] **Menu:** the closed drawer is still reachable by keyboard and VoiceOver.
 - [ ] **Accounts:** two educators archiving each other leaves none (recover with `lerni student add`); password hashing runs inside the account write lock; a live session can guess its current password in Settings without the sign-in delay; a non-ASCII cookie gives a 500; an archived account is detectable by timing; `/signin` has no Origin check and `/signout` is a GET; the data folder is created 0755; a password change doesn't sign out other devices.
 - [ ] **v3.31 review:** when the stricter answer check leaves too few questions, the agreed ones are thrown away and the next Race tap writes and checks a whole set again (hold them for the next try).
-- [ ] **v3.7–v3.29 reviews (small):** repeats match only the last 40 labels and a paraphrase gets through (Version 4's embeddings); a tagger `same_as` can fold an interest into a goal (allow interest to interest only); Chat's set-aside line lists 8 names and no aliases; journal lines grow large and nothing is trimmed; goal boxes, "missed lately", and reviews each define "got it" differently; `service status` exits 0 when stopped; `install` replaces the agent file before it starts; the educator's reword suggestion comes pre-ticked and hides the old notes; voice failures while running aren't logged, and Whisper's "Thank you." on near-silence reaches Claude; read-aloud: quick taps start several `say` runs, and `*` or `>` are read oddly; the race card still says more ⚡ moves the car farther; Rich markup in a log tail crashes the failure report; `usd: true` loads as $1.
+- [ ] **v3.7–v3.29 reviews (small):** repeats match only the last 40 labels and a paraphrase gets through (v3.38's embeddings); a tagger `same_as` can fold an interest into a goal (allow interest to interest only); Chat's set-aside line lists 8 names and no aliases; journal lines grow large and nothing is trimmed; goal boxes, "missed lately", and reviews each define "got it" differently; `service status` exits 0 when stopped; `install` replaces the agent file before it starts; the educator's reword suggestion comes pre-ticked and hides the old notes; voice failures while running aren't logged, and Whisper's "Thank you." on near-silence reaches Claude; read-aloud: quick taps start several `say` runs, and `*` or `>` are read oddly; the race card still says more ⚡ moves the car farther; Rich markup in a log tail crashes the failure report; `usd: true` loads as $1.
 - [ ] **Tests:** the role check on each educator handler, cookie expiry, and a supervised cookie calling an educator event over HTTP.
 
 ### Admin tool maintenance
