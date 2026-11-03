@@ -31,7 +31,9 @@ from lerni.student.fence import fence
 from lerni.student.garage import Car, Garage
 from lerni.student.interests import (
     InterestMap,
+    MapError,
     MapStore,
+    check_name,
     faded,
     family,
     group_days,
@@ -59,6 +61,12 @@ MISS_OPENERS = ("Good try!", "Tricky one!", "Nice guess!", "Not quite!", "Not th
                 "Good thinking!")  # a wrong answer's first words, in turn
 CARE = "care"  # a worrying answer: the caring words, no points, kept in the conversation log
 MAX_KEY_IDEA = 60
+PROBES_PER_SET = 2  # nearby ideas off the map a set of 10 may try (v3.36)
+PROBE_AT = (1, 2)  # a probe is question 2 or 3; question 4 is the bonus's
+PROBE_LEVEL = 2  # pitched simply: the idea is new
+PROBE_DAYS = 30  # a topic isn't probed again this soon, and goals explained since are sources
+OFFER_DAYS = 7  # an untapped probe is offered after a race for this long
+OPENER = "Let's talk about {topic}! What do you already know about it?"
 MAX_QUESTION, MAX_CHOICE, MAX_WHY = 140, 40, 120
 
 QUIZ_SCHEMA: dict[str, Any] = {
@@ -75,6 +83,7 @@ QUIZ_SCHEMA: dict[str, Any] = {
             "answer": {"type": "integer", "minimum": 0, "maximum": 2},
             "why": {"type": "string"},
             "math": {"type": "string"},
+            "probe": {"type": "string"},
         },
         "required": ["goal", "concept", "question", "choices", "answer", "why"],
     }}, "bonus": {"type": "array", "maxItems": BONUS_PER_SET, "items": {
@@ -114,6 +123,10 @@ price) to practice it (speeding up, power, ratios, big numbers). With no goals, 
 they work, not their numbers. Use only the listed facts and never add another fact about a \
 car (no cylinders, weights, or top speeds); engine and drive are names to mention, not \
 numbers to use. Put any arithmetic in "math".
+- When nearby ideas are listed, up to {PROBES_PER_SET} of the questions may try an idea one \
+step beyond them that isn't on their map (earthquakes next to volcanoes): "probe" names it \
+(a plain topic name, 1 to 3 words), "goal" is empty, and it's pitched simply (one step, wrong \
+choices clearly off). Never a recently probed topic.
 - Also write up to {BONUS_PER_SET} "bonus" questions to answer in their own words: "Explain \
 how …" or "Why …" about an idea from a goal, set in their interests, answerable in a few \
 sentences, each with 2 or 3 "key_ideas" (short phrases a good answer includes). The same \
@@ -141,6 +154,7 @@ class Question:
     goal_id: str = ""  # found once, when checked: a rename later keeps its history (v3.33)
     notes_key: str = ""  # its goal's notes when written: a change drops it (v3.33)
     level: int = START_LEVEL  # the goal's level it was written at
+    probe: str = ""  # a nearby idea off the map (v3.36): no goal, never counted toward one
 
 
 def _facts(c: Car) -> str:
@@ -152,26 +166,21 @@ def _facts(c: Car) -> str:
 
 def quiz_input(m: InterestMap, today: date, supervised: bool, recent: Sequence[str] = (),
                levels: Mapping[str, int] | None = None, cars: Sequence[Car] = (),
-               due: Sequence[tuple[str, str]] = (), goals: Sequence[str] | None = None) -> str:
+               due: Sequence[tuple[str, str]] = (), goals: Sequence[str] | None = None,
+               probed: Sequence[str] = ()) -> str:
     """What Claude needs to write questions: goals at their levels, interests, set-asides,
-    recent ideas, and the cars in reach. ``goals`` (names) narrows the goals to this set's."""
+    recent ideas, nearby ideas to probe, and the cars in reach. ``goals`` (names) narrows the
+    goals to this set's; ``probed`` are topics probed lately."""
     picked = {g.casefold() for g in goals} if goals else None
     # "Fractions (level 4; notes: …)": a copied level or note is cut off at " (" when checked
     goals = [f"{e.name} (level {(levels or {}).get(e.id, START_LEVEL)}"
              + (f"; notes: {e.notes})" if e.notes else ")")
              for e in m.entries if e.kind == "goal"
              and (picked is None or e.name.casefold() in picked)]
-    tops = [e for e in m.entries if e.kind == "interest" and not parents(m, e.id)
-            and group_days(m, e) and not faded(e, today, m)]
-    tops.sort(key=lambda e: len(group_days(m, e)), reverse=True)
-
-    def loved(e: Any) -> str:  # a group with a few of its kinds
-        kinds = [x.name for x in family(m, e) if x.id != e.id][:3]
-        return e.name + (f" ({', '.join(kinds)})" if kinds else "")
-
+    loved = _loved(m, today)
     lines = ["Voice: simple, everyday words." if supervised else "Voice: clear and friendly."]
     lines += ["Goals:", *(f"- {g}" for g in goals)] if goals else ["Goals: none yet."]
-    lines += ["Interests: " + "; ".join(loved(e) for e in tops[:8])] if tops else []
+    lines += ["Interests: " + "; ".join(loved)] if loved else []
     # as Chat: only removals with history; a name deleted for good is blocked here, never sent
     aside = [r for r in m.removed if "id" in m.removed_info.get(r.casefold(), {})][-8:]
     if aside:
@@ -179,12 +188,53 @@ def quiz_input(m: InterestMap, today: date, supervised: bool, recent: Sequence[s
     recent = [c for c in recent if not mentions_set_aside(m, c)]  # set aside since
     if recent:
         lines.append("Recently asked, choose other ideas or angles: " + "; ".join(recent))
+    if near := nearby(m, today):  # probes (v3.36): only with something to step beyond
+        lines.append("Nearby ideas to try (one step beyond these, never on their map): "
+                     + "; ".join(near))
+        probed = [p for p in probed if not mentions_set_aside(m, p)]
+        if probed:
+            lines.append("Recently probed, choose others: " + "; ".join(probed))
     if due:  # missed ideas, back after a gap (v3.22)
         lines.append("Due for review (ask each idea again in new words; use its label as the "
                      "concept): " + "; ".join(f"{idea} ({goal})" for goal, idea in due))
     if cars:  # only cars they own or can afford: facts are earned by saving up
         lines.append("Their cars (exact facts; use only these): " + "; ".join(map(_facts, cars)))
     return "\n".join(lines)
+
+
+def _loved(m: InterestMap, today: date) -> list[str]:
+    """The strongest interests, each a group with a few of its kinds, up to 8."""
+    tops = [e for e in m.entries if e.kind == "interest" and not parents(m, e.id)
+            and group_days(m, e) and not faded(e, today, m)]
+    tops.sort(key=lambda e: len(group_days(m, e)), reverse=True)
+    out = []
+    for e in tops[:8]:
+        kinds = [x.name for x in family(m, e) if x.id != e.id][:3]
+        out.append(e.name + (f" ({', '.join(kinds)})" if kinds else ""))
+    return out
+
+
+def nearby(m: InterestMap, today: date) -> list[str]:
+    """What probes step beyond: the strongest interests, and goals explained lately."""
+    since = (today - timedelta(days=PROBE_DAYS - 1)).isoformat()
+    explained = [e.name for e in m.entries if e.kind == "goal"
+                 and any(d >= since for d in e.explained)]
+    return [*_loved(m, today), *explained]
+
+
+def off_map(m: InterestMap, topic: str) -> bool:
+    """Whether a probe topic is new to this map: not on it, resting, or set aside."""
+    return (m.find(topic) is None and not any(same_name(a.name, topic) for a in m.archived)
+            and not mentions_set_aside(m, topic))
+
+
+def _probe(item: dict[str, Any], m: InterestMap, seen: set[str]) -> str:
+    # a probe topic that may race, or "": a plain name, new to the map, not probed lately
+    try:
+        topic = check_name(_plain(item.get("probe")))
+    except MapError:
+        return ""
+    return topic if off_map(m, topic) and normalize(topic) not in seen else ""
 
 
 def _plain(value: Any) -> str:
@@ -307,15 +357,20 @@ def _alike(text: str, others: Sequence[str]) -> bool:
 
 def check_questions(raw: Any, m: InterestMap, rng: random.Random | None = None,
                     concepts: Sequence[str] = (), texts: Sequence[str] = (),
-                    spare: list[Question] | None = None) -> list[Question]:
-    """Keep only well-formed, new questions about the map's goals; shuffle their choices.
+                    spare: list[Question] | None = None,
+                    probed: Sequence[str] = (), probes: bool = False) -> list[Question]:
+    """Keep only well-formed, new questions about the map's goals, or probes of nearby ideas;
+    shuffle their choices.
 
     ``concepts`` and ``texts`` (normalized) were asked or are held: a question on the same
     idea, or nearly the same words, is dropped, and so is a repeat within ``raw``. Good
-    questions dropped only as repeats go into ``spare``, if given.
+    questions dropped only as repeats go into ``spare``, if given. A probe topic in
+    ``probed``, on the map, or set aside is dropped with its question; ``probes`` is False when
+    the map has nothing nearby to step beyond, and then every probe is dropped.
     """
     rng = rng or random.Random()
     seen_ideas, seen_texts = {normalize(c) for c in concepts}, [*texts]
+    seen_probes = {normalize(p) for p in probed}
     goals = {e.name.casefold(): e for e in m.entries if e.kind == "goal"}
     items = raw.get("questions") if isinstance(raw, dict) else None
     kept: list[Question] = []
@@ -327,11 +382,18 @@ def check_questions(raw: Any, m: InterestMap, rng: random.Random | None = None,
         goal = _plain(item.get("goal")).split(" (")[0]  # Claude may copy the notes too
         choices = [_plain(c) for c in item.get("choices") or []]
         right = item.get("answer")
+        probe = ""
+        if item.get("probe"):  # a rejected probe never races as a plain question
+            few = sum(1 for k in kept if k.probe) < PROBES_PER_SET
+            probe = _probe(item, m, seen_probes) if probes and few else ""
+            if not probe:
+                continue
+            goal = ""  # a probe practices no goal
         if (not q or len(q) > MAX_QUESTION or not why or len(why) > MAX_WHY
                 or len(choices) != 3 or any(not c or len(c) > MAX_CHOICE for c in choices)
                 or len({c.casefold() for c in choices}) != 3
                 or not isinstance(right, int) or isinstance(right, bool) or right not in (0, 1, 2)
-                or (goals and goal.casefold() not in goals)
+                or (goals and not probe and goal.casefold() not in goals)
                 or not normalize(concept)):
             continue
         repeat = normalize(concept) in seen_ideas or _alike(normalize(q), seen_texts)
@@ -344,9 +406,12 @@ def check_questions(raw: Any, m: InterestMap, rng: random.Random | None = None,
         e = goals.get(goal.casefold())  # the map's spelling, id, and notes
         question = Question(e.name if e else goal, q, (choices[0], choices[1], choices[2]),
                             choices.index(answer_text), why, concept,
-                            e.id if e else "", notes_key(e.notes) if e else "")
+                            e.id if e else "", notes_key(e.notes) if e else "",
+                            PROBE_LEVEL if probe else START_LEVEL, probe)
         if not fits(question, m):
             continue
+        if probe:  # its topic is taken, kept or spare
+            seen_probes.add(normalize(probe))
         if repeat:  # asked recently, held already, or a twin in this set
             if spare is not None:
                 spare.append(question)
@@ -442,6 +507,8 @@ def fits(q: Question, m: InterestMap) -> bool:
     """Whether a question may still race on this map: its goal is there with the same notes,
     nothing set aside."""
     shown = " ".join([q.question, *q.choices, q.why, q.concept])  # what's shown, and its idea
+    if q.probe:  # no goal: its topic must still be new to the map
+        return off_map(m, q.probe) and not mentions_set_aside(m, shown)
     return _still_on(m, q.goal_id, q.notes_key, q.goal) and not mentions_set_aside(m, shown)
 
 
@@ -655,6 +722,36 @@ def spread(questions: list[Question]) -> list[Question]:
             for queue in turns if round_ < len(queue) for q in [queue[round_]]]
 
 
+def enough(questions: Sequence[Question]) -> bool:
+    """Whether these make a race: at most one probe counts toward it."""
+    probes = sum(1 for q in questions if q.probe)
+    return len(questions) - probes + min(probes, 1) >= QUESTIONS_PER_RACE
+
+
+def line_up(held: list[Question], rng: random.Random) -> tuple[list[Question], list[Question]]:
+    """A race's questions from ``held`` (one probe at most, at question 2 or 3), and the rest."""
+    probe = next((q for q in held if q.probe), None)
+    plain = [q for q in held if not q.probe]
+    count = QUESTIONS_PER_RACE - (probe is not None)
+    questions = plain[:count]
+    if probe is not None:
+        questions.insert(rng.choice(PROBE_AT), probe)
+    chosen = {id(q) for q in questions}
+    return questions, few_probes([q for q in held if id(q) not in chosen])
+
+
+def few_probes(held: list[Question]) -> list[Question]:
+    """``held`` with at most ``PROBES_PER_SET`` probes, the oldest first: they never pile up."""
+    out, probes = [], 0
+    for q in held:
+        if q.probe:
+            probes += 1
+            if probes > PROBES_PER_SET:
+                continue
+        out.append(q)
+    return out
+
+
 class RaceUnavailable(Exception):
     """No race now: Claude is resting, didn't answer, or wrote too few good questions."""
 
@@ -759,6 +856,14 @@ class RaceDesk:
             print(f"Goal picking skipped ({type(exc).__name__}); every goal counts as due.",
                   flush=True)
             schedule, asked = {}, {}
+        try:  # best effort: without the log, only held probes are avoided
+            probed = [t for t, _, _ in self.results.probes(
+                username, today - timedelta(days=PROBE_DAYS - 1))] if self.results else []
+        except Exception:  # noqa: BLE001 - a broken file never stops a race
+            probed = []
+        with self._lock:
+            probed += [q.probe for q in self._held(username, today) if q.probe]
+        probed = list(dict.fromkeys(probed))
         picked = [e.name for e in pick_goals(m, schedule, asked, today)]
         for g, _ in due:  # a due idea's goal, in the map's spelling, once
             name = getattr(m.find(g), "name", "")
@@ -772,7 +877,7 @@ class RaceDesk:
             try:
                 raw = self.quizzer.write(QUIZ_SYSTEM, quiz_input(m, today, supervised, recent,
                                                                  levels, cars, due,
-                                                                 picked or None))
+                                                                 picked or None, probed))
             except RaceUnavailable:
                 raise
             except Exception as exc:  # never show what went wrong inside
@@ -785,20 +890,23 @@ class RaceDesk:
                                                for b in check_bonus(raw, m, seen)])
             new = check_questions(raw, m, concepts=[*concepts, *(q.concept for q in kept)],
                                   texts=[*texts, *(normalize(q.question) for q in kept)],
-                                  spare=new_spare)
+                                  spare=new_spare,
+                                  probed=[*probed, *(q.probe for q in kept if q.probe)],
+                                  probes=bool(nearby(m, today)))
             # each at the level its goal was written for, for the results log
-            new, new_spare = ([replace(q, level=levels.get(q.goal_id, START_LEVEL)) for q in qs]
-                              for qs in (new, new_spare))
+            new, new_spare = ([q if q.probe else replace(q, level=levels.get(q.goal_id,
+                                                                             START_LEVEL))
+                               for q in qs] for qs in (new, new_spare))
             agreed = {id(q) for q in self._verify(new + new_spare)}  # one blind check per try
             kept += [q for q in new if id(q) in agreed]
             spare += [q for q in new_spare if id(q) in agreed]
-            if len(kept) >= QUESTIONS_PER_RACE:
+            if enough(kept):
                 return _as_due(kept, due)
         for q in spare:  # Claude could only repeat: race anyway, never one question twice
-            if len(kept) < QUESTIONS_PER_RACE and normalize(q.question) not in {
+            if not enough(kept) and normalize(q.question) not in {
                     normalize(k.question) for k in kept}:
                 kept.append(q)
-        if len(kept) >= QUESTIONS_PER_RACE:
+        if enough(kept):
             return _as_due(kept, due)
         raise RaceUnavailable(NOT_READY)
 
@@ -813,7 +921,7 @@ class RaceDesk:
         with self._lock:
             held = self._held(username, today)
             held[:] = [q for q in held if fits(q, m)]  # set aside or gone since: not counted
-            if len(held) >= QUESTIONS_PER_RACE or username in self._busy:
+            if enough(held) or username in self._busy:
                 return
             if self.points.races_left(username, today) <= 0:
                 return  # no race left today to use them
@@ -824,7 +932,7 @@ class RaceDesk:
                 fresh = self._write(username, supervised, today)
                 with self._lock:
                     held = self._held(username, today) + fresh
-                    self._sets[username] = (today.isoformat(), spread(held))
+                    self._sets[username] = (today.isoformat(), spread(few_probes(held)))
             except RaceUnavailable:
                 pass  # Race will try again and say why
             finally:
@@ -862,7 +970,7 @@ class RaceDesk:
             with self._lock:  # one step: count, and claim the writing, so no one writes twice
                 before = {id(q) for q in self._held(username, day)}
                 held = [q for q in self._held(username, day) if fits(q, m)]  # set aside since
-                short = len(held) < QUESTIONS_PER_RACE
+                short = not enough(held)
                 still = username in self._busy  # the wait ran out: theirs is still writing
                 mine = threading.Event() if short and not still else None
                 if mine is not None:
@@ -878,11 +986,11 @@ class RaceDesk:
                     mine.set()
             m = self.maps.get(username)  # a person may have set something aside meanwhile
             held = [q for q in held if fits(q, m)]
-            if len(held) < QUESTIONS_PER_RACE:
+            if not enough(held):
                 with self._lock:  # keep the ones that still fit for the next tap
                     self._sets[username] = (day.isoformat(), spread(held))
                 raise RaceUnavailable(NOT_READY)  # before the race is counted
-            questions, rest = held[:QUESTIONS_PER_RACE], held[QUESTIONS_PER_RACE:]
+            questions, rest = line_up(held, self.rng)  # a probe at question 2 or 3
             self.points.start_race(username, day)
             race = new_race(questions, boost, car, rivals)
             race.bonus = self._take_bonus(username, day, m) if self.grader else None
@@ -895,22 +1003,25 @@ class RaceDesk:
                              for i in range(len(questions))]
             with self._lock:
                 later = [q for q in self._held(username, day) if id(q) not in before]  # meanwhile
-                self._sets[username] = (day.isoformat(), spread(rest + later))
+                self._sets[username] = (day.isoformat(), spread(few_probes(rest + later)))
                 self._races[username] = race
                 self._started[username] = self.clock()
         self.prefill(username, supervised)  # the next race starts quickly
         return race
 
-    def _remember(self, username: str, questions: list[Question], day: date) -> list[int]:
+    def _remember(self, username: str, questions: list[Question],
+                  day: date) -> list[int | None]:
         """Note what this race asks, so later questions ask about something else; each
-        question's attempt (1: a new idea), or none when it can't be noted."""
+        question's attempt (1: a new idea), or None for a probe or when it can't be noted."""
         with self._lock:
             asked = self._asked.setdefault(username, deque(maxlen=ASKED_IN_MEMORY))
             asked.extend(normalize(q.question) for q in questions)
+        counted = [q for q in questions if not q.probe]  # a probe is never in the ledger
         if self.concepts is not None:
             try:
-                return self.concepts.add(
-                    username, [(q.goal_id, q.goal, q.concept) for q in questions], day)
+                got = iter(self.concepts.add(
+                    username, [(q.goal_id, q.goal, q.concept) for q in counted], day))
+                return [None if q.probe else next(got, None) for q in questions]
             except OSError:
                 pass  # best effort: the race goes on without remembering its ideas
         return []
@@ -931,8 +1042,8 @@ class RaceDesk:
             if turn is not None:
                 self._last_tap[username] = self.clock()
                 took = self._last_tap[username] - shown
-        if turn is not None and self.concepts is not None:
-            try:  # best effort: the long-term record of how each idea and goal went
+        if turn is not None and self.concepts is not None and not race.questions[number].probe:
+            try:  # best effort: the long-term record of how each idea and goal went (no probes)
                 q = race.questions[number]
                 self.concepts.answered(username, q.goal_id, q.concept, turn.right)
                 self.concepts.practiced(username, q.goal_id, turn.right)
@@ -1121,7 +1232,7 @@ class RaceDesk:
             self.results.add(username, {
                 "day": day, "race": race.id, "goal_id": q.goal_id,
                 "goal": goal.name if goal else q.goal, "concept": q.concept,
-                "q": question_hash(q.question),
+                "q": question_hash(q.question), **({"probe": q.probe} if q.probe else {}),
                 "level": q.level, **({"attempt": attempt} if attempt else {}),
                 "right": right, "seconds": round(max(took, 0.0), 1)})
             if race.done:
@@ -1129,6 +1240,45 @@ class RaceDesk:
                                             "points": race_points(race), "version": _version()})
         except Exception:  # a broken map or a full disk: the answer still counts
             pass
+
+    def _offered(self, username: str, today: date) -> list[tuple[str, str, bool]]:
+        # probes from the last week, newest first, as (topic, race, tapped); best effort
+        try:
+            return self.results.probes(username, today - timedelta(days=OFFER_DAYS - 1)) \
+                if self.results else []
+        except Exception:  # noqa: BLE001 - a broken file: no buttons, never an error
+            return []
+
+    def probes_after(self, username: str, race: Race, today: date | None = None) -> list[str]:
+        """Up to two topics to explore after the finish: this race's probe, and the latest
+        other one from the last week not tapped yet, both still new to the map."""
+        day = today or date.today()
+        m = self.maps.get(username)
+        offered = self._offered(username, day)
+        mine = [t for t, r, _ in offered if r == race.id]
+        other = [t for t, r, tapped in offered if r != race.id and not tapped
+                 and normalize(t) not in {normalize(x) for x in mine}]
+        return [t for t in [*mine[:1], *other[:1]] if off_map(m, t)]
+
+    def tap_probe(self, username: str, topic: str, today: date | None = None,
+                  keep: Callable[[str], bool] | None = None) -> str | None:
+        """Lerni's opener for a topic this person was offered in the last week, with the tap
+        logged; None for any other topic, or when ``keep`` (Chat taking the opener) refuses it,
+        so a refused tap isn't kept as a choice. Never calls Claude."""
+        day = today or date.today()
+        match, tapped = next(((t, done) for t, _, done in self._offered(username, day)
+                              if normalize(t) == normalize(topic or "")), (None, False))
+        if match is None or not off_map(self.maps.get(username), match):
+            return None
+        said = OPENER.format(topic=match)
+        if keep is not None and not keep(said):
+            return None  # Chat is still answering, or already shows it
+        if self.results is not None and not tapped:  # a second tap isn't a second choice
+            try:  # best effort: the opener still opens Chat
+                self.results.add(username, {"day": day.isoformat(), "probe_tap": match})
+            except OSError:
+                pass
+        return said
 
     def just_answered(self, username: str) -> bool:
         """Whether their last answer was a moment ago: a tap now is the rest of a double tap."""

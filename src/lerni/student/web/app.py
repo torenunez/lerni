@@ -135,6 +135,8 @@ _CSS = """
 .lerni-question p:first-child { font-size: 16px; }  /* Question 2 of 5 · tap to hear */
 .lerni-question p + p + p { font-size: 20px; }  /* a wrong answer's right answer and why */
 #lerni-note p { font-size: 18px; }
+.lerni-explore p { font-size: 18px; }  /* Want to find out more? (v3.36) */
+.lerni-topic { min-height: 48px !important; font-size: 18px !important; }
 body[data-lerni-hold] #lerni-next { opacity: 0.5; pointer-events: none; }  /* while it's said */
 .lerni-choice, .lerni-go { min-height: 56px !important; font-size: 18px !important; }
 /* the garage: your car big at the top, then tiles, 2 across on a phone */

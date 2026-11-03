@@ -1102,3 +1102,127 @@ def test_the_question_the_bonus_replaces_is_not_counted_as_asked(tmp_path):
     asked = {c["concept"] for c in desk.concepts.ledger("sam")}
     assert race.questions[BONUS_AT].concept not in asked and len(asked) == QUESTIONS_PER_RACE - 1
     assert race.attempts[BONUS_AT] is None and race.attempts[0] == 1
+
+
+class ProbeQuizzer(FakeQuizzer):
+    """Eight goal questions and six probes: two good, one on the map, one set aside, one
+    probed lately, and one that isn't a name."""
+
+    def __init__(self):
+        super().__init__()
+        self.prompts = []
+
+    def write(self, system, prompt):
+        self.calls += 1
+        self.prompts.append(prompt)
+        probes = ("earthquakes", "geysers", "volcanoes", "lava flows", "magma", "rocks!?")
+        return {"questions": [*(fresh("Fractions") for _ in range(8)),
+                              *(fresh("", probe=p) for p in probes)]}
+
+
+def probe_desk(tmp_path):
+    desk, maps, _ = stable_desk(tmp_path, ProbeQuizzer())
+    today = date.today()
+
+    def setup(m):  # a loved interest to probe beside, and a set-aside
+        add_interest(m, "volcanoes").days = [today.isoformat()]
+        remove(m, add_interest(m, "lava").id)
+    maps.change("sam", setup)
+    desk.results.add("sam", {"day": (today - timedelta(days=5)).isoformat(), "probe": "magma",
+                             "right": True})  # probed lately
+    desk.rng = random.Random(1)
+    return desk, maps, today
+
+
+def test_a_probe_is_checked_asked_once_and_never_counted(tmp_path):
+    import json
+
+    desk, maps, today = probe_desk(tmp_path)
+    race = desk.start("sam", supervised=True, today=today)
+    prompt = desk.quizzer.prompts[0]
+    assert "Nearby ideas to try" in prompt and "volcanoes" in prompt.split("Nearby")[1]
+    assert "Recently probed, choose others: magma" in prompt
+    probes = [(i, q.probe) for i, q in enumerate(race.questions) if q.probe]
+    assert len(probes) == 1 and probes[0][0] in (1, 2)  # never question 4, the bonus's
+    assert probes[0][1] in ("earthquakes", "geysers")
+    held = [q.probe for q in desk._held("sam", today) if q.probe]
+    assert sorted([probes[0][1], *held]) == ["earthquakes", "geysers"]  # the rest dropped
+    for n in range(QUESTIONS_PER_RACE):
+        desk.pick("sam", race.id, n, race.questions[n].answer)
+    asked = desk.concepts.recent("sam", today)
+    assert race.questions[probes[0][0]].concept not in asked  # not in the concept ledger
+    assert len(asked) == QUESTIONS_PER_RACE - 1
+    lines = [json.loads(x) for x in (tmp_path / "results" / "sam.jsonl").read_text().splitlines()]
+    probed = [x for x in lines if x.get("race") == race.id and x.get("probe")]
+    assert len(probed) == 1 and probed[0]["goal"] == "" and probed[0]["goal_id"] == ""
+    assert probed[0]["right"] is True and "What is" not in json.dumps(lines)
+    # a held probe whose topic joins the map is dropped before it races
+    maps.change("sam", lambda m: add_interest(m, held[0]))
+    assert not [q for q in desk._held("sam", today) if q.probe and desk_fits(q, maps)]
+
+
+def desk_fits(q, maps):
+    from lerni.student.race import fits
+
+    return fits(q, maps.get("sam"))
+
+
+def test_a_probe_tap_opens_chat_and_is_logged(tmp_path):
+    import json
+
+    from lerni.student.conversation import Conversations
+
+    desk, _, today = probe_desk(tmp_path)
+    race = desk.start("sam", supervised=True, today=today)
+    for n in range(QUESTIONS_PER_RACE):
+        desk.pick("sam", race.id, n, race.questions[n].answer)
+    topic = next(q.probe for q in race.questions if q.probe)
+    assert desk.probes_after("sam", race, today)[0] == topic
+
+    class NoModel:
+        def stream(self, system, turns):
+            raise AssertionError("a tap never asks Claude")
+
+    chats = Conversations(NoModel())
+    assert desk.tap_probe("sam", "rocks", today) is None  # never offered
+    opener = desk.tap_probe("sam", topic, today)
+    assert opener == f"Let's talk about {topic}! What do you already know about it?"
+    chats.open_with("sam", opener)
+    chats.open_with("sam", opener)  # a double tap
+    assert [(t.role, t.text) for t in chats.history("sam")] == [("assistant", opener)]
+    lines = [json.loads(x) for x in (tmp_path / "results" / "sam.jsonl").read_text().splitlines()]
+    assert {"day": today.isoformat(), "probe_tap": topic} in lines
+
+
+def test_review_regressions_probes_need_a_source_are_capped_and_a_refused_tap_isnt_kept(tmp_path):
+    from lerni.student.conversation import Conversations
+
+    m = InterestMap()
+    add_goal(m, "Fractions")
+    raw = {"questions": [fresh("Fractions"), fresh("", probe="earthquakes")]}
+    assert not [q for q in check_questions(raw, m) if q.probe]  # nothing nearby: no probe
+    many = {"questions": [*(fresh("", probe=p) for p in ("caves", "tides", "comets", "dunes")),
+                          fresh("Fractions", probe="Fractions")]}  # a rejected probe
+    kept = check_questions(many, m, probes=True)
+    assert len(kept) == 2 and all(q.probe for q in kept)  # at most 2 a set; the rejected one gone
+    twins = {"questions": [fresh("", probe="caves"), fresh("", probe="caves")]}
+    spare = []
+    check_questions(twins, m, probes=True, spare=spare)
+    assert not [q for q in spare if q.probe == "caves"]  # one topic is never held twice
+
+    desk, maps, today = probe_desk(tmp_path)
+    for _ in range(4):  # held probes never pile up
+        race = desk.start("sam", supervised=True, today=today)
+        for n in range(QUESTIONS_PER_RACE):
+            desk.pick("sam", race.id, n, race.questions[n].answer)
+        assert sum(1 for q in desk._held("sam", today) if q.probe) <= 2
+    topic = desk.probes_after("sam", race, today)[0]
+
+    class Busy:
+        def open_with(self, username, text):
+            return False  # still answering
+
+    assert desk.tap_probe("sam", topic, today, keep=lambda s: Busy().open_with("sam", s)) is None
+    assert desk.probes_after("sam", race, today)[0] == topic  # still offered, not logged as chosen
+    chats = Conversations(FakeQuizzer())
+    assert desk.tap_probe("sam", topic, today, keep=lambda s: chats.open_with("sam", s))

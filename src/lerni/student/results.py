@@ -97,6 +97,14 @@ class ResultsLog:
                 counts[str(r["goal_id"])] = counts.get(str(r["goal_id"]), 0) + 1
         return counts
 
+    def probes(self, username: str, since: date) -> list[tuple[str, str, bool]]:
+        """Each topic probed since ``since``, newest first, as (topic, race id, tapped ever)."""
+        lines = self.read(username)
+        tapped = {normalize(str(r["probe_tap"])) for r in lines if r.get("probe_tap")}
+        out = [(str(r["probe"]), str(r.get("race", "")), normalize(str(r["probe"])) in tapped)
+               for r in lines if r.get("probe") and str(r.get("day", "")) >= since.isoformat()]
+        return out[::-1]
+
     def practice(self, username: str, goal_id: str, today: date) -> Practice | None:
         """One goal's Practice line, or None if it was never raced."""
         lines = [r for r in self.read(username)

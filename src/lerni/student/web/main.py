@@ -141,14 +141,13 @@ def build_main_view(
             home, home_chat, _, home_done = ask_tab(signin, conversations, supervised=True,
                                                     speech=speech)
             if points is not None:
-                games, games_refresh, games_outputs = games_tab(signin, races, points, stars,
-                                                                garage or Garage(),
-                                                                speech=speech)
+                games, games_refresh, games_outputs, topic_btns = games_tab(
+                    signin, races, points, stars, garage or Garage(), speech=speech)
             else:  # built without a points store (tests): the old placeholder
                 with gr.Tab("Games", id="games", visible=False) as games:
                     gr.HTML('<div class="lerni-soon"><div aria-hidden="true">🎮</div>'
                             "<p>Games are coming soon!</p></div>")
-                games_refresh, games_outputs = None, []
+                games_refresh, games_outputs, topic_btns = None, [], []
             ask, chat, voice, ask_done = ask_tab(signin, conversations, speech=speech)
             mymap, picture, owner, version = map_tab(signin, students, maps, uploader,
                                                       races.results if races else None)
@@ -243,6 +242,26 @@ def build_main_view(
                 label = menu_label(tab, signin.viewer(request.username), students)
                 return [gr.update(selected=tab), f"**{label}**"]
             return open_tab
+
+        # a topic at the race's finish opens Chat with Lerni's opener (v3.36); no Claude call
+        def on_topic(label: str, request: gr.Request) -> list[Any]:
+            viewer = signin.viewer(request.username)
+            shown = visible_tabs(viewer)
+            tab = "home" if "home" in shown else "ask"
+            said = (races.tap_probe(viewer.username, label.removeprefix("🔭").strip(),
+                                    keep=lambda s: conversations.open_with(viewer.username, s))
+                    if races is not None and conversations is not None and viewer is not None
+                    and tab in shown else None)
+            if said is None:  # not offered, no Chat, or Chat mid-reply: nothing changes
+                return [gr.update() for _ in range(4)]
+            history = messages(conversations, viewer.username)
+            return [gr.update(selected=tab), f"**{menu_label(tab, viewer, students)}**",
+                    history if tab == "home" else gr.update(),
+                    history if tab == "ask" else gr.update()]
+
+        for button in topic_btns:
+            button.click(on_topic, button, [tabs, title, home_chat, chat],
+                         api_visibility="private")
 
         for tab, button in nav.items():
             button.click(

@@ -343,12 +343,14 @@ def _feedback(race: Race, turn: Turn, awarded: int, goal: str = "") -> str:
 
 def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
               header_stars: gr.Markdown, garage: Garage,
-              speech: Speech | None = None) -> tuple[gr.Tab, Callable[..., list[Any]], list[Any]]:
+              speech: Speech | None = None
+              ) -> tuple[gr.Tab, Callable[..., list[Any]], list[Any], list[gr.Button]]:
     """The Games tab: your car and the next goal, the race, then My cars and Showroom
     (between races only).
 
     Returns:
-        The tab, a refresh for page load (no Claude call), and the components it fills.
+        The tab, a refresh for page load (no Claude call), the components it fills, and the
+        finish's topic buttons, which open Chat (main.py wires them, since it owns the tabs).
     """
     def tile(c: Car) -> tuple[gr.Column, gr.Button]:
         with gr.Column(elem_classes="lerni-tile", min_width=0, visible=False) as col:
@@ -396,6 +398,12 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
                 peek = gr.Button(elem_id="lerni-peek-bonus", elem_classes="lerni-hide")
             skip = gr.Button("Skip", size="sm")
         note = gr.Markdown(elem_id="lerni-note")
+        # at the finish: up to two nearby ideas to talk about in Chat (v3.36)
+        with gr.Column(visible=False, elem_classes="lerni-explore") as explore:
+            gr.Markdown("Want to find out more?")
+            with gr.Row():
+                topic_btns = [gr.Button(visible=False, elem_classes="lerni-topic")
+                              for _ in range(2)]
         go = gr.Button("Race!", variant="primary", elem_classes="lerni-go")
         next_btn = gr.Button("Next", variant="primary", elem_classes="lerni-go", visible=False,
                              elem_id="lerni-next")  # race.js holds it while the why is said
@@ -412,7 +420,8 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
     outputs = [header_stars, hero, track, question, *choices, dock, answer_box, send, note, go,
                next_btn, shown, mine_title,
                *(x for pair in mine.values() for x in pair),
-               *(x for parts in shop.values() for x in parts), garage_box, hear]
+               *(x for parts in shop.values() for x in parts), garage_box, hear, explore,
+               *topic_btns]
 
     def garage_updates(p: Points | None) -> list[Any]:
         """The My cars title, then each car's tile and button in both lists."""
@@ -461,13 +470,19 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
             why = _why_first(race, last)
             reads = "why" if why else "question" if show or live else ""
         mine = stars(points, viewer)
+        topics = (desk.probes_after(viewer.username, race)  # only at the finish
+                  if desk is not None and viewer is not None and race is not None and race.done
+                  else [])
         return [gr.update(value=mine, visible=bool(mine)),
                 gr.update(value=hero_html(garage, p), visible=race is None),
                 gr.update(value=track_svg(race, driving, garage, reads if talks else ""),
                           visible=race is not None),
                 ask, *buttons, gr.update(visible=live), gr.update(value=""),
                 gr.update(interactive=True), line, go_update, gr.update(visible=waiting), ref,
-                *garage_updates(p), gr.update(visible=race is None or race.done), reads]
+                *garage_updates(p), gr.update(visible=race is None or race.done), reads,
+                gr.update(visible=bool(topics)),
+                *(gr.update(visible=True, value=f"🔭 {topics[i]}") if i < len(topics)
+                  else gr.update(visible=False) for i in range(len(topic_btns)))]
 
     def viewer_of(request: gr.Request) -> Viewer | None:
         viewer = signin.viewer(request.username)  # re-read on every request
@@ -591,8 +606,8 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
     # Race hides while questions are written, so extra taps can't start more races
     # the note says why it waits; progress only on the hidden Race button, so no "processing"
     # over the hero, the card, and every garage car ("hidden" still shows it on HTML)
-    go.click(lambda: [WAIT_LINE, gr.update(visible=False), gr.update(visible=False)], None,
-             [note, go, garage_box], queue=False, **PRIVATE).then(
+    go.click(lambda: [WAIT_LINE, *(gr.update(visible=False) for _ in range(3))], None,
+             [note, go, garage_box, explore], queue=False, **PRIVATE).then(
         on_go, None, outputs, concurrency_limit=MAX_AT_ONCE, show_progress_on=[go],
         **PRIVATE)  # side by side
     for i, button in enumerate(choices):
@@ -630,4 +645,4 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
     for car_id, button in [*((i, t[-1]) for i, t in mine.items()),
                            *((i, t[-1]) for i, t in shop.items())]:
         button.click(on_garage(car_id), None, outputs, concurrency_limit=MAX_AT_ONCE, **PRIVATE)
-    return tab, refresh, outputs
+    return tab, refresh, outputs, topic_btns
