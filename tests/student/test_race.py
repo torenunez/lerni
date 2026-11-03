@@ -1192,3 +1192,37 @@ def test_a_probe_tap_opens_chat_and_is_logged(tmp_path):
     assert [(t.role, t.text) for t in chats.history("sam")] == [("assistant", opener)]
     lines = [json.loads(x) for x in (tmp_path / "results" / "sam.jsonl").read_text().splitlines()]
     assert {"day": today.isoformat(), "probe_tap": topic} in lines
+
+
+def test_review_regressions_probes_need_a_source_are_capped_and_a_refused_tap_isnt_kept(tmp_path):
+    from lerni.student.conversation import Conversations
+
+    m = InterestMap()
+    add_goal(m, "Fractions")
+    raw = {"questions": [fresh("Fractions"), fresh("", probe="earthquakes")]}
+    assert not [q for q in check_questions(raw, m) if q.probe]  # nothing nearby: no probe
+    many = {"questions": [*(fresh("", probe=p) for p in ("caves", "tides", "comets", "dunes")),
+                          fresh("Fractions", probe="Fractions")]}  # a rejected probe
+    kept = check_questions(many, m, probes=True)
+    assert len(kept) == 2 and all(q.probe for q in kept)  # at most 2 a set; the rejected one gone
+    twins = {"questions": [fresh("", probe="caves"), fresh("", probe="caves")]}
+    spare = []
+    check_questions(twins, m, probes=True, spare=spare)
+    assert not [q for q in spare if q.probe == "caves"]  # one topic is never held twice
+
+    desk, maps, today = probe_desk(tmp_path)
+    for _ in range(4):  # held probes never pile up
+        race = desk.start("sam", supervised=True, today=today)
+        for n in range(QUESTIONS_PER_RACE):
+            desk.pick("sam", race.id, n, race.questions[n].answer)
+        assert sum(1 for q in desk._held("sam", today) if q.probe) <= 2
+    topic = desk.probes_after("sam", race, today)[0]
+
+    class Busy:
+        def open_with(self, username, text):
+            return False  # still answering
+
+    assert desk.tap_probe("sam", topic, today, keep=lambda s: Busy().open_with("sam", s)) is None
+    assert desk.probes_after("sam", race, today)[0] == topic  # still offered, not logged as chosen
+    chats = Conversations(FakeQuizzer())
+    assert desk.tap_probe("sam", topic, today, keep=lambda s: chats.open_with("sam", s))

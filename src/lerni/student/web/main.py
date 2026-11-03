@@ -248,12 +248,12 @@ def build_main_view(
             viewer = signin.viewer(request.username)
             shown = visible_tabs(viewer)
             tab = "home" if "home" in shown else "ask"
-            said = (races.tap_probe(viewer.username, label.removeprefix("🔭").strip())
+            said = (races.tap_probe(viewer.username, label.removeprefix("🔭").strip(),
+                                    keep=lambda s: conversations.open_with(viewer.username, s))
                     if races is not None and conversations is not None and viewer is not None
                     and tab in shown else None)
-            if said is None:  # not offered to them, or no Chat: nothing changes
+            if said is None:  # not offered, no Chat, or Chat mid-reply: nothing changes
                 return [gr.update() for _ in range(4)]
-            conversations.open_with(viewer.username, said)  # refused mid-reply: Chat as it is
             history = messages(conversations, viewer.username)
             return [gr.update(selected=tab), f"**{menu_label(tab, viewer, students)}**",
                     history if tab == "home" else gr.update(),

@@ -132,7 +132,7 @@ def main() -> None:
     remove(near, add_interest(near, "earthquakes").id)
     raw = ClaudeCodeQuizzer().write(QUIZ_SYSTEM, quiz_input(near, date.today(), True))
     tried = [str(i.get("probe", "")) for i in raw.get("questions", []) if i.get("probe")]
-    probes = [q for q in check_questions(raw, near) if q.probe]
+    probes = [q for q in check_questions(raw, near, probes=True) if q.probe]
     for q in probes:
         print(f"[probe · {q.probe}] {q.question} → {q.choices} ✓{q.choices[q.answer]}")
     results.append(("a set with nearby ideas brings 1 or 2 probes that pass the checks",
