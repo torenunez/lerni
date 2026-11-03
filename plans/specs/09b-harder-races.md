@@ -233,7 +233,7 @@ v3.19 (race questions from the garage), v3.20 (a map journal and nightly backups
   - breaks the name rules;
   - mentions anything set aside;
   - was probed in the last 30 days.
-- **In the race:** one probe per race, at question 2, 3, or 4.
+- **In the race:** one probe per race, at question 2 or 3 (question 4 is the bonus's).
   - It counts for the place like any question.
   - It never counts toward the goal's level or review.
 - **After the race:** up to two topic buttons: this race's probe, and the latest other probe from the last 7 days that hasn't been tapped.

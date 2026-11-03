@@ -40,7 +40,8 @@ def write(m: InterestMap, supervised: bool = True, before: list | None = None,
     kept = check_questions(raw, m, concepts=recent,
                            texts=[normalize(q.question) for q in before or []])
     for q in kept:
-        print(f"[{q.goal} · {q.concept}] {q.question} → {q.choices} ✓{q.choices[q.answer]}")
+        about = q.goal or f"probe: {q.probe}"
+        print(f"[{about} · {q.concept}] {q.question} → {q.choices} ✓{q.choices[q.answer]}")
     return kept
 
 
@@ -56,10 +57,10 @@ def main() -> None:
     raw_again = len(again)
     results = [
         ("at least one race of good questions", len(kept) >= 5),
-        ("every question practices a goal on the map",
-         all(q.goal in ("Fractions", "Acceleration") for q in kept)),
+        ("every question practices a goal on the map, or probes a nearby idea",
+         all(q.goal in ("Fractions", "Acceleration") or q.probe for q in kept)),
         ("both goals come up (a goal with notes once lost all its questions)",
-         {q.goal for q in kept} == {"Fractions", "Acceleration"}),
+         {q.goal for q in kept if not q.probe} == {"Fractions", "Acceleration"}),
         ("nothing set aside comes up",
          all("shark" not in (q.question + " ".join(q.choices)).casefold() for q in kept)),
         # regression: production raced the same questions again and again
@@ -124,6 +125,20 @@ def main() -> None:
         print(f"[bonus · {b.goal}] {b.question} → {b.key_ideas}")
     results.append(("a set brings 1 or 2 bonus questions that pass the checks",
                     1 <= len(bonuses) <= 2))
+    # probes (v3.36): nearby ideas off the map, never a set-aside
+    near = InterestMap()
+    add_goal(near, "Fractions", "halves and quarters")
+    add_interest(near, "volcanoes").days = [date.today().isoformat()]
+    remove(near, add_interest(near, "earthquakes").id)
+    raw = ClaudeCodeQuizzer().write(QUIZ_SYSTEM, quiz_input(near, date.today(), True))
+    tried = [str(i.get("probe", "")) for i in raw.get("questions", []) if i.get("probe")]
+    probes = [q for q in check_questions(raw, near) if q.probe]
+    for q in probes:
+        print(f"[probe · {q.probe}] {q.question} → {q.choices} ✓{q.choices[q.answer]}")
+    results.append(("a set with nearby ideas brings 1 or 2 probes that pass the checks",
+                    1 <= len(probes) <= 2))
+    results.append(("no probe Claude wrote names a set-aside",
+                    all("earthquake" not in t.casefold() for t in tried)))
     for name, ok in results:
         print("PASS" if ok else "FAIL", name)
 

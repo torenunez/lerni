@@ -136,6 +136,16 @@ class Conversations:
             self._turns.pop(username, None)
             self._generation[username] = self._generation.get(username, 0) + 1
 
+    def open_with(self, username: str, text: str) -> bool:
+        """Add Lerni's ``text`` to ``username``'s conversation, in memory only (a probe's
+        opener); refused while a reply is coming, and never twice in a row."""
+        with self._lock:
+            turns = self._turns.get(username, [])
+            if username in self._busy or (turns and turns[-1] == Turn("assistant", text)):
+                return False
+            self._turns[username] = [*turns, Turn("assistant", text)][-MAX_TURNS:]
+        return True
+
     def ask(self, username: str, text: str, voice: Voice = "independent") -> Iterator[str]:
         """Send a question and yield the answer as it arrives.
 
