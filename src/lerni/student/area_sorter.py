@@ -7,6 +7,7 @@ and each sort is one journal line `lerni map undo` reverses. Goals themselves st
 from __future__ import annotations
 
 import threading
+import time
 from typing import Any
 
 from lerni.student.interests import (
@@ -22,6 +23,7 @@ from lerni.student.interests import (
 from lerni.student.race import Checker
 
 AREA_TIMEOUT_SECONDS = 20  # a save waits for it, so short; a goal left unsorted shows in Other
+RETRY_SECONDS = 600  # after no answer (resting, a timeout), saves don't ask again for a while
 
 AREA_SYSTEM = """You sort a learner's goals into subject areas for their educator's list.
 - Give each goal under "Goals to sort" exactly one area.
@@ -77,26 +79,33 @@ class AreaSorter:
         self.writer, self.maps = writer, maps
         self._guard = threading.Lock()
         self._busy: set[tuple[str, str]] = set()  # goals being sorted now
-        self._tried: set[tuple[str, str]] = set()  # goals Claude couldn't sort: not again
+        self._tried: set[tuple[str, str]] = set()  # goals Claude answered without: not again
+        self._wait: dict[str, float] = {}  # username → when to ask again after no answer
+        self.clock = time.monotonic
 
     def sort(self, username: str) -> int:
         """Sort ``username``'s goals with no area; returns how many got one. Never raises."""
-        m = self.maps.get(username)
+        try:
+            m = self.maps.get(username)
+        except Exception:  # noqa: BLE001 - an unreadable map never stops the others' sweep
+            return 0
         with self._guard:
+            if self.clock() < self._wait.get(username, 0):
+                return 0
             todo = [e for e in m.entries if e.kind == "goal" and not e.area
                     and (username, e.id) not in self._busy | self._tried]
             keys = {(username, e.id) for e in todo}
             self._busy |= keys
         if not todo:
             return 0
-        picks: dict[str, str] = {}
+        picks: dict[str, str] | None = None  # None: no answer came back
         try:
             raw = self.writer.write(AREA_SYSTEM, area_input(m, todo), AREA_SCHEMA,
                                     AREA_TIMEOUT_SECONDS)
             picks = parse_areas(raw, todo)
 
             def apply(m: InterestMap) -> int:
-                n = 0
+                n, edits = 0, m.edits
                 for goal_id, area in picks.items():
                     try:
                         e = m.get(goal_id)
@@ -105,6 +114,7 @@ class AreaSorter:
                     if e.kind == "goal" and not e.area:  # a person's area always wins
                         set_area(m, goal_id, area)
                         n += 1
+                m.edits = edits  # not a person's edit, so the tagger's update in flight stays
                 return n
 
             return self.maps.change(username, apply, by="lerni") if picks else 0
@@ -113,4 +123,7 @@ class AreaSorter:
         finally:
             with self._guard:
                 self._busy -= keys
-                self._tried |= {(username, i) for _, i in keys if i not in picks}
+                if picks is None:
+                    self._wait[username] = self.clock() + RETRY_SECONDS
+                else:
+                    self._tried |= {(username, i) for _, i in keys if i not in picks}

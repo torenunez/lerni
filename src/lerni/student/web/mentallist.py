@@ -120,7 +120,9 @@ def rename_item(
 def move_area(
     maps, students, viewer, requested, entry_id: str, area: str, expected: str | None = None
 ) -> str:
-    """Move a goal to another subject area (or a new one typed in)."""
+    """Move a goal to another subject area (or a new one typed in; Other leaves it unsorted)."""
+    if not (area or "").strip():
+        return "⚠️ Pick or type an area first."
     return _act(
         maps,
         students,
@@ -437,7 +439,8 @@ def mental_list(
                         notes_box = notes_btn = None
                         if e.kind == "goal":  # its area: Lerni's pick, moved with a tap
                             with gr.Row(key=f"a-{e.id}"):
-                                pick_area = gr.Dropdown(areas(m), value=e.area or None,
+                                pick_area = gr.Dropdown(list(dict.fromkeys([*areas(m), "Other"])),
+                                                        value=e.area or None,
                                                         label="Area", allow_custom_value=True,
                                                         interactive=True,  # else drawn disabled
                                                         key=f"ap-{e.id}", scale=2)

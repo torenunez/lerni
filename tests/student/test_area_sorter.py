@@ -42,13 +42,39 @@ def test_goals_with_no_area_are_sorted_once_as_lerni(tmp_path):
     assert sorter.sort("sam") == 0 and len(writer.calls) == 1  # nothing left: no call
 
 
-def test_a_failed_sort_keeps_the_save_and_isnt_retried(tmp_path):
+def test_a_failed_sort_keeps_the_save_and_waits_before_trying_again(tmp_path):
     maps = _map(tmp_path)
     writer = FakeWriter(fail=True)
-    maps.after_change = AreaSorter(writer, maps).sort  # as the app wires it
+    sorter = AreaSorter(writer, maps)
+    now = [0.0]
+    sorter.clock = lambda: now[0]
+    maps.after_change = sorter.sort  # as the app wires it
     maps.change("sam", lambda m: add_goal(m, "Energy"), by="person:ann")  # the save still lands
     maps.change("sam", lambda m: add_goal(m, "Equation"), by="person:ann")
     m = maps.get("sam")
     assert m.find("Energy").area == "" and m.find("Equation").area == ""
-    # one call per new unsorted goal, never the same goal again
-    assert len(writer.calls) == 2 and "Energy" not in writer.calls[1]
+    assert len(writer.calls) == 1  # resting or no answer: no call on every save
+    now[0] += 601
+    writer.fail, writer.picks = False, {"Energy": "Science"}
+    maps.change("sam", lambda m: add_goal(m, "Volcanoes"), by="person:ann")
+    assert len(writer.calls) == 2 and maps.get("sam").find("Energy").area == "Science"
+
+
+def test_review_regressions_other_is_a_choice_a_sort_isnt_a_persons_edit(tmp_path):
+    from lerni.student.interests import by_area
+
+    maps = _map(tmp_path)
+    edits = maps.get("sam").edits
+    writer = FakeWriter({"Note values": "Music"})
+    sorter = AreaSorter(writer, maps)
+    sorter.sort("sam")
+    m = maps.get("sam")
+    assert m.edits == edits  # an in-flight tagger update isn't dropped for a sort
+    maps.change("sam", lambda m: set_area(m, m.find("Note values").id, "other"))
+    sorter.sort("sam")  # a person's Other stays Other: Lerni leaves it
+    m = maps.get("sam")
+    assert m.find("Note values").area == "Other"
+    goals = [e for e in m.entries if e.kind == "goal"]
+    assert [a for a, _ in by_area(goals)] == ["Math", "Other"]  # one Other heading
+    assert sorted(e.name for e in dict(by_area(goals))["Other"]) == [
+        "Note values", "Taekwondo tenets"]

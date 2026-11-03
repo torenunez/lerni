@@ -27,7 +27,7 @@ from lerni.student.garage import (
     family_cars,
     next_goal,
 )
-from lerni.student.interests import MapStore
+from lerni.student.interests import MapStore, area_group
 from lerni.student.points import STARTER, Points, PointsError, PointsStore
 from lerni.student.race import (
     BOT_RIVALS,
@@ -138,7 +138,7 @@ def student_progress(points: PointsStore, garage: Garage, students: StudentStore
         if m is None:
             return ""
         e = next((x for x in m.entries if goal_id and x.id == goal_id), None) or m.find(name)
-        return e.area if e is not None and e.kind == "goal" else ""
+        return area_group(e.area) if e is not None and e.kind == "goal" else ""
 
     groups: dict[str, list[tuple[str, int, int]]] = {}
     for goal_id, goal, right, asked in week:

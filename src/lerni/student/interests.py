@@ -376,18 +376,23 @@ def areas(m: InterestMap) -> list[str]:
     return list(seen.values())
 
 
+def area_group(area: str) -> str:
+    """The heading a goal is shown under: a person's "Other" and no area are one group."""
+    return "" if area.casefold() == "other" else area
+
+
 def by_area(goals: list[Entry]) -> list[tuple[str, list[Entry]]]:
     """Goals under their areas: the areas with the most goals first, then by name; no area
     ("Other") last."""
     groups: dict[str, list[Entry]] = {}
     for e in goals:
-        groups.setdefault(e.area, []).append(e)
+        groups.setdefault(area_group(e.area), []).append(e)
     named = sorted((a for a in groups if a), key=lambda a: (-len(groups[a]), a.casefold()))
     return [(a, groups[a]) for a in named] + ([("Other", groups[""])] if "" in groups else [])
 
 
 def set_area(m: InterestMap, entry_id: str, area: str) -> Entry:
-    """A person sets a goal's subject area (Lerni proposes; a tick decides).
+    """Set a goal's subject area: Lerni's sort, or a person's Move ("Other": Lerni leaves it).
 
     Raises:
         MapError: Unknown entry, not a goal, or not a plain name.
@@ -396,7 +401,8 @@ def set_area(m: InterestMap, entry_id: str, area: str) -> Entry:
     if entry.kind != "goal":
         raise MapError("Only goals have an area.")
     wanted = check_name(area)
-    entry.area = {a.casefold(): a for a in areas(m)}.get(wanted.casefold(), wanted)  # one spelling
+    spelled = {a.casefold(): a for a in [*areas(m), "Other"]}  # one spelling each
+    entry.area = spelled.get(wanted.casefold(), wanted)
     m.edits += 1
     return entry
 

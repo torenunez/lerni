@@ -19,6 +19,7 @@ When something changes, update this section and add a log entry below.
 - v3.37 ([plan](../plans/v3.37-auto-areas.md)): Lerni sorts any goal with no area into one by itself, after every map save and once at start: one small-model call, the map's own areas first, a new short one only when none fits, saved as one `lerni` change that `lerni map undo` reverses. An open goal's Area and Move put it in another. Reverses v3.28's "an area is set only by a person's tap"; goals stay rule 5.
 - Eval: 3 of 3 (school subjects into the starters, two related goals sharing one new area, a map's own area reused).
 - Checked on a throwaway server at phone size: the start-up sweep sorted five goals; Move put one in a new typed area; a goal added on My MentalMap was under Math 2 s after the save. Found on the way: an open item's Name field (and the new Area field) was drawn disabled, so Rename did nothing, in production too; both are now marked editable.
+- A fresh review: an undone sort was sorted again on the next save, and a typed "Other" made a second Other heading (now Other is a choice Lerni leaves, one heading); one failed or resting call kept goals unsorted until a restart (now asked again after 10 minutes); a sort counted as a person's edit and dropped a tagger update in flight; one unreadable map could stop the start-up sweep. Kept: saves wait for the sort (about 2 s).
 
 ### 2026-11-03 (probes; v3.36 built)
 
