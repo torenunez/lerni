@@ -42,7 +42,7 @@ NIGHTLY = re.compile(r"^nightly-\d{4}-\d{2}-\d{2}$")
 AT = {"Hour": 3, "Minute": 0}  # when the copy runs, while everyone's asleep
 KEYS = ("secret.key", "https-key.pem")  # never copied: a copy must not let anyone sign in
 CARRIED = (*KEYS, "https.pem")  # kept from the folder a restore replaces
-SKIP = shutil.ignore_patterns(".tmp-*", "*.lock", *KEYS)
+SKIP = shutil.ignore_patterns(".tmp-*", "*.lock", "stats.sqlite*", *KEYS)  # stats: rebuilt
 MAP_FILE = re.compile(r"^([a-z][a-z0-9-]{1,30})\.(json|events\.jsonl)$")
 
 
