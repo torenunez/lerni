@@ -82,6 +82,18 @@ def test_the_copy_has_every_table_and_a_renamed_goal_keeps_its_rows(tmp_path):
     assert rows("SELECT level, box, due FROM goal_levels") == [(3, 1, "2026-10-30")]
 
 
+def test_hand_edited_values_are_skipped_and_counted(tmp_path):
+    root = _folder(tmp_path / "data")
+    with (root / "results" / "sam.jsonl").open("a") as handle:  # after the cut-off line's newline
+        handle.write("\n" + json.dumps(_answer("2026-10-27", "", "x", True, level=10**30)) + "\n")
+    path = root / "maps" / "sam.json"
+    data = json.loads(path.read_text())
+    data["entries"][0]["days"] = None
+    path.write_text(json.dumps(data))
+    built = build(root)  # the map (no rows from it), the cut-off line, and the huge number
+    assert (built.students, built.skipped) == (1, 3)
+
+
 def test_the_report_keeps_probes_and_bonus_answers_out_of_the_percentages(tmp_path):
     root = _folder(tmp_path / "data")
     args = ["stats", "--data", str(root)]
@@ -123,7 +135,7 @@ def test_a_query_can_never_change_the_copy(tmp_path):
     assert out.exit_code == 1
     out = CliRunner().invoke(app, ["stats", "--data", str(root), "--sql",
                                    "SELECT COUNT(*) AS n FROM answers"])
-    assert out.exit_code == 0 and out.output.split() == ["n", "6"]
+    assert out.exit_code == 0 and out.stdout.split() == ["n", "6"]  # the note goes to stderr
 
 
 def test_wilson_range_matches_a_known_value():

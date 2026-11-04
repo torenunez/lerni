@@ -28,7 +28,7 @@ TOP = 5  # rows in the hardest and missed lists
 WHO = "username = ? AND day >= ?"  # every report query: one student, from a first day
 SCORED = "right IS NOT NULL AND probe IS NULL"  # a bonus has a tier, a probe its own line
 BAD = (ValueError, TypeError, AttributeError, KeyError,  # a line or file not as written
-       sqlite3.InterfaceError, sqlite3.ProgrammingError)  # a value SQLite can't store
+       OverflowError, sqlite3.InterfaceError, sqlite3.ProgrammingError)  # a value SQLite refuses
 
 TABLES = """
 CREATE TABLE students (username TEXT PRIMARY KEY, kind TEXT, educator INTEGER, archived INTEGER);
@@ -145,12 +145,13 @@ def _add_student(db: sqlite3.Connection, root: Path, user: str, account: dict[st
     skipped = 0
     try:
         m = MapStore(root).get(user)
-    except (*BAD, OSError):
+        rows = [(user, e.id, e.kind, e.name, _area(e) if e.kind == "goal" else None, e.mentions,
+                 len(e.days), len(e.explained), state)
+                for state, entries in (("active", m.entries), ("resting", m.archived))
+                for e in entries]
+        db.executemany("INSERT INTO entries VALUES (?,?,?,?,?,?,?,?,?)", rows)
+    except (*BAD, OSError):  # a broken map adds no rows of its own
         m, skipped = InterestMap(), 1
-    for state, entries in (("active", m.entries), ("resting", m.archived)):
-        db.executemany("INSERT INTO entries VALUES (?,?,?,?,?,?,?,?,?)", [
-            (user, e.id, e.kind, e.name, _area(e) if e.kind == "goal" else None, e.mentions,
-             len(e.days), len(e.explained), state) for e in entries])
     records, bad = _lines(root / "results" / f"{user}.jsonl")
     skipped += bad
     for r in records:
@@ -359,7 +360,7 @@ def report(path: Path, username: str, start: str, window: str) -> str:
             _by(db, who, "Area", "area", "ORDER BY COUNT(*) DESC, area"),
             _weeks(db, who),
             _by(db, who, f"Hardest goals ({MIN_HARDEST}+ answers)", "goal",
-                f"HAVING COUNT(*) >= {MIN_HARDEST} "
+                f"HAVING COUNT(*) >= {MIN_HARDEST} AND goal != '' "
                 f"ORDER BY 1.0 * SUM(right) / COUNT(*), COUNT(*) DESC LIMIT {TOP}"),
             _missed(db, who),
             _extras(db, who),

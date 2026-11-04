@@ -30,6 +30,8 @@ def stats_cmd(username: str = typer.Argument("", help="One student's report."),
         built = build(folder)
     except (OSError, sqlite3.Error) as exc:
         raise _fail(f"Couldn't build the stats copy: {exc}") from None
+    if built.skipped:  # stderr, so a query's rows still pipe cleanly
+        typer.echo(f"Cut-off lines or broken files skipped: {built.skipped}", err=True)
     if sql:
         try:
             columns, rows = query(built.path, sql)
@@ -49,5 +51,3 @@ def stats_cmd(username: str = typer.Argument("", help="One student's report."),
         typer.echo(report(built.path, username, start, window))
     else:
         typer.echo(overview(built.path, start))
-    if built.skipped:
-        typer.echo(f"\nCut-off lines or broken files skipped: {built.skipped}")
