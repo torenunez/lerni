@@ -32,9 +32,8 @@ Open tasks by who does the work. The educator and admin tracks run in parallel: 
 
 What ships next, in order, one PR each ([how versions work](roadmap.md#versions)):
 
-1. **v3.40: local embeddings built,** per [spec 10](../plans/specs/10-local-embeddings.md): Qwen3-Embedding-0.6B through `llama-embedding`, behind an adapter, for set-aside by meaning (a removed name close to a goal or an area is skipped by race checks) and repeats by meaning in race questions. No vectors kept; without the embedder, everything falls back to today's behavior.
-2. **Version 4, the educator's Chat** (its first PR writes the plan): the educator gives goals and right answers through Chat (a worksheet, an answer key, what we're learning this week) and ticks what Claude proposes; a Check questions list on the student's page marks recent race questions ✓ right or ✗ wrong with an optional why; ✓ and uploaded pairs form each goal's checked bank (saved as text, rule 6's one exception), races mix them in, ✗ never comes back and its why steers Claude; Chat takes notes about any student and proposes changes to their map. Nothing saved without a tap.
-3. **Versions 5–7** ([roadmap](roadmap.md)): suggested goals (Version 4 and probe results first); remembering (recall only from the checked bank, on v3.22's review schedule, FSRS or SM-2; Bridge Trip its front door); without an educator present.
+1. **Version 4, the educator's Chat** (its first PR writes the plan): the educator gives goals and right answers through Chat (a worksheet, an answer key, what we're learning this week) and ticks what Claude proposes; a Check questions list on the student's page marks recent race questions ✓ right or ✗ wrong with an optional why; ✓ and uploaded pairs form each goal's checked bank (saved as text, rule 6's one exception), races mix them in, ✗ never comes back and its why steers Claude; Chat takes notes about any student and proposes changes to their map. Nothing saved without a tap.
+2. **Versions 5–7** ([roadmap](roadmap.md)): suggested goals (Version 4 and probe results first); remembering (recall only from the checked bank, on v3.22's review schedule, FSRS or SM-2; Bridge Trip its front door); without an educator present.
 
 How PRs are split:
 

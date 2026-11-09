@@ -28,6 +28,7 @@ from lerni.student.feedback import FeedbackStore  # noqa: E402
 from lerni.student.garage import Garage  # noqa: E402
 from lerni.student.interests import MapStore  # noqa: E402
 from lerni.student.logs import ConversationLog  # noqa: E402
+from lerni.student.meaning import Embedder  # noqa: E402
 from lerni.student.points import PointsStore  # noqa: E402
 from lerni.student.race import Quizzer, RaceDesk  # noqa: E402
 from lerni.student.results import ResultsLog  # noqa: E402
@@ -218,6 +219,7 @@ def build_app(
     speech: Speech | None = None,
     usage: Usage | None = None,
     quizzer: Quizzer | None = None,
+    embedder: Embedder | None = None,
 ) -> FastAPI:
     """Build the server: the sign-in page and the app at ``/app/``.
 
@@ -233,6 +235,7 @@ def build_app(
         speech: Speech to text and back for Hold to talk; ``None`` turns it off.
         usage: Claude usage, for the educators' warning; ``None`` shows none.
         quizzer: Claude behind an adapter for race questions; ``None`` turns races off.
+        embedder: Local embeddings for race checks by meaning; ``None`` leaves words only.
     """
     root = data_root or default_data_dir()
     students = StudentStore(root)
@@ -289,7 +292,8 @@ def build_app(
                       checker=quizzer,  # the same small model answers each question blind
                       garage=garage, grader=quizzer,  # and grades bonus answers
                       log=log,  # a worrying bonus answer is kept where Chat's are
-                      speech=speech)  # reads questions aloud
+                      speech=speech,  # reads questions aloud
+                      embedder=embedder)  # rewordings and set-asides by meaning
              if quizzer is not None else None)
     if quizzer is not None:  # Lerni sorts goals with no area after each save, and once now
         sorter = AreaSorter(quizzer, maps)

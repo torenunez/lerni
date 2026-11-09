@@ -112,7 +112,8 @@ def setup_warnings(server: Server, checkout: Path, path_env: str,
     """Things that would quietly go wrong once it runs: lines to show, nothing refused."""
     warned = [f"{tool} isn't on the PATH saved for it, so {what} will be off: install from "
               "a Terminal on this Mac, not over SSH."
-              for tool, what in (("claude", "Claude"), ("whisper-cli", "Hold to talk"))
+              for tool, what in (("claude", "Claude"), ("whisper-cli", "Hold to talk"),
+                                 ("llama-embedding", "race checks by meaning"))
               if shutil.which(tool, path=path_env) is None]
     if server.name == "prod":
         try:

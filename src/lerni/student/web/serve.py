@@ -69,6 +69,13 @@ def _speech() -> tuple[Any, str]:
     return mac_speech_from_env()
 
 
+def _embedder() -> tuple[Any, str]:
+    """Return local embeddings for race checks by meaning, or ``None`` and why they're off."""
+    from lerni.student.adapters.llama_embed import embedder_from_env
+
+    return embedder_from_env()
+
+
 def running_version() -> str:
     """Which code is running: ``"v<version> · <branch> @ <commit>, <date>"``."""
     import subprocess
@@ -138,6 +145,7 @@ def serve(
     private(default_data_dir())  # and the ones written before v3.34
     usage = Usage()  # one for every Claude call: the warning and the pause
     (speech, why_off), chat, tagger = _speech(), _claude_chat(usage), _claude_tagger(usage)
+    embedder, why_words = _embedder()
     version = running_version()
     app = build_app(
         chat_model=chat,
@@ -148,6 +156,7 @@ def serve(
         version=version,
         speech=speech,
         usage=usage,
+        embedder=embedder,
     )
     print(f"Running:  {version}", flush=True)
     print(f"Sign in:  {scheme}://<this-computer>:{port}/", flush=True)
@@ -167,6 +176,7 @@ def serve(
         + ("on" if speech else f"off ({why_off})"),
         flush=True,
     )
+    print("Race checks by meaning: " + ("on" if embedder else f"off ({why_words})"), flush=True)
     print("Conversation logs (a year): lerni logs", flush=True)
     print("Home network only. Press Ctrl-C to stop.", flush=True)
     # Gradio keeps each open page connected; without a time limit, Ctrl-C waits forever
