@@ -16,7 +16,7 @@ from lerni.student.interests import (
 )
 from lerni.student.meaning import Meaning
 from lerni.student.points import PointsStore
-from lerni.student.race import RaceDesk, check_questions
+from lerni.student.race import Question, RaceDesk, check_questions, fits, race_view
 
 TODAY = date(2026, 11, 10)
 
@@ -94,6 +94,21 @@ def test_without_the_embedder_the_word_match_decides(tmp_path):
     assert "How far can a rifle shoot?" in shown  # other words: today's match can't tell
     assert "Is math about patterns?" not in shown  # and "math" is set aside, as before
     assert len(shown) >= 5  # the race is still written
+
+
+def test_goals_win_never_lets_a_set_aside_topic_through_as_a_probe():
+    # regression: the race view let a "math tricks" probe race, then open Chat on it
+    real = InterestMap()
+    set_area(real, add_goal(real, "Fractions").id, "Math")
+    add_interest(real, "sharks")
+    remove(real, add_interest(real, "math").id)
+    view = race_view(real, frozenset({"math"}))
+    raw = {"questions": [{**q("What trick makes adding 9 quick?", "math tricks"), "goal": "",
+                          "probe": "math tricks"}]}
+    assert check_questions(raw, view, real=real, probes=True) == []
+    probe = Question("", "Why?", ("a", "b", "c"), 0, "Because.", "math tricks",
+                     probe="math tricks", level=1)
+    assert not fits(probe, view, real)  # a held probe is checked against the map itself
 
 
 def test_an_idea_due_for_review_is_never_dropped_as_a_rewording():

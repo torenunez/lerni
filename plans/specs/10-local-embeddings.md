@@ -50,14 +50,15 @@ multilingual-e5-small's GGUF wouldn't load in llama.cpp, so it isn't in the tabl
 
 ## Use 1: set-aside by meaning (v3.40)
 
-- **Where:** in `_write`, on each try's new questions, bonus questions, and probe topics (see [When it runs](#when-it-runs)), beside the word match, never instead of it. Every other check stays word-only: the start and prefill re-checks (`fits`), `_take_bonus`, `_due`, and why lines.
+- **Where:** in `_write`, on each try's new questions (probes included) and bonus questions (see [When it runs](#when-it-runs)), beside the word match, never instead of it. Every other check stays word-only: the start and prefill re-checks (`fits`), `_take_bonus`, `_due`, and why lines.
 - **What's compared:** each candidate's text (question, idea, and key ideas) against the map's removed names.
 - **When it's dropped:** at a cosine of **0.55** or more with any removed name, *and* more than with its own goal's name. A probe has no goal, so the cut alone decides.
   - On the made-up pairs, that catches 63% of close pairs, with 1 false match in 23.
   - On real labels, the rule about the candidate's own goal took the false matches to zero.
 - **Goals win:** a removed name at **0.80** or more with an active goal's name, or with an area that has goals, is skipped by every race check, by meaning and by word. It still steers Chat away (the map block is unchanged).
   - This is the admin's call (2026-11-09). An interest set aside as something to chat about can share its name with an area that has goals, and its goals are still taught.
-  - **The skipped names:** `_write` works them out first, keeps them in memory beside the held set (names only), and passes them to every word check (`mentions_set_aside(m, text, skip)`, `fits`, `_take_bonus`, `_due`), so a later re-check never drops what the skip let through.
+  - **The skipped names:** `_write` works them out first and keeps them in memory beside the held set (names only). Race code reads the map through a view without them (`race_view`), so `fits`, `_take_bonus`, `_due`, and the re-checks never drop what the skip let through.
+  - **Never for probes:** a probe has no goal to give way to, and its topic can open Chat. So probes, their re-checks, and the topics offered after the finish use the map itself.
   - **Lost on a restart:** the held set and its skipped names go together.
   - **What Claude is told:** `quiz_input`'s "Set aside, never use" line leaves skipped names out.
 
@@ -83,7 +84,7 @@ multilingual-e5-small's GGUF wouldn't load in llama.cpp, so it isn't in the tabl
 
 - **No vectors on disk, and no cache.** Labels and names are embedded fresh at each check. Rule 6 is unchanged.
 - **The models** stay in `~/.lerni/models/`, outside the data folder and the backups.
-- **Drops by meaning** go to the server log as counts per set ("2 repeats and 0 set-aside dropped by meaning"), never their text. That way the admin can see whether the cuts are right.
+- **Drops by meaning** go to the server log as counts per set ("Race checks by meaning: 2 repeats, 0 set aside"), never their text. That way the admin can see whether the cuts are right.
 
 ## Later uses (described, not built)
 

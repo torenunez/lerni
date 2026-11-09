@@ -360,7 +360,8 @@ def check_questions(raw: Any, m: InterestMap, rng: random.Random | None = None,
                     concepts: Sequence[str] = (), texts: Sequence[str] = (),
                     spare: list[Question] | None = None,
                     probed: Sequence[str] = (), probes: bool = False,
-                    meaning: Meaning | None = None, due: Sequence[str] = ()) -> list[Question]:
+                    meaning: Meaning | None = None, due: Sequence[str] = (),
+                    real: InterestMap | None = None) -> list[Question]:
     """Keep only well-formed, new questions about the map's goals, or probes of nearby ideas;
     shuffle their choices.
 
@@ -370,12 +371,13 @@ def check_questions(raw: Any, m: InterestMap, rng: random.Random | None = None,
     ``probed``, on the map, or set aside is dropped with its question; ``probes`` is False when
     the map has nothing nearby to step beyond, and then every probe is dropped. With
     ``meaning``, a reworded idea is a repeat too (never one of the ``due`` ideas), and a
-    question about a removed name in other words is dropped.
+    question about a removed name in other words is dropped. ``real`` is the map itself when
+    ``m`` is the race view: probes are checked against it.
     """
     rng = rng or random.Random()
     seen_ideas, seen_texts = {normalize(c) for c in concepts}, [*texts]
     seen_labels = [*concepts]  # as written, for the check by meaning
-    removed = m.removed_names()
+    removed, every = m.removed_names(), (real or m).removed_names()  # probes: nothing skipped
     seen_probes = {normalize(p) for p in probed}
     goals = {e.name.casefold(): e for e in m.entries if e.kind == "goal"}
     items = raw.get("questions") if isinstance(raw, dict) else None
@@ -391,7 +393,7 @@ def check_questions(raw: Any, m: InterestMap, rng: random.Random | None = None,
         probe = ""
         if item.get("probe"):  # a rejected probe never races as a plain question
             few = sum(1 for k in kept if k.probe) < PROBES_PER_SET
-            probe = _probe(item, m, seen_probes) if probes and few else ""
+            probe = _probe(item, real or m, seen_probes) if probes and few else ""
             if not probe:
                 continue
             goal = ""  # a probe practices no goal
@@ -403,9 +405,9 @@ def check_questions(raw: Any, m: InterestMap, rng: random.Random | None = None,
                 or not normalize(concept)):
             continue
         repeat = normalize(concept) in seen_ideas or _alike(normalize(q), seen_texts)
-        if (not repeat and meaning is not None and not any(_same_idea(concept, d) for d in due)
-                and meaning.repeat(concept, seen_labels)):
-            repeat = True  # the same idea in other words
+        reworded = (not repeat and meaning is not None
+                    and not any(_same_idea(concept, d) for d in due)
+                    and meaning.repeat(concept, seen_labels))  # the same idea in other words
         answer_text = choices[right]
         key = _number(answer_text)
         value = _arith(_plain(item.get("math"))) if item.get("math") else None
@@ -417,12 +419,14 @@ def check_questions(raw: Any, m: InterestMap, rng: random.Random | None = None,
                             choices.index(answer_text), why, concept,
                             e.id if e else "", notes_key(e.notes) if e else "",
                             PROBE_LEVEL if probe else START_LEVEL, probe)
-        if not fits(question, m) or (meaning is not None and meaning.aside(
-                f"{q} {concept}", question.goal if not probe else "", removed)):
+        if not fits(question, m, real) or (meaning is not None and meaning.aside(
+                f"{q} {concept}", "" if probe else question.goal, every if probe else removed)):
             continue
         if probe:  # its topic is taken, kept or spare
             seen_probes.add(normalize(probe))
-        if repeat:  # asked recently, held already, or a twin in this set
+        if repeat or reworded:  # asked recently, held already, or a twin in this set
+            if meaning is not None and reworded:
+                meaning.repeats += 1  # counted once, as it's set aside
             if spare is not None:
                 spare.append(question)
             continue
@@ -468,10 +472,12 @@ def check_bonus(raw: Any, m: InterestMap, concepts: Sequence[str] = (),
                 or mentions_set_aside(m, " ".join([q, concept, *ideas]))):
             continue
         e = goals.get(goal.casefold())
-        if meaning is not None and (
-                (not any(_same_idea(concept, d) for d in due) and meaning.repeat(concept, labels))
-                or meaning.aside(" ".join([q, concept, *ideas]), e.name if e else "", removed)):
-            continue
+        if meaning is not None:
+            if not any(_same_idea(concept, d) for d in due) and meaning.repeat(concept, labels):
+                meaning.repeats += 1
+                continue
+            if meaning.aside(" ".join([q, concept, *ideas]), e.name if e else "", removed):
+                continue
         kept.append(Bonus(e.name if e else goal, concept, q, tuple(ideas), e.id if e else "",
                           notes_key(e.notes) if e else ""))
         seen.add(normalize(concept))
@@ -548,12 +554,14 @@ def _still_on(m: InterestMap, goal_id: str, key: str, name: str) -> bool:
     return not any(e.kind == "goal" for e in m.entries) or goal_of(m, "", name) is not None
 
 
-def fits(q: Question, m: InterestMap) -> bool:
+def fits(q: Question, m: InterestMap, real: InterestMap | None = None) -> bool:
     """Whether a question may still race on this map: its goal is there with the same notes,
-    nothing set aside."""
+    nothing set aside. A probe is checked against ``real`` (the map itself, when ``m`` is the
+    race view): it has no goal for a set-aside name to give way to."""
     shown = " ".join([q.question, *q.choices, q.why, q.concept])  # what's shown, and its idea
     if q.probe:  # no goal: its topic must still be new to the map
-        return off_map(m, q.probe) and not mentions_set_aside(m, shown)
+        own = real or m
+        return off_map(own, q.probe) and not mentions_set_aside(own, shown)
     return _still_on(m, q.goal_id, q.notes_key, q.goal) and not mentions_set_aside(m, shown)
 
 
@@ -849,6 +857,11 @@ class RaceDesk:
         """The map as race checks see it, with the skip names from the last write."""
         return race_view(self.maps.get(username), self._skip.get(username, frozenset()))
 
+    def _maps(self, username: str) -> tuple[InterestMap, InterestMap]:
+        """(the race view, the map itself): probes are checked against the map itself."""
+        real = self.maps.get(username)
+        return race_view(real, self._skip.get(username, frozenset())), real
+
     def _skips(self, username: str, m: InterestMap) -> frozenset[str]:
         # goals win: worked out once a write, before any check reads the map
         if self.embedder is None or not m.removed:
@@ -856,6 +869,7 @@ class RaceDesk:
         try:
             self._skip[username] = skipped(m, self.embedder)
         except Exception as exc:  # noqa: BLE001 - the word match still decides
+            self._skip.pop(username, None)  # an old skip may no longer hold
             print(f"Race checks by meaning skipped ({type(exc).__name__}).", flush=True)
         return self._skip.get(username, frozenset())
 
@@ -968,7 +982,8 @@ class RaceDesk:
                                   texts=[*texts, *(normalize(q.question) for q in kept)],
                                   spare=new_spare,
                                   probed=[*probed, *(q.probe for q in kept if q.probe)],
-                                  probes=bool(nearby(m, today)), meaning=meaning, due=due_ideas)
+                                  probes=bool(nearby(m, today)), meaning=meaning, due=due_ideas,
+                                  real=real)
             if meaning is not None:  # numbers only, so the cut-offs can be checked
                 print(f"Race checks by meaning: {meaning.repeats} repeats, {meaning.asides} set "
                       "aside", flush=True)
@@ -996,10 +1011,10 @@ class RaceDesk:
     def prefill(self, username: str, supervised: bool) -> None:
         """Write the next questions in the background if fewer than a race are held."""
         today = date.today()
-        m = self._map(username)
+        m, real = self._maps(username)
         with self._lock:
             held = self._held(username, today)
-            held[:] = [q for q in held if fits(q, m)]  # set aside or gone since: not counted
+            held[:] = [q for q in held if fits(q, m, real)]  # set aside or gone since: not counted
             if enough(held) or username in self._busy:
                 return
             if self.points.races_left(username, today) <= 0:
@@ -1045,10 +1060,10 @@ class RaceDesk:
                 writing = self._busy.get(username)
             if writing is not None:  # opening Games already asked: wait for that, not a second call
                 writing.wait(QUIZ_WAIT_SECONDS)
-            m = self._map(username)
+            m, real = self._maps(username)
             with self._lock:  # one step: count, and claim the writing, so no one writes twice
                 before = {id(q) for q in self._held(username, day)}
-                held = [q for q in self._held(username, day) if fits(q, m)]  # set aside since
+                held = [q for q in self._held(username, day) if fits(q, m, real)]  # set aside since
                 short = not enough(held)
                 still = username in self._busy  # the wait ran out: theirs is still writing
                 mine = threading.Event() if short and not still else None
@@ -1063,8 +1078,8 @@ class RaceDesk:
                     with self._lock:
                         self._busy.pop(username, None)
                     mine.set()
-            m = self._map(username)  # a person may have set something aside meanwhile
-            held = [q for q in held if fits(q, m)]
+            m, real = self._maps(username)  # a person may have set something aside meanwhile
+            held = [q for q in held if fits(q, m, real)]
             if not enough(held):
                 with self._lock:  # keep the ones that still fit for the next tap
                     self._sets[username] = (day.isoformat(), spread(held))
@@ -1332,7 +1347,7 @@ class RaceDesk:
         """Up to two topics to explore after the finish: this race's probe, and the latest
         other one from the last week not tapped yet, both still new to the map."""
         day = today or date.today()
-        m = self._map(username)
+        m = self.maps.get(username)  # a probe opens Chat: never on a set-aside topic
         offered = self._offered(username, day)
         mine = [t for t, r, _ in offered if r == race.id]
         other = [t for t, r, tapped in offered if r != race.id and not tapped
@@ -1347,7 +1362,7 @@ class RaceDesk:
         day = today or date.today()
         match, tapped = next(((t, done) for t, _, done in self._offered(username, day)
                               if normalize(t) == normalize(topic or "")), (None, False))
-        if match is None or not off_map(self._map(username), match):
+        if match is None or not off_map(self.maps.get(username), match):
             return None
         said = OPENER.format(topic=match)
         if keep is not None and not keep(said):

@@ -44,8 +44,8 @@ class Meaning:
         """
         unique = list(dict.fromkeys(t for t in texts if normalize(t)))
         vectors = embedder.embed(unique) if unique else []
-        if len(vectors) != len(unique):
-            raise ValueError(f"{len(vectors)} vectors for {len(unique)} texts")
+        if len(vectors) != len(unique) or len({len(v) for v in vectors}) > 1:
+            raise ValueError(f"{len(vectors)} vectors for {len(unique)} texts, or mixed lengths")
         return cls({normalize(t): v for t, v in zip(unique, vectors, strict=True)})
 
     def sim(self, a: str, b: str) -> float | None:
@@ -54,10 +54,8 @@ class Meaning:
         return _cos(va, vb) if va is not None and vb is not None else None
 
     def repeat(self, idea: str, against: Iterable[str]) -> bool:
-        """Whether ``idea`` rewords one of ``against``; counted when it does."""
-        hit = any((s := self.sim(idea, other)) is not None and s >= REPEAT for other in against)
-        self.repeats += hit
-        return hit
+        """Whether ``idea`` rewords one of ``against`` (the caller counts a drop)."""
+        return any((s := self.sim(idea, other)) is not None and s >= REPEAT for other in against)
 
     def aside(self, text: str, goal: str, removed: Iterable[str]) -> bool:
         """Whether ``text`` is about a removed name, more than about its own ``goal``."""
