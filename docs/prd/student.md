@@ -193,6 +193,7 @@ Public access and a native iPad app.
 - 2026-10-27: When the answer checker disagrees with most of a set, only the questions it agreed with race and Claude writes fresh ones for the rest; the bonus comes on a random draw only, so coming last never pays more (the admin's decisions, after two outside reviews).
 - 2026-10-29: Questions read themselves, one Sound switch covers the whole app (Chat's voice too), an honest bonus try earns 5 ⭐ with a cheer instead of the sputter, and a wrong answer's first words vary (the admin, after watching the student race).
 - 2026-10-30: The new order (the admin's decision): probes and local embeddings finish Version 3; then 4 the educator's Chat, 5 suggested goals, 6 remembering, 7 without an educator present. The educator gives goals and right answers through Chat and marks Claude's race questions right or wrong, like a labeler; what they mark right or write is the checked bank, the only text saved besides the logs, and recall draws only from it. This replaces the educator-approved fact-card library. Decisions above keep their old numbers.
+- 2026-11-09: Goals win over a set-aside interest (the admin's decision): one close in meaning to a goal or an area with goals no longer blocks that goal's race questions, though Chat still steers away from it. Race questions that reword a recent idea or touch a set-aside topic in other words are dropped (spec 10, v3.40).
 
 ## Open questions
 

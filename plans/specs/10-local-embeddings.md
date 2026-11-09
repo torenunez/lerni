@@ -1,6 +1,6 @@
 # Local embeddings (Version 3, v3.39–v3.40)
 
-Decided on 2026-11-09 from a bake-off ([v3.39 plan](../v3.39-spec10.md)) and the admin's answers. Builds on the race ([spec 09](09-play-and-points.md), [09b](09b-harder-races.md)) and the map ([spec 04](04-interest-map.md)). It lifts [spec 08](08-kind-of.md)'s "no embeddings" for the uses below only (the later ones included, once built).
+Built in v3.40 ([plan](../v3.40-embeddings.md)). Decided on 2026-11-09 from a bake-off ([v3.39 plan](../v3.39-spec10.md)) and the admin's answers. Builds on the race ([spec 09](09-play-and-points.md), [09b](09b-harder-races.md)) and the map ([spec 04](04-interest-map.md)). It lifts [spec 08](08-kind-of.md)'s "no embeddings" for the uses below only (the later ones included, once built).
 
 **Why.** Word matching misses the same idea in other words:
 - a set-aside "guns" catches "gun" but not "rifles";

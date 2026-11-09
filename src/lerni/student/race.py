@@ -41,6 +41,7 @@ from lerni.student.interests import (
     parents,
     same_name,
 )
+from lerni.student.meaning import Embedder, Meaning, skipped
 from lerni.student.points import PointsStore
 from lerni.student.results import ResultsLog, question_hash
 from lerni.student.voice import SpeechUnavailable, for_speaking
@@ -358,7 +359,8 @@ def _alike(text: str, others: Sequence[str]) -> bool:
 def check_questions(raw: Any, m: InterestMap, rng: random.Random | None = None,
                     concepts: Sequence[str] = (), texts: Sequence[str] = (),
                     spare: list[Question] | None = None,
-                    probed: Sequence[str] = (), probes: bool = False) -> list[Question]:
+                    probed: Sequence[str] = (), probes: bool = False,
+                    meaning: Meaning | None = None, due: Sequence[str] = ()) -> list[Question]:
     """Keep only well-formed, new questions about the map's goals, or probes of nearby ideas;
     shuffle their choices.
 
@@ -366,10 +368,14 @@ def check_questions(raw: Any, m: InterestMap, rng: random.Random | None = None,
     idea, or nearly the same words, is dropped, and so is a repeat within ``raw``. Good
     questions dropped only as repeats go into ``spare``, if given. A probe topic in
     ``probed``, on the map, or set aside is dropped with its question; ``probes`` is False when
-    the map has nothing nearby to step beyond, and then every probe is dropped.
+    the map has nothing nearby to step beyond, and then every probe is dropped. With
+    ``meaning``, a reworded idea is a repeat too (never one of the ``due`` ideas), and a
+    question about a removed name in other words is dropped.
     """
     rng = rng or random.Random()
     seen_ideas, seen_texts = {normalize(c) for c in concepts}, [*texts]
+    seen_labels = [*concepts]  # as written, for the check by meaning
+    removed = m.removed_names()
     seen_probes = {normalize(p) for p in probed}
     goals = {e.name.casefold(): e for e in m.entries if e.kind == "goal"}
     items = raw.get("questions") if isinstance(raw, dict) else None
@@ -397,6 +403,9 @@ def check_questions(raw: Any, m: InterestMap, rng: random.Random | None = None,
                 or not normalize(concept)):
             continue
         repeat = normalize(concept) in seen_ideas or _alike(normalize(q), seen_texts)
+        if (not repeat and meaning is not None and not any(_same_idea(concept, d) for d in due)
+                and meaning.repeat(concept, seen_labels)):
+            repeat = True  # the same idea in other words
         answer_text = choices[right]
         key = _number(answer_text)
         value = _arith(_plain(item.get("math"))) if item.get("math") else None
@@ -408,7 +417,8 @@ def check_questions(raw: Any, m: InterestMap, rng: random.Random | None = None,
                             choices.index(answer_text), why, concept,
                             e.id if e else "", notes_key(e.notes) if e else "",
                             PROBE_LEVEL if probe else START_LEVEL, probe)
-        if not fits(question, m):
+        if not fits(question, m) or (meaning is not None and meaning.aside(
+                f"{q} {concept}", question.goal if not probe else "", removed)):
             continue
         if probe:  # its topic is taken, kept or spare
             seen_probes.add(normalize(probe))
@@ -418,6 +428,7 @@ def check_questions(raw: Any, m: InterestMap, rng: random.Random | None = None,
             continue
         kept.append(question)
         seen_ideas.add(normalize(concept))
+        seen_labels.append(concept)
         seen_texts.append(normalize(q))
     return kept
 
@@ -435,10 +446,14 @@ class Bonus:
     level: int = START_LEVEL
 
 
-def check_bonus(raw: Any, m: InterestMap, concepts: Sequence[str] = ()) -> list[Bonus]:
-    """Keep only well-formed bonus questions on the map's goals, new, and clear of set-asides."""
+def check_bonus(raw: Any, m: InterestMap, concepts: Sequence[str] = (),
+                meaning: Meaning | None = None, due: Sequence[str] = ()) -> list[Bonus]:
+    """Keep only well-formed bonus questions on the map's goals, new, and clear of set-asides;
+    with ``meaning``, also unlike a recent idea in other words (unless ``due``) and clear of
+    set-asides in other words."""
     goals = {e.name.casefold(): e for e in m.entries if e.kind == "goal"}
     seen = {normalize(c) for c in concepts}
+    labels, removed = [*concepts], m.removed_names()  # as written, for the check by meaning
     items = raw.get("bonus") if isinstance(raw, dict) else None
     kept: list[Bonus] = []
     for item in items if isinstance(items, list) else []:
@@ -453,10 +468,40 @@ def check_bonus(raw: Any, m: InterestMap, concepts: Sequence[str] = ()) -> list[
                 or mentions_set_aside(m, " ".join([q, concept, *ideas]))):
             continue
         e = goals.get(goal.casefold())
+        if meaning is not None and (
+                (not any(_same_idea(concept, d) for d in due) and meaning.repeat(concept, labels))
+                or meaning.aside(" ".join([q, concept, *ideas]), e.name if e else "", removed)):
+            continue
         kept.append(Bonus(e.name if e else goal, concept, q, tuple(ideas), e.id if e else "",
                           notes_key(e.notes) if e else ""))
         seen.add(normalize(concept))
+        labels.append(concept)
     return kept
+
+
+def race_view(m: InterestMap, skip: frozenset[str]) -> InterestMap:
+    """The map as race checks see it: removed names that goals win over are left off (in
+    memory only; Chat reads the map itself, so it still steers away from them)."""
+    if not skip:
+        return m
+    return replace(m, removed=[r for r in m.removed if r.casefold() not in skip])
+
+
+def meaning_texts(raw: Any, m: InterestMap, ideas: Sequence[str]) -> list[str]:
+    """Everything one try's checks by meaning compare, for one embedder call: each question's
+    text and idea, each bonus's, the removed names, the goal names, and ``ideas`` (recent and
+    kept so far)."""
+    out = [*m.removed_names(), *(e.name for e in m.entries if e.kind == "goal"), *ideas]
+    for item in raw.get("questions") or [] if isinstance(raw, dict) else []:
+        if isinstance(item, dict):
+            q, concept = _plain(item.get("question")), _plain(item.get("concept"))[:MAX_CONCEPT]
+            out += [concept, f"{q} {concept}"]
+    for item in raw.get("bonus") or [] if isinstance(raw, dict) else []:
+        if isinstance(item, dict):
+            concept = _plain(item.get("concept"))[:MAX_CONCEPT]
+            keys = [_plain(k) for k in item.get("key_ideas") or [] if isinstance(k, str)]
+            out += [concept, " ".join([_plain(item.get("question")), concept, *keys])]
+    return out
 
 
 def pick_goals(m: InterestMap, schedule: Mapping[str, tuple[date, int]],
@@ -775,8 +820,11 @@ class RaceDesk:
     def __init__(self, quizzer: Quizzer, maps: MapStore, points: PointsStore,
                  concepts: ConceptStore | None = None, checker: Checker | None = None,
                  results: ResultsLog | None = None, garage: Garage | None = None,
-                 grader: Checker | None = None, log: Any = None, speech: Any = None) -> None:
+                 grader: Checker | None = None, log: Any = None, speech: Any = None,
+                 embedder: Embedder | None = None) -> None:
         self.quizzer, self.maps, self.points, self.concepts = quizzer, maps, points, concepts
+        self.embedder = embedder  # race checks by meaning (v3.40); None: words only
+        self._skip: dict[str, frozenset[str]] = {}  # removed names goals win over; memory only
         self.grader = grader  # grades bonus answers; with none, races have no bonus
         self.log = log  # the conversation log: only a worrying or ungraded bonus answer goes there
         self.speech = speech  # reads questions aloud (v3.29); None: no 🔊
@@ -796,6 +844,30 @@ class RaceDesk:
         self._last_tap: dict[str, float] = {}  # when they last answered
         self.clock = time.monotonic  # tests may replace it
         self._lock = threading.Lock()
+
+    def _map(self, username: str) -> InterestMap:
+        """The map as race checks see it, with the skip names from the last write."""
+        return race_view(self.maps.get(username), self._skip.get(username, frozenset()))
+
+    def _skips(self, username: str, m: InterestMap) -> frozenset[str]:
+        # goals win: worked out once a write, before any check reads the map
+        if self.embedder is None or not m.removed:
+            return self._skip.get(username, frozenset())
+        try:
+            self._skip[username] = skipped(m, self.embedder)
+        except Exception as exc:  # noqa: BLE001 - the word match still decides
+            print(f"Race checks by meaning skipped ({type(exc).__name__}).", flush=True)
+        return self._skip.get(username, frozenset())
+
+    def _meaning(self, raw: Any, m: InterestMap, ideas: Sequence[str]) -> Meaning | None:
+        # one embedder call for a try's checks by meaning; None leaves them to words
+        if self.embedder is None:
+            return None
+        try:
+            return Meaning.build(self.embedder, meaning_texts(raw, m, ideas))
+        except Exception as exc:  # noqa: BLE001 - a broken model never stops a race
+            print(f"Race checks by meaning skipped ({type(exc).__name__}).", flush=True)
+            return None
 
     def _avoid(self, username: str, today: date) -> tuple[list[str], list[str]]:
         """Ideas and texts a new question mustn't repeat: asked lately, or held for a race."""
@@ -838,7 +910,8 @@ class RaceDesk:
         return agreed
 
     def _write(self, username: str, supervised: bool, today: date) -> list[Question]:
-        m = self.maps.get(username)
+        real = self.maps.get(username)
+        m = race_view(real, self._skips(username, real))
         concepts, texts = self._avoid(username, today)
         with self._lock:  # a due idea already in a held question isn't asked twice
             held = {normalize(q.concept) for q in self._held(username, today)}
@@ -886,13 +959,19 @@ class RaceDesk:
             new_spare: list[Question] = []
             # due ideas may be a bonus too: only recent, held, and this set's ideas are out
             seen = [*concepts, *(q.concept for q in kept)]
+            meaning = self._meaning(raw, m, seen)  # outside the lock: about 1.5 s
+            due_ideas = [idea for _, idea in due]
             self._keep_bonus(username, today, [replace(b, level=levels.get(b.goal_id, START_LEVEL))
-                                               for b in check_bonus(raw, m, seen)])
-            new = check_questions(raw, m, concepts=[*concepts, *(q.concept for q in kept)],
+                                               for b in check_bonus(raw, m, seen, meaning,
+                                                                    due_ideas)])
+            new = check_questions(raw, m, concepts=seen,
                                   texts=[*texts, *(normalize(q.question) for q in kept)],
                                   spare=new_spare,
                                   probed=[*probed, *(q.probe for q in kept if q.probe)],
-                                  probes=bool(nearby(m, today)))
+                                  probes=bool(nearby(m, today)), meaning=meaning, due=due_ideas)
+            if meaning is not None:  # numbers only, so the cut-offs can be checked
+                print(f"Race checks by meaning: {meaning.repeats} repeats, {meaning.asides} set "
+                      "aside", flush=True)
             # each at the level its goal was written for, for the results log
             new, new_spare = ([q if q.probe else replace(q, level=levels.get(q.goal_id,
                                                                              START_LEVEL))
@@ -917,7 +996,7 @@ class RaceDesk:
     def prefill(self, username: str, supervised: bool) -> None:
         """Write the next questions in the background if fewer than a race are held."""
         today = date.today()
-        m = self.maps.get(username)
+        m = self._map(username)
         with self._lock:
             held = self._held(username, today)
             held[:] = [q for q in held if fits(q, m)]  # set aside or gone since: not counted
@@ -966,7 +1045,7 @@ class RaceDesk:
                 writing = self._busy.get(username)
             if writing is not None:  # opening Games already asked: wait for that, not a second call
                 writing.wait(QUIZ_WAIT_SECONDS)
-            m = self.maps.get(username)
+            m = self._map(username)
             with self._lock:  # one step: count, and claim the writing, so no one writes twice
                 before = {id(q) for q in self._held(username, day)}
                 held = [q for q in self._held(username, day) if fits(q, m)]  # set aside since
@@ -984,7 +1063,7 @@ class RaceDesk:
                     with self._lock:
                         self._busy.pop(username, None)
                     mine.set()
-            m = self.maps.get(username)  # a person may have set something aside meanwhile
+            m = self._map(username)  # a person may have set something aside meanwhile
             held = [q for q in held if fits(q, m)]
             if not enough(held):
                 with self._lock:  # keep the ones that still fit for the next tap
@@ -1125,7 +1204,7 @@ class RaceDesk:
         try:
             bonus = race.bonus
             tier, line, graded = self._grade(bonus, text or "", supervised,
-                                             self.maps.get(username))  # waits for Claude
+                                             self._map(username))  # waits for Claude
             if (tier == CARE or not graded) and self.log is not None:  # kept before anything
                 try:  # else can fail: the admin reads a worry, or one that might be, in the logs
                     self.log.write(username, {"question": bonus.question, "answer": text,
@@ -1253,7 +1332,7 @@ class RaceDesk:
         """Up to two topics to explore after the finish: this race's probe, and the latest
         other one from the last week not tapped yet, both still new to the map."""
         day = today or date.today()
-        m = self.maps.get(username)
+        m = self._map(username)
         offered = self._offered(username, day)
         mine = [t for t, r, _ in offered if r == race.id]
         other = [t for t, r, tapped in offered if r != race.id and not tapped
@@ -1268,7 +1347,7 @@ class RaceDesk:
         day = today or date.today()
         match, tapped = next(((t, done) for t, _, done in self._offered(username, day)
                               if normalize(t) == normalize(topic or "")), (None, False))
-        if match is None or not off_map(self.maps.get(username), match):
+        if match is None or not off_map(self._map(username), match):
             return None
         said = OPENER.format(topic=match)
         if keep is not None and not keep(said):
