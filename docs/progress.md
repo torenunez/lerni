@@ -4,15 +4,23 @@ Where things really stand, then a dated log, newest first. Completed work is rec
 
 Record each kind of "done" only when it actually happens, with the date: code built, content approved, app ready, a student session held. Passing tests show code behaves as specified; they don't make anything ready for a student.
 
-## Current state (2026-11-03, v3.37 on the home server: Versions 1 and 2 built: the conversation, MentalMaps, HTTPS, and voice; Version 3's race, garage, and Chat points)
+## Current state (2026-11-09, v3.38 on the home server: Versions 1 and 2 built: the conversation, MentalMaps, HTTPS, and voice; Version 3's race, garage, and Chat points)
 
 - **Built:** the student app's core (student accounts, sign-in, Lerni's conversations, the MentalMap with its tagger and logs kept a year, Upload and educator feedback, and the educator agent); `lerni serve` with a sign-in page and one app with a ☰ menu by role: an independent student's Chat, My MentalMap (an editable list, the picture, and Upload), and Settings; an educator's student page (a Suggest a goal box, goal progress this week by area, the folded list, and the picture), opened at sign-in, with Students in Settings; a supervised student's Chat, full screen, and Games (a race for points spent on real cars; educators race too); good answers in Chat earn points too. Hold to talk with spoken answers; a Claude usage warning and rest. Both servers run as LaunchAgents (`lerni service`). The admin tool (`lerni`, with `lerni student`, `lerni logs`, `lerni feedback`, and `lerni stats`). A [code manifest](code-manifest.md) of every file. Tests: 237 passed.
-- **Designed:** the interest map, goals, the tagger, upload, feedback, and the supervised conversation ([specs/04-interest-map.md](../plans/specs/04-interest-map.md)); approved with PR #12. Harder races, practice on the map, and probes ([spec 09b](../plans/specs/09b-harder-races.md)). The order from here: local embeddings, then Versions 4–7 ([roadmap](roadmap.md)).
+- **Designed:** the interest map, goals, the tagger, upload, feedback, and the supervised conversation ([specs/04-interest-map.md](../plans/specs/04-interest-map.md)); approved with PR #12. Harder races, practice on the map, and probes ([spec 09b](../plans/specs/09b-harder-races.md)). Local embeddings ([spec 10](../plans/specs/10-local-embeddings.md)). The order from here: embeddings built, then Versions 4–7 ([roadmap](roadmap.md)).
 - **Not yet:** a recorded supervised session (the supervised student has used it informally).
 
 When something changes, update this section and add a log entry below.
 
 ## Log
+
+### 2026-11-09 (local embeddings designed; v3.39)
+
+- v3.39 ([plan](../plans/v3.39-spec10.md), [spec 10](../plans/specs/10-local-embeddings.md)): a bake-off of six local models on about 100 made-up labelled pairs (mostly English, some Spanish). The two larger models (EmbeddingGemma, Qwen3) led; between them the gap was within noise. multilingual-e5's file wouldn't load in llama.cpp.
+- The admin's decisions: v3.40 builds set-aside by meaning and repeats by meaning; the model is Qwen3-Embedding-0.6B; and goals win: a set-aside name close to a goal or an area is skipped by race checks.
+- A private check on real labels (printed only, never saved) changed the design: the made-up pairs' cut-offs would have dropped most of one area's race questions, because a set-aside interest named a subject that has goals, and would have called many new angles repeats. So goals win, a set-aside match must also be closer than its own goal, and the repeat cut-off (0.91) comes from real labels.
+- A fresh review: due ideas weren't protected from a drop by meaning, "one call per set" couldn't be built as written (the word re-checks run under the race lock, and a write can take two tries), and goals-win didn't reach the later word re-checks. Spec 10 now runs the meaning checks only in the question write (at most three calls), passes due ideas and the skipped names through, and says repeats by meaning catch close rewordings, not full paraphrases. The bootstrap is now in the script.
+- v3.38 deployed: production shows v3.38, and `lerni stats` made the copy in production's data folder.
 
 ### 2026-11-03 (data you can query; v3.38 built)
 
