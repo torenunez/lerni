@@ -105,6 +105,7 @@ What every code file does, in the order a request flows through it. When you add
 | File | What it does |
 |---|---|
 | `scripts/eval_tagger.py` | Tagger evals: real cases (an interest and a dislike, a bridge, a personal detail, a kind of a group, a part that isn't a kind, answers, the very same thing joined and something related not), run by hand with the admin's Claude account. |
+| `scripts/bakeoff_embeddings.py` | The embedding bake-off for spec 10: runs each model in `~/.lerni/models/` through `llama-embedding` on the made-up labelled pairs in `scripts/data/embedding_pairs.jsonl` and prints AUC, the cut-off, recall, and one call's time, run by hand. |
 | `scripts/eval_areas.py` | Area sorter evals: three real cases (school subjects into the starters, two related goals sharing one new area, a map's own area reused), run by hand. |
 | `scripts/eval_educator.py` | Educator agent evals: four real cases (a goal explained in words becomes a goal, a short idea becomes a goal at once, a real name never lands in a proposal, app feedback stays feedback). |
 | `scripts/eval_voice.py` | Voice evals: two real cases (a spoken sentence comes back word for word; a spoken question gets a short supervised answer), run by hand. |

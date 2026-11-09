@@ -1,0 +1,103 @@
+{"use": "set_aside", "a": "guns", "b": "How far can a rifle shoot? · a rifle's range", "label": "close", "lang": "en"}
+{"use": "set_aside", "a": "guns", "b": "What makes a pistol loud when it fires? · why firearms are loud", "label": "close", "lang": "en"}
+{"use": "set_aside", "a": "guns", "b": "How does a water balloon burst? · stretching rubber", "label": "far", "lang": "en"}
+{"use": "set_aside", "a": "guns", "b": "Why do cannons on old ships need gunpowder? · how cannons fire", "label": "close", "lang": "en"}
+{"use": "set_aside", "a": "guns", "b": "How does a camera's flash work? · light from a flash", "label": "far", "lang": "en"}
+{"use": "set_aside", "a": "sharks", "b": "Which fish has rows of teeth that keep growing back? · great white teeth", "label": "close", "lang": "en"}
+{"use": "set_aside", "a": "sharks", "b": "How do whales breathe at the surface? · blowholes", "label": "far", "lang": "en"}
+{"use": "set_aside", "a": "sharks", "b": "Why does a hammerhead have a wide head? · hammerhead senses", "label": "close", "lang": "en"}
+{"use": "set_aside", "a": "sharks", "b": "How do dolphins sleep? · half-brain sleep", "label": "far", "lang": "en"}
+{"use": "set_aside", "a": "sharks", "b": "What do jellyfish eat? · jellyfish food", "label": "far", "lang": "en"}
+{"use": "set_aside", "a": "spiders", "b": "How does a tarantula catch its food? · tarantula hunting", "label": "close", "lang": "en"}
+{"use": "set_aside", "a": "spiders", "b": "Why do webs look sticky in the morning? · dew on webs", "label": "close", "lang": "en"}
+{"use": "set_aside", "a": "spiders", "b": "How many legs does an ant have? · insect legs", "label": "far", "lang": "en"}
+{"use": "set_aside", "a": "spiders", "b": "How do bees make honey? · honey from nectar", "label": "far", "lang": "en"}
+{"use": "set_aside", "a": "ghosts", "b": "What do people mean by a haunted house? · haunted houses", "label": "close", "lang": "en"}
+{"use": "set_aside", "a": "ghosts", "b": "Why do old houses creak at night? · wood shrinking as it cools", "label": "far", "lang": "en"}
+{"use": "set_aside", "a": "ghosts", "b": "What is a poltergeist said to do? · spirits in stories", "label": "close", "lang": "en"}
+{"use": "set_aside", "a": "war", "b": "Why did armies build castles with thick walls? · sieges and battles", "label": "close", "lang": "en"}
+{"use": "set_aside", "a": "war", "b": "Why do soldiers march in step? · armies marching", "label": "close", "lang": "en"}
+{"use": "set_aside", "a": "war", "b": "How do castles keep their towers standing? · stone arches", "label": "far", "lang": "en"}
+{"use": "set_aside", "a": "war", "b": "How do referees keep a football game fair? · rules in sports", "label": "far", "lang": "en"}
+{"use": "set_aside", "a": "snakes", "b": "How does a python swallow an egg whole? · stretchy jaws", "label": "close", "lang": "en"}
+{"use": "set_aside", "a": "snakes", "b": "Why does a rattlesnake shake its tail? · warning sounds", "label": "close", "lang": "en"}
+{"use": "set_aside", "a": "snakes", "b": "How do worms move underground? · worm muscles", "label": "far", "lang": "en"}
+{"use": "set_aside", "a": "snakes", "b": "Why do lizards sit in the sun? · cold-blooded warmth", "label": "far", "lang": "en"}
+{"use": "set_aside", "a": "tornadoes", "b": "What makes a twister spin? · spinning storms", "label": "close", "lang": "en"}
+{"use": "set_aside", "a": "tornadoes", "b": "Why does wind make waves on a lake? · wind and water", "label": "far", "lang": "en"}
+{"use": "set_aside", "a": "tornadoes", "b": "How do storm chasers measure a funnel cloud? · funnel clouds", "label": "close", "lang": "en"}
+{"use": "set_aside", "a": "blood", "b": "Why is a scraped knee red? · bleeding", "label": "close", "lang": "en"}
+{"use": "set_aside", "a": "blood", "b": "Why are strawberries red? · plant colours", "label": "far", "lang": "en"}
+{"use": "set_aside", "a": "blood", "b": "What does the heart pump around the body? · circulation", "label": "close", "lang": "en"}
+{"use": "set_aside", "a": "video games", "b": "How does a game console show a level? · consoles and screens", "label": "close", "lang": "en"}
+{"use": "set_aside", "a": "video games", "b": "How do board games use dice? · chance with dice", "label": "far", "lang": "en"}
+{"use": "set_aside", "a": "video games", "b": "Why do players unlock new characters? · leveling up in games", "label": "close", "lang": "en"}
+{"use": "set_aside", "a": "fire", "b": "Why does a campfire need air? · burning needs oxygen", "label": "close", "lang": "en"}
+{"use": "set_aside", "a": "fire", "b": "Why does ice melt in your hand? · body heat", "label": "far", "lang": "en"}
+{"use": "set_aside", "a": "fire", "b": "What do firefighters spray on flames? · putting out flames", "label": "close", "lang": "en"}
+{"use": "set_aside", "a": "zombies", "b": "What is a zombie movie about? · the undead in films", "label": "close", "lang": "en"}
+{"use": "set_aside", "a": "zombies", "b": "Why do bears sleep all winter? · hibernation", "label": "far", "lang": "en"}
+{"use": "set_aside", "a": "candy", "b": "How is a lollipop made? · boiling sugar", "label": "close", "lang": "en"}
+{"use": "set_aside", "a": "candy", "b": "How do plants make sugar from light? · photosynthesis", "label": "far", "lang": "en"}
+{"use": "set_aside", "a": "knives", "b": "How does a chef keep a blade sharp? · sharpening blades", "label": "close", "lang": "en"}
+{"use": "set_aside", "a": "knives", "b": "How does a pencil sharpener work? · cutting wood", "label": "far", "lang": "en"}
+{"use": "set_aside", "a": "earthquakes", "b": "Why does the ground shake along a fault? · tremors", "label": "close", "lang": "en"}
+{"use": "set_aside", "a": "earthquakes", "b": "Why do drums shake when you hit them? · vibration", "label": "far", "lang": "en"}
+{"use": "set_aside", "a": "tiburones", "b": "Which fish has rows of teeth that keep growing back? · great white teeth", "label": "close", "lang": "mix"}
+{"use": "set_aside", "a": "sharks", "b": "¿Por qué el tiburón martillo tiene la cabeza ancha? · sentidos del tiburón", "label": "close", "lang": "mix"}
+{"use": "set_aside", "a": "armas", "b": "¿Qué tan lejos dispara un rifle? · alcance de un rifle", "label": "close", "lang": "es"}
+{"use": "set_aside", "a": "armas", "b": "¿Cómo explota un globo de agua? · goma que se estira", "label": "far", "lang": "es"}
+{"use": "set_aside", "a": "arañas", "b": "¿Cómo hacen miel las abejas? · miel del néctar", "label": "far", "lang": "es"}
+{"use": "set_aside", "a": "fantasmas", "b": "¿Qué es una casa embrujada? · casas embrujadas", "label": "close", "lang": "es"}
+{"use": "set_aside", "a": "spiders", "b": "¿Cómo atrapa su comida una tarántula? · caza de la tarántula", "label": "close", "lang": "mix"}
+{"use": "set_aside", "a": "snakes", "b": "¿Por qué las lagartijas toman el sol? · calor de sangre fría", "label": "far", "lang": "mix"}
+{"use": "repeat", "a": "acceleration: 0–60 vs top speed", "b": "how fast a car speeds up from a stop", "label": "same", "lang": "en"}
+{"use": "repeat", "a": "acceleration: 0–60 vs top speed", "b": "what limits a car's top speed", "label": "different", "lang": "en"}
+{"use": "repeat", "a": "why tires need tread", "b": "grip on wet roads from tire grooves", "label": "same", "lang": "en"}
+{"use": "repeat", "a": "why tires need tread", "b": "why race cars change tires in a pit stop", "label": "different", "lang": "en"}
+{"use": "repeat", "a": "horsepower", "b": "engine power measured in horsepower", "label": "same", "lang": "en"}
+{"use": "repeat", "a": "horsepower", "b": "why diesel engines are louder", "label": "different", "lang": "en"}
+{"use": "repeat", "a": "fractions: halves and quarters", "b": "splitting a pizza into 4 equal parts", "label": "same", "lang": "en"}
+{"use": "repeat", "a": "fractions: halves and quarters", "b": "adding fractions with different bottoms", "label": "different", "lang": "en"}
+{"use": "repeat", "a": "a square has four equal sides", "b": "all four sides of a square match", "label": "same", "lang": "en"}
+{"use": "repeat", "a": "a square has four equal sides", "b": "a triangle has three corners", "label": "different", "lang": "en"}
+{"use": "repeat", "a": "carrying in addition", "b": "regrouping tens when adding", "label": "same", "lang": "en"}
+{"use": "repeat", "a": "carrying in addition", "b": "borrowing in subtraction", "label": "different", "lang": "en"}
+{"use": "repeat", "a": "verbs show action", "b": "words that tell what someone does", "label": "same", "lang": "en"}
+{"use": "repeat", "a": "verbs show action", "b": "adjectives describe nouns", "label": "different", "lang": "en"}
+{"use": "repeat", "a": "silent e makes the vowel say its name", "b": "the e at the end of kite changes the i", "label": "same", "lang": "en"}
+{"use": "repeat", "a": "silent e makes the vowel say its name", "b": "two vowels side by side", "label": "different", "lang": "en"}
+{"use": "repeat", "a": "capital letters start sentences", "b": "a sentence begins with an uppercase letter", "label": "same", "lang": "en"}
+{"use": "repeat", "a": "capital letters start sentences", "b": "a period ends a sentence", "label": "different", "lang": "en"}
+{"use": "repeat", "a": "tempo means how fast music goes", "b": "the speed of a song's beat", "label": "same", "lang": "en"}
+{"use": "repeat", "a": "tempo means how fast music goes", "b": "how loud a song is played", "label": "different", "lang": "en"}
+{"use": "repeat", "a": "rhyming words", "b": "words that end with the same sound", "label": "same", "lang": "en"}
+{"use": "repeat", "a": "rhyming words", "b": "words that start with the same sound", "label": "different", "lang": "en"}
+{"use": "repeat", "a": "lava cools into rock", "b": "melted rock hardening into basalt", "label": "same", "lang": "en"}
+{"use": "repeat", "a": "lava cools into rock", "b": "why volcanoes erupt", "label": "different", "lang": "en"}
+{"use": "repeat", "a": "camouflage hides animals", "b": "a moth that looks like tree bark", "label": "same", "lang": "en"}
+{"use": "repeat", "a": "camouflage hides animals", "b": "animals that migrate in winter", "label": "different", "lang": "en"}
+{"use": "repeat", "a": "plants need sunlight", "b": "photosynthesis needs light", "label": "same", "lang": "en"}
+{"use": "repeat", "a": "plants need sunlight", "b": "roots take in water", "label": "different", "lang": "en"}
+{"use": "repeat", "a": "gravity pulls things down", "b": "why a dropped ball falls", "label": "same", "lang": "en"}
+{"use": "repeat", "a": "gravity pulls things down", "b": "why the moon has phases", "label": "different", "lang": "en"}
+{"use": "repeat", "a": "friction slows things", "b": "rubbing surfaces make things stop", "label": "same", "lang": "en"}
+{"use": "repeat", "a": "friction slows things", "b": "magnets push and pull", "label": "different", "lang": "en"}
+{"use": "repeat", "a": "evaporation", "b": "water turning into vapour on a hot day", "label": "same", "lang": "en"}
+{"use": "repeat", "a": "evaporation", "b": "why clouds rain", "label": "different", "lang": "en"}
+{"use": "repeat", "a": "sharks smell blood from far away", "b": "a shark's sense of smell", "label": "same", "lang": "en"}
+{"use": "repeat", "a": "sharks smell blood from far away", "b": "how sharks swim without sinking", "label": "different", "lang": "en"}
+{"use": "repeat", "a": "dinosaurs went extinct", "b": "the asteroid that ended the dinosaurs", "label": "same", "lang": "en"}
+{"use": "repeat", "a": "dinosaurs went extinct", "b": "how fossils form", "label": "different", "lang": "en"}
+{"use": "repeat", "a": "taking turns in a game", "b": "waiting for your go", "label": "same", "lang": "en"}
+{"use": "repeat", "a": "taking turns in a game", "b": "saying sorry after a mistake", "label": "different", "lang": "en"}
+{"use": "repeat", "a": "multiplication as repeated addition", "b": "3 groups of 4 is 4+4+4", "label": "same", "lang": "en"}
+{"use": "repeat", "a": "multiplication as repeated addition", "b": "dividing into equal groups", "label": "different", "lang": "en"}
+{"use": "repeat", "a": "past tense with -ed", "b": "adding ed to say it already happened", "label": "same", "lang": "en"}
+{"use": "repeat", "a": "past tense with -ed", "b": "irregular verbs like went and ran", "label": "different", "lang": "en"}
+{"use": "repeat", "a": "fracciones: mitades", "b": "dividir una pizza en dos partes iguales", "label": "same", "lang": "es"}
+{"use": "repeat", "a": "fracciones: mitades", "b": "sumar fracciones", "label": "different", "lang": "es"}
+{"use": "repeat", "a": "acceleration: 0–60 vs top speed", "b": "qué tan rápido acelera un coche desde cero", "label": "same", "lang": "mix"}
+{"use": "repeat", "a": "gravity pulls things down", "b": "por qué cae una pelota", "label": "same", "lang": "mix"}
+{"use": "repeat", "a": "gravity pulls things down", "b": "las fases de la luna", "label": "different", "lang": "mix"}
+{"use": "repeat", "a": "plants need sunlight", "b": "las raíces toman agua", "label": "different", "lang": "mix"}

@@ -123,7 +123,7 @@ Every code file, one line each: [code manifest](code-manifest.md).
 
 | Piece | Version | Seam to leave room for now |
 |---|---|---|
-| Local embeddings | 3 | A command run like `whisper-cli`, behind an adapter; it flags and shortlists, never changes the map. |
+| Local embeddings | 3 | `llama-embedding` run like `whisper-cli`, behind an adapter ([spec 10](../plans/specs/10-local-embeddings.md)); it drops race questions that repeat an idea or touch a set-aside topic, keeps nothing, and never changes the map. |
 | The checked bank | 4 | Questions and right answers per goal, saved as text only once an educator marks them ✓ or uploads them (boundary 2); never a student's words. Races mix them in. |
 | Suggested goals | 5 | Suggestions are shown for the educator to accept; they never become goals on their own (boundary 1). |
 | Remembering preferences, recall | 6 | The map is the memory; recall questions come only from the checked bank, with recall attempts kept apart from discussion. |
