@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import json
 import math
+import random
 import subprocess
 import sys
 import time
@@ -21,7 +22,9 @@ PAIRS = Path(__file__).parent / "data" / "embedding_pairs.jsonl"
 SEP = "<#sep#>"  # between texts in one call; never inside a label
 FALSE_LIMIT = {"set_aside": 0.10, "repeat": 0.05}  # false matches allowed per use
 POSITIVE = {"set_aside": "close", "repeat": "same"}
-# file -> the prefix its model card asks for on symmetric similarity
+DRAWS = 4000  # bootstrap resamples
+# file -> the prefix its model card asks for on symmetric similarity (Qwen3's on one line,
+# since texts are joined into one argument)
 MODELS = {
     "all-MiniLM-L6-v2-Q8_0.gguf": "",
     "bge-small-en-v1.5-q8_0.gguf": "",
@@ -67,11 +70,41 @@ def threshold(pos: list[float], neg: list[float], limit: float) -> tuple[float, 
     return cut, sum(p >= cut for p in pos) / len(pos)
 
 
+def sims(pairs: list[dict], vec: dict[str, list[float]], use: str) -> list[float]:
+    """Each of one use's pairs as a cosine, in file order."""
+    return [cosine(vec[p["a"]], vec[p["b"]]) for p in pairs if p["use"] == use]
+
+
+def resampled(s: list[float], good: list[bool], idx: list[int]) -> float:
+    """AUC over the pairs at ``idx`` (repeats allowed)."""
+    return auc([s[i] for i in idx if good[i]], [s[i] for i in idx if not good[i]])
+
+
+def bootstrap(pairs: list[dict], every: dict[str, dict[str, list[float]]]) -> None:
+    """Each model's AUC gap to the best on each use, with a 95% range from resampled pairs."""
+    rng = random.Random(7)  # the same draws every run
+    for use in FALSE_LIMIT:
+        good = [p["label"] == POSITIVE[use] for p in pairs if p["use"] == use]
+        scores = {name: sims(pairs, vec, use) for name, vec in every.items()}
+        whole = list(range(len(good)))
+        best = max(scores, key=lambda name: resampled(scores[name], good, whole))
+        draws = [[rng.randrange(len(good)) for _ in good] for _ in range(DRAWS)]
+        print(f"{use}: gap to {best}")
+        for name, s in scores.items():
+            if name != best:
+                gaps = sorted(resampled(s, good, d) - resampled(scores[best], good, d)
+                              for d in draws)
+                gap = resampled(s, good, whole) - resampled(scores[best], good, whole)
+                print(f"  {name:36} {gap:+.3f}  "
+                      f"[{gaps[DRAWS // 40]:+.3f}, {gaps[DRAWS - DRAWS // 40]:+.3f}]")
+
+
 def score(pairs: list[dict], vec: dict[str, list[float]]) -> None:
     """Print each use's numbers for one model."""
     for use, limit in FALSE_LIMIT.items():
-        rows = [(cosine(vec[p["a"]], vec[p["b"]]), p["label"] == POSITIVE[use], p["lang"])
-                for p in pairs if p["use"] == use]
+        rows = [(s, p["label"] == POSITIVE[use], p["lang"])
+                for s, p in zip(sims(pairs, vec, use), [p for p in pairs if p["use"] == use],
+                                strict=True)]
         pos = [s for s, good, _ in rows if good]
         neg = [s for s, good, _ in rows if not good]
         cut, recall = threshold(pos, neg, limit)
@@ -86,6 +119,7 @@ def score(pairs: list[dict], vec: dict[str, list[float]]) -> None:
 def main() -> int:
     pairs = [json.loads(line) for line in PAIRS.read_text(encoding="utf-8").splitlines()]
     texts = list(dict.fromkeys(t for p in pairs for t in (p["a"], p["b"])))
+    every: dict[str, dict[str, list[float]]] = {}  # each model's vectors, for the bootstrap
     for name, prefix in MODELS.items():
         model = MODELS_DIR / name
         if not model.is_file():
@@ -105,6 +139,9 @@ def main() -> int:
             print(f"  failed: {type(exc).__name__}: {exc}")
             continue
         score(pairs, vec)
+        every[name] = vec
+    if len(every) > 1:
+        bootstrap(pairs, every)
     return 0
 
 

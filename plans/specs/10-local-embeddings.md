@@ -1,16 +1,18 @@
 # Local embeddings (Version 3, v3.39–v3.40)
 
-Decided on 2026-11-09 from a bake-off ([v3.39 plan](../v3.39-spec10.md)) and the admin's answers. Builds on the race ([spec 09](09-play-and-points.md), [09b](09b-harder-races.md)) and the map ([spec 04](04-interest-map.md)). It lifts [spec 08](08-kind-of.md)'s "no embeddings" for the uses below only.
+Decided on 2026-11-09 from a bake-off ([v3.39 plan](../v3.39-spec10.md)) and the admin's answers. Builds on the race ([spec 09](09-play-and-points.md), [09b](09b-harder-races.md)) and the map ([spec 04](04-interest-map.md)). It lifts [spec 08](08-kind-of.md)'s "no embeddings" for the uses below only (the later ones included, once built).
 
 **Why.** Word matching misses the same idea in other words:
 - a set-aside "guns" catches "gun" but not "rifles";
-- "how fast a car speeds up" passes as new after "0–60 acceleration".
+- "plants need the sun's light" passes as new after "plants need sunlight", because normalizing the text doesn't make them match.
+
+At the cut-off below, repeats by meaning catch rewordings this close, which is what real repeats look like. They don't catch a full paraphrase: "how fast a car speeds up" still passes after "0–60 acceleration" (0.70).
 
 An embedding turns a short text into numbers, so that texts close in meaning are close in number. It runs on the home server, and nothing is sent anywhere.
 
 ## What people see
 
-Nothing new on any screen. Race questions that repeat a recent idea in new words, or that are about a set-aside topic in other words, are dropped before the student sees them, like today's exact repeats. A dropped question is replaced as today: from the held set, or by the next write.
+Nothing new on any screen. Race questions that reword a recent idea, or that are about a set-aside topic in other words, are dropped before the student sees them, like today's exact repeats. A dropped question is replaced as today: from the held set, or by the next write.
 
 ## The model
 
@@ -28,11 +30,11 @@ multilingual-e5-small's GGUF wouldn't load in llama.cpp, so it isn't in the tabl
 
 **How it was measured:**
 - The pairs are about 100 made-up labelled pairs (`scripts/data/embedding_pairs.jsonl`), mostly English, with some Spanish and some mixed. `scripts/bakeoff_embeddings.py` reruns it.
-- A bootstrap of the pairs:
-  - **Gains that hold up:** EmbeddingGemma's on set-aside and Qwen3's on repeats, each against bge-small (their 95% ranges leave out zero).
+- The script's bootstrap (its 95% range of each model's AUC gap to the best):
+  - **Gains that hold up:** EmbeddingGemma's on set-aside and Qwen3's on repeats, each against all three small English models.
   - **Within noise:** Qwen3 against EmbeddingGemma, for both uses (repeats narrowly, +0.08).
 - Qwen3 was picked because it's better at repeats, keeps one subject's ideas further apart on real labels, and has the plainer licence.
-- The Spanish pairs are too few to judge Spanish on its own. Add some when a Spanish miss is seen.
+- **Spanish:** Qwen3's Spanish repeat AUC (0.78) is 0.08 below its English one, which misses the plan's 0.05 margin. That number rests on 3 same and 3 different pairs, too few to judge on, and no model did better on them. Add Spanish pairs when a Spanish miss is seen.
 
 ## The adapter (rule 3)
 
@@ -43,35 +45,39 @@ multilingual-e5-small's GGUF wouldn't load in llama.cpp, so it isn't in the tabl
   - **A timeout** of 10 s.
   - **Which model:** `LERNI_EMBED_MODEL` names the file. The default is the file above.
 - **Tests** use a fake that makes vectors from words, so no test runs a model.
-- **Setup:** `lerni service install` warns when `llama-embedding` or the model is missing, as it does for `whisper-cli`. The admin reference gives the download.
+- **Setup:** `lerni service install` warns when `llama-embedding` isn't on the PATH, as it does for `whisper-cli`. The server's start-up lines say whether embeddings are on (tool and model found), as they do for voice. The admin reference gives the download.
 - **Off means today:** with no tool, no model, a timeout, or the wrong number of vectors, the check uses the word match only. The server log gets one line, numbers only ("embedding check skipped: timeout"). A race is never blocked.
 
 ## Use 1: set-aside by meaning (v3.40)
 
-- **Where:** the race's set-aside checks, wherever `mentions_set_aside` runs on new text: questions, bonus questions, probe topics, and why lines. It runs beside the word match, never instead of it.
+- **Where:** in `_write`, on each try's new questions, bonus questions, and probe topics (see [When it runs](#when-it-runs)), beside the word match, never instead of it. Every other check stays word-only: the start and prefill re-checks (`fits`), `_take_bonus`, `_due`, and why lines.
 - **What's compared:** each candidate's text (question, idea, and key ideas) against the map's removed names.
 - **When it's dropped:** at a cosine of **0.55** or more with any removed name, *and* more than with its own goal's name. A probe has no goal, so the cut alone decides.
   - On the made-up pairs, that catches 63% of close pairs, with 1 false match in 23.
   - On real labels, the rule about the candidate's own goal took the false matches to zero.
-- **Goals win:** a removed name at **0.80** or more with an active goal's name or an area is skipped by race checks, by meaning and by word. It still steers Chat away (the map block is unchanged).
+- **Goals win:** a removed name at **0.80** or more with an active goal's name, or with an area that has goals, is skipped by every race check, by meaning and by word. It still steers Chat away (the map block is unchanged).
   - This is the admin's call (2026-11-09). An interest set aside as something to chat about can share its name with an area that has goals, and its goals are still taught.
-  - The word match gains the same skip, so today's checks stop dropping that area's questions.
+  - **The skipped names:** `_write` works them out first, keeps them in memory beside the held set (names only), and passes them to every word check (`mentions_set_aside(m, text, skip)`, `fits`, `_take_bonus`, `_due`), so a later re-check never drops what the skip let through.
+  - **Lost on a restart:** the held set and its skipped names go together.
+  - **What Claude is told:** `quiz_input`'s "Set aside, never use" line leaves skipped names out.
 
 ## Use 2: repeats by meaning (v3.40)
 
-- **Where:** `check_questions`.
+- **Where:** `check_questions`, from the vectors `_write` passes in.
 - **What's compared:** each new question's idea label against:
   - the recent ideas Claude was told to avoid;
   - the ideas already kept in the same set.
 - **When it's dropped:** at a cosine of **0.91** or more with any of them, like today's exact repeats.
-  - **The cut comes from real labels, not the made-up pairs.** Short labels on one goal score high together: on real labels, every pair at 0.91 or more was the same idea, while two different ideas on one goal (adding tens and adding hundreds, say) scored 0.90.
+  - **The cut comes from real labels, not the made-up pairs.** Short labels on one goal score high together: on real labels, every pair at 0.91 or more was the same idea, and two different ideas on one goal scored up to 0.90.
   - The made-up pairs' cut (0.66) would drop many real new angles.
-- **Ideas due for review are never dropped**, because they're meant to come back (`due` stays as it is today).
+- **Ideas due for review are never dropped**, because they're meant to come back. `_write` passes the due labels to `check_questions`, and a candidate whose idea is the same as a due one (`_same_idea`) skips the check by meaning.
 
-## One call per check
+## When it runs
 
-- Each question set's checks share one call: every candidate's text and idea, the removed names, the goal names, the areas, and the recent ideas, at about 1.5 s. That sits next to a 25–30 s question write.
-- Bonus questions, probe topics, and why lines ride on the same call when they're checked together. Otherwise each gets one call of its own.
+- **Only in `_write`, never under the race lock.** A write makes at most three calls, each about 1.5 s, next to its 25–30 s of question writing.
+  - **Before the first try,** when the map has removed names: one call for the skipped names (removed names, goal names, and areas with goals).
+  - **On each try** (at most two): one call for that try's raw output, meaning every new question's text and idea, bonus question, and probe topic, plus the removed names, their goals' names, the recent ideas, and the ideas kept so far. `check_bonus` and `check_questions` both get those vectors.
+- **A failed call** leaves that try to the word match.
 
 ## What's kept
 
