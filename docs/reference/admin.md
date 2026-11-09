@@ -119,9 +119,30 @@ Both servers run as macOS LaunchAgents: they start when the admin logs in (after
 
 ### Backups and undo
 
-- **Nightly copies:** `lerni backup install` (once, in the production checkout) copies `~/.lerni/student` to `~/.lerni/backups/student/nightly-<date>/` every night at 03:00 and keeps the newest 30; `lerni backup run` copies now (`--to /Volumes/Drive/lerni` also copies to a drive: use an encrypted one, since the copy holds the logs and accounts); `lerni service status` shows the newest copy. They're on the same disk: they cover a bad change or deploy, not a broken disk. The copies leave out `secret.key` and `https-key.pem`, and every data file is readable by the admin's account only.
+- **Nightly copies:** `lerni backup install` (once, in the production checkout) copies `~/.lerni/student` to `~/.lerni/backups/student/nightly-<date>/` every night at 03:00 and keeps the newest 30; `lerni backup run` copies now (`--to /Volumes/Drive/lerni` also copies to a drive: use an encrypted one, since the copy holds the logs and accounts); `lerni service status` shows the newest copy. They're on the same disk: they cover a bad change or deploy, not a broken disk. The copies leave out `secret.key`, `https-key.pem`, and the stats copy, and every data file is readable by the admin's account only.
 - **Restore:** `lerni backup restore` lists the copies; `lerni backup restore nightly-<date>` (`--data` for development's) asks, stops the server using the folder, puts the copy back with today's keys, keeps the replaced folder as `student.before-restore-<time>` (delete it when sure), and starts the server again. From a drive with no folder to replace, the first start makes a new `secret.key` (everyone signs in again); make the certificate again (HTTPS below).
 - **Undo one map change:** `lerni map log USER` lists each change (number, when, who: the tagger, a person, Upload, the Suggest box (shown as `educator chat`), Lerni sorting goals into areas (`lerni`), or the admin, and which items); `lerni map undo USER N` reverses one, as a new change, keeping what only grew since (new days, mentions, other names), and refuses when a later change renamed, removed, or regrouped the same items, when the map was replaced since (a rollback or a hand edit), or when the result would break the map's rules; then `lerni map rebuild USER --upto N` returns the whole map to just after change N. `lerni map rebuild USER` alone checks the journal still matches the map. All three are safe while the server runs. Undoing Lerni's sort leaves the goal with no area, so Lerni sorts it again on the next save; to keep a goal unsorted, Move it to Other.
+
+### Numbers and queries
+
+`lerni stats` rebuilds a read-only copy of the student data, then prints; it reads production's data unless `--data` says otherwise.
+
+- `lerni stats`: one line per active student, over the last 4 weeks (`--weeks N`, or `--all`).
+- `lerni stats USER`: right answers by area and week, the hardest goals (5+ answers), the ideas missed most, then probes and bonus answers on their own lines. Weeks are whole, Monday first. The 95% range says how far to trust a percentage: with few answers it's wide. Probes and bonus answers aren't in the percentages.
+- `lerni stats --sql "SELECT goal, SUM(right), COUNT(*) FROM answers WHERE right IS NOT NULL AND probe IS NULL GROUP BY goal"`: any one query, tab-separated; a write is refused.
+- The copy is `~/.lerni/student/stats.sqlite`, also rebuilt each night, so `sqlite3 -readonly` on it is at most a day old. Never edit it, and don't back it up: it's replaced whole.
+
+| Table | One row per | Columns |
+|---|---|---|
+| `students` | account | `username`, `kind`, `educator`, `archived` |
+| `entries` | goal or interest | `username`, `entry_id`, `kind`, `name`, `area`, `mentions`, `days`, `explained_days`, `state` (`active`, `resting`) |
+| `answers` | answered question | `username`, `day`, `week`, `race`, `goal_id`, `goal`, `area`, `concept`, `question_hash`, `level`, `attempt`, `right`, `seconds`, `probe`, `bonus_tier` |
+| `races` | finish | `username`, `day`, `week`, `race`, `place`, `points` |
+| `probe_taps` | tap on a probe topic | `username`, `day`, `topic` |
+| `concepts` | idea in the ledger | `username`, `goal_id`, `goal`, `concept`, `first`, `last`, `asked`, `right` |
+| `goal_levels` | goal | `username`, `goal_id`, `level`, `box`, `due` |
+
+`week` is that week's Monday. In `answers`, `goal` and `area` are today's, so a renamed goal keeps its rows; a goal no longer on the map keeps its old name under `Other`. A bonus answer has `bonus_tier` and no `right`. Older lines have no `level` or `attempt`. Conversations, feedback, goal notes, display names, and passwords are never in the copy.
 
 ### HTTPS (for voice)
 

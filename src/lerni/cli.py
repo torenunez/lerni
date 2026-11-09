@@ -23,7 +23,7 @@ console = Console()
 
 
 # Commands that must not touch the admin tool's database.
-_NO_DB_COMMANDS = {"serve", "student", "logs", "feedback", "map", "backup"}
+_NO_DB_COMMANDS = {"serve", "student", "logs", "feedback", "map", "backup", "stats"}
 
 
 @app.callback()
@@ -46,6 +46,7 @@ def register_commands():
         review,
         serve,
         service,
+        stats,
         student,
     )
     from .commands import map as map_cmd  # `map` would shadow the builtin
@@ -89,6 +90,7 @@ def register_commands():
     app.add_typer(feedback.feedback_app, name="feedback")
     app.add_typer(map_cmd.map_app, name="map")
     app.add_typer(backup.backup_app, name="backup")
+    app.command("stats")(stats.stats_cmd)
 
 
 # Register commands

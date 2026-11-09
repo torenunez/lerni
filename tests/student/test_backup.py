@@ -9,11 +9,32 @@ from datetime import date, datetime
 from pathlib import Path
 
 import pytest
+from typer.testing import CliRunner
 
+from lerni.cli import app
 from lerni.student.backup import BackupError, backup_plist, restore, run
 from lerni.student.interests import MapStore, add_goal
 from lerni.student.journal import MapJournal, replay
 from lerni.student.service import DATA_ENV, agent_path
+
+
+def test_the_nightly_run_rebuilds_the_stats_but_never_copies_or_fails_on_them(
+        tmp_path, monkeypatch):
+    data = tmp_path / "student"
+    (data / "students").mkdir(parents=True)
+    args = ["backup", "run", "--data", str(data)]
+    assert CliRunner().invoke(app, args).exit_code == 0
+    assert (data / "stats.sqlite").is_file()
+    assert CliRunner().invoke(app, args).exit_code == 0  # a second run copies the new file
+    night = next((tmp_path / "backups" / "student").glob("nightly-*"))
+    assert not (night / "stats.sqlite").exists()  # always rebuilt, so never backed up
+
+    def broken(root):
+        raise OSError("disk full")
+
+    monkeypatch.setattr("lerni.student.stats.build", broken)
+    out = CliRunner().invoke(app, args)
+    assert out.exit_code == 0 and "disk full" in out.output
 
 
 def test_nightly_backups_copy_everything_and_keep_thirty(tmp_path):

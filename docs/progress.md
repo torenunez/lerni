@@ -4,15 +4,21 @@ Where things really stand, then a dated log, newest first. Completed work is rec
 
 Record each kind of "done" only when it actually happens, with the date: code built, content approved, app ready, a student session held. Passing tests show code behaves as specified; they don't make anything ready for a student.
 
-## Current state (2026-11-03, v3.36 on the home server: Versions 1 and 2 built: the conversation, MentalMaps, HTTPS, and voice; Version 3's race, garage, and Chat points)
+## Current state (2026-11-03, v3.37 on the home server: Versions 1 and 2 built: the conversation, MentalMaps, HTTPS, and voice; Version 3's race, garage, and Chat points)
 
-- **Built:** the student app's core (student accounts, sign-in, Lerni's conversations, the MentalMap with its tagger and logs kept a year, Upload and educator feedback, and the educator agent); `lerni serve` with a sign-in page and one app with a ☰ menu by role: an independent student's Chat, My MentalMap (an editable list, the picture, and Upload), and Settings; an educator's student page (a Suggest a goal box, goal progress this week by area, the folded list, and the picture), opened at sign-in, with Students in Settings; a supervised student's Chat, full screen, and Games (a race for points spent on real cars; educators race too); good answers in Chat earn points too. Hold to talk with spoken answers; a Claude usage warning and rest. Both servers run as LaunchAgents (`lerni service`). The admin tool (`lerni`, with `lerni student`, `lerni logs`, and `lerni feedback`). A [code manifest](code-manifest.md) of every file. Tests: 229 passed.
-- **Designed:** the interest map, goals, the tagger, upload, feedback, and the supervised conversation ([specs/04-interest-map.md](../plans/specs/04-interest-map.md)); approved with PR #12. Harder races, practice on the map, and probes ([spec 09b](../plans/specs/09b-harder-races.md)). The order from here: probes, local embeddings, then Versions 4–7 ([roadmap](roadmap.md)).
+- **Built:** the student app's core (student accounts, sign-in, Lerni's conversations, the MentalMap with its tagger and logs kept a year, Upload and educator feedback, and the educator agent); `lerni serve` with a sign-in page and one app with a ☰ menu by role: an independent student's Chat, My MentalMap (an editable list, the picture, and Upload), and Settings; an educator's student page (a Suggest a goal box, goal progress this week by area, the folded list, and the picture), opened at sign-in, with Students in Settings; a supervised student's Chat, full screen, and Games (a race for points spent on real cars; educators race too); good answers in Chat earn points too. Hold to talk with spoken answers; a Claude usage warning and rest. Both servers run as LaunchAgents (`lerni service`). The admin tool (`lerni`, with `lerni student`, `lerni logs`, `lerni feedback`, and `lerni stats`). A [code manifest](code-manifest.md) of every file. Tests: 237 passed.
+- **Designed:** the interest map, goals, the tagger, upload, feedback, and the supervised conversation ([specs/04-interest-map.md](../plans/specs/04-interest-map.md)); approved with PR #12. Harder races, practice on the map, and probes ([spec 09b](../plans/specs/09b-harder-races.md)). The order from here: local embeddings, then Versions 4–7 ([roadmap](roadmap.md)).
 - **Not yet:** a recorded supervised session (the supervised student has used it informally).
 
 When something changes, update this section and add a log entry below.
 
 ## Log
+
+### 2026-11-03 (data you can query; v3.38 built)
+
+- v3.38 ([plan](../plans/v3.38-stats.md)): `lerni stats` rebuilds `stats.sqlite`, a read-only copy of labels and numbers, then prints every student, one student's report, or any query's rows (`--sql`, refused if it writes). Percentages show their count and a Wilson 95% range; probes and bonus answers stay out of them. The nightly backup rebuilds the copy and leaves it out of its copies.
+- Checked on a throwaway copy of last night's data: the line counts matched the results file exactly (answers, bonus answers, and finishes add up to every line), and the right answers matched a separate count of the file.
+- A fresh review: the admin reference's sample query counted bonus answers as wrong (fixed); hand-edited values could crash a rebuild (now skipped and counted); a query never showed the skipped count (now on stderr). Privacy, source files, the numbers, and read-only queries came back clean. Kept: a killed rebuild leaves a private temporary file that backups skip.
 
 ### 2026-11-03 (areas set automatically; v3.37 built)
 

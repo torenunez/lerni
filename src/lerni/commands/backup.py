@@ -38,6 +38,7 @@ def run_cmd(to: Path = typer.Option(  # noqa: B008
             data: Path = typer.Option(  # noqa: B008
                 None, "--data", help="The data folder to copy (default: production's).")) -> None:
     """Copy the data folder to ~/.lerni/backups/<its name>/nightly-<today>/ (and --to)."""
+    from lerni.student import stats
     from lerni.student.backup import run
 
     data = _data(data)
@@ -47,6 +48,10 @@ def run_cmd(to: Path = typer.Option(  # noqa: B008
         except OSError as exc:
             console.print(f"[red]Couldn't copy to {place}: {exc}[/red]")
             raise typer.Exit(1) from None
+    try:  # fresh numbers for the morning; never a reason to fail the backup
+        stats.build(data)
+    except Exception as exc:
+        console.print(f"[yellow]Couldn't rebuild the stats copy: {exc}[/yellow]")
 
 
 @backup_app.command("install")

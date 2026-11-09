@@ -27,6 +27,8 @@ Today's CLI is effectively an admin testing tool. It exercises two mechanics:
 - **Explaining (Feynman technique):** write raw notes, a simple explanation, gaps, then a refined explanation.
 - **Spaced review (SM-2):** explain from memory, grade yourself 0–5, and get the next review date.
 
+It also shows how students are doing, and answers any query, with `lerni stats` (v3.38): a read-only copy of labels and numbers, never conversations.
+
 Commands and behavior: [admin tool reference](../reference/admin.md). Open maintenance work: [todo](../todo.md#admin-tool-maintenance).
 
 ## Later
