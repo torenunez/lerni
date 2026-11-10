@@ -18,7 +18,7 @@ These concepts guide how Lerni's conversation and interest map are designed ([sp
 
 *Example:* Compare doubling a recipe with enlarging a scale model: both preserve ratios. Then ask the learner to work out a paint mixture without that prompt.
 
-*In Lerni:* once a goal has a bridge from one interest, the agent's next bridge to it comes from a different interest (fractions through cars, later through pizza), briefly naming the shared idea when it helps, then asking a fresh question. Two bridges into one goal are a chance to check transfer, not proof of it.
+*In Lerni:* once a goal has a bridge from one interest, the agent's next bridge to it comes from a different interest (fractions through cars, later through pizza), briefly naming the shared idea when it helps, then asking a fresh question. Race questions do the same: each is set, where one fits, in an interest not yet bridged to its goal. Two bridges into one goal are a chance to check transfer, not proof of it.
 
 **Anchored instruction.** Organize learning around a meaningful problem or story. The problem gives the learner a reason to investigate and apply several concepts throughout the activity. [Research](https://journals.sagepub.com/doi/abs/10.3102/0013189X019006002).
 

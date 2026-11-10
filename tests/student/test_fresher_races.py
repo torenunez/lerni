@@ -6,7 +6,14 @@ from datetime import date, timedelta
 from lerni.student.concepts import ConceptStore
 from lerni.student.interests import MapStore, add_goal
 from lerni.student.points import PointsStore
-from lerni.student.race import FORMATS, SET_SIZE, WRITE_SIZE, RaceDesk, check_questions
+from lerni.student.race import (
+    FORMATS,
+    QUESTIONS_PER_RACE,
+    SET_SIZE,
+    WRITE_SIZE,
+    RaceDesk,
+    check_questions,
+)
 
 TODAY = date(2026, 11, 10)
 
@@ -160,3 +167,59 @@ def test_the_morning_write_ahead_survives_a_broken_account_list():
             raise OSError("disk")
 
     write_ahead(object(), Broken())  # logs the kind and returns
+
+
+def test_every_interest_gets_a_turn_and_new_bridges_come_first(tmp_path):
+    import random
+
+    from lerni.student.interests import add_interest, group, remove
+    from lerni.student.race import deal, quiz_input
+
+    maps = MapStore(tmp_path)
+    made = {}
+
+    def fill(m):
+        made["Fractions"], made["Nouns"] = add_goal(m, "Fractions"), add_goal(m, "Nouns")
+        for name in ("pizza", "trains", "baking", "volcanoes", "dogs", "space"):
+            made[name] = add_interest(m, name)
+        for kind in ("rockets", "planets"):  # kinds of space: one group with it
+            made[kind] = add_interest(m, kind)
+            group(m, made[kind].id, made["space"].id)
+        remove(m, add_interest(m, "spiders").id)  # set aside: never a setting
+        from lerni.student.interests import Link
+        m.links.append(Link(made["pizza"].id, made["Fractions"].id, "bridge", "2026-11-01"))
+
+    maps.change("sam", fill)
+    m = maps.get("sam")
+    used = {"trains": 2}  # trains framed the most questions lately
+    slots = deal(m, ["Fractions", "Nouns"], used, random.Random(1))
+    assert {s.goal for s in slots} == {"Fractions", "Nouns"} and all(s.setting for s in slots)
+    firsts = [s.setting for s in slots]
+    assert "spiders" not in " ".join(f"{s.setting} {s.second}" for s in slots)
+    groups = {"rockets": "space", "planets": "space"}
+    assert sum(groups.get(x, x) == "space" for x in firsts) <= 4  # one group, not three
+    assert firsts.index("trains") >= 5  # the most used comes after the rest have had turns
+    fractions = [s.setting for s in slots if s.goal == "Fractions"][:3]
+    assert "pizza" not in fractions  # already bridged to Fractions: the others first
+    prompt = quiz_input(m, TODAY, True, goals=["Fractions", "Nouns"], plan=slots)
+    assert "1. Fractions, set in " in prompt or "1. Nouns, set in " in prompt
+    assert "bridged from: pizza" in prompt
+    # the setting Claude used reaches the ledger
+    races = desk(tmp_path / "desk", None)
+
+    class Setting(Quizzer):
+        def write(self, system, prompt):
+            return {"questions": [{**q("Fractions", n), "setting": "nowhere"} if n == 0 else
+                                  q("Fractions", n) for n in range(WRITE_SIZE)]}
+
+    races.quizzer = Setting()
+    races.maps.change("sam", lambda m: add_interest(m, "trains") and None)
+    kept = races._write("sam", supervised=True, today=TODAY)
+    assert kept[0].setting == ""  # not an interest on the map: left blank
+    kept_named = check_questions({"questions": [{**q("Fractions", 1), "setting": "Trains"}]},
+                                 races.maps.get("sam"))
+    assert kept_named[0].setting == "trains"  # the map's spelling
+    races._sets["sam"] = (TODAY.isoformat(), kept_named * QUESTIONS_PER_RACE)
+    race = races.start("sam", supervised=True, today=TODAY)
+    ledger = races.concepts.ledger("sam")
+    assert race and any(c.get("setting") == "trains" for c in ledger)  # it reaches the ledger

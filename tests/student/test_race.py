@@ -381,15 +381,16 @@ def test_the_concept_ledger_keeps_every_idea_with_its_answers(tmp_path):
     first = race.questions[0]
     desk.pick("sam", race.id, 0, first.answer)  # right
     desk.pick("sam", race.id, 1, (race.questions[1].answer + 1) % 3)  # wrong
-    later = TODAY + timedelta(days=20)
-    assert first.concept not in concepts.recent("sam", later)  # not "asked lately" any more
+    later = TODAY + timedelta(days=31)
+    lately = [c for cs in concepts.asked_by_goal("sam", later).values() for c in cs]
+    assert first.concept not in lately  # not "asked lately" any more
     ledger = {c["concept"]: c for c in concepts.ledger("sam")}
     assert ledger[first.concept]["asked"] == 1 and ledger[first.concept]["right"] == 1
     assert ledger[race.questions[1].concept]["right"] == 0 and len(ledger) == QUESTIONS_PER_RACE
     old = tmp_path / "concepts" / "kim.json"  # a v3.9 file still loads
     old.write_text('{"schema": 1, "recent": [{"concept": "halves", "goal": "Fractions", '
                    '"day": "2026-10-12"}]}')
-    assert concepts.recent("kim", TODAY) == ["halves"]
+    assert concepts.asked_by_goal("kim", TODAY) == {"": ["halves"]}
 
 
 def test_a_wrong_key_never_races(tmp_path):
@@ -1149,7 +1150,7 @@ def test_a_probe_is_checked_asked_once_and_never_counted(tmp_path):
     assert sorted([probes[0][1], *held]) == ["earthquakes", "geysers"]  # the rest dropped
     for n in range(QUESTIONS_PER_RACE):
         desk.pick("sam", race.id, n, race.questions[n].answer)
-    asked = desk.concepts.recent("sam", today)
+    asked = [c for cs in desk.concepts.asked_by_goal("sam", today).values() for c in cs]
     assert race.questions[probes[0][0]].concept not in asked  # not in the concept ledger
     assert len(asked) == QUESTIONS_PER_RACE - 1
     lines = [json.loads(x) for x in (tmp_path / "results" / "sam.jsonl").read_text().splitlines()]
