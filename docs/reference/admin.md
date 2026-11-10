@@ -175,7 +175,7 @@ Audio stays on the home server: each clip's temp file is deleted once it's heard
 Race questions that reword a recent idea, or touch a set-aside topic in other words, are dropped while they're written ([spec 10](../../plans/specs/10-local-embeddings.md)). A set-aside interest close to a goal or an area with goals (math beside Math) doesn't block those questions, though Chat still steers away from it. Nothing leaves the home server, and nothing is kept.
 
 1. `brew install llama.cpp`, then the model, about 0.6 GB: `curl -L -o ~/.lerni/models/Qwen3-Embedding-0.6B-Q8_0.gguf https://huggingface.co/Qwen/Qwen3-Embedding-0.6B-GGUF/resolve/main/Qwen3-Embedding-0.6B-Q8_0.gguf`. `LERNI_EMBED_MODEL` names another file.
-2. The log's start says `Race checks by meaning: on`, or `off` with the reason. Each question write logs `Race set: 15 written, 10 kept; dropped N repeats (N by meaning), N set aside, N car; N formats, N settings` (counts only). To turn it off, rename the model file and restart.
+2. The log's start says `Race checks by meaning: on`, or `off` with the reason. Each question write logs `Race set: 15 written, 10 kept; dropped N repeats (N by meaning), N set aside, N car; N formats, N settings` (counts only). Healthy sets show several formats and settings and few repeats; if `lerni stats` shows one setting leading by far, or many ideas asked before, tell Claude Code. To turn it off, rename the model file and restart.
 3. To compare models again: `.venv/bin/python scripts/bakeoff_embeddings.py`.
 
 ### If Claude stops working

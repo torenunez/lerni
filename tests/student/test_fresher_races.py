@@ -60,7 +60,7 @@ def desk(tmp_path, embedder):
     ids = {}
     maps.change("sam", lambda m: ids.update(
         {name: add_goal(m, name).id for name in ("Fractions", "Nouns")}))
-    month = TODAY - timedelta(days=20)  # beyond today's 14 days and 40 labels, inside 30
+    month = TODAY - timedelta(days=20)  # inside each goal's 30 days of ideas
     concepts.add("sam", [(ids["Fractions"], "Fractions", "halves of a pizza"),
                          (ids["Nouns"], "Nouns", "naming words")], month)
     return RaceDesk(Quizzer(), maps, PointsStore(tmp_path), concepts, embedder=embedder)
@@ -214,8 +214,9 @@ def test_every_interest_gets_a_turn_and_new_bridges_come_first(tmp_path):
 
     races.quizzer = Setting()
     races.maps.change("sam", lambda m: add_interest(m, "trains") and None)
-    kept = races._write("sam", supervised=True, today=TODAY)
-    assert kept[0].setting == ""  # not an interest on the map: left blank
+    unknown = check_questions({"questions": [{**q("Fractions", 1), "setting": "nowhere"}]},
+                              races.maps.get("sam"))
+    assert unknown[0].setting == ""  # not an interest on the map: left blank
     kept_named = check_questions({"questions": [{**q("Fractions", 1), "setting": "Trains"}]},
                                  races.maps.get("sam"))
     assert kept_named[0].setting == "trains"  # the map's spelling
@@ -223,3 +224,21 @@ def test_every_interest_gets_a_turn_and_new_bridges_come_first(tmp_path):
     race = races.start("sam", supervised=True, today=TODAY)
     ledger = races.concepts.ledger("sam")
     assert race and any(c.get("setting") == "trains" for c in ledger)  # it reaches the ledger
+
+
+def test_sets_written_ahead_rotate_and_due_goals_lead(tmp_path):
+    # review (v3.43): held sets all started from the same counts; due goals were dealt last
+    from dataclasses import replace
+
+    from lerni.student.interests import add_interest
+
+    races = desk(tmp_path, None)
+    races.maps.change("sam", lambda m: [add_interest(m, n) for n in ("trains", "baking")] and None)
+    fresh = races._write("sam", supervised=True, today=TODAY)
+    held = [replace(k, setting="trains") for k in fresh]  # a set written ahead, all in trains
+    races._sets["sam"] = (TODAY.isoformat(), held)
+    nouns = races.maps.get("sam").find("Nouns")
+    races.concepts.answered("sam", nouns.id, "naming words", False, TODAY - timedelta(days=1))
+    races._write("sam", supervised=True, today=TODAY)
+    plan = races.quizzer.prompts[-1].split("Question plan: ")[1]
+    assert plan.startswith("1. Nouns, set in baking")  # the due goal first, the other interest

@@ -99,7 +99,8 @@ class ConceptStore:
         return out
 
     def settings_since(self, username: str, today: date | None = None) -> dict[str, int]:
-        """How many ideas of the last 30 days each interest framed, by lowercase name (v3.43)."""
+        """How many ideas of the last 30 days each interest framed, by lowercase name (v3.43): a
+        soft count (an idea keeps its latest setting), only for taking turns."""
         cutoff = ((today or date.today()) - timedelta(days=IDEA_DAYS)).isoformat()
         out: dict[str, int] = {}
         for c in self.ledger(username):
