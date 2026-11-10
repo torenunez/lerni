@@ -4,15 +4,21 @@ Where things really stand, then a dated log, newest first. Completed work is rec
 
 Record each kind of "done" only when it actually happens, with the date: code built, content approved, app ready, a student session held. Passing tests show code behaves as specified; they don't make anything ready for a student.
 
-## Current state (2026-11-09, v3.38 on the home server: Versions 1 and 2 built: the conversation, MentalMaps, HTTPS, and voice; Version 3's race, garage, and Chat points)
+## Current state (2026-11-09, v3.40 on the home server: Versions 1 and 2 built: the conversation, MentalMaps, HTTPS, and voice; Version 3's race, garage, and Chat points)
 
-- **Built:** the student app's core (student accounts, sign-in, Lerni's conversations, the MentalMap with its tagger and logs kept a year, Upload and educator feedback, and the educator agent); `lerni serve` with a sign-in page and one app with a ☰ menu by role: an independent student's Chat, My MentalMap (an editable list, the picture, and Upload), and Settings; an educator's student page (a Suggest a goal box, goal progress this week by area, the folded list, and the picture), opened at sign-in, with Students in Settings; a supervised student's Chat, full screen, and Games (a race for points spent on real cars; educators race too); good answers in Chat earn points too. Hold to talk with spoken answers; a Claude usage warning and rest; race checks by meaning, on the home server's own model. Both servers run as LaunchAgents (`lerni service`). The admin tool (`lerni`, with `lerni student`, `lerni logs`, `lerni feedback`, and `lerni stats`). A [code manifest](code-manifest.md) of every file. Tests: 242 passed.
+- **Built:** the student app's core (student accounts, sign-in, Lerni's conversations, the MentalMap with its tagger and logs kept a year, Upload and educator feedback, and the educator agent); `lerni serve` with a sign-in page and one app with a ☰ menu by role: an independent student's Chat, My MentalMap (an editable list, the picture, and Upload), and Settings; an educator's student page (a Suggest a goal box, goal progress this week by area, the folded list, and the picture), opened at sign-in, with Students in Settings; a supervised student's Chat, full screen, and Games (a race for points spent on real cars; educators race too); good answers in Chat earn points too. Hold to talk with spoken answers; a Claude usage warning and rest; race checks by meaning, on the home server's own model. Both servers run as LaunchAgents (`lerni service`). The admin tool (`lerni`, with `lerni student`, `lerni logs`, `lerni feedback`, and `lerni stats`). A [code manifest](code-manifest.md) of every file. Tests: 244 passed.
 - **Designed:** the interest map, goals, the tagger, upload, feedback, and the supervised conversation ([specs/04-interest-map.md](../plans/specs/04-interest-map.md)); approved with PR #12. Harder races, practice on the map, and probes ([spec 09b](../plans/specs/09b-harder-races.md)). Local embeddings ([spec 10](../plans/specs/10-local-embeddings.md)). The order from here: Versions 4–7 ([roadmap](roadmap.md)).
 - **Not yet:** a recorded supervised session (the supervised student has used it informally).
 
 When something changes, update this section and add a log entry below.
 
 ## Log
+
+### 2026-11-09 (a failed Claude call says why; v3.41 built)
+
+- After v3.40 shipped, races said "The track needs a minute" and the log was empty. The cause was Claude Code's sign-in on the home server, which had expired, so every Claude feature failed silently. The admin signed in again, and a real question write then made 10 questions.
+- v3.41 ([plan](../plans/v3.41-claude-signin.md)): a failed Claude call logs its kind ("sign-in expired", or the error's kind such as "TimeoutError"), never its text, and after an expired sign-in educators see "Claude needs the admin to sign in again" until a call works. Students' messages are unchanged.
+- A fresh review: "log in" matched ordinary words (dropped; Claude's own 401 now counts too), a timeout logged as CancelledError (now its own kind), and one upload failure wasn't logged. All fixed.
 
 ### 2026-11-09 (race checks by meaning; v3.40 built)
 

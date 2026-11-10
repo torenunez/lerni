@@ -14,6 +14,7 @@ WARN_AT = {"five_hour": 0.80}  # per window; the weekly ones warn at WEEK_WARN
 WEEK_WARN = 0.75
 PAUSE_AT = 0.95  # leaves a little room for the admin's own Claude use
 OVERAGE_PAUSE = timedelta(hours=5)  # if overage comes with no reset time
+SIGN_IN = "⚠️ Claude needs the admin to sign in again."  # Claude Code's login expired (v3.41)
 
 
 def _when(at: datetime) -> str:
@@ -32,7 +33,23 @@ class Usage:
     def __init__(self) -> None:
         self._windows: dict[str, tuple[float, datetime]] = {}
         self._overage_until: datetime | None = None
+        self._signed_out = False  # set by a failed sign-in, cleared by any call that works
         self._lock = threading.Lock()
+
+    def failed(self, signin: bool) -> None:
+        """Note a failed call; ``signin``: Claude Code's sign-in has expired."""
+        with self._lock:
+            self._signed_out = self._signed_out or signin
+
+    def succeeded(self) -> None:
+        """Note a call that worked: signed in again, if it wasn't."""
+        with self._lock:
+            self._signed_out = False
+
+    def signed_out(self) -> bool:
+        """Whether the last sign-in failure hasn't been followed by a call that worked."""
+        with self._lock:
+            return self._signed_out
 
     def record(
         self, windows: dict[str, tuple[float, int]], overage: bool, now: datetime | None = None
@@ -47,9 +64,12 @@ class Usage:
                 self._overage_until = max(full, default=now + OVERAGE_PAUSE)
 
     def warning(self, now: datetime | None = None) -> str:
-        """A line for educators when a window is getting full; "" otherwise."""
+        """A line for educators when the admin must sign in again, or a window is getting full;
+        "" otherwise."""
         now = now or datetime.now()
         with self._lock:
+            if self._signed_out:
+                return SIGN_IN
             high = [
                 (used, name, at)
                 for name, (used, at) in self._windows.items()
