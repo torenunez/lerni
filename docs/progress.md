@@ -14,6 +14,12 @@ When something changes, update this section and add a log entry below.
 
 ## Log
 
+### 2026-11-10 (the morning plan; v3.44 built)
+
+- v3.44 ([plan](../plans/v3.44-morning-plan.md)): each morning at 5:00, and at start-up once a day, one small-model call for each supervised student suggests up to 5 connections to try (an interest, a goal, and the hook between them), a goal suggestion for a goal running out of things to ask, and goal steps for narrow goals. The educator ticks them under the renamed Tell Lerni box: Use ticked steers races and Chat (never a bridge by itself) or widens a goal's notes; Not these sets them aside; and the Tell Lerni box's agent can note what the educator thinks of them for the next morning. The admin consolidated the former v3.46 idea lists into it. Kept as labels in `suggestions/` (rule 6 updated).
+- The eval passed 3 of 3 in one 10 s call on a made-up map. On a throwaway server, ticking a connection and a goal suggestion put the connection in use and changed the goal's notes under the educator's name; the browser couldn't shrink to phone width, so the admin confirms on the phone.
+- A fresh review found four important gaps, fixed with a regression test: steps over 40 characters never counted as tried (now capped and compared at a race label's length), sets written ahead all got the same first steps (held ones now count), a used goal suggestion came back the next morning (now it waits 14 days), and unticked suggestions never expired, even after their interest was set aside (now tidied each morning, and gone after 14 days). Smaller fixes: the notes change before a suggestion is marked used, a stale tick says so, the list redraws only when notes changed, and a failed morning never skips the races written next.
+
 ### 2026-11-10 (every interest, new bridges; v3.43 built)
 
 - v3.43 ([plan](../plans/v3.43-every-interest.md)): the server deals each question a goal and an interest to set it in: every interest group takes turns (a general interest and its kinds count as one), the least used in the last 30 days first, preferring one not yet bridged to that goal (a bridge counts as 3 uses, so every interest still gets turns); Claude may use a second choice when the first would be forced. Each goal's line lists the interests already bridged to it. The setting a question used goes in the results log, the concept ledger, and `lerni stats` (interest names only). The old 40-label list is gone.

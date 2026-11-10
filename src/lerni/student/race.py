@@ -42,6 +42,7 @@ from lerni.student.interests import (
     same_name,
 )
 from lerni.student.meaning import Embedder, Meaning, skipped
+from lerni.student.morning import untried_steps_held
 from lerni.student.points import PointsStore
 from lerni.student.results import ResultsLog, question_hash
 from lerni.student.voice import SpeechUnavailable, for_speaking
@@ -128,7 +129,10 @@ lists as asked lately, or one listed as recently asked, except ideas due for rev
 - Follow the question plan: question N practices plan N's goal, set in its interest (or the \
 one in brackets when the first can't make a natural question), with its format and, when it \
 has one, its twist; "format" names the format exactly, and "setting" the interest you used. \
-A goal "bridged from" an interest was already reached through it in conversation. \
+A goal "bridged from" an interest was already reached through it in conversation. When a \
+goal lists a "connection to try", its question set in that interest works from that link; \
+when it lists "steps not tried yet", its questions practice those steps, in order, each \
+step's words as its "concept". \
 "Spot the rival's mistake": a rival racer says something \
 wrong, and the choices say what's wrong with it.
 - When the right answer is a number worked out from numbers in the question, put that \
@@ -188,11 +192,14 @@ def quiz_input(m: InterestMap, today: date, supervised: bool, recent: Sequence[s
                levels: Mapping[str, int] | None = None, cars: Sequence[Car] = (),
                due: Sequence[tuple[str, str]] = (), goals: Sequence[str] | None = None,
                probed: Sequence[str] = (), asked: Mapping[str, Sequence[str]] | None = None,
-               plan: Sequence[Slot] = ()) -> str:
+               plan: Sequence[Slot] = (),
+               connections: Mapping[str, tuple[str, str]] | None = None,
+               steps: Mapping[str, Sequence[str]] | None = None) -> str:
     """What Claude needs to write questions: goals at their levels, interests, set-asides,
     recent ideas, nearby ideas to probe, and the cars in reach. ``goals`` (names) narrows the
     goals to this set's; ``probed`` are topics probed lately; ``asked`` is each goal's ideas
-    lately by goal id; ``plan`` is each question's slot: goal, setting, format, and twist."""
+    lately by goal id; ``plan`` is each question's slot: goal, setting, format, and twist;
+    ``connections`` (interest, hook) and ``steps`` by goal id come from the morning plan."""
     picked = {g.casefold() for g in goals} if goals else None
 
     bridged: dict[str, list[str]] = {}  # goal id -> the interests bridged to it (v3.43)
@@ -204,7 +211,11 @@ def quiz_input(m: InterestMap, today: date, supervised: bool, recent: Sequence[s
     def lately(e: Any) -> str:  # its own ideas, so each goal's next ones are new (v3.42)
         ideas = [i for i in (asked or {}).get(e.id, ()) if not mentions_set_aside(m, i)]
         froms = bridged.get(e.id, [])
+        link = (connections or {}).get(e.id)  # the educator ticked it (v3.44)
+        todo = [s for s in (steps or {}).get(e.id, ()) if not mentions_set_aside(m, s)][:5]
         return ((f"; bridged from: {', '.join(froms)}" if froms else "")
+                + (f"; connection to try: {link[0]} ({link[1]})" if link else "")
+                + (f"; steps not tried yet: {'; '.join(todo)}" if todo else "")
                 + (f"; asked lately: {'; '.join(ideas)}" if ideas else ""))
 
     # "Fractions (level 4; notes: …)": a copied level or note is cut off at " (" when checked
@@ -276,11 +287,13 @@ def interest_groups(m: InterestMap) -> list[tuple[str, list[str], set[str]]]:
 
 
 def deal(m: InterestMap, goals: Sequence[str], used: Mapping[str, int], rng: random.Random,
-         n: int = WRITE_SIZE) -> list[Slot]:
+         n: int = WRITE_SIZE,
+         targets: Mapping[str, tuple[str, str]] | None = None) -> list[Slot]:
     """A set's question plan (v3.43): the goals dealt in turn (in ``goals``' order), and each
     slot a setting from every interest group, the least used first (``used``: lately, by
     lowercase name), a group already bridged to that slot's goal counting as 3 more uses, and
-    a second choice."""
+    a second choice. A connection in use (``targets``: interest by goal id, v3.44) sets its
+    goal's first slot, and its second when the goal has more than two."""
     slots = roll(rng, n)
     groups = interest_groups(m)
     counts = [sum(used.get(x.casefold(), 0) for x in names) for _, names, _ in groups]
@@ -291,6 +304,7 @@ def deal(m: InterestMap, goals: Sequence[str], used: Mapping[str, int], rng: ran
             bridged.setdefault(k.b, set()).add(k.a)
     entries = [e for g in goals if (e := m.find(g)) is not None and e.kind == "goal"]
     out = []
+    led: dict[str, int] = {}  # each goal's slots so far, for the connections in use
     for i, s in enumerate(slots):
         goal = entries[i % len(entries)] if entries else None
         near = bridged.get(goal.id, set()) if goal is not None else set()
@@ -301,6 +315,11 @@ def deal(m: InterestMap, goals: Sequence[str], used: Mapping[str, int], rng: ran
         pick = [rng.choice(groups[j][1]) for j in ranked[:2]]
         if len(pick) == 1 and len(names := groups[ranked[0]][1]) > 1:  # one group: another kind
             pick.append(rng.choice([x for x in names if x != pick[0]]))
+        if goal is not None and (link := (targets or {}).get(goal.id)):
+            k = led[goal.id] = led.get(goal.id, 0) + 1
+            share = len(range(i % len(entries), n, len(entries)))  # this goal's slots (review)
+            if k == 1 or (k == 2 and share > 2):  # the educator's connection leads
+                pick = [link[0], *(x for x in pick if x != link[0])][:2]
         out.append(replace(s, goal=goal.name if goal is not None else "",
                            setting=pick[0] if pick else "",
                            second=pick[1] if len(pick) > 1 else ""))
@@ -1014,6 +1033,7 @@ class RaceDesk:
         self._grading: set[str] = set()  # a bonus answer being graded now, per race
         self.rng = random.Random()  # the 1-in-4 bonus draw; tests may replace it
         self.dice = random.Random()  # each question's format and twist (v3.42)
+        self.suggestions: Any = None  # the morning plan's store (v3.44); set by the app
         self._races: dict[str, Race] = {}
         self._busy: dict[str, threading.Event] = {}  # writing ahead now; set when done
         self._starting: dict[str, threading.Lock] = {}  # each person's starts, one at a time
@@ -1137,6 +1157,16 @@ class RaceDesk:
             for q in self._held(username, today):
                 if q.setting:
                     used[q.setting.casefold()] = used.get(q.setting.casefold(), 0) + 1
+        targets: dict[str, tuple[str, str]] = {}
+        steps: dict[str, list[str]] = {}
+        if self.suggestions is not None:  # the morning plan (v3.44): best effort
+            try:
+                targets = self.suggestions.in_use(username, real, today)
+                with self._lock:  # steps already in held questions wait for those races
+                    held_ideas = [(q.goal_id, q.concept) for q in self._held(username, today)]
+                steps = untried_steps_held(self.suggestions, username, m, by_goal, held_ideas)
+            except Exception as exc:  # noqa: BLE001 - a broken file never stops a race
+                print(f"Morning plan skipped in a race ({type(exc).__name__}).", flush=True)
         firsts = {getattr(m.find(g), "name", "").casefold() for g, _ in due}  # due goals lead
         dealt = [*(g for g in picked if g.casefold() in firsts),
                  *(g for g in picked if g.casefold() not in firsts)]
@@ -1148,7 +1178,8 @@ class RaceDesk:
             try:
                 raw = self.quizzer.write(QUIZ_SYSTEM, quiz_input(
                     m, today, supervised, recent, levels, cars, due, picked or None, probed,
-                    history, deal(m, dealt, used, self.dice)))
+                    history, deal(m, dealt, used, self.dice, targets=targets),
+                    connections=targets, steps=steps))
             except RaceUnavailable:
                 raise
             except Exception as exc:  # never show what went wrong inside

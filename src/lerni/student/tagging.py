@@ -132,10 +132,16 @@ class MapKeeper:
     ) -> None:
         self.maps, self.tagger, self.log = maps, tagger, log
         self.run, self.today, self.points, self.earns = run, today, points, earns
+        self.suggestions: Any = None  # the morning plan's store (v3.44); set by the app
 
     def context(self, username: str) -> str:
-        """The map block for this student's prompt."""
-        return map_block(self.maps.get(username), self.today())
+        """The map block for this student's prompt, with the connections the educator ticked."""
+        m, day = self.maps.get(username), self.today()
+        try:  # best effort: a broken suggestions file never stops Chat
+            tries = self.suggestions.in_use(username, m, day) if self.suggestions else None
+        except Exception:  # noqa: BLE001
+            tries = None
+        return map_block(m, day, connections=tries)
 
     def after(self, exchange: Exchange) -> None:
         """Tag and log an exchange without making anyone wait."""

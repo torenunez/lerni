@@ -12,7 +12,7 @@ import json
 import re
 import threading
 import unicodedata
-from collections.abc import Callable, Collection, Iterator
+from collections.abc import Callable, Collection, Iterator, Mapping
 from contextlib import contextmanager
 from dataclasses import asdict, dataclass, field, fields
 from datetime import date, timedelta
@@ -1068,8 +1068,10 @@ def _turn(day: date, entry_id: str) -> str:
     return hashlib.sha256(f"{day.toordinal()}|{entry_id}".encode()).hexdigest()  # never the time
 
 
-def map_block(m: InterestMap, today: date) -> str:
-    """The map for the prompt, as information, at most 1,500 characters; "" if empty."""
+def map_block(m: InterestMap, today: date,
+              connections: Mapping[str, tuple[str, str]] | None = None) -> str:
+    """The map for the prompt, as information, at most 1,500 characters; "" if empty.
+    ``connections`` are the educator's ticked connections to try, (interest, hook) by goal id."""
     names = {e.id: e.name for e in m.entries}
     bridges = [k for k in m.links if k.kind == "bridge"]
     tops = [e for e in m.entries
@@ -1090,6 +1092,7 @@ def map_block(m: InterestMap, today: date) -> str:
     steer = sorted((g for g in goals if not backed_off(g, today)),
                    key=lambda g: (covered[g.id], _turn(today, g.id)))[:8]
     revisit = [g for g in goals if g.explained and faded(g, today)]
+    tries = [f"{i} → {names[g]}: {h}" for g, (i, h) in (connections or {}).items() if g in names]
     lines = [MAP_HEADER]
     # removed interests with their history: not older removals, nor ones deleted for good
     avoid = [r for r in m.removed
@@ -1102,6 +1105,8 @@ def map_block(m: InterestMap, today: date) -> str:
     if steer:
         lines.append("Goals to bridge toward, one at a time:")
         lines += [f"- {g.name}" + (f" ({g.notes})" if g.notes else "") for g in steer]
+    if tries:  # v3.44: open with one now and then, never forced
+        lines.append("Connections to try (the educator chose these): " + "; ".join(tries))
     if revisit:
         lines.append(
             "Explained a while ago; ask a light question first: "
