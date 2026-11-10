@@ -14,6 +14,10 @@ When something changes, update this section and add a log entry below.
 
 ## Log
 
+### 2026-11-10 (fewer goal suggestions; v3.45 built)
+
+- Production's first morning plan made 5 connections, steps for 14 goals, and 14 goal suggestions, so the educator's page listed 19 items. "Running out" (12 ideas in 30 days) fit most goals at the student's pace. v3.45 ([plan](../plans/v3.45-fewer-goal-suggestions.md)): a goal may be widened only at the top level with 12 or more ideas, the most outgrown first (ideas asked again after they were right), and at most one goal suggestion waits; the first morning call after the deploy tidies the rest. The admin moved away from home to Version 8, after Version 7, aiming to build Versions 4–7 this week.
+
 ### 2026-11-10 (the morning plan; v3.44 built)
 
 - v3.44 ([plan](../plans/v3.44-morning-plan.md)): each morning at 5:00, and at start-up once a day, one small-model call for each supervised student suggests up to 5 connections to try (an interest, a goal, and the hook between them), a goal suggestion for a goal running out of things to ask, and goal steps for narrow goals. The educator ticks them under the renamed Tell Lerni box: Use ticked steers races and Chat (never a bridge by itself) or widens a goal's notes; Not these sets them aside; and the Tell Lerni box's agent can note what the educator thinks of them for the next morning. The admin consolidated the former v3.46 idea lists into it. Kept as labels in `suggestions/` (rule 6 updated).

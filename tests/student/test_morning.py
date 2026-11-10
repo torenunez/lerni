@@ -40,6 +40,8 @@ def setup(tmp_path):
     maps.change("sam", fill)
     month = TODAY - timedelta(days=10)
     concepts.add("sam", [(ids["Fractions"], "Fractions", f"idea {n}") for n in range(12)], month)
+    top = {ids["Fractions"]: {"level": 5, "right": 0, "asked": 0}}  # outgrown: may widen (v3.45)
+    concepts._change("sam", levels=lambda by_goal: by_goal.update(top))
     return maps, concepts, store, ids
 
 
@@ -150,3 +152,36 @@ def test_review_long_steps_used_goals_and_stale_waits(tmp_path):
     run_morning("sam", Planner({"connections": [], "goal_suggestions": [], "steps": []}), maps,
                 concepts, store, later)
     assert store.waiting("sam") == []
+
+
+def test_only_one_outgrown_goal_gets_a_suggestion(tmp_path):
+    # regression (v3.45): production's first morning made 14 goal suggestions
+    maps, concepts, store = MapStore(tmp_path), ConceptStore(tmp_path), SuggestionStore(tmp_path)
+    ids = {}
+    maps.change("sam", lambda m: ids.update(
+        {g: add_goal(m, g, "the basics").id for g in ("Fractions", "Nouns", "Rain")}) or None)
+    month = TODAY - timedelta(days=10)
+    for g in ids:  # all three asked a lot: 12 ideas each
+        concepts.add("sam", [(ids[g], g, f"{g} idea {n}") for n in range(12)], month)
+    for n in range(3):  # Nouns: ideas asked again after they were right
+        concepts.add("sam", [(ids["Nouns"], "Nouns", f"Nouns idea {n}")], month)
+        for _ in range(2):
+            concepts.answered("sam", ids["Nouns"], f"Nouns idea {n}", True, month)
+    top = {ids["Fractions"]: {"level": 5, "right": 0, "asked": 0},
+           ids["Nouns"]: {"level": 5, "right": 0, "asked": 0}}  # Rain stays at level 3
+    concepts._change("sam", levels=lambda by_goal: by_goal.update(top))
+    raw = {"connections": [], "steps": [],
+           "goal_suggestions": [{"goal": g, "notes": "the basics, then more"} for g in ids]}
+    planner = Planner(raw)
+    run_morning("sam", planner, maps, concepts, store, TODAY)
+    goals = planner.prompts[0].split("Interests")[0]
+    assert goals.count("running out") == 1  # one goal at a time
+    assert "Nouns (notes: the basics) [running out" in goals  # the most outgrown
+    assert store.waiting("sam") == ["🎯 Goal Nouns: the basics, then more"]
+    # a file from before, holding three, keeps one at the next morning
+    def three(d):
+        d["goals"] = [{"goal_id": ids[g], "goal": g, "notes": "wider", "state": "waiting",
+                       "day": TODAY.isoformat()} for g in ids]
+    store._change("sam", three)
+    run_morning("sam", Planner(raw), maps, concepts, store, TODAY + timedelta(days=1))
+    assert store.waiting("sam") == ["🎯 Goal Nouns: wider"]  # and no new one while one waits
