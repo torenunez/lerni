@@ -18,7 +18,7 @@ from datetime import date, timedelta
 from pathlib import Path
 from typing import Any, Protocol
 
-from lerni.student.concepts import MAX_CONCEPT, normalize
+from lerni.student.concepts import MAX_CONCEPT, MAX_LEVEL, normalize
 from lerni.student.fence import fence
 from lerni.student.interests import (
     MAX_NOTES,
@@ -247,17 +247,18 @@ def _running_out(asked: Mapping[str, Sequence[str]], goal_id: str) -> bool:
 
 
 def morning_input(
-    m: InterestMap, asked: Mapping[str, Sequence[str]], data: dict[str, Any], today: date
+    m: InterestMap, asked: Mapping[str, Sequence[str]], data: dict[str, Any], today: date,
+    widen: str = "",
 ) -> str:
     """What the morning call needs: goals (with whether they're running out or need steps),
-    interests, bridges, suggestions already made, and the educator's notes."""
+    interests, bridges, suggestions already made, and the educator's notes. Only ``widen``,
+    the one goal to suggest widening (v3.45), is marked running out."""
     names = {e.id: e.name for e in m.entries}
-    blocked = _blocked_goals(data, today)
     lines = ["Goals:"]
     for e in (e for e in m.entries if e.kind == "goal"):
         marks = []
         if _running_out(asked, e.id):
-            if e.id not in blocked:
+            if e.id == widen:
                 marks.append("running out")
             if _needs_steps(e, asked, data):
                 marks.append("needs steps")
@@ -320,10 +321,26 @@ def _needs_steps(goal: Any, asked: Mapping[str, Sequence[str]], data: dict[str, 
     return all(normalize(str(x)[:MAX_CONCEPT]) in done for x in s.get("steps", []))
 
 
-def _tidy(data: dict[str, Any], m: InterestMap, today: date) -> dict[str, Any]:
+def outgrown(m: InterestMap, asked: Mapping[str, Sequence[str]], levels: Mapping[str, int],
+             ledger: Sequence[dict[str, Any]]) -> list[str]:
+    """Goals the student may have outgrown (v3.45), most first: at the top level with 12 or
+    more ideas in 30 days, ranked by ideas asked again after they were right, then by ideas."""
+    again: dict[str, int] = {}
+    for c in ledger:  # asked again with every answer right: repetition, not a review
+        asked_n, right_n = int(c.get("asked", 0) or 0), int(c.get("right", 0) or 0)
+        if asked_n >= 2 and right_n >= asked_n:
+            again[str(c.get("goal_id", ""))] = again.get(str(c.get("goal_id", "")), 0) + 1
+    ready = [e.id for e in m.entries if e.kind == "goal" and levels.get(e.id) == MAX_LEVEL
+             and _running_out(asked, e.id)]
+    return sorted(ready, key=lambda g: (-again.get(g, 0), -len(set(asked.get(g, ())))))
+
+
+def _tidy(data: dict[str, Any], m: InterestMap, today: date,
+          rank: Sequence[str] = ()) -> dict[str, Any]:
     """Suggestions that still stand (review): waiting ones off the map, set aside, bridged, or
     older than 14 days go; used, dismissed, and lapsed ones stay 90 days, so they aren't
-    made again, then go."""
+    made again, then go. At most one goal suggestion waits (v3.45): the first in ``rank``,
+    else the oldest."""
     wait = (today - timedelta(days=WAIT_DAYS)).isoformat()
     gone = (today - timedelta(days=DISMISSED_DAYS)).isoformat()
 
@@ -339,12 +356,18 @@ def _tidy(data: dict[str, Any], m: InterestMap, today: date) -> dict[str, Any]:
         return (e is not None and e.kind == "interest" and not mentions_set_aside(m, e.name)
                 and not _bridged(m, e.id, goal.id))
 
+    goals = [g for g in data["goals"] if stands(g)]
+    waiting = sorted((g for g in goals if g.get("state") == "waiting"),
+                     key=lambda g: (rank.index(g["goal_id"]) if g.get("goal_id") in rank
+                                    else len(rank), str(g.get("day", ""))))
+    goals = [g for g in goals if g.get("state") != "waiting" or g is (waiting or [None])[0]]
     return {**data, "connections": [c for c in data["connections"] if stands(c)],
-            "goals": [g for g in data["goals"] if stands(g)]}
+            "goals": goals}
 
 
 def check_plan(
-    raw: Any, m: InterestMap, data: dict[str, Any], asked: Mapping[str, Sequence[str]], today: date
+    raw: Any, m: InterestMap, data: dict[str, Any], asked: Mapping[str, Sequence[str]], today: date,
+    widen: str = "",
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, Any]]:
     """The call's answer, checked: new connections, goal suggestions, and steps by goal id.
     Anything off the map, set aside, too long, or already suggested is dropped."""
@@ -394,7 +417,7 @@ def check_plan(
             or not notes
             or notes.casefold() == goal.notes.casefold()
             or goal.id in blocked
-            or not _running_out(asked, goal.id)
+            or goal.id != widen  # only the one outgrown goal (v3.45)
             or mentions_set_aside(m, notes)
         ):
             continue
@@ -432,15 +455,21 @@ def run_morning(
     try:
         m = maps.get(username)
         asked = concepts.asked_by_goal(username, today) if concepts is not None else {}
-        data = _tidy(store.get(username), m, today)
-        raw = planner.write(MORNING_SYSTEM, morning_input(m, asked, data, today), MORNING_SCHEMA)
-        connections, suggestions, steps = check_plan(raw, m, data, asked, today)
+        levels = concepts.levels(username) if concepts is not None else {}
+        rank = outgrown(m, asked, levels, concepts.ledger(username) if concepts else [])
+        data = _tidy(store.get(username), m, today, rank)
+        blocked = _blocked_goals(data, today)  # one waits already, or used or dismissed lately
+        widen = next((g for g in rank if g not in blocked), "") if not any(
+            g.get("state") == "waiting" for g in data["goals"]) else ""
+        prompt = morning_input(m, asked, data, today, widen)
+        raw = planner.write(MORNING_SYSTEM, prompt, MORNING_SCHEMA)
+        connections, suggestions, steps = check_plan(raw, m, data, asked, today, widen)
     except Exception as exc:  # noqa: BLE001 - never echo the map in errors
         print(f"Morning plan skipped ({type(exc).__name__}).", flush=True)
         store._change(username, lambda d: d.update(day=today.isoformat()))  # tried today
         return
     def save(d: dict[str, Any]) -> None:
-        kept = _tidy(d, m, today)
+        kept = _tidy(d, m, today, rank)
         d.update(day=today.isoformat(), connections=kept["connections"] + connections,
                  goals=kept["goals"] + suggestions, steps={**d["steps"], **steps})
 
