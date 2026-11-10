@@ -133,7 +133,7 @@ As a student, I want to spend my points on cars in the garage, so that I can rac
 
 ## Version 4: the educator's Chat
 
-Races mix in questions the educator checked or wrote, with right answers they approved; a question marked wrong never comes back. The educator's side: [educator PRD](educator.md#version-4-the-educators-chat).
+Races mix in questions the educator checked or wrote (up to 1 a race), a question marked wrong never comes back, and the educator's broad feedback steers every question after it; the educator checks a sample, never every question. The educator's side: [educator PRD](educator.md#version-4-the-educators-chat).
 
 ## Version 5: new goals from the map
 

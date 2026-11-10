@@ -103,19 +103,22 @@ These notes are for the admin and educator, not the app; the in-app text stays s
 
 ## Version 4: the educator's Chat
 
-### Story: Give goals and right answers through Chat
+The educator is a continuous improvement partner and auditor, not a gatekeeper (the admin, 2026-11-10): they check a small sample and give broad feedback, and nothing waits on their approval.
 
-As an educator, I want to give Lerni a worksheet, an answer key, or what we're learning this week, so that races ask what I'm teaching, with answers I trust.
+### Story: Give feedback and answer keys through Tell Lerni
 
-- WHEN the educator shares goals or questions with answers in Chat (typed, or attached with 📎) THE SYSTEM SHALL propose goals and question-and-answer pairs for the student they name, and save only what they tick.
-- WHEN the educator tells Chat something about any of their students THE SYSTEM SHALL propose the change to that student's map, saved only on a tap.
+As an educator, I want to tell Lerni in my own words what to do better, or hand it an answer key, so that every question after gets better and races ask what I'm teaching.
 
-### Story: Check Claude's questions
+- WHEN the educator gives broad feedback in Tell Lerni ("too easy", "use metric units") THE SYSTEM SHALL propose a guidance note, and once ticked, the question writer and the morning plan SHALL follow it.
+- WHEN the educator shares questions with answers (typed, or attached with 📎) THE SYSTEM SHALL propose each as a question with its right answer and two wrong choices Claude wrote, for a goal, and keep only the ones ticked, in that goal's checked bank.
+- WHEN the educator names another student THE SYSTEM SHALL ask them to pick that student first, and never propose for a student who isn't shown.
 
-As an educator, I want to mark Claude's race questions right or wrong, like a labeler, so that good questions come back and wrong ones never do.
+### Story: Check a few questions
 
-- WHEN the educator opens Check questions on a student's page THE SYSTEM SHALL list recent race questions with Claude's answer, each to mark ✓ right or ✗ wrong with an optional why.
-- WHEN a question is marked ✓ or a pair is uploaded THE SYSTEM SHALL keep it in that goal's checked bank, and races SHALL mix it in; WHEN one is marked ✗ THE SYSTEM SHALL never ask it again, and Claude SHALL see the why when writing that goal's questions.
+As an educator, I want to look at a few of Lerni's race questions now and then, like a quality check, so that good questions come back and wrong ones never do.
+
+- WHEN the educator opens a supervised student's page THE SYSTEM SHALL show up to 3 of today's race questions, drawn at random, each with Claude's answer and wrong choices, to tick Right ✓ or Wrong ✗, with the week's count of checks.
+- WHEN a question is marked ✓ or an answer key is ticked THE SYSTEM SHALL keep it in that goal's checked bank, and races SHALL mix in up to 1 a race, each not again for 7 days; WHEN one is marked ✗ THE SYSTEM SHALL never ask it again, and Claude SHALL see the why the educator gave when writing that goal's questions.
 
 ## Settings (Versions 2, 6, and 7)
 
