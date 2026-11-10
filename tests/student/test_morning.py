@@ -183,6 +183,5 @@ def test_only_one_outgrown_goal_gets_a_suggestion(tmp_path):
         d["goals"] = [{"goal_id": ids[g], "goal": g, "notes": "wider", "state": "waiting",
                        "day": TODAY.isoformat()} for g in ids]
     store._change("sam", three)
-    run_morning("sam", Planner({"connections": [], "goal_suggestions": [], "steps": []}), maps,
-                concepts, store, TODAY + timedelta(days=1))
-    assert store.waiting("sam") == ["🎯 Goal Nouns: wider"]
+    run_morning("sam", Planner(raw), maps, concepts, store, TODAY + timedelta(days=1))
+    assert store.waiting("sam") == ["🎯 Goal Nouns: wider"]  # and no new one while one waits

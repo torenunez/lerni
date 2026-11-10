@@ -327,7 +327,9 @@ def outgrown(m: InterestMap, asked: Mapping[str, Sequence[str]], levels: Mapping
     more ideas in 30 days, ranked by ideas asked again after they were right, then by ideas."""
     again: dict[str, int] = {}
     for c in ledger:  # asked again with every answer right: repetition, not a review
-        asked_n, right_n = int(c.get("asked", 0) or 0), int(c.get("right", 0) or 0)
+        asked_n, right_n = c.get("asked"), c.get("right")
+        if not (isinstance(asked_n, int) and isinstance(right_n, int)):
+            continue  # a hand edit: left out, so the morning still runs (review)
         if asked_n >= 2 and right_n >= asked_n:
             again[str(c.get("goal_id", ""))] = again.get(str(c.get("goal_id", "")), 0) + 1
     ready = [e.id for e in m.entries if e.kind == "goal" and levels.get(e.id) == MAX_LEVEL
@@ -456,7 +458,8 @@ def run_morning(
         m = maps.get(username)
         asked = concepts.asked_by_goal(username, today) if concepts is not None else {}
         levels = concepts.levels(username) if concepts is not None else {}
-        rank = outgrown(m, asked, levels, concepts.ledger(username) if concepts else [])
+        rank = outgrown(m, asked, levels,
+                        concepts.ledger(username) if concepts is not None else [])
         data = _tidy(store.get(username), m, today, rank)
         blocked = _blocked_goals(data, today)  # one waits already, or used or dismissed lately
         widen = next((g for g in rank if g not in blocked), "") if not any(
