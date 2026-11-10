@@ -54,8 +54,35 @@ def _isolated() -> dict[str, Any]:
     }
 
 
+SIGN_IN_WORDS = ("authenticat", "oauth", "/login", "not logged in", "log in")  # in its error
+
+
+def _signin(*texts: Any) -> bool:
+    """Whether an error's words say Claude Code's sign-in failed."""
+    words = " ".join(str(t) for t in texts).casefold()
+    return any(w in words for w in SIGN_IN_WORDS)
+
+
+def _failed(usage: Usage | None, what: str, exc: BaseException) -> None:
+    """Log why a call failed, as its kind only (never its text), and note an expired sign-in."""
+    chain, seen = [], exc
+    while seen is not None and len(chain) < 5:  # the error and what caused it
+        chain.append(seen)
+        seen = seen.__cause__ or seen.__context__
+    signin = _signin(*chain) or (usage is not None and usage.signed_out())
+    if usage is not None:
+        usage.failed(signin)
+    kind = "sign-in expired" if signin else type(chain[-1]).__name__
+    print(f"Claude call failed ({what}): {kind}", flush=True)
+
+
 def _note_limits(usage: Usage | None, message: Any) -> None:
-    """Pass a rate-limit event's numbers on to ``usage``."""
+    """Pass a rate-limit event's numbers on to ``usage``, and note a call's result."""
+    if usage is not None and isinstance(message, ResultMessage):
+        if not message.is_error:
+            usage.succeeded()  # signed in again, if it wasn't
+        elif _signin(message.result or "", message.errors or ""):
+            usage.failed(signin=True)
     if usage is None or not isinstance(message, RateLimitEvent):
         return
     info = message.rate_limit_info
@@ -123,6 +150,7 @@ class ClaudeCodeChat:
         try:
             while (piece := pieces.get()) is not None:
                 if isinstance(piece, BaseException):
+                    _failed(self.usage, "chat", piece)
                     raise ConversationUnavailable("Claude didn't answer. Try again in a moment.")
                 sent = True
                 yield piece
@@ -177,7 +205,11 @@ class ClaudeCodeTagger:
         """
         if self.usage is not None and self.usage.paused():
             raise RuntimeError("resting")  # the map waits; nothing is lost but this update
-        return asyncio.run(asyncio.wait_for(self._tag(system, prompt), TAG_TIMEOUT_SECONDS))
+        try:
+            return asyncio.run(asyncio.wait_for(self._tag(system, prompt), TAG_TIMEOUT_SECONDS))
+        except Exception as exc:
+            _failed(self.usage, "the map", exc)
+            raise
 
     async def _tag(self, system: str, prompt: str) -> dict[str, Any]:
         with tempfile.TemporaryDirectory(prefix="lerni-tag-") as workdir:
@@ -222,6 +254,7 @@ class ClaudeCodeQuizzer:
             return asyncio.run(
                 asyncio.wait_for(self._write(system, prompt, schema), timeout))
         except Exception as exc:  # never echo the map in errors
+            _failed(self.usage, "small model", exc)  # questions, checks, grades, and areas
             raise RaceUnavailable("The track needs a minute. Try again soon.") from exc
 
     async def _write(self, system: str, prompt: str, schema: dict[str, Any]) -> dict[str, Any]:
@@ -271,6 +304,7 @@ class ClaudeCodeUploader:
         except UploaderUnavailable:
             raise
         except Exception as exc:  # never echo the notes in errors
+            _failed(self.usage, "upload", exc)
             raise UploaderUnavailable("Claude didn't respond. Try again in a moment.") from exc
 
     async def _propose(self, system: str, source: UploadSource) -> dict[str, Any]:

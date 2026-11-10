@@ -178,6 +178,10 @@ Race questions that reword a recent idea, or touch a set-aside topic in other wo
 2. The log's start says `Race checks by meaning: on`, or `off` with the reason. Each question write logs `Race checks by meaning: N repeats, N set aside` (counts only). To turn it off, rename the model file and restart.
 3. To compare models again: `.venv/bin/python scripts/bakeoff_embeddings.py`.
 
+### If Claude stops working
+
+Races say "The track needs a minute" and Chat says "Claude didn't answer". The log says why: `Claude call failed (chat): sign-in expired`, or the error's kind. Educators also see "Claude needs the admin to sign in again". For an expired sign-in, run `claude` in Terminal on the home server, then `/login`. The next call clears the line, with no restart.
+
 ## Maintenance
 
 Open work is tracked in [todo.md](../todo.md#admin-tool-maintenance). Existing scheduling tests do not establish complete application coverage.

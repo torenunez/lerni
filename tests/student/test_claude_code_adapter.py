@@ -128,3 +128,37 @@ def test_a_resting_quizzer_never_calls_claude(monkeypatch):
     monkeypatch.setattr(claude_code, "query", lambda **_: (_ for _ in ()).throw(AssertionError()))
     with pytest.raises(RaceUnavailable, match="resting"):
         claude_code.ClaudeCodeQuizzer(usage=usage).write("Write.", "Goals: none yet.")
+
+
+def test_an_expired_sign_in_is_logged_and_shown_to_educators_until_a_call_works(
+        monkeypatch, capsys):
+    # regression: an expired Claude Code sign-in showed only "The track needs a minute"
+    from claude_agent_sdk import ResultMessage
+
+    from lerni.student.adapters import claude_code
+    from lerni.student.race import RaceUnavailable
+    from lerni.student.usage import Usage
+
+    def signed_out(**_kw):
+        try:
+            raise OSError("Command failed with exit code 1")
+        except OSError as exc:
+            raise RuntimeError("Claude Code returned an error result: Failed to authenticate: "
+                               "OAuth session expired and could not be refreshed") from exc
+
+    usage = Usage()
+    monkeypatch.setattr(claude_code, "query", signed_out)
+    with pytest.raises(RaceUnavailable, match="The track needs a minute"):  # students: as today
+        claude_code.ClaudeCodeQuizzer(usage=usage).write("Write.", "Goals: Secret goal")
+    out = capsys.readouterr().out
+    assert "Claude call failed (small model): sign-in expired" in out
+    assert "Secret goal" not in out and "OAuth" not in out  # the kind only, never the text
+    assert usage.warning() == "⚠️ Claude needs the admin to sign in again."
+
+    async def answers(**_kw):
+        yield ResultMessage(subtype="success", duration_ms=1, duration_api_ms=1, is_error=False,
+                            num_turns=1, session_id="s", structured_output={"questions": []})
+
+    monkeypatch.setattr(claude_code, "query", answers)
+    claude_code.ClaudeCodeQuizzer(usage=usage).write("Write.", "Goals: none yet.")
+    assert usage.warning() == ""  # signed in again: the line goes by itself

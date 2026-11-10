@@ -32,9 +32,8 @@ Open tasks by who does the work. The educator and admin tracks run in parallel: 
 
 What ships next, in order, one PR each ([how versions work](roadmap.md#versions)):
 
-1. **v3.41: a failed Claude call says why** ([plan](../plans/v3.41-claude-signin.md)): the server log names each failed Claude call's kind (never its text), and after an expired sign-in educators see "Claude needs the admin to sign in again" until a call succeeds.
-2. **Version 4, the educator's Chat** (its first PR writes the plan): the educator gives goals and right answers through Chat (a worksheet, an answer key, what we're learning this week) and ticks what Claude proposes; a Check questions list on the student's page marks recent race questions ✓ right or ✗ wrong with an optional why; ✓ and uploaded pairs form each goal's checked bank (saved as text, rule 6's one exception), races mix them in, ✗ never comes back and its why steers Claude; Chat takes notes about any student and proposes changes to their map. Nothing saved without a tap.
-3. **Versions 5–7** ([roadmap](roadmap.md)): suggested goals (Version 4 and probe results first); remembering (recall only from the checked bank, on v3.22's review schedule, FSRS or SM-2; Bridge Trip its front door); without an educator present.
+1. **Version 4, the educator's Chat** (its first PR writes the plan): the educator gives goals and right answers through Chat (a worksheet, an answer key, what we're learning this week) and ticks what Claude proposes; a Check questions list on the student's page marks recent race questions ✓ right or ✗ wrong with an optional why; ✓ and uploaded pairs form each goal's checked bank (saved as text, rule 6's one exception), races mix them in, ✗ never comes back and its why steers Claude; Chat takes notes about any student and proposes changes to their map. Nothing saved without a tap.
+2. **Versions 5–7** ([roadmap](roadmap.md)): suggested goals (Version 4 and probe results first); remembering (recall only from the checked bank, on v3.22's review schedule, FSRS or SM-2; Bridge Trip its front door); without an educator present.
 
 How PRs are split:
 

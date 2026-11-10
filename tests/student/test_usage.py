@@ -19,6 +19,15 @@ def test_a_high_week_warns_with_the_reset_time_and_a_full_one_pauses_until_then(
     assert usage.paused(NOW + timedelta(days=2)) == ""  # the window reset
 
 
+def test_signing_in_again_comes_before_a_near_limit():
+    usage = Usage()
+    usage.record({"seven_day": (0.88, LATER)}, overage=False)
+    usage.failed(signin=True)
+    assert "sign in again" in usage.warning(NOW)
+    usage.succeeded()
+    assert "88%" in usage.warning(NOW)
+
+
 def test_paid_overage_pauses_lerni():
     usage = Usage()
     usage.record({"five_hour": (0.5, SOON), "seven_day": (0.5, LATER)}, overage=True, now=NOW)
