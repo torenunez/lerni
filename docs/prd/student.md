@@ -114,7 +114,7 @@ As a student, I want to race my car by answering questions, so that I can win po
 - WHEN they pick the right answer THE SYSTEM SHALL boost their car and slow a bot; WHEN they pick another THE SYSTEM SHALL slow their car and show the right answer with a short why.
 - WHEN the race ends THE SYSTEM SHALL award points by their place (4 or 5 right wins, in any car), once per race, and offer Race again.
 - WHEN a race tried a nearby idea not on their map THE SYSTEM SHALL offer it at the finish under "Want to find out more?"; a tap opens Chat with Lerni asking about it, and it joins their map only from what they say.
-- WHEN questions are written THE SYSTEM SHALL avoid each goal's ideas from the last month, bring back missed ideas after a gap, vary the kinds of question, set them in all the student's interests in turn, and adjust difficulty per goal so the student gets about half to three quarters right.
+- WHEN questions are written THE SYSTEM SHALL avoid each goal's ideas from the last month and, for good, ideas the student has answered right every time (at least twice), bring back missed ideas after a gap, vary the kinds of question, set them in all the student's interests in turn, and adjust difficulty per goal so the student gets about half to three quarters right.
 
 ### Story: Points for good answers in the conversation
 
