@@ -10,6 +10,8 @@ from __future__ import annotations
 
 import os
 import threading
+import time
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -30,7 +32,13 @@ from lerni.student.interests import MapStore  # noqa: E402
 from lerni.student.logs import ConversationLog  # noqa: E402
 from lerni.student.meaning import Embedder  # noqa: E402
 from lerni.student.points import PointsStore  # noqa: E402
-from lerni.student.race import Quizzer, RaceDesk  # noqa: E402
+from lerni.student.race import (  # noqa: E402
+    AHEAD_HOUR,
+    AHEAD_RACES,
+    Quizzer,
+    RaceDesk,
+    seconds_until,
+)
 from lerni.student.results import ResultsLog  # noqa: E402
 from lerni.student.signin import SignIn, cookie_name, load_secret  # noqa: E402
 from lerni.student.students import (  # noqa: E402
@@ -304,12 +312,21 @@ def build_app(
     log.purge()  # at startup; then once a day as exchanges are logged
     # production only (a labelled server is development): a restart loses held questions
     if races is not None and not label:
-        for s in students.list_students():
-            if s.kind is Kind.SUPERVISED and not s.archived:
-                try:  # best effort: the next race's questions, in the background
-                    races.prefill(s.username, supervised=True)
-                except Exception:  # noqa: BLE001 - a broken file never stops the server
-                    pass
+        def ahead() -> None:  # a few races' worth for each supervised student (v3.42)
+            for s in students.list_students():
+                if s.kind is Kind.SUPERVISED and not s.archived:
+                    try:  # best effort, in the background
+                        races.prefill(s.username, supervised=True, races=AHEAD_RACES)
+                    except Exception:  # noqa: BLE001 - a broken file never stops the server
+                        pass
+
+        def mornings() -> None:  # and again each morning, before anyone races
+            while True:
+                time.sleep(seconds_until(AHEAD_HOUR, datetime.now()))
+                ahead()
+
+        ahead()
+        threading.Thread(target=mornings, daemon=True).start()
 
     def plays(username: str) -> bool:  # supervised students and educators earn ⭐
         try:

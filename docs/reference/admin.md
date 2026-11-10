@@ -128,7 +128,7 @@ Both servers run as macOS LaunchAgents: they start when the admin logs in (after
 `lerni stats` rebuilds a read-only copy of the student data, then prints; it reads production's data unless `--data` says otherwise.
 
 - `lerni stats`: one line per active student, over the last 4 weeks (`--weeks N`, or `--all`).
-- `lerni stats USER`: right answers by area and week, the hardest goals (5+ answers), the ideas missed most, then probes and bonus answers on their own lines. Weeks are whole, Monday first. The 95% range says how far to trust a percentage: with few answers it's wide. Probes and bonus answers aren't in the percentages.
+- `lerni stats USER`: right answers by area and week, the hardest goals (5+ answers), the ideas missed most, a Variety line (questions, distinct ideas, ideas asked before, and the formats used), then probes and bonus answers on their own lines. Weeks are whole, Monday first. The 95% range says how far to trust a percentage: with few answers it's wide. Probes and bonus answers aren't in the percentages.
 - `lerni stats --sql "SELECT goal, SUM(right), COUNT(*) FROM answers WHERE right IS NOT NULL AND probe IS NULL GROUP BY goal"`: any one query, tab-separated; a write is refused.
 - The copy is `~/.lerni/student/stats.sqlite`, also rebuilt each night, so `sqlite3 -readonly` on it is at most a day old. Never edit it, and don't back it up: it's replaced whole.
 
@@ -175,7 +175,7 @@ Audio stays on the home server: each clip's temp file is deleted once it's heard
 Race questions that reword a recent idea, or touch a set-aside topic in other words, are dropped while they're written ([spec 10](../../plans/specs/10-local-embeddings.md)). A set-aside interest close to a goal or an area with goals (math beside Math) doesn't block those questions, though Chat still steers away from it. Nothing leaves the home server, and nothing is kept.
 
 1. `brew install llama.cpp`, then the model, about 0.6 GB: `curl -L -o ~/.lerni/models/Qwen3-Embedding-0.6B-Q8_0.gguf https://huggingface.co/Qwen/Qwen3-Embedding-0.6B-GGUF/resolve/main/Qwen3-Embedding-0.6B-Q8_0.gguf`. `LERNI_EMBED_MODEL` names another file.
-2. The log's start says `Race checks by meaning: on`, or `off` with the reason. Each question write logs `Race checks by meaning: N repeats, N set aside` (counts only). To turn it off, rename the model file and restart.
+2. The log's start says `Race checks by meaning: on`, or `off` with the reason. Each question write logs `Race set: 15 written, 10 kept; dropped N repeats (N by meaning), N set aside, N car; N formats` (counts only). To turn it off, rename the model file and restart.
 3. To compare models again: `.venv/bin/python scripts/bakeoff_embeddings.py`.
 
 ### If Claude stops working

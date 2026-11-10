@@ -21,7 +21,7 @@ import zlib
 from collections import Counter, deque
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import dataclass, field, replace
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from difflib import SequenceMatcher
 from importlib import metadata
 from typing import Any, Protocol
@@ -53,7 +53,7 @@ FORMATS = ("how it works", "compare two things", "what happens if", "odd one out
            "what comes next", "closest guess", "spot the rival's mistake",
            "a number from their interest")  # dealt to question slots (v3.42)
 TWISTS = ("a record (biggest, fastest, oldest)", "a bit of history", "at home or school",
-          "a mystery to solve", "would you rather", "")  # rolled per slot; "" is none
+          "a mystery to solve", "")  # rolled per slot; "" is none
 STEP_RIGHT, STEP_WRONG = 2.2, 0.7  # how far the student moves
 BOT_RIVALS = (("Zippy", "formula"), ("Bolt", "muscle"))  # (name, car) when the garage has none
 SLOW = 0.4  # each rival moves this much less on a turn the student gets right
@@ -68,6 +68,8 @@ MISS_OPENERS = ("Good try!", "Tricky one!", "Nice guess!", "Not quite!", "Not th
                 "Good thinking!")  # a wrong answer's first words, in turn
 CARE = "care"  # a worrying answer: the caring words, no points, kept in the conversation log
 MAX_KEY_IDEA = 60
+AHEAD_RACES = 4  # races' worth written each morning and at start-up, so no one waits (v3.42)
+AHEAD_HOUR = 5  # the morning write-ahead, local time
 PROBES_PER_SET = 2  # nearby ideas off the map a set of 10 may try (v3.36)
 PROBE_AT = (1, 2)  # a probe is question 2 or 3; question 4 is the bonus's
 PROBE_LEVEL = 2  # pitched simply: the idea is new
@@ -837,10 +839,23 @@ def spread(questions: list[Question]) -> list[Question]:
             for queue in turns if round_ < len(queue) for q in [queue[round_]]]
 
 
-def enough(questions: Sequence[Question]) -> bool:
-    """Whether these make a race: at most one probe counts toward it."""
+def enough(questions: Sequence[Question], races: int = 1) -> bool:
+    """Whether these make ``races`` races: at most one probe counts toward each."""
     probes = sum(1 for q in questions if q.probe)
-    return len(questions) - probes + min(probes, 1) >= QUESTIONS_PER_RACE
+    return len(questions) - probes + min(probes, races) >= QUESTIONS_PER_RACE * races
+
+
+def _set_event() -> threading.Event:
+    # an event already set: nothing to wait for
+    done = threading.Event()
+    done.set()
+    return done
+
+
+def seconds_until(hour: int, now: datetime) -> float:
+    """Seconds from ``now`` to the next ``hour`` o'clock, today or tomorrow."""
+    at = now.replace(hour=hour, minute=0, second=0, microsecond=0)
+    return ((at if at > now else at + timedelta(days=1)) - now).total_seconds()
 
 
 def line_up(held: list[Question], rng: random.Random) -> tuple[list[Question], list[Question]]:
@@ -1083,25 +1098,29 @@ class RaceDesk:
         _, held = self._sets.get(username, ("", []))
         return held  # kept past midnight: each is checked against the map at the start
 
-    def prefill(self, username: str, supervised: bool) -> None:
-        """Write the next questions in the background if fewer than a race are held."""
+    def prefill(self, username: str, supervised: bool, races: int = 1) -> threading.Event:
+        """Write questions in the background until ``races`` races' worth are held (the next
+        race by default; the morning write-ahead asks for more), never past the day's races.
+        Returns an event set when nothing more is being written."""
         today = date.today()
         m, real = self._maps(username)
         with self._lock:
             held = self._held(username, today)
             held[:] = [q for q in held if fits(q, m, real)]  # set aside or gone since: not counted
-            if enough(held) or username in self._busy:
-                return
-            if self.points.races_left(username, today) <= 0:
-                return  # no race left today to use them
+            want = min(races, self.points.races_left(username, today))  # none left: nothing
+            if want <= 0 or enough(held, want) or username in self._busy:
+                return self._busy.get(username) or _set_event()
             done = self._busy[username] = threading.Event()
 
         def work() -> None:
             try:
-                fresh = self._write(username, supervised, today)
-                with self._lock:
-                    held = self._held(username, today) + fresh
-                    self._sets[username] = (today.isoformat(), spread(few_probes(held)))
+                for _ in range(want):  # a write a race at most: each brings about two
+                    fresh = self._write(username, supervised, today)
+                    with self._lock:
+                        held = spread(few_probes(self._held(username, today) + fresh))
+                        self._sets[username] = (today.isoformat(), held)
+                    if not fresh or enough(held, want):
+                        break
             except RaceUnavailable:
                 pass  # Race will try again and say why
             finally:
@@ -1110,6 +1129,7 @@ class RaceDesk:
                 done.set()
 
         threading.Thread(target=work, daemon=True).start()
+        return done
 
     def start(self, username: str, supervised: bool, today: date | None = None,
               boost: float = 1.0, car: str = "",

@@ -4,7 +4,7 @@ Where things really stand, then a dated log, newest first. Completed work is rec
 
 Record each kind of "done" only when it actually happens, with the date: code built, content approved, app ready, a student session held. Passing tests show code behaves as specified; they don't make anything ready for a student.
 
-## Current state (2026-11-09, v3.40 on the home server: Versions 1 and 2 built: the conversation, MentalMaps, HTTPS, and voice; Version 3's race, garage, and Chat points)
+## Current state (2026-11-10, v3.41 on the home server: Versions 1 and 2 built: the conversation, MentalMaps, HTTPS, and voice; Version 3's race, garage, and Chat points)
 
 - **Built:** the student app's core (student accounts, sign-in, Lerni's conversations, the MentalMap with its tagger and logs kept a year, Upload and educator feedback, and the educator agent); `lerni serve` with a sign-in page and one app with a ☰ menu by role: an independent student's Chat, My MentalMap (an editable list, the picture, and Upload), and Settings; an educator's student page (a Suggest a goal box, goal progress this week by area, the folded list, and the picture), opened at sign-in, with Students in Settings; a supervised student's Chat, full screen, and Games (a race for points spent on real cars; educators race too); good answers in Chat earn points too. Hold to talk with spoken answers; a Claude usage warning and rest; race checks by meaning, on the home server's own model. Both servers run as LaunchAgents (`lerni service`). The admin tool (`lerni`, with `lerni student`, `lerni logs`, `lerni feedback`, and `lerni stats`). A [code manifest](code-manifest.md) of every file. Tests: 244 passed.
 - **Designed:** the interest map, goals, the tagger, upload, feedback, and the supervised conversation ([specs/04-interest-map.md](../plans/specs/04-interest-map.md)); approved with PR #12. Harder races, practice on the map, and probes ([spec 09b](../plans/specs/09b-harder-races.md)). Local embeddings ([spec 10](../plans/specs/10-local-embeddings.md)). The order from here: Versions 4–7 ([roadmap](roadmap.md)).
@@ -13,6 +13,12 @@ Record each kind of "done" only when it actually happens, with the date: code bu
 When something changes, update this section and add a log entry below.
 
 ## Log
+
+### 2026-11-10 (fresher races; v3.42 built)
+
+- The admin kept hearing the same few questions. The results log, read on the home server and never copied, showed why: one near miss sent a strong goal back to "due tomorrow", so the same goals led every set; Claude was told only the last 40 ideas, about 2 to 3 days' worth; car comparisons were asked of every number goal; and the prompt never changed. Temperature can't be raised: current models reject it.
+- v3.42 ([plan](../plans/v3.42-fresher-races.md)): one miss moves a goal back one box; each goal remembers its own ideas for 30 days; the server rolls a format (8 kinds) and a twist for each question; at most one car comparison a set; Claude writes 15 and the 10 most different race; and, the admin's addition, a few races are written ahead at start-up and each morning at 5:00, in memory only, so the student doesn't wait. Sameness numbers go to the server log and a Variety line in `lerni stats`.
+- Real checks on made-up data: 15 questions took 72 s to write (main's prompt: 6 in 25 s), so the writer's limit went from 60 s to 150 s; end to end, a write took 87 s and kept 10 in 7 formats. The meaning model embeds 230 labels in about 5 s. The "would you rather" twist read awkwardly and was dropped.
 
 ### 2026-11-09 (a failed Claude call says why; v3.41 built)
 

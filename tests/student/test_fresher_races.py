@@ -83,3 +83,23 @@ def test_each_goal_remembers_its_ideas_and_the_ten_most_different_race(tmp_path,
 def test_without_the_meaning_model_ten_still_race_dealt_by_format(tmp_path):
     kept = desk(tmp_path, TopicEmbedder(fail=True))._write("sam", supervised=True, today=TODAY)
     assert len(kept) == SET_SIZE and len({k.format for k in kept}) >= 4
+
+
+def test_the_morning_write_ahead_holds_a_few_races(tmp_path):
+    from datetime import datetime
+
+    from lerni.student.race import AHEAD_RACES, QUESTIONS_PER_RACE, seconds_until
+
+    class Fresh(Quizzer):  # new ideas every call
+        def write(self, system, prompt):
+            self.prompts.append(prompt)
+            start = 100 * len(self.prompts)
+            return {"questions": [q("Fractions" if n % 2 else "Nouns", n)
+                                  for n in range(start, start + WRITE_SIZE)]}
+
+    races = desk(tmp_path, None)
+    races.quizzer = Fresh()
+    races.prefill("sam", supervised=True, races=AHEAD_RACES).wait(10)  # in the background
+    held = races._held("sam", date.today())
+    assert len(held) >= AHEAD_RACES * QUESTIONS_PER_RACE and len(races.quizzer.prompts) == 2
+    assert seconds_until(5, datetime(2026, 11, 10, 23, 0)) == 6 * 3600  # next 5:00, tomorrow
