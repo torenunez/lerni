@@ -18,11 +18,12 @@ from datetime import date, timedelta
 from pathlib import Path
 from typing import Any, Protocol
 
-from lerni.student.concepts import normalize
+from lerni.student.concepts import MAX_CONCEPT, normalize
 from lerni.student.fence import fence
 from lerni.student.interests import (
     MAX_NOTES,
     InterestMap,
+    MapError,
     MapStore,
     family,
     mentions_set_aside,
@@ -40,7 +41,9 @@ KEEP_NOTES = 5  # the educator's latest notes about suggestions
 MAX_NOTE = 200  # characters in one
 DISMISSED_DAYS = 90  # a dismissed suggestion isn't made again this soon
 LAPSE_DAYS = 30  # a connection in use this long without a bridge lapses
-AGAIN_DAYS = 14  # a goal whose suggestion was dismissed waits this long for another
+AGAIN_DAYS = 14  # a goal whose suggestion was used or dismissed waits this long for another
+WAIT_DAYS = 14  # a suggestion left unticked this long is dropped, making room (review)
+SHOWN_PAIRS = 30  # suggestions made already, at most this many in the prompt
 
 MORNING_SCHEMA: dict[str, Any] = {
     "type": "object",
@@ -204,10 +207,12 @@ class SuggestionStore:
             if goal is None or not isinstance(s, dict) or s.get("notes_key") != _key(goal.notes):
                 continue
             done = {normalize(a) for a in asked.get(goal_id, ())}
-            left = [
+            left = [  # a race cuts its label at 40 characters: compare the same way (review)
                 x
                 for x in s.get("steps", [])
-                if isinstance(x, str) and normalize(x) not in done and not mentions_set_aside(m, x)
+                if isinstance(x, str)
+                and normalize(x[:MAX_CONCEPT]) not in done
+                and not mentions_set_aside(m, x)
             ]
             if left:
                 out[goal_id] = left
@@ -254,10 +259,7 @@ def morning_input(
         if _running_out(asked, e.id):
             if e.id not in blocked:
                 marks.append("running out")
-            s = data["steps"].get(e.id)
-            fresh = isinstance(s, dict) and s.get("notes_key") == _key(e.notes)
-            done = {normalize(a) for a in asked.get(e.id, ())}
-            if not fresh or all(normalize(x) in done for x in s.get("steps", [])):
+            if _needs_steps(e, asked, data):
                 marks.append("needs steps")
         lines.append(
             f"- {e.name}"
@@ -284,7 +286,7 @@ def morning_input(
             if c.get("state") == state
         ]
         if made:
-            lines.append(f"{title}: " + "; ".join(made))
+            lines.append(f"{title}: " + "; ".join(made[-SHOWN_PAIRS:]))
     aside = [r for r in m.removed if "id" in m.removed_info.get(r.casefold(), {})][-8:]
     if aside:
         lines.append("Set aside, never use: " + ", ".join(aside))
@@ -303,8 +305,42 @@ def _blocked_goals(data: dict[str, Any], today: date) -> set[str]:
         str(g.get("goal_id"))
         for g in data["goals"]
         if g.get("state") == "waiting"
-        or (g.get("state") == "dismissed" and str(g.get("day", "")) >= cutoff)
+        or (g.get("state") in ("dismissed", "used") and str(g.get("day", "")) >= cutoff)
     }
+
+
+def _needs_steps(goal: Any, asked: Mapping[str, Sequence[str]], data: dict[str, Any]) -> bool:
+    # running out, with no steps for its notes, or every one of them tried
+    if not _running_out(asked, goal.id):
+        return False
+    s = data["steps"].get(goal.id)
+    if not isinstance(s, dict) or s.get("notes_key") != _key(goal.notes):
+        return True
+    done = {normalize(a) for a in asked.get(goal.id, ())}
+    return all(normalize(str(x)[:MAX_CONCEPT]) in done for x in s.get("steps", []))
+
+
+def _tidy(data: dict[str, Any], m: InterestMap, today: date) -> dict[str, Any]:
+    """Suggestions that still stand (review): waiting ones off the map, set aside, bridged, or
+    older than 14 days go; used, dismissed, and lapsed ones stay 90 days, so they aren't
+    made again, then go."""
+    wait = (today - timedelta(days=WAIT_DAYS)).isoformat()
+    gone = (today - timedelta(days=DISMISSED_DAYS)).isoformat()
+
+    def stands(item: dict[str, Any]) -> bool:
+        day, goal = str(item.get("day", "")), _goal(m, item)
+        if item.get("state") != "waiting":
+            return day >= gone
+        if day < wait or goal is None:
+            return False
+        if "interest" not in item:
+            return True
+        e = m.find(str(item.get("interest", "")))
+        return (e is not None and e.kind == "interest" and not mentions_set_aside(m, e.name)
+                and not _bridged(m, e.id, goal.id))
+
+    return {**data, "connections": [c for c in data["connections"] if stands(c)],
+            "goals": [g for g in data["goals"] if stands(g)]}
 
 
 def check_plan(
@@ -369,13 +405,13 @@ def check_plan(
     steps = {}
     for s in raw.get("steps") or []:
         goal = goals.get(_plain(s.get("goal")).casefold()) if isinstance(s, dict) else None
-        if goal is None or not _running_out(asked, goal.id):
+        if goal is None or not _needs_steps(goal, asked, data):
             continue
         kept = list(
             dict.fromkeys(
                 x
                 for x in (_plain(y) for y in s.get("steps") or [])
-                if x and len(x) <= MAX_LABEL and not mentions_set_aside(m, x)
+                if x and len(x) <= MAX_CONCEPT and not mentions_set_aside(m, x)
             )
         )
         if len(kept) >= MIN_STEPS:
@@ -396,34 +432,23 @@ def run_morning(
     try:
         m = maps.get(username)
         asked = concepts.asked_by_goal(username, today) if concepts is not None else {}
-        data = store.get(username)
+        data = _tidy(store.get(username), m, today)
         raw = planner.write(MORNING_SYSTEM, morning_input(m, asked, data, today), MORNING_SCHEMA)
         connections, suggestions, steps = check_plan(raw, m, data, asked, today)
     except Exception as exc:  # noqa: BLE001 - never echo the map in errors
         print(f"Morning plan skipped ({type(exc).__name__}).", flush=True)
         store._change(username, lambda d: d.update(day=today.isoformat()))  # tried today
         return
-    gone = (today - timedelta(days=DISMISSED_DAYS)).isoformat()
-
     def save(d: dict[str, Any]) -> None:
-        keep = [
-            c
-            for c in d["connections"]
-            if c.get("state") != "dismissed" or str(c.get("day", "")) >= gone
-        ]
-        d.update(
-            day=today.isoformat(),
-            connections=keep + connections,
-            goals=[
-                g
-                for g in d["goals"]
-                if g.get("state") != "dismissed" or str(g.get("day", "")) >= gone
-            ]
-            + suggestions,
-            steps={**d["steps"], **steps},
-        )
+        kept = _tidy(d, m, today)
+        d.update(day=today.isoformat(), connections=kept["connections"] + connections,
+                 goals=kept["goals"] + suggestions, steps={**d["steps"], **steps})
 
-    store._change(username, save)
+    try:  # a failed save never stops the races written next (review)
+        store._change(username, save)
+    except Exception as exc:  # noqa: BLE001
+        print(f"Morning plan not saved ({type(exc).__name__}).", flush=True)
+        return
     print(
         f"Morning plan: {len(connections)} connections, {len(suggestions)} goal suggestion"
         f"{'' if len(suggestions) == 1 else 's'}, {len(steps)} goal's steps",
@@ -444,30 +469,45 @@ def decide(
     suggestions the goals' notes; otherwise the ticked ones are dismissed. Returns how many
     were decided, and a line for each one that couldn't be."""
     chosen = set(picked)
-    notes: list[tuple[str, str]] = []  # (goal id, notes) to apply
+    skipped: list[str] = []
+    failed: set[str] = set()  # goal suggestions whose notes couldn't change: still waiting
+    notes = [(label(g), str(g.get("goal_id")), str(g.get("notes")))
+             for g in store.get(username)["goals"]
+             if use and g.get("state") == "waiting" and label(g) in chosen]
+    if notes:  # the notes first: a mark is never left without its change (review)
+
+        def apply(m: InterestMap) -> None:
+            for shown, goal_id, text in notes:
+                e = next((e for e in m.entries if e.id == goal_id and e.kind == "goal"), None)
+                try:
+                    if e is None:
+                        raise MapError("it's no longer on the map")
+                    set_notes(m, e.id, text)
+                except MapError as exc:
+                    skipped.append(f"{shown}: {exc}")
+                    failed.add(shown)
+
+        maps.change(username, apply, by=by)
 
     def mark(d: dict[str, Any]) -> int:
         n = 0
         for item in [*d["connections"], *d["goals"]]:
-            if item.get("state") == "waiting" and label(item) in chosen:
-                item.update(state="using" if use else "dismissed", day=today.isoformat())
-                if use and "interest" not in item:
-                    item["state"] = "used"
-                    notes.append((str(item.get("goal_id")), str(item.get("notes"))))
+            shown = label(item)
+            if item.get("state") == "waiting" and shown in chosen and shown not in failed:
+                state = ("using" if "interest" in item else "used") if use else "dismissed"
+                item.update(state=state, day=today.isoformat())
                 n += 1
         return n
 
-    done = store._change(username, mark)
-    skipped: list[str] = []
-    if notes:
+    return store._change(username, mark), skipped
 
-        def apply(m: InterestMap) -> None:
-            for goal_id, text in notes:
-                e = next((e for e in m.entries if e.id == goal_id and e.kind == "goal"), None)
-                if e is None:
-                    skipped.append("a goal that's no longer on the map")
-                    continue
-                set_notes(m, e.id, text)
 
-        maps.change(username, apply, by=by)
-    return done - len(skipped), skipped
+def untried_steps_held(store: SuggestionStore, username: str, m: InterestMap,
+                       asked: Mapping[str, Sequence[str]],
+                       held: Sequence[tuple[str, str]]) -> dict[str, list[str]]:
+    """Untried steps, leaving out those already in questions held for later races (review):
+    ``held`` is (goal id, idea) for each held question."""
+    more: dict[str, list[str]] = {k: list(v) for k, v in asked.items()}
+    for goal_id, idea in held:
+        more.setdefault(goal_id, []).append(idea)
+    return store.untried_steps(username, m, more)

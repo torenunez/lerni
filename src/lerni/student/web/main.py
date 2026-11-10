@@ -153,7 +153,8 @@ def build_main_view(
                                                       races.results if races else None)
             maps_tab, who = educator_tab(signin, students, maps, educator_chats, feedback, points,
                                          garage or Garage(), races.results if races else None,
-                                         races.suggestions if races else None)
+                                         getattr(educator_chats, "suggestions", None)
+                                         or (races.suggestions if races else None))
             account, students_table, students_box = settings_tab(signin, students)
 
         def on_load(request: gr.Request) -> list[Any]:

@@ -121,3 +121,32 @@ def test_a_note_from_tell_lerni_is_a_proposal_never_a_map_change(tmp_path):
     found = parse_educator_proposals(block, m)
     assert [p.label for p in found] == ["📝 Note for suggestions: fewer train ideas"]
     assert apply_educator_proposals(m, found) == (0, [])  # kept for the morning, not the map
+
+
+def test_review_long_steps_used_goals_and_stale_waits(tmp_path):
+    # review (v3.44): long steps never counted as tried; a used goal suggestion came back daily;
+    # a waiting connection whose interest was set aside stayed for good
+    from lerni.student.concepts import MAX_CONCEPT
+    from lerni.student.morning import untried_steps_held
+
+    maps, concepts, store, ids = setup(tmp_path)
+    long_step = "split a pizza into equal halves for two hungry friends"  # over 40 characters
+    raw = {**RAW, "steps": [{"goal": "Fractions", "steps": [long_step, *steps(9)]}]}
+    run_morning("sam", Planner(raw), maps, concepts, store, TODAY)
+    concepts.add("sam", [(ids["Fractions"], "Fractions", long_step[:MAX_CONCEPT])], TODAY)
+    left = store.untried_steps("sam", maps.get("sam"), concepts.asked_by_goal("sam", TODAY))
+    assert long_step not in left[ids["Fractions"]]  # a race's cut label counts
+    # a step held for a later race isn't offered again to the next set
+    held = untried_steps_held(store, "sam", maps.get("sam"), {}, [(ids["Fractions"], "step 0")])
+    assert "step 0" not in held[ids["Fractions"]]
+    goal = next(w for w in store.waiting("sam") if "then thirds" in w)
+    decide(store, maps, "sam", [goal], use=True, today=TODAY)
+    maps.change("sam", lambda m: remove(m, m.find("trains").id))  # set aside while waiting
+    planner = Planner(RAW)
+    run_morning("sam", planner, maps, concepts, store, TODAY + timedelta(days=1))
+    assert "running out" not in planner.prompts[0].split("Interests")[0]  # used: not again yet
+    assert not any(w.startswith("trains") for w in store.waiting("sam"))  # gone with it
+    later = TODAY + timedelta(days=20)  # waiting this long: it expires
+    run_morning("sam", Planner({"connections": [], "goal_suggestions": [], "steps": []}), maps,
+                concepts, store, later)
+    assert store.waiting("sam") == []

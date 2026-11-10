@@ -226,15 +226,18 @@ def educator_tab(
                 try:
                     v_ = require_educator(viewer)
                     who = map_owner(students, v_, requested or "")
-                except NotAllowed as exc:
-                    return [*ideas(requested, request), f"⚠️ {exc}", v]
+                except NotAllowed as exc:  # ticks stay, as after any error
+                    return [gr.update(), gr.update(), gr.update(), f"⚠️ {exc}", v]
                 if not picked:  # keeps nothing ticked: nothing to keep
                     return [gr.update(), gr.update(), gr.update(), "⚠️ Tick one first.", v]
                 done, skipped = decide(suggestions, maps, who, picked, use_them, date.today(),
                                        by=f"person:{v_.username}") if suggestions else (0, [])
-                line = (f"✅ Using {done}." if use_them else f"🗑️ Set aside {done}.") if done else ""
+                line = (f"✅ Using {done}." if use_them else f"Not using {done}.") if done else (
+                    "" if skipped else "⚠️ Those changed meanwhile; here's the list now.")
                 lines = [x for x in (line, *(f"Skipped {s}" for s in skipped)) if x]
-                return [*ideas(requested, request), "\n\n".join(lines), bump()]
+                goals = use_them and any(p.startswith("🎯") for p in picked)
+                # redraw the list only when a goal's notes changed: a half-typed rename stays
+                return [*ideas(requested, request), "\n\n".join(lines), bump() if goals else v]
             return handler
 
         def on_attach(path: str | None) -> list[Any]:

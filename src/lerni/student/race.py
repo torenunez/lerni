@@ -42,6 +42,7 @@ from lerni.student.interests import (
     same_name,
 )
 from lerni.student.meaning import Embedder, Meaning, skipped
+from lerni.student.morning import untried_steps_held
 from lerni.student.points import PointsStore
 from lerni.student.results import ResultsLog, question_hash
 from lerni.student.voice import SpeechUnavailable, for_speaking
@@ -316,7 +317,7 @@ def deal(m: InterestMap, goals: Sequence[str], used: Mapping[str, int], rng: ran
             pick.append(rng.choice([x for x in names if x != pick[0]]))
         if goal is not None and (link := (targets or {}).get(goal.id)):
             k = led[goal.id] = led.get(goal.id, 0) + 1
-            share = -(-n // max(len(entries), 1))  # this goal's slots in the set
+            share = len(range(i % len(entries), n, len(entries)))  # this goal's slots (review)
             if k == 1 or (k == 2 and share > 2):  # the educator's connection leads
                 pick = [link[0], *(x for x in pick if x != link[0])][:2]
         out.append(replace(s, goal=goal.name if goal is not None else "",
@@ -1161,7 +1162,9 @@ class RaceDesk:
         if self.suggestions is not None:  # the morning plan (v3.44): best effort
             try:
                 targets = self.suggestions.in_use(username, real, today)
-                steps = self.suggestions.untried_steps(username, m, by_goal)
+                with self._lock:  # steps already in held questions wait for those races
+                    held_ideas = [(q.goal_id, q.concept) for q in self._held(username, today)]
+                steps = untried_steps_held(self.suggestions, username, m, by_goal, held_ideas)
             except Exception as exc:  # noqa: BLE001 - a broken file never stops a race
                 print(f"Morning plan skipped in a race ({type(exc).__name__}).", flush=True)
         firsts = {getattr(m.find(g), "name", "").casefold() for g, _ in due}  # due goals lead

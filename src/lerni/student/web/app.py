@@ -227,9 +227,12 @@ def write_ahead(races: Any, students: Any, morning: Any = None) -> None:
         print(f"Writing races ahead skipped ({type(exc).__name__}).", flush=True)
         return
     for username in players:
-        try:  # one student's broken file never stops the others'
-            if morning is not None:  # first, so the races written next can use its steps
+        if morning is not None:  # first, so the races written next can use its steps
+            try:
                 morning(username)
+            except Exception as exc:  # noqa: BLE001 - the races are still written (review)
+                print(f"Morning plan skipped for one ({type(exc).__name__}).", flush=True)
+        try:  # one student's broken file never stops the others'
             races.prefill(username, supervised=True, races=AHEAD_RACES)
         except Exception as exc:  # noqa: BLE001
             print(f"Writing races ahead skipped for one ({type(exc).__name__}).", flush=True)
