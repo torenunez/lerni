@@ -85,7 +85,7 @@ def test_rewordings_and_set_aside_topics_are_dropped_and_goals_win(tmp_path, cap
     told = races.quizzer.prompts[0]
     assert "guns" in told and "never use: math" not in told and ", math" not in told
     out = capsys.readouterr().out
-    assert "by meaning: 1 repeats, 1 set aside" in out and "rifle" not in out  # numbers only
+    assert "(1 by meaning), 1 set aside" in out and "rifle" not in out  # numbers only
 
 
 def test_without_the_embedder_the_word_match_decides(tmp_path):

@@ -36,7 +36,8 @@ def _folder(root):
     fractions, verbs = (next(e for e in m.entries if e.name == n) for n in ("Fractions", "Verbs"))
     log = ResultsLog(root)
     for right in (True, True, False):
-        log.add("sam", _answer("2026-10-26", fractions.id, "Fractions", right, level=2, attempt=1))
+        log.add("sam", _answer("2026-10-26", fractions.id, "Fractions", right, level=2, attempt=1,
+                               format="odd one out"))
     log.add("sam", _answer("2026-10-27", verbs.id, "Verbs", False))  # older line: no level
     log.add("sam", _answer("2026-10-27", fractions.id, "Fractions", True, probe="earthquakes"))
     log.add("sam", {"day": "2026-10-27", "race": "r1", "goal_id": fractions.id,
@@ -103,6 +104,7 @@ def test_the_report_keeps_probes_and_bonus_answers_out_of_the_percentages(tmp_pa
     assert "4 answers in 1 race · 50% right" in report.output
     assert "Probes: 1 asked, 1 right, 1 tapped" in report.output
     assert "Bonus: 1 nailed" in report.output
+    assert "Variety: 4 questions, 2 ideas, 0 asked before; formats: 3 odd one out" in report.output
     assert "2nd ×1" in report.output
     assert "Hardest" not in report.output  # no goal has 5 scored answers
     overview = CliRunner().invoke(app, args)

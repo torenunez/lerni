@@ -22,6 +22,8 @@ from lerni.student.students import check_username, default_data_dir
 MAX_CONCEPT = 40  # characters in a label
 KEEP_RECENT = 40  # labels sent to Claude as asked lately
 RECENT_DAYS = 14
+IDEA_DAYS = 30  # a goal's ideas stay off its questions this long (v3.42)
+PER_GOAL = 30  # labels kept per goal for that
 START_LEVEL, MIN_LEVEL, MAX_LEVEL = 3, 1, 5  # 3 is the questions before levels
 LEVEL_WINDOW = 5  # answers on a goal between level checks
 REVIEW_DAYS = (1, 3, 7)  # a missed idea comes back after these gaps, one per right answer
@@ -96,6 +98,18 @@ class ConceptStore:
         ]
         return asked[:KEEP_RECENT]
 
+    def asked_by_goal(self, username: str, today: date | None = None) -> dict[str, list[str]]:
+        """Each goal's labels asked in the last 30 days by goal id, newest first, at most 30
+        each; ideas with no goal (probes, a map without goals) are under ""."""
+        cutoff = ((today or date.today()) - timedelta(days=IDEA_DAYS)).isoformat()
+        out: dict[str, list[str]] = {}
+        for c in reversed(self.ledger(username)):  # newest touched first
+            if str(c.get("last", "")) >= cutoff:
+                labels = out.setdefault(str(c.get("goal_id", "")), [])
+                if len(labels) < PER_GOAL:
+                    labels.append(str(c["concept"]))
+        return out
+
     def _levels(self, username: str) -> dict[str, dict[str, Any]]:
         raw = self._read(username).get("levels", {})
         return {str(g): v for g, v in raw.items() if isinstance(v, dict)} if isinstance(
@@ -139,7 +153,7 @@ class ConceptStore:
     def raced(self, username: str, per_goal: dict[str, tuple[int, int]],
               today: date | None = None) -> None:
         """Move each goal a finished race asked by how it went: all right on a due goal, one box
-        up (a longer gap); half or fewer, back to box 0 (tomorrow); otherwise it stays, so a
+        up (a longer gap); half or fewer, one box back (box 0 is tomorrow); otherwise it stays, so a
         goal raced again early (the same set's second race) never skips a box."""
         day = today or date.today()
 
@@ -152,7 +166,7 @@ class ConceptStore:
                 box = min(max(box, 0), len(GOAL_DAYS) - 1)  # a hand edit stays in range
                 was_due = _day(v.get("due"))
                 if right * 2 <= asked:
-                    box = 0
+                    box = max(box - 1, 0)  # one box back: a single near miss isn't daily (v3.42)
                 elif right < asked or (was_due is not None and was_due > day):
                     continue  # partly right, or early: box and date stay
                 elif "due" in v or box:
