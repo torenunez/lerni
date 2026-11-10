@@ -339,7 +339,7 @@ def _missed(db: sqlite3.Connection, who: tuple[str, str]) -> str | None:
 def _variety(db: sqlite3.Connection, who: tuple[str, str]) -> str | None:
     # how fresh the questions were (v3.42): ideas, repeats, and the formats used
     n, ideas, before = db.execute(
-        "SELECT COUNT(*), COUNT(DISTINCT goal_id || '|' || lower(concept)), "
+        "SELECT COUNT(*), COUNT(DISTINCT COALESCE(goal_id, '') || '|' || lower(concept)), "
         f"COALESCE(SUM(attempt > 1), 0) FROM answers WHERE {WHO} AND {SCORED}", who).fetchone()
     if not n:
         return None

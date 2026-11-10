@@ -216,6 +216,22 @@ def _theme() -> gr.themes.Base:
     return gr.themes.Base(font=_SYSTEM_FONTS, font_mono=_MONO_FONTS)
 
 
+def write_ahead(races: Any, students: Any) -> None:
+    """A few races' worth for each supervised student, in the background (v3.42); never raises,
+    so one bad morning never stops the next."""
+    try:
+        players = [s.username for s in students.list_students()
+                   if s.kind is Kind.SUPERVISED and not s.archived]
+    except Exception as exc:  # noqa: BLE001 - a broken file never stops the server
+        print(f"Writing races ahead skipped ({type(exc).__name__}).", flush=True)
+        return
+    for username in players:
+        try:  # one student's broken file never stops the others'
+            races.prefill(username, supervised=True, races=AHEAD_RACES)
+        except Exception as exc:  # noqa: BLE001
+            print(f"Writing races ahead skipped for one ({type(exc).__name__}).", flush=True)
+
+
 def build_app(
     *,
     data_root: Path | None = None,
@@ -312,20 +328,12 @@ def build_app(
     log.purge()  # at startup; then once a day as exchanges are logged
     # production only (a labelled server is development): a restart loses held questions
     if races is not None and not label:
-        def ahead() -> None:  # a few races' worth for each supervised student (v3.42)
-            for s in students.list_students():
-                if s.kind is Kind.SUPERVISED and not s.archived:
-                    try:  # best effort, in the background
-                        races.prefill(s.username, supervised=True, races=AHEAD_RACES)
-                    except Exception:  # noqa: BLE001 - a broken file never stops the server
-                        pass
-
         def mornings() -> None:  # and again each morning, before anyone races
             while True:
                 time.sleep(seconds_until(AHEAD_HOUR, datetime.now()))
-                ahead()
+                write_ahead(races, students)
 
-        ahead()
+        write_ahead(races, students)
         threading.Thread(target=mornings, daemon=True).start()
 
     def plays(username: str) -> bool:  # supervised students and educators earn ⭐

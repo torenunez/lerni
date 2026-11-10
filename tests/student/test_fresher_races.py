@@ -134,3 +134,29 @@ def test_a_race_never_waits_for_the_write_ahead_to_finish(tmp_path, monkeypatch)
     assert time.monotonic() - began < 1  # raced on the first set, not after the second
     gate.set()
     done.wait(10)
+
+
+def test_a_goal_with_a_long_history_still_gets_its_turn():
+    # review (v3.42): scoring by the closest of 30 old ideas left the most-asked goal out entirely
+    from lerni.student.meaning import Meaning
+    from lerni.student.race import Question, pick_varied
+
+    def one(goal_id, concept):
+        return Question("", f"About {concept}?", ("a", "b", "c"), 0, "Why.", concept, goal_id)
+
+    vectors = {"old a": [1, 0, 0, 0, 0], "a1": [0.8, 0.6, 0, 0, 0], "a2": [0.8, 0, 0.6, 0, 0],
+               "b1": [0, 0, 0, 1, 0], "b2": [0, 0, 0, 0, 1]}
+    picked = pick_varied([one("A", "a1"), one("A", "a2"), one("B", "b1"), one("B", "b2")], 2,
+                         Meaning(vectors), {"A": ["old a"], "B": []})
+    assert {q.goal_id for q in picked} == {"A", "B"}  # each goal keeps its most novel one
+
+
+def test_the_morning_write_ahead_survives_a_broken_account_list():
+    # review (v3.42): one error stopped the 5:00 thread for good
+    from lerni.student.web.app import write_ahead
+
+    class Broken:
+        def list_students(self):
+            raise OSError("disk")
+
+    write_ahead(object(), Broken())  # logs the kind and returns
