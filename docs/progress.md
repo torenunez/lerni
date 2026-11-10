@@ -14,6 +14,10 @@ When something changes, update this section and add a log entry below.
 
 ## Log
 
+### 2026-11-10 (repeats by theme; options for review)
+
+- An internal review (online research, a code map, and an adversarial pass) found the repeats the admin sees are mostly one theme in different ideas, which the 0.91 label check can't catch by design, plus causes with no embeddings in them: a car comparison in every set, interests counted across all goals rather than per goal, reviews of missed ideas, and repeats raced when Claude runs short. It recommends no new embedding uses in Versions 4–7 for now; the options are in [repeats by theme](../plans/repeats-by-theme.md), out for an outside review before the admin decides.
+
 ### 2026-11-10 (Version 4 planned; v4.0)
 
 - The admin's direction: the educator is a continuous improvement partner and auditor, not a gatekeeper. Version 4 ([plan](../plans/v4.0-educator-chat.md)) samples up to 3 race questions a day for ✓ or ✗ (from different goals, the least checked first, and weighted toward ones the student missed), takes broad feedback through Tell Lerni as guidance notes that steer every question after, and turns answer keys into checked questions; races mix in up to 1 a race. Two PRs: v4.1 and v4.2. The sample stays in memory; rule 6 is unchanged. Version 8 now also holds minimal CI (a few key integration tests).
