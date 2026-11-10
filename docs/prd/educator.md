@@ -117,7 +117,7 @@ As an educator, I want to tell Lerni in my own words what to do better, or hand 
 
 As an educator, I want to look at a few of Lerni's race questions now and then, like a quality check, so that good questions come back and wrong ones never do.
 
-- WHEN the educator opens a supervised student's page THE SYSTEM SHALL show up to 3 of today's race questions, from different goals (the least checked lately first, so every goal is covered in turn) and weighted toward ones the student got wrong, each with Claude's answer and wrong choices, to tick Right ✓ or Wrong ✗, with the week's count of checks.
+- WHEN the educator opens a supervised student's page THE SYSTEM SHALL show up to 3 of today's race questions, from different goals (those with no feedback yet first, then the least checked lately, carried over from day to day, so a little feedback each day covers every goal in turn) and weighted toward ones the student got wrong, each with Claude's answer and wrong choices, to tick Right ✓ or Wrong ✗, with the week's count of checks.
 - WHEN a question is marked ✓ or an answer key is ticked THE SYSTEM SHALL keep it in that goal's checked bank, and races SHALL mix in up to 1 a race, each not again for 7 days and retired once the student gets it right 3 times in a row; WHEN one is marked ✗ THE SYSTEM SHALL never ask it again, and Claude SHALL see the why the educator gave when writing that goal's questions.
 
 ## Settings (Versions 2, 6, and 7)
