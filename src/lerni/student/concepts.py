@@ -20,8 +20,6 @@ from lerni.student.jsonfiles import read_json, write_json_atomic
 from lerni.student.students import check_username, default_data_dir
 
 MAX_CONCEPT = 40  # characters in a label
-KEEP_RECENT = 40  # labels sent to Claude as asked lately
-RECENT_DAYS = 14
 IDEA_DAYS = 30  # a goal's ideas stay off its questions this long (v3.42)
 PER_GOAL = 30  # labels kept per goal for that
 START_LEVEL, MIN_LEVEL, MAX_LEVEL = 3, 1, 5  # 3 is the questions before levels
@@ -88,16 +86,6 @@ class ConceptStore:
             ]
         return [c for c in data["concepts"] if isinstance(c, dict) and c.get("concept")]
 
-    def recent(self, username: str, today: date | None = None) -> list[str]:
-        """Labels asked in the last 14 days, newest first, at most 40."""
-        cutoff = ((today or date.today()) - timedelta(days=RECENT_DAYS)).isoformat()
-        asked = [
-            str(c["concept"])
-            for c in reversed(self.ledger(username))
-            if str(c.get("last", "")) >= cutoff
-        ]
-        return asked[:KEEP_RECENT]
-
     def asked_by_goal(self, username: str, today: date | None = None) -> dict[str, list[str]]:
         """Each goal's labels asked in the last 30 days by goal id, newest first, at most 30
         each; ideas with no goal (probes, a map without goals) are under ""."""
@@ -108,6 +96,17 @@ class ConceptStore:
                 labels = out.setdefault(str(c.get("goal_id", "")), [])
                 if len(labels) < PER_GOAL:
                     labels.append(str(c["concept"]))
+        return out
+
+    def settings_since(self, username: str, today: date | None = None) -> dict[str, int]:
+        """How many ideas of the last 30 days each interest framed, by lowercase name (v3.43): a
+        soft count (an idea keeps its latest setting), only for taking turns."""
+        cutoff = ((today or date.today()) - timedelta(days=IDEA_DAYS)).isoformat()
+        out: dict[str, int] = {}
+        for c in self.ledger(username):
+            if str(c.get("last", "")) >= cutoff and isinstance(c.get("setting"), str):
+                key = c["setting"].casefold()
+                out[key] = out.get(key, 0) + 1
         return out
 
     def _levels(self, username: str) -> dict[str, dict[str, Any]]:
@@ -187,16 +186,17 @@ class ConceptStore:
                 out[goal_id] = (due, min(max(box, 0), len(GOAL_DAYS) - 1))
         return out
 
-    def add(self, username: str, items: list[tuple[str, str, str]],
+    def add(self, username: str, items: list[tuple[str, ...]],
             today: date | None = None) -> list[int]:
-        """Note (goal id, goal, concept) triples asked today; each moves to the end, as the
-        newest. Returns each one's attempt: how many times it's been asked, this one included.
+        """Note (goal id, goal, concept) triples asked today, each with the interest it was set
+        in as an optional fourth (v3.43); each moves to the end, as the newest. Returns each
+        one's attempt: how many times it's been asked, this one included.
         An entry from before goal ids, with the same label and goal name, is adopted."""
         day = (today or date.today()).isoformat()
         attempts: list[int] = []
 
         def apply(ledger: list[dict[str, Any]]) -> None:
-            for goal_id, goal, concept in items:
+            for goal_id, goal, concept, *where in items:
                 old = _find(ledger, goal_id, concept, goal)
                 if old is None:
                     old = {
@@ -211,6 +211,8 @@ class ConceptStore:
                     ledger.remove(old)
                 old.update(goal_id=goal_id, goal=goal, last=day,
                            asked=int(old.get("asked", 0)) + 1)
+                if where and where[0]:  # the interest it was set in this time
+                    old["setting"] = where[0]
                 ledger.append(old)
                 attempts.append(old["asked"])
 

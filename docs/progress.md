@@ -14,6 +14,13 @@ When something changes, update this section and add a log entry below.
 
 ## Log
 
+### 2026-11-10 (every interest, new bridges; v3.43 built)
+
+- v3.43 ([plan](../plans/v3.43-every-interest.md)): the server deals each question a goal and an interest to set it in: every interest group takes turns (a general interest and its kinds count as one), the least used in the last 30 days first, preferring one not yet bridged to that goal (a bridge counts as 3 uses, so every interest still gets turns); Claude may use a second choice when the first would be forced. Each goal's line lists the interests already bridged to it. The setting a question used goes in the results log, the concept ledger, and `lerni stats` (interest names only). The old 40-label list is gone.
+- A real write on made-up data: 15 written, 10 kept, set in all 6 interests, and the interest already bridged to a goal never framed that goal's questions; 63 s.
+- Docs drift since v3.41 fixed (the morning write-ahead, one box back, each goal's ideas lately); the admin moved proposals from races ahead of away from home.
+- A fresh review found two important gaps, fixed with a regression test: sets written ahead all started from the same "least used" counts (held questions now count), and goals with ideas due were dealt last (now first). Smaller fixes: a set-aside never recorded as a setting, a second choice within a single group, "bridged from" explained to Claude, and the eval compares counts, not positions.
+
 ### 2026-11-10 (fresher races; v3.42 built)
 
 - The admin kept hearing the same few questions. The results log, read on the home server and never copied, showed why: one near miss sent a strong goal back to "due tomorrow", so the same goals led every set; Claude was told only the last 40 ideas, about 2 to 3 days' worth; car comparisons were asked of every number goal; and the prompt never changed. Temperature can't be raised: current models reject it.

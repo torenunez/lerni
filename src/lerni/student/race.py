@@ -68,6 +68,7 @@ MISS_OPENERS = ("Good try!", "Tricky one!", "Nice guess!", "Not quite!", "Not th
                 "Good thinking!")  # a wrong answer's first words, in turn
 CARE = "care"  # a worrying answer: the caring words, no points, kept in the conversation log
 MAX_KEY_IDEA = 60
+BRIDGED_AS = 3  # a group already bridged to a slot's goal counts as this many more uses (v3.43)
 AHEAD_RACES = 4  # races' worth written each morning and at start-up, so no one waits (v3.42)
 AHEAD_HOUR = 5  # the morning write-ahead, local time
 PROBES_PER_SET = 2  # nearby ideas off the map a set of 10 may try (v3.36)
@@ -94,8 +95,10 @@ QUIZ_SCHEMA: dict[str, Any] = {
             "math": {"type": "string"},
             "probe": {"type": "string"},
             "format": {"type": "string", "enum": list(FORMATS)},
+            "setting": {"type": "string"},
         },
-        "required": ["goal", "concept", "question", "choices", "answer", "why", "format"],
+        "required": ["goal", "concept", "question", "choices", "answer", "why", "format",
+                     "setting"],
     }}, "bonus": {"type": "array", "maxItems": BONUS_PER_SET, "items": {
         "type": "object",
         "additionalProperties": False,
@@ -122,8 +125,11 @@ as multiple choice (feelings, values) gets 1, and a bonus question if one fits.
 - Every question tests a different idea; "concept" names it in a few words \
 (under {MAX_CONCEPT} characters, e.g. "top speed vs acceleration"). Never an idea a goal \
 lists as asked lately, or one listed as recently asked, except ideas due for review.
-- Follow the question plan: question N uses plan N's format and, when it has one, its twist; \
-"format" names the format exactly. "Spot the rival's mistake": a rival racer says something \
+- Follow the question plan: question N practices plan N's goal, set in its interest (or the \
+one in brackets when the first can't make a natural question), with its format and, when it \
+has one, its twist; "format" names the format exactly, and "setting" the interest you used. \
+A goal "bridged from" an interest was already reached through it in conversation. \
+"Spot the rival's mistake": a rival racer says something \
 wrong, and the choices say what's wrong with it.
 - When the right answer is a number worked out from numbers in the question, put that \
 arithmetic in "math" ("400 / 2", "3 / 4 * 12"); otherwise leave "math" out.
@@ -168,6 +174,7 @@ class Question:
     level: int = START_LEVEL  # the goal's level it was written at
     probe: str = ""  # a nearby idea off the map (v3.36): no goal, never counted toward one
     format: str = ""  # its rolled format (v3.42), a fixed label for the results log
+    setting: str = ""  # the interest it was set in (v3.43), the map's spelling
 
 
 def _facts(c: Car) -> str:
@@ -181,16 +188,24 @@ def quiz_input(m: InterestMap, today: date, supervised: bool, recent: Sequence[s
                levels: Mapping[str, int] | None = None, cars: Sequence[Car] = (),
                due: Sequence[tuple[str, str]] = (), goals: Sequence[str] | None = None,
                probed: Sequence[str] = (), asked: Mapping[str, Sequence[str]] | None = None,
-               plan: Sequence[tuple[str, str]] = ()) -> str:
+               plan: Sequence[Slot] = ()) -> str:
     """What Claude needs to write questions: goals at their levels, interests, set-asides,
     recent ideas, nearby ideas to probe, and the cars in reach. ``goals`` (names) narrows the
     goals to this set's; ``probed`` are topics probed lately; ``asked`` is each goal's ideas
-    lately by goal id; ``plan`` is each question's rolled (format, twist)."""
+    lately by goal id; ``plan`` is each question's slot: goal, setting, format, and twist."""
     picked = {g.casefold() for g in goals} if goals else None
+
+    bridged: dict[str, list[str]] = {}  # goal id -> the interests bridged to it (v3.43)
+    for k in m.links:
+        if k.kind == "bridge" and (i := next((e for e in m.entries if e.id == k.a), None)):
+            if not mentions_set_aside(m, i.name):
+                bridged.setdefault(k.b, []).append(i.name)
 
     def lately(e: Any) -> str:  # its own ideas, so each goal's next ones are new (v3.42)
         ideas = [i for i in (asked or {}).get(e.id, ()) if not mentions_set_aside(m, i)]
-        return f"; asked lately: {'; '.join(ideas)}" if ideas else ""
+        froms = bridged.get(e.id, [])
+        return ((f"; bridged from: {', '.join(froms)}" if froms else "")
+                + (f"; asked lately: {'; '.join(ideas)}" if ideas else ""))
 
     # "Fractions (level 4; notes: …)": a copied level or note is cut off at " (" when checked
     goals = [f"{e.name} (level {(levels or {}).get(e.id, START_LEVEL)}"
@@ -220,19 +235,76 @@ def quiz_input(m: InterestMap, today: date, supervised: bool, recent: Sequence[s
     if cars:  # only cars they own or can afford: facts are earned by saving up
         lines.append("Their cars (exact facts; use only these): " + "; ".join(map(_facts, cars)))
     if plan:  # the dice: a different prompt every set (v3.42)
-        lines.append("Question plan: " + "; ".join(
-            f"{n}. {fmt}" + (f", {twist}" if twist else "") for n, (fmt, twist) in
-            enumerate(plan, 1)))
+        lines.append("Question plan: " + "; ".join(f"{n}. {s}" for n, s in enumerate(plan, 1)))
     return "\n".join(lines)
 
 
-def roll(rng: random.Random, n: int = WRITE_SIZE) -> list[tuple[str, str]]:
-    """Each question's (format, twist): formats dealt from shuffled decks, so a set has several,
-    and a twist drawn for each."""
+@dataclass(frozen=True)
+class Slot:
+    """One question's plan: its rolled format and twist, and its dealt goal and settings."""
+
+    fmt: str
+    twist: str = ""
+    goal: str = ""
+    setting: str = ""
+    second: str = ""  # the setting to use when the first can't make a natural question
+
+    def __str__(self) -> str:  # "Fractions, set in trains (or baking): odd one out, a record"
+        where = f"set in {self.setting}" + (f" (or {self.second})" if self.second else "")
+        head = ", ".join(x for x in (self.goal, where if self.setting else "") if x)
+        return (f"{head}: " if head else "") + self.fmt + (f", {self.twist}" if self.twist else "")
+
+
+def roll(rng: random.Random, n: int = WRITE_SIZE) -> list[Slot]:
+    """Each question's format and twist: formats dealt from shuffled decks, so a set has
+    several, and a twist drawn for each."""
     deck: list[str] = []
     while len(deck) < n:
         deck += rng.sample(FORMATS, len(FORMATS))
-    return [(fmt, rng.choice(TWISTS)) for fmt in deck[:n]]
+    return [Slot(fmt, rng.choice(TWISTS)) for fmt in deck[:n]]
+
+
+def interest_groups(m: InterestMap) -> list[tuple[str, list[str], set[str]]]:
+    """Each general interest with its kinds, as (name, every name, every id): one group, so a
+    group with many kinds doesn't get many turns; nothing set aside."""
+    out = []
+    for e in m.entries:
+        if e.kind == "interest" and not parents(m, e.id) and not mentions_set_aside(m, e.name):
+            kin = [x for x in family(m, e) if not mentions_set_aside(m, x.name)]
+            out.append((e.name, [x.name for x in kin], {x.id for x in kin}))
+    return out
+
+
+def deal(m: InterestMap, goals: Sequence[str], used: Mapping[str, int], rng: random.Random,
+         n: int = WRITE_SIZE) -> list[Slot]:
+    """A set's question plan (v3.43): the goals dealt in turn (in ``goals``' order), and each
+    slot a setting from every interest group, the least used first (``used``: lately, by
+    lowercase name), a group already bridged to that slot's goal counting as 3 more uses, and
+    a second choice."""
+    slots = roll(rng, n)
+    groups = interest_groups(m)
+    counts = [sum(used.get(x.casefold(), 0) for x in names) for _, names, _ in groups]
+    ties = rng.sample(range(len(groups)), len(groups))  # equal turns: drawn, not map order
+    bridged: dict[str, set[str]] = {}  # goal id -> bridged interest ids
+    for k in m.links:
+        if k.kind == "bridge":
+            bridged.setdefault(k.b, set()).add(k.a)
+    entries = [e for g in goals if (e := m.find(g)) is not None and e.kind == "goal"]
+    out = []
+    for i, s in enumerate(slots):
+        goal = entries[i % len(entries)] if entries else None
+        near = bridged.get(goal.id, set()) if goal is not None else set()
+        ranked = sorted(range(len(groups)), key=lambda j: (
+            counts[j] + BRIDGED_AS * bool(groups[j][2] & near), ties.index(j)))  # soft: in turn
+        if ranked:
+            counts[ranked[0]] += 1  # its turn, so the next slot goes elsewhere
+        pick = [rng.choice(groups[j][1]) for j in ranked[:2]]
+        if len(pick) == 1 and len(names := groups[ranked[0]][1]) > 1:  # one group: another kind
+            pick.append(rng.choice([x for x in names if x != pick[0]]))
+        out.append(replace(s, goal=goal.name if goal is not None else "",
+                           setting=pick[0] if pick else "",
+                           second=pick[1] if len(pick) > 1 else ""))
+    return out
 
 
 def pick_varied(questions: list[Question], k: int = SET_SIZE, meaning: Meaning | None = None,
@@ -301,6 +373,13 @@ def _probe(item: dict[str, Any], m: InterestMap, seen: set[str]) -> str:
     except MapError:
         return ""
     return topic if off_map(m, topic) and normalize(topic) not in seen else ""
+
+
+def _setting(m: InterestMap, value: Any) -> str:
+    # the interest a question says it was set in, in the map's spelling, or "" if it isn't one
+    e = m.find(_plain(value)) if _plain(value) else None
+    ok = e is not None and e.kind == "interest" and not mentions_set_aside(m, e.name)
+    return e.name if ok and e is not None else ""
 
 
 def _plain(value: Any) -> str:
@@ -457,7 +536,8 @@ def check_questions(raw: Any, m: InterestMap, rng: random.Random | None = None,
             continue
         q, why = _plain(item.get("question")), _plain(item.get("why"))
         concept = _plain(item.get("concept"))[:MAX_CONCEPT]  # a label, so a long one is cut
-        goal = _plain(item.get("goal")).split(" (")[0]  # Claude may copy the notes too
+        # Claude may copy the notes, or the plan's setting, into the goal's name
+        goal = _plain(item.get("goal")).split(" (")[0].split(", set in ")[0]
         choices = [_plain(c) for c in item.get("choices") or []]
         right = item.get("answer")
         probe = ""
@@ -489,7 +569,8 @@ def check_questions(raw: Any, m: InterestMap, rng: random.Random | None = None,
                             choices.index(answer_text), why, concept,
                             e.id if e else "", notes_key(e.notes) if e else "",
                             PROBE_LEVEL if probe else START_LEVEL, probe,
-                            fmt if (fmt := _plain(item.get("format"))) in FORMATS else "")
+                            fmt if (fmt := _plain(item.get("format"))) in FORMATS else "",
+                            _setting(real or m, item.get("setting")))
         if not fits(question, m, real) or (meaning is not None and meaning.aside(
                 f"{q} {concept}", "" if probe else question.goal, every if probe else removed)):
             continue
@@ -1051,6 +1132,14 @@ class RaceDesk:
                                       [*(c for cs in history.values() for c in cs), *loose])
         concepts = [c for c in concepts if normalize(c) not in labels]
         recent = list(dict.fromkeys(loose))  # the "recently asked" line: ideas with no goal
+        used = self.concepts.settings_since(username, today) if self.concepts else {}
+        with self._lock:  # held sets count too, so each set written ahead turns further (review)
+            for q in self._held(username, today):
+                if q.setting:
+                    used[q.setting.casefold()] = used.get(q.setting.casefold(), 0) + 1
+        firsts = {getattr(m.find(g), "name", "").casefold() for g, _ in due}  # due goals lead
+        dealt = [*(g for g in picked if g.casefold() in firsts),
+                 *(g for g in picked if g.casefold() not in firsts)]
         p = self.points.get(username)
         cars = self.garage.in_reach(p.cars, p.balance) if self.garage else []
         kept: list[Question] = []
@@ -1059,7 +1148,7 @@ class RaceDesk:
             try:
                 raw = self.quizzer.write(QUIZ_SYSTEM, quiz_input(
                     m, today, supervised, recent, levels, cars, due, picked or None, probed,
-                    history, roll(self.dice)))
+                    history, deal(m, dealt, used, self.dice)))
             except RaceUnavailable:
                 raise
             except Exception as exc:  # never show what went wrong inside
@@ -1097,7 +1186,8 @@ class RaceDesk:
                   f"{sum(id(q) in agreed for q in new)} kept; dropped {tally['repeat']} repeats "
                   f"({meaning.repeats - bonus_repeats if meaning else 0} by meaning), "
                   f"{meaning.asides if meaning else 0} set aside, {tally['car']} car; "
-                  f"{len({q.format for q in new if q.format})} formats", flush=True)  # numbers only
+                  f"{len({q.format for q in new if q.format})} formats, "
+                  f"{len({q.setting for q in new if q.setting})} settings", flush=True)  # numbers
             if enough(kept):
                 return _as_due(kept, due)
         for q in spare:  # Claude could only repeat: race anyway, never one question twice
@@ -1231,7 +1321,7 @@ class RaceDesk:
         if self.concepts is not None:
             try:
                 got = iter(self.concepts.add(
-                    username, [(q.goal_id, q.goal, q.concept) for q in counted], day))
+                    username, [(q.goal_id, q.goal, q.concept, q.setting) for q in counted], day))
                 return [None if q.probe else next(got, None) for q in questions]
             except OSError:
                 pass  # best effort: the race goes on without remembering its ideas
@@ -1446,6 +1536,7 @@ class RaceDesk:
                 "q": question_hash(q.question), **({"probe": q.probe} if q.probe else {}),
                 "level": q.level, **({"attempt": attempt} if attempt else {}),
                 **({"format": q.format} if q.format else {}),  # a fixed label (v3.42)
+                **({"setting": q.setting} if q.setting else {}),  # an interest's name (v3.43)
                 "right": right, "seconds": round(max(took, 0.0), 1)})
             if race.done:
                 self.results.add(username, {"day": day, "race": race.id, "place": place(race),
