@@ -23,6 +23,7 @@ Open tasks by who does the work. The educator and admin tracks run in parallel: 
 
 ### Now
 
+- [ ] Decide on repeats by theme, after an outside review ([options](../plans/v4.1-repeats-by-theme.md)): measure first, fix all now, or theme clustering; and whether to keep ✗'d question text. The answer may change v4.2.
 - [ ] Check v3.7 on the iPhone and iPad (both on the same Wi-Fi as the Mac): Games, the ⭐ tap and "+3" in Chat, both MentalMap screens, and Hold to talk.
 - [ ] Turn off extra usage (paid credits) on the Claude account Lerni uses (claude.ai → Settings → Usage), so Lerni can never spend credits; Lerni also rests if a call ever uses them.
 - [ ] Pick Lerni's voice ([admin reference: Voice](reference/admin.md#voice); set it, then install the service again), try Hold to talk on the iPad, then with the supervised student and an adult nearby (Version 2 is done when their map grows from a spoken conversation).
@@ -32,9 +33,8 @@ Open tasks by who does the work. The educator and admin tracks run in parallel: 
 
 What ships next, in order, one PR each ([how versions work](roadmap.md#versions)):
 
-0. **Before v4.1, the admin's call on repeats by theme** ([options](../plans/repeats-by-theme.md), out for an outside review): measure first, fix all now, or theme clustering; and whether to keep ✗'d question text.
-1. **v4.1, check a few questions** ([plan](../plans/v4.0-educator-chat.md)): up to 3 of today's race questions, from different goals (the least checked first) and weighted toward ones the student missed, on the student's page to mark Right ✓ or Wrong ✗; ✓ goes into the goal's checked bank, ✗ never races again; races mix in up to 1 banked question each, not again for 7 days, retired after 3 right in a row; an idea right every time (at least twice) is never asked again; a banked question's label joins the repeat check, so no fresh question on the same idea races beside it.
-2. **v4.2, feedback and answer keys through Tell Lerni:** guidance notes from broad feedback, read by the question writer and the morning plan; answer keys proposed as questions with two wrong choices, into the bank on a tick; a ✗'s why steers that goal's questions.
+1. **v4.2, check a few questions** ([plan](../plans/v4.0-educator-chat.md)): up to 3 of today's race questions, from different goals (the least checked first) and weighted toward ones the student missed, on the student's page to mark Right ✓ or Wrong ✗; ✓ goes into the goal's checked bank, ✗ never races again; races mix in up to 1 banked question each, not again for 7 days, retired after 3 right in a row; an idea right every time (at least twice) is never asked again; a banked question's label joins the repeat check, so no fresh question on the same idea races beside it.
+2. **v4.3, feedback and answer keys through Tell Lerni:** guidance notes from broad feedback, read by the question writer and the morning plan; answer keys proposed as questions with two wrong choices, into the bank on a tick; a ✗'s why steers that goal's questions.
 3. **Versions 5–7** ([roadmap](roadmap.md)), the admin's aim being to build them in the week from 2026-11-10: suggested goals (Version 4 and probe results first); remembering (recall only from the checked bank, on v3.22's review schedule, FSRS or SM-2; Bridge Trip its front door); without an educator present.
 4. **Version 8, away from home and CI checks** (after Version 7, the admin's calls, 2026-11-10; the admin's Tailscale setup has started): **CI**, kept minimal: on each PR, GitHub Actions runs only a few key integration tests (fakes only, no secrets, never an eval), marked in the suite, plus lint on changed files; the full suite stays in the commit gate. **Away from home:** reach Lerni privately over Tailscale Serve from the family's devices, the iPad included; never Funnel or port forwarding. Ops first, development then production, tested on cellular (sign-in, Chat, Hold to talk, a race; page, first text, and first audio timed); the PR is the admin steps in the admin reference, with no tailnet names. Production deploys pause while away unless a deploy over SSH is tested.
 
@@ -63,7 +63,7 @@ Versions 1 and 2 also need sessions, not code: the educator sets goals, rehearse
 
 ### Later: Version 3 Play and points
 
-- [ ] Embeddings, later uses ([spec 10](../plans/specs/10-local-embeddings.md#later-uses-described-not-built)): Chat's goals ranked by the student's message (if wanted), the "same as" shortlist once items rest, and near-duplicate ideas grouped in `lerni stats`; the 2026-11-10 review's deferred uses, each with its trigger ([options](../plans/repeats-by-theme.md#the-reviews-verdicts-on-more-embedding-uses)).
+- [ ] Embeddings, later uses ([spec 10](../plans/specs/10-local-embeddings.md#later-uses-described-not-built)): Chat's goals ranked by the student's message (if wanted), the "same as" shortlist once items rest, and near-duplicate ideas grouped in `lerni stats`; the 2026-11-10 review's deferred uses, each with its trigger ([options](../plans/v4.1-repeats-by-theme.md#the-reviews-verdicts-on-more-embedding-uses)).
 - [ ] A week after v3.40: read the server log's counts of questions dropped by meaning; add made-up Spanish pairs to the bake-off when a Spanish miss is seen.
 - [ ] Pit stop: fill a toy car's fuel gauge with quarters, then the same amount with eighths (fixed math, no Claude calls); the educator sketches the scene first.
 - [ ] An educator "reset points", and Games for independent students.
