@@ -103,3 +103,34 @@ def test_the_morning_write_ahead_holds_a_few_races(tmp_path):
     held = races._held("sam", date.today())
     assert len(held) >= AHEAD_RACES * QUESTIONS_PER_RACE and len(races.quizzer.prompts) == 2
     assert seconds_until(5, datetime(2026, 11, 10, 23, 0)) == 6 * 3600  # next 5:00, tomorrow
+
+
+def test_a_race_never_waits_for_the_write_ahead_to_finish(tmp_path, monkeypatch):
+    # regression (v3.42 build): a tap during the morning write waited for its second write too
+    import threading
+    import time
+
+    import lerni.student.race as race
+
+    gate = threading.Event()
+
+    class SlowSecond(Quizzer):  # the first set comes at once, the second waits for the gate
+        def write(self, system, prompt):
+            self.prompts.append(prompt)
+            if len(self.prompts) > 1:
+                gate.wait(10)
+            start = 100 * len(self.prompts)
+            return {"questions": [q("Fractions" if n % 2 else "Nouns", n)
+                                  for n in range(start, start + WRITE_SIZE)]}
+
+    monkeypatch.setattr(race, "QUIZ_WAIT_SECONDS", 5)
+    races = desk(tmp_path, None)
+    races.quizzer = SlowSecond()
+    done = races.prefill("sam", supervised=True, races=race.AHEAD_RACES)
+    while len(races.quizzer.prompts) < 2:  # the second write has begun
+        time.sleep(0.01)
+    began = time.monotonic()
+    races.start("sam", supervised=True)
+    assert time.monotonic() - began < 1  # raced on the first set, not after the second
+    gate.set()
+    done.wait(10)

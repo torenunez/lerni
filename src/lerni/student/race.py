@@ -1110,26 +1110,31 @@ class RaceDesk:
             want = min(races, self.points.races_left(username, today))  # none left: nothing
             if want <= 0 or enough(held, want) or username in self._busy:
                 return self._busy.get(username) or _set_event()
-            done = self._busy[username] = threading.Event()
+            busy = self._busy[username] = threading.Event()  # this write's; a race waits on it
+        finished = threading.Event()  # set once nothing more is being written
 
         def work() -> None:
+            nonlocal busy
             try:
                 for _ in range(want):  # a write a race at most: each brings about two
                     fresh = self._write(username, supervised, today)
                     with self._lock:
                         held = spread(few_probes(self._held(username, today) + fresh))
                         self._sets[username] = (today.isoformat(), held)
-                    if not fresh or enough(held, want):
-                        break
+                        if not fresh or enough(held, want):
+                            break
+                        busy.set()  # a race waiting on this write can start now
+                        busy = self._busy[username] = threading.Event()  # the next write's
             except RaceUnavailable:
                 pass  # Race will try again and say why
             finally:
                 with self._lock:
                     self._busy.pop(username, None)
-                done.set()
+                busy.set()
+                finished.set()
 
         threading.Thread(target=work, daemon=True).start()
-        return done
+        return finished
 
     def start(self, username: str, supervised: bool, today: date | None = None,
               boost: float = 1.0, car: str = "",
@@ -1151,11 +1156,13 @@ class RaceDesk:
                     return current
             if self.points.races_left(username, day) <= 0:
                 self.points.start_race(username, day)  # raises the "closed for today" line
+            m, real = self._maps(username)
             with self._lock:
                 writing = self._busy.get(username)
-            if writing is not None:  # opening Games already asked: wait for that, not a second call
-                writing.wait(QUIZ_WAIT_SECONDS)
-            m, real = self._maps(username)
+                ready = enough([q for q in self._held(username, day) if fits(q, m, real)])
+            if writing is not None and not ready:  # a write is under way: wait for it, not a second
+                writing.wait(QUIZ_WAIT_SECONDS)  # (never when a race is held: v3.42's write-ahead)
+                m, real = self._maps(username)
             with self._lock:  # one step: count, and claim the writing, so no one writes twice
                 before = {id(q) for q in self._held(username, day)}
                 held = [q for q in self._held(username, day) if fits(q, m, real)]  # set aside since
