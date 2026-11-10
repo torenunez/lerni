@@ -32,11 +32,14 @@ Open tasks by who does the work. The educator and admin tracks run in parallel: 
 
 What ships next, in order, one PR each ([how versions work](roadmap.md#versions)):
 
-1. **v3.44, proposals from races** (next; screen changes, so mockups first): bridge probes, a question linking two things already on the map, offered after the race as a Chat topic or a goal to tap; when a goal runs out of ideas, the educator gets one proposal to widen it ("halves, then thirds"). Nothing saved without a tap.
+1. **v3.44, the morning plan** (next; screen changes, so mockups first): each morning at 5:00, with the write-ahead, one small-model call for each supervised student returns three things (the admin's decisions, 2026-11-10):
+   - **Bridge ideas:** an interest, a goal, and the idea between them ("trains → Fractions: sharing a train's seats"), shown on the educator's page to tick ✓ or ✗. A ticked idea is a target, not a link: races set that goal's questions in that interest and Chat steers there; the map's bridge is still recorded only when it happens in conversation.
+   - **A widen proposal** when a goal is running out of ideas ("halves, then thirds"), for the educator to tick.
+   - **Idea lists for narrow goals:** 10–15 small ideas (labels only, never on the map), and races take untried ones first. No tap needed.
+   - Pending ideas and lists are kept as labels (a rule 6 addition, noted in the PRD). Nothing on the map changes without a tap.
 2. **v3.45, away from home** (after v3.44, the admin's call, 2026-11-10; the target was the iPad on Tailscale outside the home network by 2026-11-19; the admin's setup has started): reach Lerni privately over Tailscale Serve from the family's devices, the iPad included; never Funnel or port forwarding. Ops first, development then production, tested on cellular (sign-in, Chat, Hold to talk, a race; page, first text, and first audio timed); the PR is the admin steps in the admin reference, with no tailnet names. Production deploys pause while away unless a deploy over SSH is tested.
-3. **v3.46, only if v3.42's numbers show goals running out of ideas:** an idea ladder (Claude lists 10–15 small ideas for a narrow goal once, labels only, and races take untried ones first) and one question a set that combines two goals.
-4. **Version 4, the educator's Chat** (its first PR writes the plan): the educator gives goals and right answers through Chat (a worksheet, an answer key, what we're learning this week) and ticks what Claude proposes; a Check questions list on the student's page marks recent race questions ✓ right or ✗ wrong with an optional why; ✓ and uploaded pairs form each goal's checked bank (saved as text, rule 6's one exception), races mix them in, ✗ never comes back and its why steers Claude; Chat takes notes about any student and proposes changes to their map. Nothing saved without a tap.
-5. **Versions 5–7** ([roadmap](roadmap.md)): suggested goals (Version 4 and probe results first); remembering (recall only from the checked bank, on v3.22's review schedule, FSRS or SM-2; Bridge Trip its front door); without an educator present.
+3. **Version 4, the educator's Chat** (its first PR writes the plan): the educator gives goals and right answers through Chat (a worksheet, an answer key, what we're learning this week) and ticks what Claude proposes; a Check questions list on the student's page marks recent race questions ✓ right or ✗ wrong with an optional why; ✓ and uploaded pairs form each goal's checked bank (saved as text, rule 6's one exception), races mix them in, ✗ never comes back and its why steers Claude; Chat takes notes about any student and proposes changes to their map. Nothing saved without a tap.
+4. **Versions 5–7** ([roadmap](roadmap.md)): suggested goals (Version 4 and probe results first); remembering (recall only from the checked bank, on v3.22's review schedule, FSRS or SM-2; Bridge Trip its front door); without an educator present.
 
 How PRs are split:
 
@@ -68,6 +71,7 @@ Versions 1 and 2 also need sessions, not code: the educator sets goals, rehearse
 - [ ] Pit stop: fill a toy car's fuel gauge with quarters, then the same amount with eighths (fixed math, no Claude calls); the educator sketches the scene first.
 - [ ] An educator "reset points", and Games for independent students.
 - [ ] Other games: Beat builder (rhythm and fractions), Recipe mixer (ratios), Build and balance.
+- [ ] One race question a set that combines two goals (from v3.46, set aside when the morning plan took its idea lists, 2026-11-10).
 - [ ] A "this question seems wrong" button that doesn't use up a race (the blind check catches most wrong keys since v3.14).
 - [ ] Garage extras: read-aloud 🔊 on cards; a short "here are your keys" moment on buying (reduced motion respected); paint and a number plate bought with ⭐; shark, rocket or dinosaur bodies for students who aren't into cars; an educator preview of a student's race questions.
 - [ ] Two weeks after v3.7: are Lerni's questions getting real answers, or are points just being hunted? `answered` is Claude's judgment, not a check, so spot-check it in `lerni logs`. Tune the points, or stop.
