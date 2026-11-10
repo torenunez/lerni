@@ -154,6 +154,7 @@ def test_an_expired_sign_in_is_logged_and_shown_to_educators_until_a_call_works(
     assert "Claude call failed (small model): sign-in expired" in out
     assert "Secret goal" not in out and "OAuth" not in out  # the kind only, never the text
     assert usage.warning() == "⚠️ Claude needs the admin to sign in again."
+    assert not claude_code._signin("No catalog in the dialog")  # ordinary words don't count
 
     async def answers(**_kw):
         yield ResultMessage(subtype="success", duration_ms=1, duration_api_ms=1, is_error=False,

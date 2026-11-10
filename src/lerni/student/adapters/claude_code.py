@@ -54,7 +54,7 @@ def _isolated() -> dict[str, Any]:
     }
 
 
-SIGN_IN_WORDS = ("authenticat", "oauth", "/login", "not logged in", "log in")  # in its error
+SIGN_IN_WORDS = ("authenticat", "oauth", "/login", "not logged in")  # in its error
 
 
 def _signin(*texts: Any) -> bool:
@@ -69,10 +69,11 @@ def _failed(usage: Usage | None, what: str, exc: BaseException) -> None:
     while seen is not None and len(chain) < 5:  # the error and what caused it
         chain.append(seen)
         seen = seen.__cause__ or seen.__context__
-    signin = _signin(*chain) or (usage is not None and usage.signed_out())
+    signin = _signin(*chain)
     if usage is not None:
         usage.failed(signin)
-    kind = "sign-in expired" if signin else type(chain[-1]).__name__
+    # while signed out, any failure is most likely that; otherwise the error's own kind
+    kind = "sign-in expired" if signin or (usage and usage.signed_out()) else type(exc).__name__
     print(f"Claude call failed ({what}): {kind}", flush=True)
 
 
@@ -81,7 +82,8 @@ def _note_limits(usage: Usage | None, message: Any) -> None:
     if usage is not None and isinstance(message, ResultMessage):
         if not message.is_error:
             usage.succeeded()  # signed in again, if it wasn't
-        elif _signin(message.result or "", message.errors or ""):
+        elif getattr(message, "api_error_status", None) == 401 or _signin(
+                message.result or "", message.errors or ""):
             usage.failed(signin=True)
     if usage is None or not isinstance(message, RateLimitEvent):
         return
@@ -301,7 +303,8 @@ class ClaudeCodeUploader:
             raise UploaderUnavailable(resting)
         try:
             return asyncio.run(asyncio.wait_for(self._propose(system, source), TIMEOUT_SECONDS))
-        except UploaderUnavailable:
+        except UploaderUnavailable as exc:  # Claude answered with nothing usable
+            _failed(self.usage, "upload", exc)
             raise
         except Exception as exc:  # never echo the notes in errors
             _failed(self.usage, "upload", exc)
