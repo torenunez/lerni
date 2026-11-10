@@ -5,6 +5,7 @@
 Uses the admin's Claude account. Add one case for each problem seen.
 """
 
+import random
 import re
 from datetime import date
 from difflib import SequenceMatcher
@@ -22,6 +23,7 @@ from lerni.student.race import (
     check_input,
     check_questions,
     quiz_input,
+    roll,
 )
 
 REUSED: list[int] = []  # per call: ideas Claude wrote again though told they were asked
@@ -118,6 +120,18 @@ def main() -> None:
     results.append(("a due idea comes back", bool(back)))
     results.append(("in new words", all(SequenceMatcher(None, normalize(q.question), normalize(
         missed.question)).ratio() < 0.9 for q in back)))
+    # the dice (v3.42): a rolled plan brings several formats and at most one car comparison
+    plan = roll(random.Random(7))
+    raw = ClaudeCodeQuizzer().write(QUIZ_SYSTEM, quiz_input(one, date.today(), True, cars=near,
+                                                            plan=plan))
+    rolled = check_questions(raw, one)
+    followed = sum(q.format == f for q, (f, _) in zip(rolled, plan, strict=False))
+    compared = [q for q in rolled if "P1" in q.question and "M4" in q.question]
+    print(f"--- dice: {len({q.format for q in rolled})} formats, {followed} of {len(rolled)} "
+          f"as planned, {len(compared)} car comparisons")
+    formats = {q.format for q in rolled}
+    results.append(("a rolled plan brings at least 4 formats", len(formats) >= 4))
+    results.append(("and compares two cars at most once", len(compared) <= 1))
     # the bonus (v3.24): each set brings 1 or 2 explain-it questions, each with 2 or 3 key ideas
     raw = ClaudeCodeQuizzer().write(QUIZ_SYSTEM, quiz_input(one, date.today(), True))
     bonuses = check_bonus(raw, one)

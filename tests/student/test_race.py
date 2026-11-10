@@ -550,7 +550,7 @@ def test_a_goals_level_follows_its_last_five_answers(tmp_path):
     assert concepts.levels("sam") == {goal_id: 4}
     assert "old idea" in [c["concept"] for c in concepts.ledger("sam")]  # the ledger survives
     race([True, True, False, False, False])
-    assert "- Fractions (level 4; notes: halves)" in quizzer.prompts[-1]  # Claude heard the level
+    assert "- Fractions (level 4; notes: halves" in quizzer.prompts[-1]  # Claude heard the level
     assert concepts.levels("sam") == {goal_id: 3}
     # regression (review): a broken map or a hand-edited level never stops a race or its award
     r = desk.start("sam", supervised=True)
@@ -1226,3 +1226,15 @@ def test_review_regressions_probes_need_a_source_are_capped_and_a_refused_tap_is
     assert desk.probes_after("sam", race, today)[0] == topic  # still offered, not logged as chosen
     chats = Conversations(FakeQuizzer())
     assert desk.tap_probe("sam", topic, today, keep=lambda s: chats.open_with("sam", s))
+
+
+def test_one_miss_moves_a_goal_back_one_box_not_to_daily(tmp_path):
+    # regression (v3.42): at level 5 one near miss a race sent a strong goal back to box 0 daily
+    from lerni.student.concepts import ConceptStore
+
+    concepts = ConceptStore(tmp_path)
+    for day in range(3):  # all right three times: box 3
+        concepts.raced("sam", {"g1": (2, 2)}, TODAY + timedelta(days=30 * day))
+    later = TODAY + timedelta(days=90)
+    concepts.raced("sam", {"g1": (1, 2)}, later)  # one miss of two
+    assert concepts.schedule("sam")["g1"] == (later + timedelta(days=7), 2)

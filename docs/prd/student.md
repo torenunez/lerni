@@ -114,7 +114,7 @@ As a student, I want to race my car by answering questions, so that I can win po
 - WHEN they pick the right answer THE SYSTEM SHALL boost their car and slow a bot; WHEN they pick another THE SYSTEM SHALL slow their car and show the right answer with a short why.
 - WHEN the race ends THE SYSTEM SHALL award points by their place (4 or 5 right wins, in any car), once per race, and offer Race again.
 - WHEN a race tried a nearby idea not on their map THE SYSTEM SHALL offer it at the finish under "Want to find out more?"; a tap opens Chat with Lerni asking about it, and it joins their map only from what they say.
-- WHEN questions are written THE SYSTEM SHALL avoid ideas asked recently, bring back missed ideas after a gap, and adjust difficulty per goal so the student gets about half to three quarters right.
+- WHEN questions are written THE SYSTEM SHALL avoid each goal's ideas from the last month, bring back missed ideas after a gap, vary the kinds of question, and adjust difficulty per goal so the student gets about half to three quarters right.
 
 ### Story: Points for good answers in the conversation
 
@@ -194,6 +194,7 @@ Public access and a native iPad app.
 - 2026-10-29: Questions read themselves, one Sound switch covers the whole app (Chat's voice too), an honest bonus try earns 5 ⭐ with a cheer instead of the sputter, and a wrong answer's first words vary (the admin, after watching the student race).
 - 2026-10-30: The new order (the admin's decision): probes and local embeddings finish Version 3; then 4 the educator's Chat, 5 suggested goals, 6 remembering, 7 without an educator present. The educator gives goals and right answers through Chat and marks Claude's race questions right or wrong, like a labeler; what they mark right or write is the checked bank, the only text saved besides the logs, and recall draws only from it. This replaces the educator-approved fact-card library. Decisions above keep their old numbers.
 - 2026-11-09: Goals win over a set-aside interest (the admin's decision): one close in meaning to a goal or an area with goals no longer blocks that goal's race questions, though Chat still steers away from it. Race questions that reword a recent idea or touch a set-aside topic in other words are dropped (spec 10, v3.40).
+- 2026-11-10: Fresher races (the admin's decisions, after hearing the same questions again): each goal remembers its ideas for a month; the server rolls each question's format and twist, since Claude's temperature can't be raised; Claude writes 15 and the 10 most different race; and each morning, and at start-up, the server writes a few races ahead in memory so the student doesn't wait (never on disk, rule 6).
 
 ## Open questions
 

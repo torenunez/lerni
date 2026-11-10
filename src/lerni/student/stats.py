@@ -36,7 +36,7 @@ CREATE TABLE entries (username TEXT, entry_id TEXT, kind TEXT, name TEXT, area T
     mentions INTEGER, days INTEGER, explained_days INTEGER, state TEXT);
 CREATE TABLE answers (username TEXT, day TEXT, week TEXT, race TEXT, goal_id TEXT, goal TEXT,
     area TEXT, concept TEXT, question_hash TEXT, level INTEGER, attempt INTEGER, right INTEGER,
-    seconds REAL, probe TEXT, bonus_tier TEXT);
+    seconds REAL, probe TEXT, bonus_tier TEXT, format TEXT);
 CREATE TABLE races (username TEXT, day TEXT, week TEXT, race TEXT, place INTEGER, points INTEGER);
 CREATE TABLE probe_taps (username TEXT, day TEXT, topic TEXT);
 CREATE TABLE concepts (username TEXT, goal_id TEXT, goal TEXT, concept TEXT, first TEXT,
@@ -128,10 +128,11 @@ def _add_result(db: sqlite3.Connection, user: str, m: InterestMap, r: dict[str, 
         goal_id, name = str(r.get("goal_id") or ""), str(r.get("goal") or "")
         e = _goal(m, goal_id, name)
         right = int(bool(r["right"])) if "right" in r else None
-        db.execute("INSERT INTO answers VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", (
+        db.execute("INSERT INTO answers VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", (
             user, day, week, r.get("race"), goal_id or (e.id if e else None),
             e.name if e else name, _area(e), r.get("concept"), r.get("q"), r.get("level"),
-            r.get("attempt"), right, r.get("seconds"), r.get("probe") or None, r.get("bonus")))
+            r.get("attempt"), right, r.get("seconds"), r.get("probe") or None, r.get("bonus"),
+            r.get("format") or None))
     else:
         return False
     return True
@@ -335,6 +336,20 @@ def _missed(db: sqlite3.Connection, who: tuple[str, str]) -> str | None:
     return _table([("Ideas missed most", "Missed", "Asked"), *rows]) if rows else None
 
 
+def _variety(db: sqlite3.Connection, who: tuple[str, str]) -> str | None:
+    # how fresh the questions were (v3.42): ideas, repeats, and the formats used
+    n, ideas, before = db.execute(
+        "SELECT COUNT(*), COUNT(DISTINCT COALESCE(goal_id, '') || '|' || lower(concept)), "
+        f"COALESCE(SUM(attempt > 1), 0) FROM answers WHERE {WHO} AND {SCORED}", who).fetchone()
+    if not n:
+        return None
+    formats = db.execute(f"SELECT format, COUNT(*) FROM answers WHERE {WHO} AND {SCORED} "
+                         "AND format IS NOT NULL GROUP BY format ORDER BY COUNT(*) DESC, format",
+                         who).fetchall()
+    line = f"Variety: {n} questions, {ideas} ideas, {before} asked before"
+    return line + ("; formats: " + ", ".join(f"{k} {f}" for f, k in formats) if formats else "")
+
+
 def _extras(db: sqlite3.Connection, who: tuple[str, str]) -> str | None:
     # probes and bonus answers, kept apart from the percentages
     asked, right = db.execute("SELECT COUNT(*), COALESCE(SUM(right), 0) FROM answers "
@@ -351,7 +366,8 @@ def _extras(db: sqlite3.Connection, who: tuple[str, str]) -> str | None:
 
 def report(path: Path, username: str, start: str, window: str) -> str:
     """One student's report from day ``start`` on: right answers by area and week, the
-    hardest goals, the ideas missed most, then probes and bonus answers on their own lines."""
+    hardest goals, the ideas missed most, how varied the questions were, then probes and bonus
+    answers on their own lines."""
     db = connect(path)
     who = (username, start)
     try:
@@ -363,6 +379,7 @@ def report(path: Path, username: str, start: str, window: str) -> str:
                 f"HAVING COUNT(*) >= {MIN_HARDEST} AND goal != '' "
                 f"ORDER BY 1.0 * SUM(right) / COUNT(*), COUNT(*) DESC LIMIT {TOP}"),
             _missed(db, who),
+            _variety(db, who),
             _extras(db, who),
         ]
     finally:
