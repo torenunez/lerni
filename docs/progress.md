@@ -14,6 +14,10 @@ When something changes, update this section and add a log entry below.
 
 ## Log
 
+### 2026-11-10 (Version 4 planned; v4.0)
+
+- The admin's direction: the educator is a continuous improvement partner and auditor, not a gatekeeper. Version 4 ([plan](../plans/v4.0-educator-chat.md)) samples up to 3 race questions a day for ✓ or ✗ (from different goals, the least checked first, and weighted toward ones the student missed), takes broad feedback through Tell Lerni as guidance notes that steer every question after, and turns answer keys into checked questions; races mix in up to 1 a race. Two PRs: v4.1 and v4.2. The sample stays in memory; rule 6 is unchanged. Version 8 now also holds minimal CI (a few key integration tests).
+
 ### 2026-11-10 (fewer goal suggestions; v3.45 built)
 
 - Production's first morning plan made 5 connections, steps for 14 goals, and 14 goal suggestions, so the educator's page listed 19 items. "Running out" (12 ideas in 30 days) fit most goals at the student's pace. v3.45 ([plan](../plans/v3.45-fewer-goal-suggestions.md)): a goal may be widened only at the top level with 12 or more ideas, the most outgrown first (ideas asked again after they were right), and at most one goal suggestion waits; the first morning call after the deploy tidies the rest. The admin moved away from home to Version 8, after Version 7, aiming to build Versions 4–7 this week.
