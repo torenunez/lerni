@@ -12,8 +12,8 @@ Open tasks by who does the work. The educator and admin tracks run in parallel: 
 
 ### Later: Version 1 MVP
 
-- [ ] Talk with Lerni yourself for a few days and watch your own MentalMap; tell the admin what's confusing, or mention it in the Suggest box.
-- [ ] Try the conversation with the supervised-student voice, then sit beside the supervised student for a short first conversation. Keep notes private, or mention them in the Suggest box.
+- [ ] Talk with Lerni yourself for a few days and watch your own MentalMap; tell the admin what's confusing, or mention it in the Tell Lerni box.
+- [ ] Try the conversation with the supervised-student voice, then sit beside the supervised student for a short first conversation. Keep notes private, or mention them in the Tell Lerni box.
 
 ### Later: Version 4 The educator's Chat
 
@@ -32,14 +32,9 @@ Open tasks by who does the work. The educator and admin tracks run in parallel: 
 
 What ships next, in order, one PR each ([how versions work](roadmap.md#versions)):
 
-1. **v3.44, the morning plan** (next; screen changes, so mockups first): each morning at 5:00, with the write-ahead, one small-model call for each supervised student returns three things (the admin's decisions, 2026-11-10):
-   - **Bridge ideas:** an interest, a goal, and the idea between them ("trains → Fractions: sharing a train's seats"), shown on the educator's page to tick ✓ or ✗. A ticked idea is a target, not a link: races set that goal's questions in that interest and Chat steers there; the map's bridge is still recorded only when it happens in conversation.
-   - **A widen proposal** when a goal is running out of ideas ("halves, then thirds"), for the educator to tick.
-   - **Idea lists for narrow goals:** 10–15 small ideas (labels only, never on the map), and races take untried ones first. No tap needed.
-   - Pending ideas and lists are kept as labels (a rule 6 addition, noted in the PRD). Nothing on the map changes without a tap.
-2. **v3.45, away from home** (after v3.44, the admin's call, 2026-11-10; the target was the iPad on Tailscale outside the home network by 2026-11-19; the admin's setup has started): reach Lerni privately over Tailscale Serve from the family's devices, the iPad included; never Funnel or port forwarding. Ops first, development then production, tested on cellular (sign-in, Chat, Hold to talk, a race; page, first text, and first audio timed); the PR is the admin steps in the admin reference, with no tailnet names. Production deploys pause while away unless a deploy over SSH is tested.
-3. **Version 4, the educator's Chat** (its first PR writes the plan): the educator gives goals and right answers through Chat (a worksheet, an answer key, what we're learning this week) and ticks what Claude proposes; a Check questions list on the student's page marks recent race questions ✓ right or ✗ wrong with an optional why; ✓ and uploaded pairs form each goal's checked bank (saved as text, rule 6's one exception), races mix them in, ✗ never comes back and its why steers Claude; Chat takes notes about any student and proposes changes to their map. Nothing saved without a tap.
-4. **Versions 5–7** ([roadmap](roadmap.md)): suggested goals (Version 4 and probe results first); remembering (recall only from the checked bank, on v3.22's review schedule, FSRS or SM-2; Bridge Trip its front door); without an educator present.
+1. **v3.45, away from home** (next, the admin's call, 2026-11-10; the target was the iPad on Tailscale outside the home network by 2026-11-19; the admin's setup has started): reach Lerni privately over Tailscale Serve from the family's devices, the iPad included; never Funnel or port forwarding. Ops first, development then production, tested on cellular (sign-in, Chat, Hold to talk, a race; page, first text, and first audio timed); the PR is the admin steps in the admin reference, with no tailnet names. Production deploys pause while away unless a deploy over SSH is tested.
+2. **Version 4, the educator's Chat** (its first PR writes the plan): the educator gives goals and right answers through Chat (a worksheet, an answer key, what we're learning this week) and ticks what Claude proposes; a Check questions list on the student's page marks recent race questions ✓ right or ✗ wrong with an optional why; ✓ and uploaded pairs form each goal's checked bank (saved as text, rule 6's one exception), races mix them in, ✗ never comes back and its why steers Claude; Chat takes notes about any student and proposes changes to their map. Nothing saved without a tap.
+3. **Versions 5–7** ([roadmap](roadmap.md)): suggested goals (Version 4 and probe results first); remembering (recall only from the checked bank, on v3.22's review schedule, FSRS or SM-2; Bridge Trip its front door); without an educator present.
 
 How PRs are split:
 
@@ -57,9 +52,9 @@ Versions 1 and 2 also need sessions, not code: the educator sets goals, rehearse
 - [ ] **The win rate (after v3.33, about mid-November):** with about two weeks of results lines carrying `level`, compare right answers by level, and places, against the target (about 60% right, 1 race in 3 won); then decide whether to change the level steps (`UP_AT`, `DOWN_AT` in `concepts.py`) or the rivals' pace.
 - [ ] Chat for everyone (split from one Chat, 2026-10-30): an independent student's Chat proposes goals for their own map and takes feedback about the app.
 - [ ] A second backup place for a broken disk: an external drive (`lerni backup run --to …` in the agent) or Time Machine. The nightly copies (v3.20) are on the same disk.
-- [ ] After a week of family use: compare each feature's Claude use (Chat, tagger, Upload, the Suggest box) and decide whether any can move to a cheaper model.
+- [ ] After a week of family use: compare each feature's Claude use (Chat, tagger, Upload, the Tell Lerni box) and decide whether any can move to a cheaper model.
 - [ ] Try the voice with the students before deciding whether a hosted voice (Inworld, about $18 a month) is worth it; a hosted service means student audio leaves the house, so it needs the educator's agreement first.
-- [ ] Suggest box: PDFs (its Claude call takes text only; Upload on My MentalMap still reads PDFs).
+- [ ] Tell Lerni box: PDFs (its Claude call takes text only; Upload on My MentalMap still reads PDFs).
 - [ ] `feedback.summarize` is unused since v2.14 (the chat writes the note); remove it with its test, or use it for chat feedback.
 - [ ] After the first supervised sessions, if useful: count redirects per session, and a "flag this reply" button for the adult nearby.
 - [ ] Try Chat on the iPad and a phone with the keyboard open; then a VoiceOver and keyboard-only pass.
@@ -104,7 +99,7 @@ Versions 1 and 2 also need sessions, not code: the educator sets goals, rehearse
 - [ ] **Tagging:** two quick answers' tags can land out of order, and a subject change counts against the newest bridge rather than the one in the answer before.
 - [ ] **MentalMap list:** a redraw trusts the owner set by the last checked handler and doesn't re-check the viewer (every edit does).
 - [ ] **Games:** v3.30 review: on a wrong last answer the finish fanfare and the spoken right answer overlap; v3.21 review: tapping a garage tile while a wrong answer's why shows skips to the next question (the waiting card lives only on screen); a tap within 0.8 s is dropped silently; v3.16 review: with the driven car gone from the garage file, the starter can be both the drawn car and the slow rival; the Sound switch shows "on" for a frame on the first page load while off; an all-caps rival name of about 18 letters runs a little past its label pill; the MentalMaps points line refreshes only on picking a student. Garage file: a car removed from it disappears from its owners (add a `retired` flag instead, and say so in the admin reference); one route-test path is rewritten by the test client; the picture route serves any signed-in account, has no `nosniff`, and caches a replaced picture for a day. `lift_car.swift`: a bad crop number crashes it, it keeps every foreground object (a person beside the car), writes full size, and may ignore a photo's rotation.
-- [ ] **Groups:** a group ticked in the Suggest box can bring back a removed name without Put back, and one failing member skips the rest; the tagger can link any two names on the map without seeing the existing groups, and "Not under" blocks one direction only.
+- [ ] **Groups:** a group ticked in the Tell Lerni box can bring back a removed name without Put back, and one failing member skips the rest; the tagger can link any two names on the map without seeing the existing groups, and "Not under" blocks one direction only.
 - [ ] **Services (v3.11 review):** the crossed-data and port checks know only the default folders and ports (read the other agent file instead), and don't catch both servers run from one checkout.
 - [ ] **Names (v3.12 review):** spellings that differ only in spaces and punctuation count as one, so a set-aside "he'll" also blocks "hell" and "its" blocks "it's" (it errs toward blocking); a merge that finds a group loop keeps the first link it sees, which may not be the true one.
 - [ ] **Memory (v3.10 review):** a resting item named only in the tagger's `about` doesn't wake (harmless: the tagger sees only the map); the concept ledger rewrites its whole file on each right answer and is never trimmed (about 600 KB a year); the map block can keep "Goals to bridge toward" with every goal line too long to fit.

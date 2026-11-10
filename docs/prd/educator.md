@@ -55,10 +55,10 @@ As an educator, I want to add and manage the students who use the app, so that e
 
 As an educator, I want to add what I'd like the student to explore, so that Lerni bridges toward it from what they love.
 
-- WHEN the educator tells the educator agent on the student's page what they'd like for a supervised student (a goal idea in the Suggest box at the top, in words, or with notes attached as .txt, .md, or .docx) THE SYSTEM SHALL propose changes at once, each labeled (a goal with notes for Lerni and a subject area, an interest, new notes for a goal, a goal's area, or removing an entry) and additions already ticked, and change that student's map only with the ones still ticked when the educator taps Add.
+- WHEN the educator tells the educator agent on the student's page what they'd like for a supervised student (a goal idea in the Tell Lerni box at the top, in words, or with notes attached as .txt, .md, or .docx) THE SYSTEM SHALL propose changes at once, each labeled (a goal with notes for Lerni and a subject area, an interest, new notes for a goal, a goal's area, or removing an entry) and additions already ticked, and change that student's map only with the ones still ticked when the educator taps Add.
 - WHEN the educator taps an item in the MentalMap's picture THE SYSTEM SHALL light up its links and open it in the list.
 - WHEN a goal is saved without a subject area THE SYSTEM SHALL give it one by itself, one the map already uses where it fits.
-- WHEN the educator renames or removes a goal or an interest, or moves a goal to another area, in the MentalMap's list THE SYSTEM SHALL change the map at once (on the student's page, goals and interests are added through the Suggest box). A removed entry waits in Removed, where Put back restores it with its history; Lerni never adds it back on its own, stops steering toward a removed goal, and never brings up a removed interest (if the student does, Lerni acknowledges it briefly and turns to something they love).
+- WHEN the educator renames or removes a goal or an interest, or moves a goal to another area, in the MentalMap's list THE SYSTEM SHALL change the map at once (on the student's page, goals and interests are added through the Tell Lerni box). A removed entry waits in Removed, where Put back restores it with its history; Lerni never adds it back on its own, stops steering toward a removed goal, and never brings up a removed interest (if the student does, Lerni acknowledges it briefly and turns to something they love).
 
 ### Story: See the map
 
@@ -66,20 +66,20 @@ As an educator, I want to see a supervised student's map, so that I know what th
 
 - WHEN the educator signs in with one supervised student THE SYSTEM SHALL open that student's page, named after them in the menu (with several, a picker on MentalMaps), and draw their map: interests in green and goals in coral, each sized by its strength (a group counts its kinds), goals outlined until they come up, linked items drawn together, and bridges as dashed lines.
 - WHEN the educator taps an item in the list THE SYSTEM SHALL show its strength (strong, growing, faint, or not yet, from the days it came up in the last 30), the facts behind it, and its bridges and related items, each a tap away with the link's own strength (a bridge also says how it held).
-- WHEN an interest is a kind of another (a Great White is a kind of shark) THE SYSTEM SHALL list it under that group and count the group's strength from the days any of its kinds came up, each day once; the tagger may group names already on the map, and the educator can put an item under a group, take it out (it stays out), or tick a group the Suggest box proposes.
+- WHEN an interest is a kind of another (a Great White is a kind of shark) THE SYSTEM SHALL list it under that group and count the group's strength from the days any of its kinds came up, each day once; the tagger may group names already on the map, and the educator can put an item under a group, take it out (it stays out), or tick a group the Tell Lerni box proposes.
 
 ### Story: Give feedback
 
 As an educator, I want to tell the admin what to change in plain words, so that the app improves without me learning anything technical.
 
-- WHEN the educator mentions something about the app in the Suggest box THE SYSTEM SHALL propose it as a feedback item, and save it for the admin only when the educator ticks it.
+- WHEN the educator mentions something about the app in the Tell Lerni box THE SYSTEM SHALL propose it as a feedback item, and save it for the admin only when the educator ticks it.
 - WHEN feedback is saved THE SYSTEM SHALL never act on it: no change to the map, the goals, or the app. The admin reads it in the terminal and makes changes by hand.
 
 ### What to watch for in the first sessions
 
 - The student uses the iPad with you beside them. Offer it in one sentence; they may say no or stop at any time.
 - Plan on 5–10 minutes. Finishing is not the goal.
-- Afterward, keep brief private notes, or tell the Suggest box (it goes to the admin): what caught their interest, what confused them, what to change. Keep what happened separate from what you think it means.
+- Afterward, keep brief private notes, or tell the Tell Lerni box (it goes to the admin): what caught their interest, what confused them, what to change. Keep what happened separate from what you think it means.
 
 | Watch for | It shapes |
 |---|---|
@@ -98,6 +98,7 @@ These notes are for the admin and educator, not the app; the in-app text stays s
 - WHEN the educator opens Games THE SYSTEM SHALL let them race too, to rehearse; their points are their own.
 - WHEN the educator opens a supervised student's page THE SYSTEM SHALL show their goal progress this week by subject area (a bar per goal, right of asked), their points, and the car they drive, and list their goals under their areas.
 - WHEN the educator taps a goal THE SYSTEM SHALL show how racing on it is going (last raced, this week's right answers, ideas missed lately), read from the race results and never written into the map.
+- WHEN the morning plan runs (each morning at 5:00) THE SYSTEM SHALL show the educator, under the Tell Lerni box, up to 5 connections to try (an interest, a goal, and the hook that links them) and any goal suggestion (a goal's notes widened when it's running out of things to ask), to tick: Use ticked makes a connection a target for races and Chat and makes a goal suggestion the goal's notes; Not these sets them aside. A connection never becomes a bridge by itself; what the educator tells the Tell Lerni box about the suggestions is noted, once ticked, for the next morning.
 - Race questions come from the student's goals and interests, so the goals on MentalMaps are what the race practices. Whether Lerni's questions now get real answers instead of emojis is noted privately.
 
 ## Version 4: the educator's Chat

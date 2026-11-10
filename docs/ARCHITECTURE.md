@@ -41,7 +41,7 @@ flowchart LR
     claude -- "4 answer" --> screen
     convo -. "5 the exchange" .-> tagger["Claude: tagger<br/>(small, background)"]
     tagger -. "6 interests, links, bridge" .-> check["Server checks"] --> maps
-    edev["Suggest box"] -- "ticked proposals" --> maps
+    edev["Tell Lerni box"] -- "ticked proposals" --> maps
 ```
 
 1. The student sends a question.
@@ -75,7 +75,7 @@ flowchart LR
 
   No educator screen shows an independent student's map. That is privacy by default, not a protection: the educator can reset a password and sign in as that student, and the admin can read every file.
 - **Devices are a household rule:** a supervised student's iPad is signed in only as that student.
-- **Outbound:** all calls go to Claude (Anthropic) through the admin's Claude account, behind an adapter: the answers, the tagger, the upload, the educator agent, race questions with their blind answer check, bonus grading, and the feedback themes (`lerni feedback --summary`). Race questions are written ahead, at server start, each morning, and sign-in, not only on a tap. A failed call logs its kind, never its text; an expired sign-in is shown to educators. No account details are added, and Claude Code keeps no transcript on the server (Anthropic's retention still applies). A supervised student's conversation through this consumer account is a choice the admin made for the household; an API key is not planned, revisit before anyone outside the family uses the app ([spec](../plans/specs/04-interest-map.md#supervised-students)). Version 1 has no automatic reply check; the adult nearby and the logs are the check.
+- **Outbound:** all calls go to Claude (Anthropic) through the admin's Claude account, behind an adapter: the answers, the tagger, the upload, the educator agent, race questions with their blind answer check, bonus grading, and the feedback themes (`lerni feedback --summary`). Race questions are written ahead, at server start, each morning, and sign-in, not only on a tap; each morning one more call suggests connections to try, goal suggestions, and goal steps (v3.44). A failed call logs its kind, never its text; an expired sign-in is shown to educators. No account details are added, and Claude Code keeps no transcript on the server (Anthropic's retention still applies). A supervised student's conversation through this consumer account is a choice the admin made for the household; an API key is not planned, revisit before anyone outside the family uses the app ([spec](../plans/specs/04-interest-map.md#supervised-students)). Version 1 has no automatic reply check; the adult nearby and the logs are the check.
 - **Files:** uploads are read and deleted at once; maps, feedback, and logs are written only by the server. Gradio serves cached files to anyone signed in, so nothing private is ever served as a file: the map picture is inline.
 
 ## Who owns each kind of data
@@ -84,12 +84,13 @@ flowchart LR
 |---|---|---|---|
 | Student accounts | Username, display name, kind, password hash, session version, educator flag, archived flag | Educator manages; an independent student changes their own name and password | `~/.lerni/student/students/` (built) |
 | Interest map | Entries (name, other names it was called, interest or goal, notes, days, mentions, explained and bounce dates) and links (related, bridge, or kind of; a group's strength counts its kinds' days, worked out on read), plus removed items' history, resting items, and name pairs a person split | Educators for a supervised student; an independent student for their own | `~/.lerni/student/maps/<username>.json` (built) |
-| Map journal | Every map change: who made it (the tagger, a person, Upload, the Suggest box, the admin) and the items before and after, so any change can be undone and a map rebuilt | The server, at each map change; the admin reads and undoes with `lerni map` | `~/.lerni/student/maps/<username>.events.jsonl` |
+| Map journal | Every map change: who made it (the tagger, a person, Upload, the Tell Lerni box, the admin) and the items before and after, so any change can be undone and a map rebuilt | The server, at each map change; the admin reads and undoes with `lerni map` | `~/.lerni/student/maps/<username>.events.jsonl` |
 | Conversation | The last 20 messages, one ongoing conversation per student | That student | Memory only; gone on New conversation or a server restart (built) |
 | Conversation logs | Each exchange and what the tagger did with it | The admin reads them (`lerni logs`) | `~/.lerni/student/logs/<username>/<date>.jsonl`, deleted after a year (built) |
 | Feedback | Date, who, which map, the note the educator ticked | The admin processes it | `~/.lerni/student/feedback.jsonl` (built) |
 | Points | Balance, cars, today's races, and recent award ids (ids and numbers only) | The player; an educator reads a supervised student's | `~/.lerni/student/points/<username>.json` |
 | Race results | Each answer and finish, kept for good: day, goal id and name, concept, a question hash, level, attempt, right or wrong, seconds, place (never question text) | The server, at each answer; the educator sees this week per goal | `~/.lerni/student/results/<username>.jsonl` |
+| Morning suggestions | Connections to try and goal suggestions with their state (waiting, in use, set aside), goal steps by goal id, and the educator's last 5 notes on them (labels; never a student's words) | The server each morning; a person's tick | `~/.lerni/student/suggestions/<username>.json` |
 | Race concepts | Every idea race questions tested, kept for good: short labels under their goal's id, first and last dates, times asked and right, review due dates for missed ideas, and each goal's level by goal id (never question text) | The server, at each race start and answer | `~/.lerni/student/concepts/<username>.json` |
 | Garage | Real cars: names, prices, stats, and cut-out pictures | The admin, by hand; players see them in Games (pictures only when signed in) | `~/.lerni/student/garage.json` and `cars/` (private: never in the repo) |
 | Nightly backups | A copy of the whole data folder but its keys and stats copy each night at 03:00, the newest 30 kept (same disk: covers bad changes and deploys, not a broken disk); `lerni backup restore` puts one back | `lerni backup` (a LaunchAgent) | `~/.lerni/backups/student/nightly-YYYY-MM-DD/` |
@@ -102,7 +103,7 @@ flowchart LR
 
 If a change would break one of these, stop and ask.
 
-1. **People decide goals; agents may propose them.** A goal and its notes are saved only from a person's tap, through the server: a signed-in educator for a supervised student, or an independent student for their own map. Claude's proposals (Upload, the Suggest box, later the educator's Chat and suggestions) stay proposals until a person accepts them. The tagger can add interests, time, and links, never goals. Feedback is summarized, never acted on.
+1. **People decide goals; agents may propose them.** A goal and its notes are saved only from a person's tap, through the server: a signed-in educator for a supervised student, or an independent student for their own map. Claude's proposals (Upload, the Tell Lerni box, later the educator's Chat and suggestions) stay proposals until a person accepts them. The tagger can add interests, time, and links, never goals. Feedback is summarized, never acted on.
 2. **Conversation text is kept only in the logs** on the home server, for a year while the family hosts it: never in other files, server output, or browser storage. Also saved: accounts; maps (short names drawn from the conversation, plus dates and links; a full map rests its least-seen interest, history and all, until it comes up again); feedback (an educator's own words and a summary); from Version 4, the checked bank.
 3. **The safety rules come last** in every prompt, after the persona and the map, and live in code, not in the editable persona files. That's how the prompt is built, not a guarantee of what Claude says; the evals check it.
 4. **Home network only.** See [trust boundaries](#trust-boundaries).
