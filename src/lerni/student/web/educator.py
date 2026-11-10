@@ -19,6 +19,7 @@ from lerni.student.educator_agent import EducatorChats, apply_educator_proposals
 from lerni.student.feedback import FeedbackStore
 from lerni.student.garage import Garage
 from lerni.student.interests import MapStore
+from lerni.student.morning import SuggestionStore, decide
 from lerni.student.points import PointsStore
 from lerni.student.results import ResultsLog
 from lerni.student.signin import SignIn, Viewer
@@ -69,6 +70,7 @@ def educator_add(
     viewer: Viewer | None,
     owner: str,
     ticked: list[str],
+    suggestions: SuggestionStore | None = None,
 ) -> str:
     """Apply the ticked proposals for ``owner``, the student they were made for."""
     try:
@@ -79,18 +81,22 @@ def educator_add(
     chosen = [p for p in chats.proposals(v.username, owner) if p.label in set(ticked)]
     if not chosen:
         return "⚠️ Tick something to add first."
-    on_map = [p for p in chosen if p.kind != "feedback"]
+    on_map = [p for p in chosen if p.kind not in ("feedback", "note")]
     done, skipped = 0, []
     if on_map:  # one change: nothing else edits the map in between
         done, skipped = maps.change(owner, lambda m: apply_educator_proposals(m, on_map),
                                     by="educator chat")
-    sent = 0
+    sent = noted = 0
     for p in chosen:
         if p.kind == "feedback" and feedback is not None:
             sent += save_feedback(feedback, students, v, owner, p.notes, "").startswith("✅")
+        elif p.kind == "note" and suggestions is not None:  # for tomorrow's suggestions
+            suggestions.add_note(owner, p.notes, date.today())
+            noted += 1
     chats.taken(v.username, owner, chosen)
     lines = [f"✅ Added {done} to the map."] if done else []
     lines += [f"📨 Sent {sent} to the admin."] if sent else []
+    lines += ["📝 Noted for tomorrow's suggestions."] if noted else []
     lines += [f"Skipped {s}" for s in skipped]
     return "\n\n".join(lines) or "⚠️ Nothing was added."
 
@@ -114,8 +120,10 @@ def educator_tab(
     points: PointsStore | None = None,
     garage: Garage | None = None,
     results: ResultsLog | None = None,
+    suggestions: SuggestionStore | None = None,
 ) -> tuple[gr.Tab, gr.Dropdown]:
-    """The student's page: suggest or change a goal, then goal progress, the list, the picture.
+    """The student's page: Tell Lerni (a goal, a change, or a note on its suggestions), Lerni's
+    morning suggestions to tick, then goal progress, the list, the picture.
 
     With one supervised student it opens on them (main.py picks and hides the dropdown).
     """
@@ -123,11 +131,12 @@ def educator_tab(
         # any value: a page open across a restart sends its old pick; map_owner checks it
         who = gr.Dropdown(label="Student", choices=[], value=None, allow_custom_value=True)
         # suggest a goal: first on the page, so the phone keyboard never pushes it around
-        gr.Markdown("### Suggest or change a goal")
+        gr.Markdown("### Tell Lerni\nA new goal, a change to one, or what you think of the "
+                    "suggestions below.")
         with gr.Row(elem_classes="lerni-type"):
             text = gr.Textbox(
                 show_label=False,
-                placeholder="New goal, or 'easier notes for Fractions'…",
+                placeholder="New goal, a change, or 'fewer train ideas'…",
                 lines=1,
                 max_lines=4,
                 max_length=MAX_MESSAGE,
@@ -150,6 +159,13 @@ def educator_tab(
         ticks = gr.CheckboxGroup(show_label=False, choices=[], visible=False)
         add = gr.Button("Add to the map", variant="primary", visible=False)
         status = gr.Markdown()
+        # Lerni's morning suggestions (v3.44): ticks and two buttons, no box of their own
+        lerni_head = gr.Markdown("### Suggestions from Lerni", visible=False)
+        lerni_ticks = gr.CheckboxGroup(show_label=False, choices=[], visible=False)
+        with gr.Row(visible=False) as lerni_row:
+            use = gr.Button("Use ticked", variant="primary", min_width=90)
+            skip = gr.Button("Not these", min_width=90)
+        lerni_status = gr.Markdown()
         points_line = gr.HTML()  # their goal progress this week, ⭐, and car
         list_owner, version = gr.State(""), gr.State(0)  # set only after map_owner's check
         # edits go to the student the list shows, never a newer dropdown pick
@@ -191,6 +207,35 @@ def educator_tab(
             stars = progress(requested, request)
             return [draw(requested, request), checked_owner(requested, request), bump(), hidden,
                     gr.update(visible=False), "", "", None, stars, ""]
+
+        def ideas(requested: str | None, request: gr.Request) -> list[Any]:
+            # the waiting suggestions for the student shown; hidden when there are none
+            try:
+                who = map_owner(students, signin.viewer(request.username), requested or "")
+                waiting = suggestions.waiting(who) if suggestions is not None else []
+            except NotAllowed:
+                waiting = []
+            shown = bool(waiting)
+            return [gr.update(visible=shown), gr.update(choices=waiting, value=[], visible=shown),
+                    gr.update(visible=shown)]
+
+        def on_decide(use_them: bool) -> Any:
+            def handler(picked: list[str], requested: str | None, v: int,
+                        request: gr.Request) -> list[Any]:
+                viewer = signin.viewer(request.username)
+                try:
+                    v_ = require_educator(viewer)
+                    who = map_owner(students, v_, requested or "")
+                except NotAllowed as exc:
+                    return [*ideas(requested, request), f"⚠️ {exc}", v]
+                if not picked:  # keeps nothing ticked: nothing to keep
+                    return [gr.update(), gr.update(), gr.update(), "⚠️ Tick one first.", v]
+                done, skipped = decide(suggestions, maps, who, picked, use_them, date.today(),
+                                       by=f"person:{v_.username}") if suggestions else (0, [])
+                line = (f"✅ Using {done}." if use_them else f"🗑️ Set aside {done}.") if done else ""
+                lines = [x for x in (line, *(f"Skipped {s}" for s in skipped)) if x]
+                return [*ideas(requested, request), "\n\n".join(lines), bump()]
+            return handler
 
         def on_attach(path: str | None) -> list[Any]:
             return [path, f"📎 {Path(path).name}, sent with your next message" if path else ""]
@@ -249,7 +294,8 @@ def educator_tab(
             viewer = signin.viewer(request.username)
             if chats is None or not owner:
                 return ["", gr.update(), gr.update(), draw(owner, request), v]
-            message = educator_add(chats, maps, feedback, students, viewer, owner, picked or [])
+            message = educator_add(chats, maps, feedback, students, viewer, owner, picked or [],
+                                   suggestions)
             left = [p.label for p in chats.proposals(viewer.username, owner)] if viewer else []
             return [
                 message,
@@ -276,6 +322,12 @@ def educator_tab(
             **PRIVATE,
         )
         attach.upload(on_attach, attach, [held_file, status], **PRIVATE)
+        lerni_out = [lerni_head, lerni_ticks, lerni_row]
+        who.change(ideas, who, lerni_out, **PRIVATE)  # the student picked: their suggestions
+        tab.select(ideas, who, lerni_out, **PRIVATE)
+        for button, use_them in ((use, True), (skip, False)):
+            button.click(on_decide(use_them), [lerni_ticks, who, version],
+                         [*lerni_out, lerni_status, version], **PRIVATE)
         add.click(on_add, [ticks, owner_state, version], [status, ticks, add, picture, version],
                   **PRIVATE)
         ticks.change(lambda picked: add_button(len(picked or [])), ticks, add, **PRIVATE)

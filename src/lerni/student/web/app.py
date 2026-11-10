@@ -11,7 +11,7 @@ from __future__ import annotations
 import os
 import threading
 import time
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 from typing import Any
 
@@ -31,6 +31,7 @@ from lerni.student.garage import Garage  # noqa: E402
 from lerni.student.interests import MapStore  # noqa: E402
 from lerni.student.logs import ConversationLog  # noqa: E402
 from lerni.student.meaning import Embedder  # noqa: E402
+from lerni.student.morning import SuggestionStore, run_morning  # noqa: E402
 from lerni.student.points import PointsStore  # noqa: E402
 from lerni.student.race import (  # noqa: E402
     AHEAD_HOUR,
@@ -216,9 +217,9 @@ def _theme() -> gr.themes.Base:
     return gr.themes.Base(font=_SYSTEM_FONTS, font_mono=_MONO_FONTS)
 
 
-def write_ahead(races: Any, students: Any) -> None:
-    """A few races' worth for each supervised student, in the background (v3.42); never raises,
-    so one bad morning never stops the next."""
+def write_ahead(races: Any, students: Any, morning: Any = None) -> None:
+    """For each supervised student, this morning's plan (v3.44, once a day) and then a few
+    races' worth (v3.42); never raises, so one bad morning never stops the next."""
     try:
         players = [s.username for s in students.list_students()
                    if s.kind is Kind.SUPERVISED and not s.archived]
@@ -227,6 +228,8 @@ def write_ahead(races: Any, students: Any) -> None:
         return
     for username in players:
         try:  # one student's broken file never stops the others'
+            if morning is not None:  # first, so the races written next can use its steps
+                morning(username)
             races.prefill(username, supervised=True, races=AHEAD_RACES)
         except Exception as exc:  # noqa: BLE001
             print(f"Writing races ahead skipped for one ({type(exc).__name__}).", flush=True)
@@ -325,15 +328,27 @@ def build_app(
         threading.Thread(target=lambda: [sorter.sort(s.username) for s in
                                          students.list_students() if not s.archived],
                          daemon=True).start()
+    suggestions = SuggestionStore(root)  # the morning plan (v3.44)
+    if races is not None:
+        races.suggestions = suggestions
+
+    def morning(username: str) -> None:  # once a day per student; best effort inside
+        today = date.today()
+        if quizzer is not None and races is not None and not suggestions.ran_today(username,
+                                                                                    today):
+            run_morning(username, quizzer, maps, races.concepts, suggestions, today)
+
     log.purge()  # at startup; then once a day as exchanges are logged
     # production only (a labelled server is development): a restart loses held questions
     if races is not None and not label:
         def mornings() -> None:  # and again each morning, before anyone races
             while True:
                 time.sleep(seconds_until(AHEAD_HOUR, datetime.now()))
-                write_ahead(races, students)
+                write_ahead(races, students, morning)
 
-        write_ahead(races, students)
+        # in the background: the morning call takes a minute, and the server starts now
+        threading.Thread(target=write_ahead, args=(races, students, morning),
+                         daemon=True).start()
         threading.Thread(target=mornings, daemon=True).start()
 
     def plays(username: str) -> bool:  # supervised students and educators earn ⭐
@@ -344,6 +359,10 @@ def build_app(
         return student.kind is Kind.SUPERVISED or student.educator
 
     keeper = MapKeeper(maps, tagger, log, points=points, earns=plays)
+    keeper.suggestions = suggestions  # Chat hears the connections the educator ticked
+    educator_chats = EducatorChats(chat_model, maps, log) if chat_model else None
+    if educator_chats is not None:
+        educator_chats.suggestions = suggestions  # it sees what's waiting
     conversations = (
         Conversations(
             chat_model, context=keeper.context, on_exchange=keeper.after, spoken=speech is not None
@@ -360,7 +379,7 @@ def build_app(
         feedback=FeedbackStore(root),
         label=label,
         speech=speech,
-        educator_chats=EducatorChats(chat_model, maps, log) if chat_model else None,
+        educator_chats=educator_chats,
         usage=usage,
         points=points,
         races=races,
