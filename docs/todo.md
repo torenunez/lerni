@@ -23,7 +23,6 @@ Open tasks by who does the work. The educator and admin tracks run in parallel: 
 
 ### Now
 
-- [ ] Decide what Version 4 keeps on disk ([v4.1](../plans/v4.1-repeats-by-theme.md#decision-the-admin-2026-11-10)): the ✗'d question's record (question, choices, key, the educator's why, goal id) instead of a hash, and the day's sample for 7 days; both recommended, both a rule 6 change.
 - [ ] Read the private repeat report (Claude runs it on existing labels, on your screen only; never committed).
 - [ ] Check v3.7 on the iPhone and iPad (both on the same Wi-Fi as the Mac): Games, the ⭐ tap and "+3" in Chat, both MentalMap screens, and Hold to talk.
 - [ ] Turn off extra usage (paid credits) on the Claude account Lerni uses (claude.ai → Settings → Usage), so Lerni can never spend credits; Lerni also rests if a call ever uses them.

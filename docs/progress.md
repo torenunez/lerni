@@ -17,7 +17,7 @@ When something changes, update this section and add a log entry below.
 ### 2026-11-10 (repeats by theme; v4.1, decided)
 
 - An internal review and two outside reviews of v3.30–v4.1 found the repeats are mostly one theme across different ideas, which the 0.91 label check can't catch by design. The causes: formats and a twist that lean towards size and speed, the prompt's one example label, goals and interests falling into step, and three identity bugs (math labels lose their operators, the repeat check pools goals, a reworded review doesn't advance). The outside reviews also found a stale goal suggestion can overwrite newer notes, a restore can revive signed-out sessions, and a broken points file breaks Games; no High findings.
-- The admin's calls: fix these without embeddings first (v4.2 race fixes, v4.3 data fixes), then Version 4 (v4.4–v4.5); theme clustering dropped; a learned idea leaves races but stays open for recall; Versions 5 and 6 gated on probe data and bank size, Version 7 its own release after a written safety plan, and minimal CI moved before Version 5 ([v4.1](../plans/v4.1-repeats-by-theme.md)). Pending: whether Version 4 keeps the ✗'d question's record and the day's sample on disk.
+- The admin's calls: fix these without embeddings first (v4.2 race fixes, v4.3 data fixes), then Version 4 (v4.4–v4.5); theme clustering dropped; a learned idea leaves races but stays open for recall; Versions 5 and 6 gated on probe data and bank size, Version 7 its own release after a written safety plan, and minimal CI moved before Version 5 ([v4.1](../plans/v4.1-repeats-by-theme.md)). Version 4 keeps the ✗'d question's record (not only a hash) and the day's sample for 7 days (rule 6).
 
 ### 2026-11-10 (Version 4 planned; v4.0)
 
