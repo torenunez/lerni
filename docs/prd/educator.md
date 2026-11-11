@@ -25,8 +25,8 @@ Each stage needs evidence from the one before.
 | Setting | Default | Effect | From version |
 |---|---|---|---|
 | Voice | Off | When on, the student can hold the talk button | 2 |
-| Remembering preferences | On | When off, the companion keeps no preferences beyond the map | 4 |
-| Without me present | Off | When on, the supervised student may talk with Lerni without an educator beside them | 6 |
+| Remembering preferences | On | When off, the companion keeps no preferences beyond the map | 6 |
+| Without me present | Off | When on, the supervised student may talk with Lerni without an educator beside them | 7 |
 
 Settings never change on their own, and each takes effect at once. The starting exclusion list (violence, weapons, sexual content, self-harm, drugs) is built into the supervised rules.
 
