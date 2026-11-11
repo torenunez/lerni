@@ -14,6 +14,10 @@ When something changes, update this section and add a log entry below.
 
 ## Log
 
+### 2026-11-11 (bulk ratings; v4.5 built)
+
+- v4.5 ([plan](../plans/v4.5-bulk-labels.md)): `lerni race batch` writes about 8 checked questions per goal on a temporary copy of the data (nothing recorded), for a Google Sheet in the admin's account; `lerni race labels` reads the ratings into the checked bank (`bank.py`). Each write now shows up to 2 good questions and 3 marked wrong (with the problem or notes) for its goals, and a question marked wrong never races. Banked questions don't race yet (v4.6).
+
 ### 2026-11-11 (review fixes; v4.4 built)
 
 - v4.4 ([plan](../plans/v4.4-review-fixes.md)), from the v4.3 review: the spare fill never races one idea on a goal twice, so a review can't race twice; a restore treats a session version it can't read as 1 instead of stopping halfway; a minus after another sign, or before a letter, stays a sign; due reviews list each idea once; a goal suggestion refused because its notes changed leaves the list at once; the concept file is read once per change; writes use macOS's full flush. From the admin's example (an "odd one out" built from an equation's parts): a planned format that can't make a sensible question becomes "how it works". The car eval case now allows no comparison, since the prompt says at most one. Question fingerprints changed in v4.2 and v4.4 for sums like 6/2 or x^2, so stats group old and new rows of such a question apart. The admin chose a bulk labelling pass in a Google Sheet next (v4.5), before the daily sample (v4.6) and Tell Lerni (v4.7). Tests: 273 passed.

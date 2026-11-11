@@ -113,6 +113,13 @@ As an educator, I want to tell Lerni in my own words what to do better, or hand 
 - WHEN the educator shares questions with answers (typed, or attached with 📎) THE SYSTEM SHALL propose each as a question with its right answer and two wrong choices Claude wrote, for a goal, and keep only the ones ticked, in that goal's checked bank.
 - WHEN the educator names another student THE SYSTEM SHALL ask them to pick that student first, and never propose for a student who isn't shown.
 
+### Story: Rate questions in bulk
+
+As an educator, I want to rate a batch of race questions per goal in one sitting, so that Lerni learns what good questions look like for each goal.
+
+- WHEN the admin asks Claude for a batch THE SYSTEM SHALL write about 8 questions per goal that pass every race check, without recording anything, into a sheet with a rating (Good, Needs a fix, Bad), a problem, and notes for each.
+- WHEN the ratings are read back THE SYSTEM SHALL keep them in each goal's checked bank: good ones become examples for that goal's next questions, and ones marked Bad or Needs a fix become mistakes to avoid and never race.
+
 ### Story: Check a few questions
 
 As an educator, I want to look at a few of Lerni's race questions now and then, like a quality check, so that good questions come back and wrong ones never do.

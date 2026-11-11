@@ -178,6 +178,10 @@ Race questions that reword a recent idea, or touch a set-aside topic in other wo
 2. The log's start says `Race checks by meaning: on`, or `off` with the reason. Each question write logs `Race set: 15 written, 10 kept; dropped N repeats (N by meaning), N set aside, N car; N formats, N settings` (counts only). Each morning, and at start-up once a day, it logs `Morning plan: N connections, N goal suggestions, N goal's steps` per supervised student, or `Morning plan skipped` with the kind of error. Healthy sets show several formats and settings and few repeats; if `lerni stats` shows one setting leading by far, or many ideas asked before, tell Claude Code. To turn it off, rename the model file and restart.
 3. To compare models again: `.venv/bin/python scripts/bakeoff_embeddings.py`.
 
+### Rating questions in bulk
+
+Ask Claude Code to "write a batch for rating" for a student. It runs `lerni race batch --user U --out FILE` (about 8 checked questions per goal, written on a copy of the data so nothing is recorded; it says the number of Claude calls first), makes a Google Sheet from the file in your account, and deletes the file. Rate each row Good, Needs a fix, or Bad, with a problem and notes. Then ask Claude Code to read it back: it runs `lerni race labels FILE --user U` (good ones become examples for their goal; wrong ones are avoided and never race), deletes the file, and offers to delete the sheet. `--data` points either at development's folder. Takes effect at the next question write; no restart.
+
 ### If Claude stops working
 
 Races say "The track needs a minute" and Chat says "Claude didn't answer". The log says why: `Claude call failed (chat): sign-in expired`, or the error's kind. Educators also see "Claude needs the admin to sign in again". For an expired sign-in, run `claude` in Terminal on the home server, then `/login`. The next call clears the line, with no restart.
