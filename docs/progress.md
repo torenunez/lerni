@@ -14,6 +14,10 @@ When something changes, update this section and add a log entry below.
 
 ## Log
 
+### 2026-11-10 (race fixes; v4.2 built)
+
+- v4.2 ([plan](../plans/v4.2-race-fixes.md)): labels and question hashes keep their math ("1/2 + 1/4" and "1/2 − 1/4" are two ideas); repeats are checked within each goal, so an idea from one goal can be a first on another; each review has an id Claude returns, so a reworded review moves its idea; the prompt lost its one example label and asks for a different angle too; a goal takes at most one quantity format a set, a set at most one "record" twist, each goal's questions use different interests, and one car number a set is compared, in turn, counted across both tries. Tests: 263 passed.
+
 ### 2026-11-10 (repeats by theme; v4.1, decided)
 
 - An internal review and two outside reviews of v3.30–v4.1 found the repeats are mostly one theme across different ideas, which the 0.91 label check can't catch by design. The causes: formats and a twist that lean towards size and speed, the prompt's one example label, goals and interests falling into step, and three identity bugs (math labels lose their operators, the repeat check pools goals, a reworded review doesn't advance). The outside reviews also found a stale goal suggestion can overwrite newer notes, a restore can revive signed-out sessions, and a broken points file breaks Games; no High findings.

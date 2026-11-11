@@ -65,7 +65,7 @@ multilingual-e5-small's GGUF wouldn't load in llama.cpp, so it isn't in the tabl
 ## Use 2: repeats by meaning (v3.40)
 
 - **Where:** `check_questions`, from the vectors `_write` passes in.
-- **What's compared:** each new question's idea label against:
+- **What's compared:** each new question's idea label against its own goal's (since v4.2; probes against all):
   - the recent ideas Claude was told to avoid;
   - the ideas already kept in the same set.
 - **When it's dropped:** at a cosine of **0.91** or more with any of them, like today's exact repeats.
