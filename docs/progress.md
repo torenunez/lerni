@@ -4,9 +4,9 @@ Where things really stand, then a dated log, newest first. Completed work is rec
 
 Record each kind of "done" only when it actually happens, with the date: code built, content approved, app ready, a student session held. Passing tests show code behaves as specified; they don't make anything ready for a student.
 
-## Current state (2026-11-10, v3.41 on the home server: Versions 1 and 2 built: the conversation, MentalMaps, HTTPS, and voice; Version 3's race, garage, and Chat points)
+## Current state (2026-11-10, v3.45 on the home server: Versions 1 and 2 built: the conversation, MentalMaps, HTTPS, and voice; Version 3's race, garage, and Chat points)
 
-- **Built:** the student app's core (student accounts, sign-in, Lerni's conversations, the MentalMap with its tagger and logs kept a year, Upload and educator feedback, and the educator agent); `lerni serve` with a sign-in page and one app with a ☰ menu by role: an independent student's Chat, My MentalMap (an editable list, the picture, and Upload), and Settings; an educator's student page (a Suggest a goal box, goal progress this week by area, the folded list, and the picture), opened at sign-in, with Students in Settings; a supervised student's Chat, full screen, and Games (a race for points spent on real cars; educators race too); good answers in Chat earn points too. Hold to talk with spoken answers; a Claude usage warning and rest; race checks by meaning, on the home server's own model. Both servers run as LaunchAgents (`lerni service`). The admin tool (`lerni`, with `lerni student`, `lerni logs`, `lerni feedback`, and `lerni stats`). A [code manifest](code-manifest.md) of every file. Tests: 244 passed.
+- **Built:** the student app's core (student accounts, sign-in, Lerni's conversations, the MentalMap with its tagger and logs kept a year, Upload and educator feedback, and the educator agent); `lerni serve` with a sign-in page and one app with a ☰ menu by role: an independent student's Chat, My MentalMap (an editable list, the picture, and Upload), and Settings; an educator's student page (a Suggest a goal box, goal progress this week by area, the folded list, and the picture), opened at sign-in, with Students in Settings; a supervised student's Chat, full screen, and Games (a race for points spent on real cars; educators race too); good answers in Chat earn points too. Hold to talk with spoken answers; a Claude usage warning and rest; race checks by meaning, on the home server's own model. Both servers run as LaunchAgents (`lerni service`). The admin tool (`lerni`, with `lerni student`, `lerni logs`, `lerni feedback`, and `lerni stats`). A [code manifest](code-manifest.md) of every file. Tests: 258 passed.
 - **Designed:** the interest map, goals, the tagger, upload, feedback, and the supervised conversation ([specs/04-interest-map.md](../plans/specs/04-interest-map.md)); approved with PR #12. Harder races, practice on the map, and probes ([spec 09b](../plans/specs/09b-harder-races.md)). Local embeddings ([spec 10](../plans/specs/10-local-embeddings.md)). The order from here: Versions 4–7 ([roadmap](roadmap.md)).
 - **Not yet:** a recorded supervised session (the supervised student has used it informally).
 
@@ -14,13 +14,18 @@ When something changes, update this section and add a log entry below.
 
 ## Log
 
+### 2026-11-10 (repeats by theme; v4.1, decided)
+
+- An internal review and two outside reviews of v3.30–v4.1 found the repeats are mostly one theme across different ideas, which the 0.91 label check can't catch by design. The causes: formats and a twist that lean towards size and speed, the prompt's one example label, goals and interests falling into step, and three identity bugs (math labels lose their operators, the repeat check pools goals, a reworded review doesn't advance). The outside reviews also found a stale goal suggestion can overwrite newer notes, a restore can revive signed-out sessions, and a broken points file breaks Games; no High findings.
+- The admin's calls: fix these without embeddings first (v4.2 race fixes, v4.3 data fixes), then Version 4 (v4.4–v4.5); theme clustering dropped; a learned idea leaves races but stays open for recall; Versions 5 and 6 gated on probe data and bank size, Version 7 its own release after a written safety plan, and minimal CI moved before Version 5 ([v4.1](../plans/v4.1-repeats-by-theme.md)). Version 4 keeps the ✗'d question's record (not only a hash) and the day's sample for 7 days (rule 6).
+
 ### 2026-11-10 (Version 4 planned; v4.0)
 
 - The admin's direction: the educator is a continuous improvement partner and auditor, not a gatekeeper. Version 4 ([plan](../plans/v4.0-educator-chat.md)) samples up to 3 race questions a day for ✓ or ✗ (from different goals, the least checked first, and weighted toward ones the student missed), takes broad feedback through Tell Lerni as guidance notes that steer every question after, and turns answer keys into checked questions; races mix in up to 1 a race. Two PRs: v4.1 and v4.2. The sample stays in memory; rule 6 is unchanged. Version 8 now also holds minimal CI (a few key integration tests).
 
 ### 2026-11-10 (fewer goal suggestions; v3.45 built)
 
-- Production's first morning plan made 5 connections, steps for 14 goals, and 14 goal suggestions, so the educator's page listed 19 items. "Running out" (12 ideas in 30 days) fit most goals at the student's pace. v3.45 ([plan](../plans/v3.45-fewer-goal-suggestions.md)): a goal may be widened only at the top level with 12 or more ideas, the most outgrown first (ideas asked again after they were right), and at most one goal suggestion waits; the first morning call after the deploy tidies the rest. The admin moved away from home to Version 8, after Version 7, aiming to build Versions 4–7 this week.
+- The first morning plan made far more goal suggestions than the admin's "up to 5": "running out" (12 ideas in 30 days) fit most goals. v3.45 ([plan](../plans/v3.45-fewer-goal-suggestions.md)): a goal may be widened only at the top level with 12 or more ideas, the most outgrown first (ideas asked again after they were right), and at most one goal suggestion waits; the first morning call after the deploy tidies the rest. The admin moved away from home to Version 8, after Version 7, aiming to build Versions 4–7 this week.
 
 ### 2026-11-10 (the morning plan; v3.44 built)
 
