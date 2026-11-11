@@ -39,7 +39,7 @@
 
 - **Unraced questions written ahead** may stay on disk until the day ends (a rule 6 addition).
 - **The local tagger's shadow test** may read the conversation logs in place. Nothing leaves the Mac, and only agree/disagree counts are kept.
-- **The usage meter comes first** after v4.5.
+- **The usage meter comes first** after v4.5. *Replaced 2026-11-11:* it comes after the map picture and Tell Lerni, with minimal CI (v4.8); write-ahead and the daily check share a PR (v4.9).
 - **Supervised chat on Haiku 5.5** may be tested, with a switch back.
 
 ## The plan: four versions, each its own PR, after v4.5 merges
@@ -102,7 +102,7 @@
 
 ## Order
 
-v4.5 (bulk ratings) → **A, the usage meter (v4.6)** → question quality from the ratings → the map picture (general interests only) → **B, overnight write-ahead** → check a few questions (the bank races; fewer writes) → **C, lighter chat** → **D, local tagger in shadow** → Tell Lerni → CI → Versions 5–7.
+v4.5 (bulk ratings and question quality) → v4.6 the map picture (general interests only) → v4.7 Tell Lerni → **v4.8 A, the usage meter**, with minimal CI → **v4.9 B, overnight write-ahead**, with check a few questions → **v4.10 C, lighter chat** → **v4.11 D, local tagger in shadow** → Versions 5–7.
 
 **Data check-in:** about a week after A ships, read the meter. It may reorder B, C and D.
 
