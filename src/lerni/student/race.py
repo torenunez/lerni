@@ -613,7 +613,6 @@ def check_questions(raw: Any, m: InterestMap, rng: random.Random | None = None,
                 or not normalize(concept)):
             continue
         own_key = "" if probe else goal.casefold()  # this question's goal, for its own ideas
-        written_as = concept  # Claude's own label, for a spare (v4.3 review)
         if (review := _review(item.get("review"), reviews, own_key, taken)) is not None:
             concept = reviews[review][1]  # its due idea's label, so the answer moves that review
         mine = [] if probe else own.get(own_key, [])  # a probe is checked against every goal
@@ -646,9 +645,8 @@ def check_questions(raw: Any, m: InterestMap, rng: random.Random | None = None,
             if meaning is not None and reworded:
                 meaning.repeats += 1  # counted once, as it's set aside
             tally["repeat" if repeat or reworded else "car"] += 1
-            if spare is not None:  # a spare never carries a review's label: it can't race twice
-                spare.append(replace(question, concept=written_as) if review is not None
-                             else question)
+            if spare is not None:  # with its review's label: the fill skips it once that idea races
+                spare.append(question)
             continue
         compared += cars_named
         kept.append(question)
@@ -661,6 +659,22 @@ def check_questions(raw: Any, m: InterestMap, rng: random.Random | None = None,
             own.setdefault(own_key, []).append(concept)
         seen_texts.append(normalize(q))
     return kept
+
+
+def fill(kept: list[Question], spare: Sequence[Question]) -> list[Question]:
+    """Spares added until a race's worth, never one question, or one idea on a goal, twice
+    (v4.3 review: a review once raced twice)."""
+    out = [*kept]
+    for q in spare:
+        if enough(out):
+            break
+        if normalize(q.question) in {normalize(k.question) for k in out}:
+            continue
+        if q.goal_id and any(k.goal_id == q.goal_id and _same_idea(k.concept, q.concept)
+                             for k in out):
+            continue
+        out.append(q)
+    return out
 
 
 def _compares(q: Question, cars: Sequence[Car]) -> bool:
@@ -1314,11 +1328,7 @@ class RaceDesk:
                   f"{len({q.setting for q in new if q.setting})} settings", flush=True)  # numbers
             if enough(kept):
                 return _as_due(kept, due)
-        for q in spare:  # Claude could only repeat: race anyway, never one question or idea twice
-            if not enough(kept) and normalize(q.question) not in {
-                    normalize(k.question) for k in kept} and (q.goal_id, normalize(q.concept)) \
-                    not in {(k.goal_id, normalize(k.concept)) for k in kept}:
-                kept.append(q)
+        kept = fill(kept, spare)  # Claude could only repeat: race anyway
         if enough(kept):
             return _as_due(kept, due)
         raise RaceUnavailable(NOT_READY)

@@ -108,7 +108,7 @@ def main() -> None:
     about = [q for q in asked if "P1" in q.question or "M4" in q.question]
     quoted = [float(n.replace(",", "")) for q in about
               for n in re.findall(r"\d[\d,]*\.?\d*", q.question)]
-    # regression: an earlier rule let Claude add facts (a V8's "left side") instead of comparing
+    # a comparison is optional ("at most 1"); the number check below catches made-up facts
     both = [q for q in about if ("P1" in q.question or "McLaren" in q.question)
             and ("M4" in q.question or "BMW" in q.question)]
     print(f"car comparisons: {len(both)}")  # "at most 1" allows none (v4.4)

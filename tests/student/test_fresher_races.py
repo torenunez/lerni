@@ -372,7 +372,9 @@ def test_review_v43_a_review_never_races_twice_through_the_spare_fill(tmp_path):
                            texts=[normalize(first["question"])],
                            reviews=[("Fractions", "halves of odd numbers")])
     assert [k.concept for k in kept] == ["halves of odd numbers"]
-    assert [s.concept for s in spare] == ["odd halves"]  # Claude's own label
+    assert [s.concept for s in spare] == ["halves of odd numbers"]  # the review's own label
+    from lerni.student.race import fill
+    assert len(fill(kept, spare)) == 1  # the fill never races that idea twice
 
 
 def test_review_v43_minus_signs_and_old_duplicate_reviews(tmp_path):

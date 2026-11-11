@@ -527,7 +527,8 @@ def decide(
         maps.change(username, apply, by=by)
 
     def mark(d: dict[str, Any]) -> int:
-        d["goals"] = [g for g in d["goals"] if label(g) not in stale]  # no 14-day block
+        d["goals"] = [g for g in d["goals"]  # the refused ones go, with no 14-day block
+                      if g.get("state") != "waiting" or label(g) not in stale]
         n = 0
         for item in [*d["connections"], *d["goals"]]:
             shown = label(item)

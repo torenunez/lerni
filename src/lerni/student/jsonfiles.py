@@ -27,10 +27,10 @@ def write_json_atomic(path: Path, data: dict[str, Any]) -> None:
             json.dump(data, handle, ensure_ascii=False, indent=2)
             handle.write("\n")
             handle.flush()
-            if hasattr(fcntl, "F_FULLFSYNC"):  # macOS: past the drive's own cache too
+            try:  # on disk before the swap; on macOS past the drive's own cache too
                 fcntl.fcntl(handle.fileno(), fcntl.F_FULLFSYNC)
-            else:
-                os.fsync(handle.fileno())  # on disk before the swap, so a power cut keeps one
+            except (AttributeError, OSError):  # not macOS, or a disk that refuses it
+                os.fsync(handle.fileno())
         os.replace(tmp, path)
     except BaseException:
         Path(tmp).unlink(missing_ok=True)

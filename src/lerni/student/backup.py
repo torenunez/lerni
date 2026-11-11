@@ -117,6 +117,14 @@ def server_for(data: Path, home: Path) -> str | None:
     return None
 
 
+def _version(account: dict) -> int:
+    # an account's session version, 1 when it isn't a number (hand-edited)
+    try:
+        return int(account.get("session_version", 1))
+    except (TypeError, ValueError, OverflowError):
+        return 1
+
+
 def _keep_sign_ins(today: Path, restored: Path) -> None:
     """Each restored account keeps today's password and the newer session version, so a reset
     or a sign-out since the copy stays in effect (v4.3)."""
@@ -124,11 +132,7 @@ def _keep_sign_ins(today: Path, restored: Path) -> None:
         now, then = read_json(today / path.name), read_json(path)
         if not now or not then or "password" not in now:
             continue
-        try:  # a hand-edited account can't stop a restore halfway (v4.3 review)
-            version = max(int(now.get("session_version", 1)),
-                          int(then.get("session_version", 1)))
-        except (TypeError, ValueError):
-            continue
+        version = max(_version(now), _version(then))  # a hand edit can't stop a restore
         write_json_atomic(path, {**then, "password": now["password"], "session_version": version})
 
 
