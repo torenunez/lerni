@@ -136,6 +136,8 @@ question leaves "review" out.
 - Follow the question plan: question N practices plan N's goal, set in its interest (or the \
 one in brackets when the first can't make a natural question), with its format and, when it \
 has one, its twist; "format" names the format exactly, and "setting" the interest you used. \
+When a planned format can't make a sensible question for its goal, use "how it works" \
+instead and name that in "format". \
 A goal "bridged from" an interest was already reached through it in conversation. When a \
 goal lists a "connection to try", its question set in that interest works from that link; \
 when it lists "steps not tried yet", its questions practice those steps, in order, each \
@@ -643,7 +645,7 @@ def check_questions(raw: Any, m: InterestMap, rng: random.Random | None = None,
             if meaning is not None and reworded:
                 meaning.repeats += 1  # counted once, as it's set aside
             tally["repeat" if repeat or reworded else "car"] += 1
-            if spare is not None:
+            if spare is not None:  # with its review's label: the fill skips it once that idea races
                 spare.append(question)
             continue
         compared += cars_named
@@ -657,6 +659,22 @@ def check_questions(raw: Any, m: InterestMap, rng: random.Random | None = None,
             own.setdefault(own_key, []).append(concept)
         seen_texts.append(normalize(q))
     return kept
+
+
+def fill(kept: list[Question], spare: Sequence[Question]) -> list[Question]:
+    """Spares added until a race's worth, never one question, or one idea on a goal, twice
+    (v4.3 review: a review once raced twice)."""
+    out = [*kept]
+    for q in spare:
+        if enough(out):
+            break
+        if normalize(q.question) in {normalize(k.question) for k in out}:
+            continue
+        if q.goal_id and any(k.goal_id == q.goal_id and _same_idea(k.concept, q.concept)
+                             for k in out):
+            continue
+        out.append(q)
+    return out
 
 
 def _compares(q: Question, cars: Sequence[Car]) -> bool:
@@ -1310,10 +1328,7 @@ class RaceDesk:
                   f"{len({q.setting for q in new if q.setting})} settings", flush=True)  # numbers
             if enough(kept):
                 return _as_due(kept, due)
-        for q in spare:  # Claude could only repeat: race anyway, never one question twice
-            if not enough(kept) and normalize(q.question) not in {
-                    normalize(k.question) for k in kept}:
-                kept.append(q)
+        kept = fill(kept, spare)  # Claude could only repeat: race anyway
         if enough(kept):
             return _as_due(kept, due)
         raise RaceUnavailable(NOT_READY)

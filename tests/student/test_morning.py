@@ -198,3 +198,5 @@ def test_review_a_goal_suggestion_never_overwrites_newer_notes(tmp_path):
     n, skipped = decide(store, maps, "sam", [shown], True, TODAY)
     assert n == 0 and skipped and "changed" in skipped[0]
     assert maps.get("sam").find("Fractions").notes == "only tenths this week"
+    assert shown not in store.waiting("sam")  # gone at once (v4.3 review), no 14-day block
+    assert not any(g.get("state") == "dismissed" for g in store.get("sam")["goals"])

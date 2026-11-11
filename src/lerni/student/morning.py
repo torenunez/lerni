@@ -504,6 +504,7 @@ def decide(
     chosen = set(picked)
     skipped: list[str] = []
     failed: set[str] = set()  # goal suggestions whose notes couldn't change: still waiting
+    stale: set[str] = set()  # refused because the notes changed: off the list (v4.3 review)
     notes = [(label(g), str(g.get("goal_id")), str(g.get("notes")), g.get("notes_key"))
              for g in store.get(username)["goals"]
              if use and g.get("state") == "waiting" and label(g) in chosen]
@@ -516,6 +517,7 @@ def decide(
                     if e is None:
                         raise MapError("it's no longer on the map")
                     if key and key != _key(e.notes):  # changed since: never overwritten (v4.3)
+                        stale.add(shown)
                         raise MapError("its notes changed since; tomorrow's plan can suggest again")
                     set_notes(m, e.id, text)
                 except MapError as exc:
@@ -525,6 +527,8 @@ def decide(
         maps.change(username, apply, by=by)
 
     def mark(d: dict[str, Any]) -> int:
+        d["goals"] = [g for g in d["goals"]  # the refused ones go, with no 14-day block
+                      if g.get("state") != "waiting" or label(g) not in stale]
         n = 0
         for item in [*d["connections"], *d["goals"]]:
             shown = label(item)

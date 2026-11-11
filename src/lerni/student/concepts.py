@@ -31,9 +31,10 @@ GOAL_DAYS = (1, 3, 7, 14)  # a goal's boxes: days until it comes back (v3.28)
 
 # one way to write each sign, so "1/2 − 1/4" and "1/2 - 1/4" are one idea (v4.3)
 _SIGNS = str.maketrans({"−": "-", "–": "-", "×": "*", "÷": "/"})
-# a number, a math sign, a minus or slash standing as a sign (after a space, "(", "[", "=",
-# or at the start), or a word (v4.2: "1/2 + 1/4" and "1/2 - 1/4" are different ideas)
-_TOKENS = re.compile(r"\d+(?:\.\d+)?|[+*=<>%]|(?<![^\s(\[=])[-/](?=\s|\d|$)|\w+")
+# a number, a math sign, a minus or slash standing as a sign (at the start, or after a space
+# or another sign), or a word (v4.2: "1/2 + 1/4" and "1/2 - 1/4" are different ideas)
+_TOKENS = re.compile(r"\d+(?:\.\d+)?|[+*=<>%^]|(?<![^\s(\[=<>+*/%^,])-(?=[\s\d(]|[^\W\d_]|$)"
+                     r"|(?<![^\s(\[=<>+*%^,])/(?=\s|\d|$)|\w+")
 
 
 def normalize(text: str) -> str:
@@ -71,14 +72,14 @@ class ConceptStore:
     def _path(self, username: str) -> Path:
         return self.root / f"{check_username(username)}.json"
 
-    def _read(self, username: str) -> dict[str, Any]:
+    def _read(self, username: str, strict: bool = False) -> dict[str, Any]:
         # missing or broken (moved aside, never overwritten): nothing known, the race still runs
-        return read_json(self._path(username)) or {}
+        return read_json(self._path(username), strict=strict) or {}
 
-    def ledger(self, username: str) -> list[dict[str, Any]]:
+    def ledger(self, username: str, data: dict[str, Any] | None = None) -> list[dict[str, Any]]:
         """Every idea asked, oldest-touched first: concept, goal id, goal, first, last, asked,
-        right; an idea is its goal and label together (v3.33)."""
-        data = self._read(username)
+        right; an idea is its goal and label together (v3.33). ``data``: the file, read."""
+        data = self._read(username) if data is None else data
         if not data:
             return []
         if "concepts" not in data:  # a v3.9 file: the recent list only
@@ -119,16 +120,17 @@ class ConceptStore:
                 out[key] = out.get(key, 0) + 1
         return out
 
-    def _levels(self, username: str) -> dict[str, dict[str, Any]]:
-        raw = self._read(username).get("levels", {})
+    def _levels(self, username: str, data: dict[str, Any] | None = None
+                ) -> dict[str, dict[str, Any]]:
+        raw = (self._read(username) if data is None else data).get("levels", {})
         return {str(g): v for g, v in raw.items() if isinstance(v, dict)} if isinstance(
             raw, dict) else {}
 
     def _change(self, username: str, fn: Any = None, levels: Any = None) -> None:
         # the ideas and the levels are written together, so neither loses the other
         with self._lock:
-            read_json(self._path(username), strict=True)  # unreadable: never written over (v4.3)
-            ledger, by_goal = self.ledger(username), self._levels(username)
+            data = self._read(username, strict=True)  # unreadable: never written over (v4.3)
+            ledger, by_goal = self.ledger(username, data), self._levels(username, data)
             if fn is not None:
                 fn(ledger)
             if levels is not None:
@@ -277,8 +279,14 @@ class ConceptStore:
         day = today or date.today()
         waiting = [c for c in self.ledger(username) if (d := _day(c.get("due"))) and d <= day]
         waiting.sort(key=lambda c: c["due"])
-        return [(str(c.get("goal_id", "")), str(c.get("goal", "")), str(c["concept"]))
-                for c in waiting]
+        seen: set[tuple[str, str]] = set()  # one idea once, however v4.2 spelled it (review)
+        out = []
+        for c in waiting:
+            key = (str(c.get("goal_id", "")), normalize(str(c["concept"])))
+            if key not in seen:
+                seen.add(key)
+                out.append((key[0], str(c.get("goal", "")), str(c["concept"])))
+        return out
 
 
 def _find(ledger: list[dict[str, Any]], goal_id: str, concept: str,

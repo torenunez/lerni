@@ -14,6 +14,10 @@ When something changes, update this section and add a log entry below.
 
 ## Log
 
+### 2026-11-11 (review fixes; v4.4 built)
+
+- v4.4 ([plan](../plans/v4.4-review-fixes.md)), from the v4.3 review: the spare fill never races one idea on a goal twice, so a review can't race twice; a restore treats a session version it can't read as 1 instead of stopping halfway; a minus after another sign, or before a letter, stays a sign; due reviews list each idea once; a goal suggestion refused because its notes changed leaves the list at once; the concept file is read once per change; writes use macOS's full flush. From the admin's example (an "odd one out" built from an equation's parts): a planned format that can't make a sensible question becomes "how it works". The car eval case now allows no comparison, since the prompt says at most one. Question fingerprints changed in v4.2 and v4.4 for sums like 6/2 or x^2, so stats group old and new rows of such a question apart. The admin chose a bulk labelling pass in a Google Sheet next (v4.5), before the daily sample (v4.6) and Tell Lerni (v4.7). Tests: 273 passed.
+
 ### 2026-11-10 (fixes; v4.3 built)
 
 - v4.3 ([plan](../plans/v4.3-fixes.md)), from the v4.2 review: a review id counts as used only once its question is kept; one sum written two ways is one idea again (− and -, × and *, 6/2 and 6 / 2), and a minus after "(" or "=" stays; a goal's connection counts as its interest's turn, so its third question goes elsewhere; a set compares only a car number two cars in reach list. From the outside reviews: a goal suggestion is refused (and tidied away) once its goal's notes change; a restore keeps today's passwords and sign-ins; a broken points file is moved aside instead of breaking Games, an unreadable points or concept file is never written over, and writes reach the disk before the swap. The v4.2 race eval: 21 of 23 (the car case lacked the set's car number in the eval itself, now fixed; the bonus case missed once). Tests: 270 passed.

@@ -359,3 +359,31 @@ def test_review_v42_a_sets_car_number_is_one_two_cars_have(tmp_path):
     for _ in range(6):
         races._write("sam", supervised=True, today=TODAY)
         assert "uses only: horsepower" not in races.quizzer.prompts[-1]  # only one has hp
+
+
+def test_review_v43_a_review_never_races_twice_through_the_spare_fill(tmp_path):
+    # review (v4.3): a spare already carried the review's label, so a short race asked it twice
+    maps = MapStore(tmp_path)
+    maps.change("sam", lambda m: add_goal(m, "Fractions") and None)
+    first = {**q("Fractions", 1, "odd halves"), "review": "R1"}  # its words were asked: spare
+    second = {**q("Fractions", 2, "sharing odd counts"), "review": "R1"}
+    spare: list = []
+    kept = check_questions({"questions": [first, second]}, maps.get("sam"), spare=spare,
+                           texts=[normalize(first["question"])],
+                           reviews=[("Fractions", "halves of odd numbers")])
+    assert [k.concept for k in kept] == ["halves of odd numbers"]
+    assert [s.concept for s in spare] == ["halves of odd numbers"]  # the review's own label
+    from lerni.student.race import fill
+    assert len(fill(kept, spare)) == 1  # the fill never races that idea twice
+
+
+def test_review_v43_minus_signs_and_old_duplicate_reviews(tmp_path):
+    assert normalize("x<-3") != normalize("x<3") and normalize("2^-3") != normalize("2^3")
+    assert normalize("−x") != normalize("x") and normalize("x+-3") != normalize("x+3")
+    assert normalize("top-speed") == "top speed"
+    concepts = ConceptStore(tmp_path)
+    old = TODAY - timedelta(days=3)
+    concepts._change("sam", lambda ledger: ledger.extend(  # two spellings v4.2 kept apart
+        {"concept": c, "goal_id": "g1", "goal": "Sums", "first": str(old), "last": str(old),
+         "asked": 1, "right": 0, "due": str(old), "step": 0} for c in ("7-3", "7 - 3")))
+    assert len(concepts.due("sam", TODAY)) == 1
