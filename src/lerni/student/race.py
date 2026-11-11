@@ -136,6 +136,8 @@ question leaves "review" out.
 - Follow the question plan: question N practices plan N's goal, set in its interest (or the \
 one in brackets when the first can't make a natural question), with its format and, when it \
 has one, its twist; "format" names the format exactly, and "setting" the interest you used. \
+When a planned format can't make a sensible question for its goal, use "how it works" \
+instead and name that in "format". \
 A goal "bridged from" an interest was already reached through it in conversation. When a \
 goal lists a "connection to try", its question set in that interest works from that link; \
 when it lists "steps not tried yet", its questions practice those steps, in order, each \
@@ -611,6 +613,7 @@ def check_questions(raw: Any, m: InterestMap, rng: random.Random | None = None,
                 or not normalize(concept)):
             continue
         own_key = "" if probe else goal.casefold()  # this question's goal, for its own ideas
+        written_as = concept  # Claude's own label, for a spare (v4.3 review)
         if (review := _review(item.get("review"), reviews, own_key, taken)) is not None:
             concept = reviews[review][1]  # its due idea's label, so the answer moves that review
         mine = [] if probe else own.get(own_key, [])  # a probe is checked against every goal
@@ -643,8 +646,9 @@ def check_questions(raw: Any, m: InterestMap, rng: random.Random | None = None,
             if meaning is not None and reworded:
                 meaning.repeats += 1  # counted once, as it's set aside
             tally["repeat" if repeat or reworded else "car"] += 1
-            if spare is not None:
-                spare.append(question)
+            if spare is not None:  # a spare never carries a review's label: it can't race twice
+                spare.append(replace(question, concept=written_as) if review is not None
+                             else question)
             continue
         compared += cars_named
         kept.append(question)
@@ -1310,9 +1314,10 @@ class RaceDesk:
                   f"{len({q.setting for q in new if q.setting})} settings", flush=True)  # numbers
             if enough(kept):
                 return _as_due(kept, due)
-        for q in spare:  # Claude could only repeat: race anyway, never one question twice
+        for q in spare:  # Claude could only repeat: race anyway, never one question or idea twice
             if not enough(kept) and normalize(q.question) not in {
-                    normalize(k.question) for k in kept}:
+                    normalize(k.question) for k in kept} and (q.goal_id, normalize(q.concept)) \
+                    not in {(k.goal_id, normalize(k.concept)) for k in kept}:
                 kept.append(q)
         if enough(kept):
             return _as_due(kept, due)

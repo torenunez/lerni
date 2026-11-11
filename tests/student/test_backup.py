@@ -178,3 +178,13 @@ def test_review_a_restore_keeps_todays_passwords_and_sign_outs(tmp_path):
     sam = StudentStore(data).get("sam")
     assert sam.session_version == 2  # the signed-out cookies stay out
     assert verify_password("second-test-pass", sam.password)
+
+
+def test_review_a_restore_with_a_bad_session_version_still_finishes(tmp_path):
+    data, home, copy = _setup(tmp_path)
+    (copy / "students" / "sam.json").write_text('{"session_version": 1}')
+    (data / "students" / "sam.json").write_text('{"password": {}, "session_version": "x"}')
+    calls: list = []
+    restore(data, copy, home=home, run_=_launchctl(calls), uid=501,
+            now=datetime(2026, 10, 30, 10, 15))
+    assert calls[-1] == "bootstrap"  # the server started again
