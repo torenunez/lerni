@@ -49,7 +49,8 @@ def setup(tmp_path):
 def test_ratings_steer_the_next_write_and_a_bad_question_never_races(tmp_path):
     maps, bank = setup(tmp_path), BankStore(tmp_path)
     kept, skipped = bank.add_labels("sam", [
-        row("Adding", "A train has 6 cars and 3 more join. How many now?", "Good"),
+        row("Adding", "A train has 6 cars and 3 more join. How many now?", "Good",
+            notes="Good, but explain what join means"),  # a Good row's note steers too
         row("Adding", BAD, "Bad", "Format doesn't fit", "Not about adding"),
         row("Gone", "A question on a goal that's gone?", "Good"),  # its goal was removed
         row("Nouns", "Not rated yet?", ""),  # unrated rows are left out
@@ -60,6 +61,7 @@ def test_ratings_steer_the_next_write_and_a_bad_question_never_races(tmp_path):
     prompt = races.quizzer.prompts[0]
     good = prompt.split("Marked good")[1].splitlines()[1]
     assert "6 cars and 3 more join" in good and "9" in good  # with its right answer
+    assert "explain what join means" in good
     wrong = prompt.split("Marked wrong")[1].splitlines()[1]
     assert BAD in wrong and "Format doesn't fit" in wrong and "Not about adding" in wrong
     assert BAD not in [k.question for k in kept_qs]  # marked bad: never races

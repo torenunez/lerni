@@ -30,6 +30,9 @@ def batch_cmd(
     data: Path = typer.Option(  # noqa: B008
         None, "--data", help="The data folder (default: production's)."
     ),
+    goal: list[str] = typer.Option(  # noqa: B008
+        [], "--goal", help="Only this goal (repeat for more); default every goal."
+    ),
 ) -> None:
     """Write about --per-goal checked questions on each goal, on a copy of the data."""
     from lerni.student.batch import write_batch
@@ -58,6 +61,7 @@ def batch_cmd(
         per_goal=per_goal,
         checker=quizzer,
         embedder=embedder,
+        only=goal,
     )
     with os.fdopen(fd, "w", encoding="utf-8") as handle:
         json.dump({"rows": rows}, handle, ensure_ascii=False, indent=2)

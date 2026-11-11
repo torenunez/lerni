@@ -246,7 +246,9 @@ def quiz_input(m: InterestMap, today: date, supervised: bool, recent: Sequence[s
         if e.kind != "goal" or (picked is not None and e.name.casefold() not in picked):
             continue
         ok, bad = (marked or {}).get(e.id, ((), ()))
-        good += [f"- {e.name}: {_plain(i.get('question'))} (answer: {_right(i)})" for i in ok
+        good += [f"- {e.name}: {_plain(i.get('question'))} (answer: {_right(i)}"
+                 + (f"; note: {_plain(i.get('notes'))}" if _plain(i.get("notes")) else "")
+                 + ")" for i in ok  # a Good row's note steers too
                  if not _aside(m, i)]
         wrong += [f"- {e.name}: {_plain(i.get('question'))} ("
                   + "; ".join(x for x in (_plain(i.get("problem")), _plain(i.get("notes"))) if x)

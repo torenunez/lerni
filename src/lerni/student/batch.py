@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import shutil
 import tempfile
+from collections.abc import Sequence
 from datetime import date
 from pathlib import Path
 from typing import Any
@@ -35,6 +36,7 @@ def write_batch(
     per_goal: int = 8,
     checker: Checker | None = None,
     embedder: Embedder | None = None,
+    only: Sequence[str] = (),
 ) -> list[dict[str, Any]]:
     """Questions that pass every race check, about ``per_goal`` on each goal, sorted by goal.
 
@@ -47,6 +49,7 @@ def write_batch(
         per_goal: Questions wanted on each goal.
         checker: The blind check; None keeps every question.
         embedder: Checks by meaning; None leaves them to words.
+        only: Goal names to write on (any case); empty for every goal.
 
     Returns:
         One row per question: id, goal, goal_id, interest, format, question, choices,
@@ -73,7 +76,9 @@ def write_batch(
         )
         desk.suggestions = SuggestionStore(copy)
         m = race_view(desk.maps.get(username), frozenset())
-        goals = [e.name for e in m.entries if e.kind == "goal"]
+        wanted = {g.casefold() for g in only}  # --goal: just these
+        goals = [e.name for e in m.entries
+                 if e.kind == "goal" and (not wanted or e.name.casefold() in wanted)]
         count = dict.fromkeys(goals, 0)
         rows: dict[str, dict[str, Any]] = {}
         for _ in range(ROUNDS):
