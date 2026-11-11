@@ -6,6 +6,7 @@ their why, become lines to avoid, and that exact question never races. Standard 
 
 from __future__ import annotations
 
+import re
 import threading
 from collections.abc import Sequence
 from datetime import date
@@ -20,6 +21,7 @@ from lerni.student.students import check_username, default_data_dir
 RATINGS = {"good": "Good", "needs a fix": "Needs a fix", "bad": "Bad"}
 WRONG = ("Needs a fix", "Bad")
 MAX_TEXT = 500  # a cell's text is cut here
+FINGERPRINT = re.compile(r"[0-9a-f]{12}")  # results.question_hash
 
 
 def _text(value: Any) -> str:
@@ -62,19 +64,24 @@ class BankStore:
 
         new: dict[str, dict[str, Any]] = {}
         skipped = 0
-        for row in rows:
+        for raw in rows:
+            row = {str(k).casefold(): v for k, v in raw.items()}  # the sheet's headers too
             rating = RATINGS.get(_text(row.get("rating")).casefold())
             if rating is None:
                 continue
-            question, choices = _text(row.get("question")), row.get("choices") or []
+            question = _text(row.get("question"))
+            choices = row.get("choices") or [row.get(c) for c in "abc" if row.get(c) is not None]
             goal = goal_of(m, _text(row.get("goal_id")), _text(row.get("goal")))
             if goal is None and row.get("goal_id"):  # an id from before a rename: by name
                 goal = goal_of(m, "", _text(row.get("goal")))
-            answer = _answer(row.get("answer"))
-            if goal is None or not question or answer is None or len(choices) != 3:
+            answer = _answer(next((row[k] for k in ("answer", "right answer", "right")
+                                   if row.get(k) not in (None, "")), None))
+            if (goal is None or not question or answer is None or not isinstance(choices, list)
+                    or len(choices) != 3):
                 skipped += 1
                 continue
-            key = _text(row.get("id")) or question_hash(question)  # the question as written
+            key = _text(row.get("id"))  # the question as written, unless Sheets changed it
+            key = key if FINGERPRINT.fullmatch(key) else question_hash(question)
             new[key] = {
                 "id": key,
                 "goal_id": goal.id,

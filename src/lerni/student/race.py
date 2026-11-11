@@ -247,10 +247,10 @@ def quiz_input(m: InterestMap, today: date, supervised: bool, recent: Sequence[s
             continue
         ok, bad = (marked or {}).get(e.id, ((), ()))
         good += [f"- {e.name}: {_plain(i.get('question'))} (answer: {_right(i)})" for i in ok
-                 if not mentions_set_aside(m, str(i.get("question", "")))]
+                 if not _aside(m, i)]
         wrong += [f"- {e.name}: {_plain(i.get('question'))} ("
                   + "; ".join(x for x in (_plain(i.get("problem")), _plain(i.get("notes"))) if x)
-                  + ")" for i in bad if not mentions_set_aside(m, str(i.get("question", "")))]
+                  + ")" for i in bad if not _aside(m, i)]
     lines += ["Marked good by the educator:", *good] if good else []
     lines += ["Marked wrong by the educator:", *wrong] if wrong else []
     lines += ["Interests: " + "; ".join(loved)] if loved else []
@@ -278,6 +278,12 @@ def quiz_input(m: InterestMap, today: date, supervised: bool, recent: Sequence[s
     if plan:  # the dice: a different prompt every set (v3.42)
         lines.append("Question plan: " + "; ".join(f"{n}. {s}" for n, s in enumerate(plan, 1)))
     return "\n".join(lines)
+
+
+def _aside(m: InterestMap, item: Mapping[str, Any]) -> bool:
+    # a banked row touching anything set aside, in any of its words, stays out of the prompt
+    words = [item.get(k) for k in ("question", "problem", "notes", "why")]
+    return mentions_set_aside(m, " ".join(map(str, [*words, *(item.get("choices") or [])])))
 
 
 def _right(item: Mapping[str, Any]) -> str:

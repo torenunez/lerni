@@ -43,6 +43,11 @@ def batch_cmd(
     quizzer = _claude_quizzer()
     if quizzer is None:
         _fail("Claude Code isn't installed here.")
+    try:  # private from the start, and before any Claude call, so a bad path costs nothing
+        out.parent.mkdir(parents=True, exist_ok=True)
+        fd = os.open(out, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    except OSError as exc:
+        _fail(f"Couldn't write {out} ({type(exc).__name__}).")
     embedder, _ = _embedder()
     rows = write_batch(
         root,
@@ -54,8 +59,6 @@ def batch_cmd(
         checker=quizzer,
         embedder=embedder,
     )
-    out.parent.mkdir(parents=True, exist_ok=True)
-    fd = os.open(out, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)  # private from the start
     with os.fdopen(fd, "w", encoding="utf-8") as handle:
         json.dump({"rows": rows}, handle, ensure_ascii=False, indent=2)
     goals = {r["goal"] for r in rows}
@@ -85,7 +88,10 @@ def labels_cmd(
     rows = loaded.get("rows") if isinstance(loaded, dict) else loaded
     if not isinstance(rows, list):
         _fail("The file needs a list of rows.")
-    kept, skipped = BankStore(root).add_labels(
-        user, [r for r in rows if isinstance(r, dict)], MapStore(root).get(user), date.today()
-    )
+    try:
+        kept, skipped = BankStore(root).add_labels(
+            user, [r for r in rows if isinstance(r, dict)], MapStore(root).get(user), date.today()
+        )
+    except OSError as exc:  # an unreadable bank file is never overwritten
+        _fail(f"Couldn't read the bank ({type(exc).__name__}); nothing was changed.")
     console.print(f"Banked {kept} rated questions; skipped {skipped} (goal gone or incomplete).")

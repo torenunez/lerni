@@ -65,6 +65,21 @@ def test_ratings_steer_the_next_write_and_a_bad_question_never_races(tmp_path):
     assert BAD not in [k.question for k in kept_qs]  # marked bad: never races
 
 
+def test_review_v45_the_sheets_own_columns_and_set_asides_in_banked_rows(tmp_path):
+    maps, bank = setup(tmp_path), BankStore(tmp_path)
+    sheet = {"goal": "Adding", "question": "Dinosaurs: 2 + 2?", "A": "3", "B": "4", "C": "5",
+             "Right answer": "B", "Rating": "Good", "id": "12345e1"}  # an id Sheets mangled
+    wrong = row("Nouns", "Name the noun?", "Bad", "Off the goal", "Use dinosaurs instead")
+    assert bank.add_labels("sam", [sheet, wrong], maps.get("sam"), TODAY) == (2, 0)
+    assert bank.blocked("sam") == {question_hash("Name the noun?")}
+    good = bank.good("sam", maps.get("sam").find("Adding").id)
+    assert good[0]["id"] == question_hash("Dinosaurs: 2 + 2?") and good[0]["answer"] == 1
+    maps.change("sam", lambda m: m.removed.append("dinosaurs"))  # set aside since
+    races = RaceDesk(Quizzer(), maps, PointsStore(tmp_path), ConceptStore(tmp_path), bank=bank)
+    races._write("sam", supervised=True, today=TODAY)
+    assert "inosaur" not in races.quizzer.prompts[0]  # not in a question, answer, or note
+
+
 def test_a_blocked_question_is_dropped(tmp_path):
     m = setup(tmp_path).get("sam")
     raw = {"questions": [item("Adding", 1, BAD), item("Adding", 2)]}
@@ -83,3 +98,22 @@ def test_a_batch_never_writes_the_real_data(tmp_path):
     assert all(n >= 4 for n in by_goal.values())
     assert len({r["id"] for r in rows}) == len(rows)  # no question twice
     assert [r["goal"] for r in rows] == sorted(r["goal"] for r in rows)  # sorted by goal
+
+
+def test_review_v45_a_batch_checks_its_output_before_any_claude_call(tmp_path, monkeypatch):
+    from typer.testing import CliRunner
+
+    from lerni.commands import race as cmd
+    from lerni.student import batch
+    from lerni.student.students import Kind, StudentStore
+    from lerni.student.web import serve
+
+    StudentStore(tmp_path).add("sam", "Sam", Kind.SUPERVISED, "a-test-password-1")
+    monkeypatch.setattr(serve, "_claude_quizzer", lambda: Quizzer())
+    monkeypatch.setattr(batch, "write_batch", lambda *a, **k: (_ for _ in ()).throw(
+        AssertionError("wrote before checking the output")))
+    (tmp_path / "file").write_text("")
+    bad = tmp_path / "file" / "out.json"  # a file where a folder should be
+    out = CliRunner().invoke(cmd.race_app, ["batch", "--user", "sam", "--out", str(bad),
+                                            "--data", str(tmp_path)])
+    assert out.exit_code == 1 and "Couldn't write" in out.output

@@ -23,6 +23,7 @@ from fastapi import FastAPI, Request  # noqa: E402
 from fastapi.responses import FileResponse, PlainTextResponse, RedirectResponse  # noqa: E402
 
 from lerni.student.area_sorter import AreaSorter  # noqa: E402
+from lerni.student.bank import BankStore  # noqa: E402
 from lerni.student.concepts import ConceptStore  # noqa: E402
 from lerni.student.conversation import ChatModel, Conversations  # noqa: E402
 from lerni.student.educator_agent import EducatorChats
@@ -323,7 +324,8 @@ def build_app(
                       garage=garage, grader=quizzer,  # and grades bonus answers
                       log=log,  # a worrying bonus answer is kept where Chat's are
                       speech=speech,  # reads questions aloud
-                      embedder=embedder)  # rewordings and set-asides by meaning
+                      embedder=embedder,  # rewordings and set-asides by meaning
+                      bank=BankStore(root))  # the educator's ratings steer each write (v4.5)
              if quizzer is not None else None)
     if quizzer is not None:  # Lerni sorts goals with no area after each save, and once now
         sorter = AreaSorter(quizzer, maps)

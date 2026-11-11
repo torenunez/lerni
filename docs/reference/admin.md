@@ -180,7 +180,7 @@ Race questions that reword a recent idea, or touch a set-aside topic in other wo
 
 ### Rating questions in bulk
 
-Ask Claude Code to "write a batch for rating" for a student. It runs `lerni race batch --user U --out FILE` (about 8 checked questions per goal, written on a copy of the data so nothing is recorded; it says the number of Claude calls first), makes a Google Sheet from the file in your account, and deletes the file. Rate each row Good, Needs a fix, or Bad, with a problem and notes. Then ask Claude Code to read it back: it runs `lerni race labels FILE --user U` (good ones become examples for their goal; wrong ones are avoided and never race), deletes the file, and offers to delete the sheet. `--data` points either at development's folder. Takes effect at the next question write; no restart.
+Ask Claude Code to "write a batch for rating" for a student. It runs `lerni race batch --user U --out FILE` (about 8 checked questions per goal, written on a copy of the data so nothing is recorded; it says the number of Claude calls first), makes a Google Sheet from the file in your account, and deletes the file. Rate each row Good, Needs a fix, or Bad, with a problem and notes. Then ask Claude Code to read it back: it runs `lerni race labels FILE --user U` (good ones become examples for their goal; wrong ones are avoided and never race), deletes the file, and offers to delete the sheet. The file is a list of rows (`{"rows": [...]}`) with the sheet's headers as keys (Goal, Question, A, B, C, Right answer, Why, Rating, Problem, Notes, id). `--data ~/.lerni/student-dev` works on development's data. Takes effect at the next question write; no restart.
 
 ### If Claude stops working
 

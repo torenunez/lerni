@@ -118,7 +118,7 @@ As an educator, I want to tell Lerni in my own words what to do better, or hand 
 As an educator, I want to rate a batch of race questions per goal in one sitting, so that Lerni learns what good questions look like for each goal.
 
 - WHEN the admin asks Claude for a batch THE SYSTEM SHALL write about 8 questions per goal that pass every race check, without recording anything, into a sheet with a rating (Good, Needs a fix, Bad), a problem, and notes for each.
-- WHEN the ratings are read back THE SYSTEM SHALL keep them in each goal's checked bank: good ones become examples for that goal's next questions, and ones marked Bad or Needs a fix become mistakes to avoid and never race.
+- WHEN the ratings are read back THE SYSTEM SHALL keep them in each goal's checked bank: good ones become examples for that goal's next questions, and ones marked Bad or Needs a fix become mistakes to avoid and never race (a probe has no goal, so its rating isn't kept).
 
 ### Story: Check a few questions
 
