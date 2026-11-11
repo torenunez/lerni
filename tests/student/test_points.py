@@ -42,3 +42,21 @@ def test_ten_races_a_day_then_tomorrow(tmp_path):
     with pytest.raises(PointsError, match="tomorrow"):
         store.start_race("sam", DAY)
     assert store.races_left("sam", DAY + timedelta(days=1)) == RACES_PER_DAY
+
+
+def test_review_a_broken_points_file_is_moved_aside_and_an_unreadable_one_kept(tmp_path):
+    # outside review (2026-11-10): a cut-off file broke every Games action
+    store = PointsStore(tmp_path)
+    store.award("sam", "r1", "race", 5, DAY)
+    path = store._path("sam")
+    path.write_text('{"balance": 5, "ca')  # half a file
+    assert store.get("sam").balance == 0  # Games still opens
+    assert list(path.parent.glob("sam.broken-*.json"))  # kept for the admin
+    store.award("sam", "r2", "race", 3, DAY)
+    path.chmod(0)  # unreadable: never overwritten with an empty one
+    try:
+        with pytest.raises(OSError):
+            store.award("sam", "r3", "race", 3, DAY)
+    finally:
+        path.chmod(0o600)
+    assert store.get("sam").balance == 3

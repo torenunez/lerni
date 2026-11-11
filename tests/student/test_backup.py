@@ -161,3 +161,20 @@ def test_review_regressions_a_drive_stays_as_it_was_and_a_restart_failure_says_i
     with pytest.raises(BackupError, match="before-restore"):  # names the kept folder
         restore(data, copy, home=home, run_=no_start, uid=501)
     assert next(tmp_path.glob("student.before-restore-*")).is_dir()  # and it did restore
+
+
+def test_review_a_restore_keeps_todays_passwords_and_sign_outs(tmp_path):
+    # outside review (2026-11-10): a restore brought back an old password and signed-out cookies
+    from lerni.student.students import StudentStore, verify_password
+
+    data, home, _ = _setup(tmp_path)
+    accounts = StudentStore(data)
+    (data / "students" / "sam.json").unlink()
+    accounts.add("sam", "Sam", "independent", "first-test-pass")
+    copy = run(data, tmp_path / "backups2", date(2026, 10, 29))
+    accounts.reset_password("sam", "second-test-pass")  # every device signs out
+    restore(data, copy, home=home, run_=_launchctl([]), uid=501,
+            now=datetime(2026, 10, 30, 10, 15))
+    sam = StudentStore(data).get("sam")
+    assert sam.session_version == 2  # the signed-out cookies stay out
+    assert verify_password("second-test-pass", sam.password)

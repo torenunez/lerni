@@ -14,6 +14,10 @@ When something changes, update this section and add a log entry below.
 
 ## Log
 
+### 2026-11-10 (fixes; v4.3 built)
+
+- v4.3 ([plan](../plans/v4.3-fixes.md)), from the v4.2 review: a review id counts as used only once its question is kept; one sum written two ways is one idea again (− and -, × and *, 6/2 and 6 / 2), and a minus after "(" or "=" stays; a goal's connection counts as its interest's turn, so its third question goes elsewhere; a set compares only a car number two cars in reach list. From the outside reviews: a goal suggestion is refused (and tidied away) once its goal's notes change; a restore keeps today's passwords and sign-ins; a broken points file is moved aside instead of breaking Games, an unreadable points or concept file is never written over, and writes reach the disk before the swap. The v4.2 race eval: 21 of 23 (the car case lacked the set's car number in the eval itself, now fixed; the bonus case missed once). Tests: 270 passed.
+
 ### 2026-11-10 (race fixes; v4.2 built)
 
 - v4.2 ([plan](../plans/v4.2-race-fixes.md)): labels and question hashes keep their math ("1/2 + 1/4" and "1/2 − 1/4" are two ideas); repeats are checked within each goal, so an idea from one goal can be a first on another; each review has an id Claude returns, so a reworded review moves its idea; the prompt lost its one example label and asks for a different angle too; a goal takes at most one quantity format a set, a set at most one "record" twist, each goal's questions use different interests, and one car number a set is compared, in turn, counted across both tries. Tests: 263 passed.

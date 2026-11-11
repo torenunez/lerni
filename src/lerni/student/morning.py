@@ -352,8 +352,8 @@ def _tidy(data: dict[str, Any], m: InterestMap, today: date,
             return day >= gone
         if day < wait or goal is None:
             return False
-        if "interest" not in item:
-            return True
+        if "interest" not in item:  # a goal suggestion: gone once its notes change (v4.3)
+            return not item.get("notes_key") or item["notes_key"] == _key(goal.notes)
         e = m.find(str(item.get("interest", "")))
         return (e is not None and e.kind == "interest" and not mentions_set_aside(m, e.name)
                 and not _bridged(m, e.id, goal.id))
@@ -425,7 +425,8 @@ def check_plan(
             continue
         blocked.add(goal.id)
         suggestions.append(
-            {"goal_id": goal.id, "goal": goal.name, "notes": notes, "state": "waiting", "day": day}
+            {"goal_id": goal.id, "goal": goal.name, "notes": notes, "state": "waiting", "day": day,
+             "notes_key": _key(goal.notes)}  # the notes it was made from (v4.3)
         )
     steps = {}
     for s in raw.get("steps") or []:
@@ -503,17 +504,19 @@ def decide(
     chosen = set(picked)
     skipped: list[str] = []
     failed: set[str] = set()  # goal suggestions whose notes couldn't change: still waiting
-    notes = [(label(g), str(g.get("goal_id")), str(g.get("notes")))
+    notes = [(label(g), str(g.get("goal_id")), str(g.get("notes")), g.get("notes_key"))
              for g in store.get(username)["goals"]
              if use and g.get("state") == "waiting" and label(g) in chosen]
     if notes:  # the notes first: a mark is never left without its change (review)
 
         def apply(m: InterestMap) -> None:
-            for shown, goal_id, text in notes:
+            for shown, goal_id, text, key in notes:
                 e = next((e for e in m.entries if e.id == goal_id and e.kind == "goal"), None)
                 try:
                     if e is None:
                         raise MapError("it's no longer on the map")
+                    if key and key != _key(e.notes):  # changed since: never overwritten (v4.3)
+                        raise MapError("its notes changed since; tomorrow's plan can suggest again")
                     set_notes(m, e.id, text)
                 except MapError as exc:
                     skipped.append(f"{shown}: {exc}")

@@ -185,3 +185,16 @@ def test_only_one_outgrown_goal_gets_a_suggestion(tmp_path):
     store._change("sam", three)
     run_morning("sam", Planner(raw), maps, concepts, store, TODAY + timedelta(days=1))
     assert store.waiting("sam") == ["🎯 Goal Nouns: wider"]  # and no new one while one waits
+
+
+def test_review_a_goal_suggestion_never_overwrites_newer_notes(tmp_path):
+    # outside review (2026-11-10): ticking Monday's suggestion replaced Wednesday's notes
+    from lerni.student.interests import set_notes
+
+    maps, concepts, store, ids = setup(tmp_path)
+    run_morning("sam", Planner(RAW), maps, concepts, store, TODAY)
+    shown = next(w for w in store.waiting("sam") if w.startswith("🎯"))
+    maps.change("sam", lambda m: set_notes(m, ids["Fractions"], "only tenths this week"))
+    n, skipped = decide(store, maps, "sam", [shown], True, TODAY)
+    assert n == 0 and skipped and "changed" in skipped[0]
+    assert maps.get("sam").find("Fractions").notes == "only tenths this week"

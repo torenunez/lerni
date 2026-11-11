@@ -253,7 +253,7 @@ def test_math_labels_keep_their_operators_and_signs(tmp_path):
     # review (2026-11-10): "1/2 + 1/4" and "1/2 - 1/4" were one idea and one hash
     assert normalize("1/2 + 1/4") != normalize("1/2 - 1/4")
     assert normalize("-3") != normalize("3") and normalize("0.5") != normalize("0 5")
-    assert normalize("top-speed vs 0-60") == normalize("top speed vs 0 60")  # words unchanged
+    assert normalize("top-speed vs 0–60") == normalize("top speed vs 0-60")  # words unchanged
     assert question_hash("What is 1/2 + 1/4?") != question_hash("What is 1/2 - 1/4?")
     concepts = ConceptStore(tmp_path)
     concepts.add("sam", [("g1", "Fractions", "1/2 + 1/4"), ("g1", "Fractions", "1/2 - 1/4")],
@@ -315,3 +315,47 @@ def test_one_car_comparison_across_both_tries(tmp_path):
                            spare=spare, compared=1)
     assert kept == [] and len(spare) == 1  # the first try already compared two cars
 
+
+
+def test_review_v42_a_rejected_question_leaves_its_review_id_free(tmp_path):
+    # review (v4.2): a first question with "R1" and a wrong sum used up the id
+    maps = MapStore(tmp_path)
+    maps.change("sam", lambda m: add_goal(m, "Fractions") and None)
+    wrong = {**q("Fractions", 1, "odd halves"), "review": "R1", "math": "7 / 2"}  # keys 4
+    good = {**q("Fractions", 2, "sharing an odd count equally"), "review": "R1"}
+    kept = check_questions({"questions": [wrong, good]}, maps.get("sam"),
+                           reviews=[("Fractions", "halves of odd numbers")])
+    assert [k.concept for k in kept] == ["halves of odd numbers"]
+
+
+def test_review_v42_one_sum_written_two_ways_is_one_idea():
+    for a, b in [("1/2 − 1/4", "1/2 - 1/4"), ("6 / 2", "6/2"), ("7-3", "7 - 3"),
+                 ("3 × 4", "3 * 4"), ("x=-3", "x = -3")]:
+        assert normalize(a) == normalize(b), (a, b)
+    assert normalize("(-3)") != normalize("3") and normalize("top-speed") == "top speed"
+
+
+def test_review_v42_a_connection_still_spreads_a_goals_interests():
+    from lerni.student.interests import InterestMap
+
+    m = InterestMap()
+    goal = add_goal(m, "Fractions")
+    for name in ("pizza", "trains", "dogs"):
+        add_interest(m, name)
+    for seed in range(60):
+        slots = deal(m, ["Fractions"], {}, random.Random(seed), n=3,
+                     targets={goal.id: ("trains", "a hook")})
+        assert [s.setting for s in slots][:2] == ["trains", "trains"]  # it leads 2 of 3 (v3.44)
+        assert slots[2].setting != "trains", seed  # the third goes elsewhere
+
+
+def test_review_v42_a_sets_car_number_is_one_two_cars_have(tmp_path):
+    from lerni.student.garage import Car
+
+    races = desk(tmp_path, None)
+    cars = [Car("a", "Mini", 10, "red", "", usd=20000, zero_to_60=9.0),
+            Car("b", "Beetle", 10, "blue", "", usd=15000, zero_to_60=12.0, power_hp=80)]
+    races.garage = type("G", (), {"in_reach": lambda self, owned, balance: cars})()
+    for _ in range(6):
+        races._write("sam", supervised=True, today=TODAY)
+        assert "uses only: horsepower" not in races.quizzer.prompts[-1]  # only one has hp

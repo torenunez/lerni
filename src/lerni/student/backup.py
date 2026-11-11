@@ -19,7 +19,7 @@ from datetime import date, datetime
 from pathlib import Path
 
 from lerni.student.journal import map_lock
-from lerni.student.jsonfiles import private
+from lerni.student.jsonfiles import private, read_json, write_json_atomic
 from lerni.student.service import (
     DATA_ENV,
     PORTS,
@@ -117,6 +117,17 @@ def server_for(data: Path, home: Path) -> str | None:
     return None
 
 
+def _keep_sign_ins(today: Path, restored: Path) -> None:
+    """Each restored account keeps today's password and the newer session version, so a reset
+    or a sign-out since the copy stays in effect (v4.3)."""
+    for path in restored.glob("*.json"):
+        now, then = read_json(today / path.name), read_json(path)
+        if not now or not then or "password" not in now:
+            continue
+        version = max(int(now.get("session_version", 1)), int(then.get("session_version", 1)))
+        write_json_atomic(path, {**then, "password": now["password"], "session_version": version})
+
+
 def restore(data: Path, copy: Path, home: Path | None = None, run_: Runner = subprocess.run,
             uid: int | None = None, now: datetime | None = None) -> tuple[Path, str | None]:
     """Put a whole copy back as ``data``: stop the server that uses it, swap the folders
@@ -147,6 +158,7 @@ def restore(data: Path, copy: Path, home: Path | None = None, run_: Runner = sub
         for name in CARRIED:  # nobody signs out, and HTTPS keeps working
             if (data / name).is_file():
                 shutil.copy2(data / name, half / name)
+        _keep_sign_ins(data / "students", half / "students")
         private(half)
         if data.exists():
             data.rename(kept)

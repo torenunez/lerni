@@ -25,22 +25,31 @@ def write_json_atomic(path: Path, data: dict[str, Any]) -> None:
         with os.fdopen(fd, "w", encoding="utf-8") as handle:
             json.dump(data, handle, ensure_ascii=False, indent=2)
             handle.write("\n")
+            handle.flush()
+            os.fsync(handle.fileno())  # on disk before the swap, so a power cut keeps one whole
         os.replace(tmp, path)
     except BaseException:
         Path(tmp).unlink(missing_ok=True)
         raise
 
 
-def read_json(path: Path) -> dict[str, Any] | None:
+def read_json(path: Path, strict: bool = False) -> dict[str, Any] | None:
     """A JSON object from ``path``, or None when it's missing or broken. A broken file (not
     JSON, or not an object) is renamed ``<name>.broken-<time>.json`` beside it, so the next
-    write never overwrites it, and the log names it."""
+    write never overwrites it, and the log names it.
+
+    Raises:
+        OSError: With ``strict``, when the file is there but can't be read, so a caller that
+            writes it back never replaces it with an empty one (v4.3).
+    """
     try:
         text = path.read_text(encoding="utf-8")
     except FileNotFoundError:
         return None
     except OSError as exc:  # unreadable (permissions): left where it is
         print(f"Couldn't read {path} ({type(exc).__name__}).", flush=True)
+        if strict:
+            raise
         return None
     try:
         data = json.loads(text)
