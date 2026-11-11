@@ -331,16 +331,12 @@ def deal(m: InterestMap, goals: Sequence[str], used: Mapping[str, int], rng: ran
         ranked = sorted(range(len(groups)), key=lambda j: (
             had.count(j), counts[j] + BRIDGED_AS * bool(groups[j][2] & near),
             ties.index(j)))  # this goal's own turns first, then the set's: never in step
-        if ranked:
-            had.append(ranked[0])
         if goal is not None and s.fmt in QUANTITY:  # one size-or-number frame a goal (v4.2)
             if goal.id in sized:
                 used_fmts = [x.fmt for x in out]
                 s = replace(s, fmt=min((f for f in FORMATS if f not in QUANTITY),
                                        key=lambda f: (used_fmts.count(f), rng.random())))
             sized.add(goal.id)
-        if ranked:
-            counts[ranked[0]] += 1  # its turn, so the next slot goes elsewhere
         pick = [rng.choice(groups[j][1]) for j in ranked[:2]]
         if len(pick) == 1 and len(names := groups[ranked[0]][1]) > 1:  # one group: another kind
             pick.append(rng.choice([x for x in names if x != pick[0]]))
@@ -349,6 +345,10 @@ def deal(m: InterestMap, goals: Sequence[str], used: Mapping[str, int], rng: ran
             share = len(range(i % len(entries), n, len(entries)))  # this goal's slots (review)
             if k == 1 or (k == 2 and share > 2):  # the educator's connection leads
                 pick = [link[0], *(x for x in pick if x != link[0])][:2]
+        if ranked:  # the group actually used takes the turn, a connection's too (v4.2 review)
+            j = next((j for j, g in enumerate(groups) if pick and pick[0] in g[1]), ranked[0])
+            counts[j] += 1
+            had.append(j)
         out.append(replace(s, goal=goal.name if goal is not None else "",
                            setting=pick[0] if pick else "",
                            second=pick[1] if len(pick) > 1 else ""))
@@ -611,8 +611,8 @@ def check_questions(raw: Any, m: InterestMap, rng: random.Random | None = None,
                 or not normalize(concept)):
             continue
         own_key = "" if probe else goal.casefold()  # this question's goal, for its own ideas
-        if (n := _review(item.get("review"), reviews, own_key, taken)) is not None:
-            concept = reviews[n][1]  # its due idea's label, so the answer moves that review
+        if (review := _review(item.get("review"), reviews, own_key, taken)) is not None:
+            concept = reviews[review][1]  # its due idea's label, so the answer moves that review
         mine = [] if probe else own.get(own_key, [])  # a probe is checked against every goal
         everyone = [c for cs in own.values() for c in cs] if probe else []
         repeat = (normalize(concept) in seen_ideas | {normalize(c) for c in [*mine, *everyone]}
@@ -648,6 +648,8 @@ def check_questions(raw: Any, m: InterestMap, rng: random.Random | None = None,
             continue
         compared += cars_named
         kept.append(question)
+        if review is not None:  # used only once its question is kept (v4.2 review)
+            taken.add(review)
         if probe:  # no goal: every goal steers clear of it
             seen_ideas.add(normalize(concept))
             seen_labels.append(concept)
@@ -665,13 +667,11 @@ def _compares(q: Question, cars: Sequence[Car]) -> bool:
 def _review(value: Any, reviews: Sequence[tuple[str, str]], goal: str,
             taken: set[int]) -> int | None:
     """The index of the due idea a question's "review" id names, if it's on that question's goal
-    and not taken yet (it's then taken)."""
+    and not taken by a kept question yet."""
     match = re.fullmatch(r"R(\d+)", _plain(value).upper()) if value else None
     n = int(match.group(1)) - 1 if match else -1
-    if 0 <= n < len(reviews) and n not in taken and reviews[n][0].casefold() == goal:
-        taken.add(n)
-        return n
-    return None
+    return n if 0 <= n < len(reviews) and n not in taken and reviews[n][0].casefold() == goal \
+        else None
 
 
 @dataclass(frozen=True)
@@ -1246,9 +1246,13 @@ class RaceDesk:
                  *(g for g in picked if g.casefold() not in firsts)]
         p = self.points.get(username)
         cars = self.garage.in_reach(p.cars, p.balance) if self.garage else []
+        have = [f for f, n in zip(CAR_FACTS, (sum(c.zero_to_60 > 0 for c in cars),
+                                               sum(bool(c.power_hp) for c in cars),
+                                               sum(c.usd > 0 for c in cars)), strict=True)
+                if n >= 2]  # a number at least 2 cars in reach list (v4.2 review)
         with self._lock:  # one car number a set, never the last set's (v4.2)
             last = self._car_fact.get(username, "")
-            car_fact = self.dice.choice([f for f in CAR_FACTS if f != last])
+            car_fact = self.dice.choice([f for f in have if f != last] or have or [""])
             self._car_fact[username] = car_fact
         kept: list[Question] = []
         spare: list[Question] = []  # good but repeated: better than no race

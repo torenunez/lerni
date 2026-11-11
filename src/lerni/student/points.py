@@ -7,7 +7,6 @@ tap, a refresh, or a late repeat never counts twice. Standard library only.
 
 from __future__ import annotations
 
-import json
 import threading
 from collections.abc import Callable
 from dataclasses import asdict, dataclass, field
@@ -15,7 +14,7 @@ from datetime import date, timedelta
 from pathlib import Path
 from typing import Any, Literal, TypeVar
 
-from lerni.student.jsonfiles import write_json_atomic
+from lerni.student.jsonfiles import read_json, write_json_atomic
 from lerni.student.students import check_username, default_data_dir
 
 STARTER = "starter"  # every player starts with this car
@@ -67,10 +66,10 @@ class PointsStore:
 
     def get(self, username: str) -> Points:
         """Their points; a new player has none and the starter car."""
-        path = self._path(username)
-        if not path.exists():
+        # a broken file is moved aside, an unreadable one raises: neither is written over (v4.3)
+        data = read_json(self._path(username), strict=True)
+        if data is None:
             return Points()
-        data = json.loads(path.read_text(encoding="utf-8"))
         return Points(int(data.get("balance", 0)), list(data.get("cars", [STARTER])),
                       str(data.get("car", STARTER)), list(data.get("awards", [])),
                       dict(data.get("races", {})))

@@ -29,6 +29,7 @@ from lerni.student.race import (
 )
 
 REUSED: list[int] = []  # per call: ideas Claude wrote again though told they were asked
+RAW: list[dict] = []  # per call: what Claude returned
 
 
 def write(m: InterestMap, supervised: bool = True, before: list | None = None,
@@ -36,7 +37,9 @@ def write(m: InterestMap, supervised: bool = True, before: list | None = None,
     labels = {normalize(idea) for _, idea in due or []}  # due ideas may come back (v3.22)
     recent = [q.concept for q in before or [] if normalize(q.concept) not in labels]
     raw = ClaudeCodeQuizzer().write(QUIZ_SYSTEM, quiz_input(m, date.today(), supervised, recent,
-                                                            levels, cars or [], due or []))
+                                                            levels, cars or [], due or [],
+                                                            car_fact="horsepower" if cars else ""))
+    RAW.append(raw)  # for checks on what Claude returned
     asked = {normalize(c) for c in recent}
     reused = [i for i in raw.get("questions", []) if normalize(str(i.get("concept"))) in asked]
     print(f"Claude reused {len(reused)} of the ideas it was told were asked")
@@ -121,7 +124,8 @@ def main() -> None:
                                                 "halves of odd numbers").ratio() >= 0.8]
     results.append(("a due idea comes back", bool(back)))
     results.append(("with its review id, under its own label (v4.2)",
-                    any(q.concept == "halves of odd numbers" for q in again)))
+                    any(q.concept == "halves of odd numbers" for q in again)
+                    and any(i.get("review") == "R1" for i in RAW[-1].get("questions", []))))
     results.append(("in new words", all(SequenceMatcher(None, normalize(q.question), normalize(
         missed.question)).ratio() < 0.9 for q in back)))
     # the dice (v3.42): a rolled plan brings several formats and at most one car comparison

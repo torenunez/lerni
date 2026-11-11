@@ -29,15 +29,18 @@ UP_AT, DOWN_AT = 4, 2  # this many right of 5 or more: harder; this many or fewe
 GOAL_DAYS = (1, 3, 7, 14)  # a goal's boxes: days until it comes back (v3.28)
 
 
-# a number (with its decimal point or fraction bar), a math sign, a spaced or leading minus,
-# or a word (v4.2: "1/2 + 1/4" and "1/2 - 1/4" are different ideas)
-_TOKENS = re.compile(r"\d+(?:[./]\d+)*|[+−×÷*=<>%]|(?:(?<=\s)|^)-(?=\s|\d)|\w+")
+# one way to write each sign, so "1/2 − 1/4" and "1/2 - 1/4" are one idea (v4.3)
+_SIGNS = str.maketrans({"−": "-", "–": "-", "×": "*", "÷": "/"})
+# a number, a math sign, a minus or slash standing as a sign (after a space, "(", "[", "=",
+# or at the start), or a word (v4.2: "1/2 + 1/4" and "1/2 - 1/4" are different ideas)
+_TOKENS = re.compile(r"\d+(?:\.\d+)?|[+*=<>%]|(?<![^\s(\[=])[-/](?=\s|\d|$)|\w+")
 
 
 def normalize(text: str) -> str:
     """Lowercase words, numbers, and math signs, single-spaced, for comparing labels and
-    questions; a hyphen inside words or ranges ("top-speed", "0-60") reads as a space."""
-    folded = re.sub(r"(?<=\d),(?=\d{3})", "", text.casefold())  # 1,000 is 1000
+    questions; a hyphen or slash inside words ("top-speed", "and/or") reads as a space."""
+    folded = re.sub(r"(?<=\d),(?=\d{3})", "", text.casefold().translate(_SIGNS))  # 1,000
+    folded = re.sub(r"(?<=\d)\s*([-+*/=<>])\s*(?=[\d(-])", r" \1 ", folded)  # 6/2 is 6 / 2
     return " ".join(_TOKENS.findall(folded))
 
 
@@ -124,6 +127,7 @@ class ConceptStore:
     def _change(self, username: str, fn: Any = None, levels: Any = None) -> None:
         # the ideas and the levels are written together, so neither loses the other
         with self._lock:
+            read_json(self._path(username), strict=True)  # unreadable: never written over (v4.3)
             ledger, by_goal = self.ledger(username), self._levels(username)
             if fn is not None:
                 fn(ledger)
