@@ -1,19 +1,24 @@
-"""Fresher races (v3.42): each goal's own memory, the dice, and the 10 most different of 15."""
+"""Fresher races (v3.42): each goal's own memory, the dice, and the 10 most different of 15;
+the race fixes (v4.2): math identity, repeats per goal, review ids, fewer theme repeats."""
 
+import random
 import uuid
 from datetime import date, timedelta
 
-from lerni.student.concepts import ConceptStore
-from lerni.student.interests import MapStore, add_goal
+from lerni.student.concepts import ConceptStore, normalize
+from lerni.student.interests import MapStore, add_goal, add_interest
 from lerni.student.points import PointsStore
 from lerni.student.race import (
     FORMATS,
+    QUANTITY,
     QUESTIONS_PER_RACE,
     SET_SIZE,
     WRITE_SIZE,
     RaceDesk,
     check_questions,
+    deal,
 )
+from lerni.student.results import question_hash
 
 TODAY = date(2026, 11, 10)
 
@@ -242,3 +247,71 @@ def test_sets_written_ahead_rotate_and_due_goals_lead(tmp_path):
     races._write("sam", supervised=True, today=TODAY)
     plan = races.quizzer.prompts[-1].split("Question plan: ")[1]
     assert plan.startswith("1. Nouns, set in baking")  # the due goal first, the other interest
+
+
+def test_math_labels_keep_their_operators_and_signs(tmp_path):
+    # review (2026-11-10): "1/2 + 1/4" and "1/2 - 1/4" were one idea and one hash
+    assert normalize("1/2 + 1/4") != normalize("1/2 - 1/4")
+    assert normalize("-3") != normalize("3") and normalize("0.5") != normalize("0 5")
+    assert normalize("top-speed vs 0-60") == normalize("top speed vs 0 60")  # words unchanged
+    assert question_hash("What is 1/2 + 1/4?") != question_hash("What is 1/2 - 1/4?")
+    concepts = ConceptStore(tmp_path)
+    concepts.add("sam", [("g1", "Fractions", "1/2 + 1/4"), ("g1", "Fractions", "1/2 - 1/4")],
+                 TODAY)
+    assert len(concepts.ledger("sam")) == 2
+
+
+def test_an_idea_asked_on_one_goal_is_new_on_another(tmp_path):
+    # review (2026-11-10): the repeat check pooled every picked goal's history
+    races = desk(tmp_path, None)
+
+    class Shared(Quizzer):
+        def write(self, system, prompt):
+            return {"questions": [q("Nouns", 1, "halves of a pizza"),  # Fractions asked it
+                                  q("Fractions", 2, "halves of a pizza"),  # its own repeat
+                                  *(q("Fractions" if n % 2 else "Nouns", n)
+                                    for n in range(3, WRITE_SIZE))]}
+
+    races.quizzer = Shared()
+    kept = races._write("sam", supervised=True, today=TODAY)
+    ideas = {(k.goal, k.concept) for k in kept}
+    assert ("Nouns", "halves of a pizza") in ideas
+    assert ("Fractions", "halves of a pizza") not in ideas
+
+
+def test_a_reworded_review_with_its_id_moves_that_review(tmp_path):
+    # review (2026-11-10): a new label left the review due for good
+    maps = MapStore(tmp_path)
+    maps.change("sam", lambda m: [add_goal(m, "Fractions"), add_goal(m, "Nouns")] and None)
+    raw = {"questions": [{**q("Fractions", 1, "sharing an odd count equally"), "review": "R1"},
+                         {**q("Nouns", 2, "naming things you share"), "review": "R1"}]}
+    kept = check_questions(raw, maps.get("sam"), reviews=[("Fractions", "halves of odd numbers")])
+    assert [k.concept for k in kept] == ["halves of odd numbers", "naming things you share"]
+
+
+def test_a_goal_spreads_its_interests_formats_and_records():
+    # review (2026-11-10): goals and interests fell into step; quantity frames piled up
+    from lerni.student.interests import InterestMap
+
+    m = InterestMap()
+    goals = [add_goal(m, name).name for name in ("Fractions", "Nouns", "Volume")]
+    for name in ("pizza", "trains", "dogs"):  # 3 groups for 3 goals: in step before
+        add_interest(m, name)
+    for seed in range(40):
+        slots = deal(m, goals, {}, random.Random(seed), n=9)
+        for g in goals:
+            mine = [s for s in slots if s.goal == g]
+            assert len({s.setting for s in mine}) == len(mine) == 3
+            assert sum(s.fmt in QUANTITY for s in mine) <= 1
+        assert sum(s.twist.startswith("a record") for s in slots) <= 1
+
+
+def test_one_car_comparison_across_both_tries(tmp_path):
+    maps = MapStore(tmp_path)
+    maps.change("sam", lambda m: add_goal(m, "Speed") and None)
+    two = {**q("Speed", 1), "question": "Which is quicker, the Mini or the Beetle?"}
+    spare: list = []
+    kept = check_questions({"questions": [two]}, maps.get("sam"), cars=["Mini", "Beetle"],
+                           spare=spare, compared=1)
+    assert kept == [] and len(spare) == 1  # the first try already compared two cars
+

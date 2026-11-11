@@ -55,6 +55,8 @@ FORMATS = ("how it works", "compare two things", "what happens if", "odd one out
            "a number from their interest")  # dealt to question slots (v3.42)
 TWISTS = ("a record (biggest, fastest, oldest)", "a bit of history", "at home or school",
           "a mystery to solve", "")  # rolled per slot; "" is none
+QUANTITY = ("compare two things", "closest guess", "a number from their interest")  # 1 a goal
+CAR_FACTS = ("0-60 time", "horsepower", "price")  # one a set may compare, in turn (v4.2)
 STEP_RIGHT, STEP_WRONG = 2.2, 0.7  # how far the student moves
 BOT_RIVALS = (("Zippy", "formula"), ("Bolt", "muscle"))  # (name, car) when the garage has none
 SLOW = 0.4  # each rival moves this much less on a turn the student gets right
@@ -97,6 +99,7 @@ QUIZ_SCHEMA: dict[str, Any] = {
             "probe": {"type": "string"},
             "format": {"type": "string", "enum": list(FORMATS)},
             "setting": {"type": "string"},
+            "review": {"type": "string"},
         },
         "required": ["goal", "concept", "question", "choices", "answer", "why", "format",
                      "setting"],
@@ -124,8 +127,12 @@ With no goals, ask how things in their interests work, never dates or numbers to
 Spread the questions evenly across the listed goals (about 3 each); a goal that's hard to ask \
 as multiple choice (feelings, values) gets 1, and a bonus question if one fits.
 - Every question tests a different idea; "concept" names it in a few words \
-(under {MAX_CONCEPT} characters, e.g. "top speed vs acceleration"). Never an idea a goal \
-lists as asked lately, or one listed as recently asked, except ideas due for review.
+(under {MAX_CONCEPT} characters). Never an idea a goal lists as asked lately, or one listed \
+as recently asked, except ideas due for review. Every question also takes a different angle: \
+never the same measurement, record, or comparison as another question in the set or a \
+recent idea, in other words.
+- A question on an idea due for review puts that idea's id ("R1") in "review"; every other \
+question leaves "review" out.
 - Follow the question plan: question N practices plan N's goal, set in its interest (or the \
 one in brackets when the first can't make a natural question), with its format and, when it \
 has one, its twist; "format" names the format exactly, and "setting" the interest you used. \
@@ -140,8 +147,8 @@ arithmetic in "math" ("400 / 2", "3 / 4 * 12"); otherwise leave "math" out.
 - One right answer and two wrong ones that someone might believe; "why" says in one short \
 line why the right one is right.
 - When their cars are listed and a goal works with numbers or how things move, at most 1 \
-question in the whole set compares two of their cars by a listed number (0-60 time, horsepower, \
-price) to practice it (speeding up, power, ratios, big numbers). With no goals, compare how \
+question in the whole set compares two of their cars, by the one number named for this set, \
+to practice it (speeding up, power, ratios, big numbers). With no goals, compare how \
 they work, not their numbers. Use only the listed facts and never add another fact about a \
 car (no cylinders, weights, or top speeds); engine and drive are names to mention, not \
 numbers to use. Put any arithmetic in "math".
@@ -194,7 +201,7 @@ def quiz_input(m: InterestMap, today: date, supervised: bool, recent: Sequence[s
                probed: Sequence[str] = (), asked: Mapping[str, Sequence[str]] | None = None,
                plan: Sequence[Slot] = (),
                connections: Mapping[str, tuple[str, str]] | None = None,
-               steps: Mapping[str, Sequence[str]] | None = None) -> str:
+               steps: Mapping[str, Sequence[str]] | None = None, car_fact: str = "") -> str:
     """What Claude needs to write questions: goals at their levels, interests, set-asides,
     recent ideas, nearby ideas to probe, and the cars in reach. ``goals`` (names) narrows the
     goals to this set's; ``probed`` are topics probed lately; ``asked`` is each goal's ideas
@@ -242,9 +249,12 @@ def quiz_input(m: InterestMap, today: date, supervised: bool, recent: Sequence[s
             lines.append("Recently probed, choose others: " + "; ".join(probed))
     if due:  # missed ideas, back after a gap (v3.22)
         lines.append("Due for review (ask each idea again in new words; use its label as the "
-                     "concept): " + "; ".join(f"{idea} ({goal})" for goal, idea in due))
+                     "concept and its id as \"review\"): "
+                     + "; ".join(f"R{n}. {idea} ({goal})" for n, (goal, idea) in enumerate(due, 1)))
     if cars:  # only cars they own or can afford: facts are earned by saving up
         lines.append("Their cars (exact facts; use only these): " + "; ".join(map(_facts, cars)))
+        if car_fact:  # one number a set, in turn (v4.2)
+            lines.append(f"This set's car comparison, if any, uses only: {car_fact}")
     if plan:  # the dice: a different prompt every set (v3.42)
         lines.append("Question plan: " + "; ".join(f"{n}. {s}" for n, s in enumerate(plan, 1)))
     return "\n".join(lines)
@@ -272,7 +282,13 @@ def roll(rng: random.Random, n: int = WRITE_SIZE) -> list[Slot]:
     deck: list[str] = []
     while len(deck) < n:
         deck += rng.sample(FORMATS, len(FORMATS))
-    return [Slot(fmt, rng.choice(TWISTS)) for fmt in deck[:n]]
+    out: list[Slot] = []
+    for fmt in deck[:n]:
+        twist = rng.choice(TWISTS)
+        if twist == TWISTS[0] and any(s.twist == TWISTS[0] for s in out):  # one record a set
+            twist = rng.choice(TWISTS[1:])
+        out.append(Slot(fmt, twist))
+    return out
 
 
 def interest_groups(m: InterestMap) -> list[tuple[str, list[str], set[str]]]:
@@ -293,7 +309,8 @@ def deal(m: InterestMap, goals: Sequence[str], used: Mapping[str, int], rng: ran
     slot a setting from every interest group, the least used first (``used``: lately, by
     lowercase name), a group already bridged to that slot's goal counting as 3 more uses, and
     a second choice. A connection in use (``targets``: interest by goal id, v3.44) sets its
-    goal's first slot, and its second when the goal has more than two."""
+    goal's first slot, and its second when the goal has more than two. Each goal takes the
+    groups it hasn't used in this set first, and at most one quantity format (v4.2)."""
     slots = roll(rng, n)
     groups = interest_groups(m)
     counts = [sum(used.get(x.casefold(), 0) for x in names) for _, names, _ in groups]
@@ -305,11 +322,23 @@ def deal(m: InterestMap, goals: Sequence[str], used: Mapping[str, int], rng: ran
     entries = [e for g in goals if (e := m.find(g)) is not None and e.kind == "goal"]
     out = []
     led: dict[str, int] = {}  # each goal's slots so far, for the connections in use
+    mine: dict[str, list[int]] = {}  # each goal's groups so far in this set
+    sized: set[str] = set()  # goals that already have a quantity format
     for i, s in enumerate(slots):
         goal = entries[i % len(entries)] if entries else None
         near = bridged.get(goal.id, set()) if goal is not None else set()
+        had = mine.setdefault(goal.id if goal is not None else "", [])
         ranked = sorted(range(len(groups)), key=lambda j: (
-            counts[j] + BRIDGED_AS * bool(groups[j][2] & near), ties.index(j)))  # soft: in turn
+            had.count(j), counts[j] + BRIDGED_AS * bool(groups[j][2] & near),
+            ties.index(j)))  # this goal's own turns first, then the set's: never in step
+        if ranked:
+            had.append(ranked[0])
+        if goal is not None and s.fmt in QUANTITY:  # one size-or-number frame a goal (v4.2)
+            if goal.id in sized:
+                used_fmts = [x.fmt for x in out]
+                s = replace(s, fmt=min((f for f in FORMATS if f not in QUANTITY),
+                                       key=lambda f: (used_fmts.count(f), rng.random())))
+            sized.add(goal.id)
         if ranked:
             counts[ranked[0]] += 1  # its turn, so the next slot goes elsewhere
         pick = [rng.choice(groups[j][1]) for j in ranked[:2]]
@@ -525,7 +554,10 @@ def check_questions(raw: Any, m: InterestMap, rng: random.Random | None = None,
                     probed: Sequence[str] = (), probes: bool = False,
                     meaning: Meaning | None = None, due: Sequence[str] = (),
                     real: InterestMap | None = None, cars: Sequence[str] = (),
-                    tally: Counter[str] | None = None) -> list[Question]:
+                    tally: Counter[str] | None = None,
+                    by_goal: Mapping[str, Sequence[str]] | None = None,
+                    reviews: Sequence[tuple[str, str]] = (),
+                    compared: int = 0) -> list[Question]:
     """Keep only well-formed, new questions about the map's goals, or probes of nearby ideas;
     shuffle their choices.
 
@@ -538,10 +570,15 @@ def check_questions(raw: Any, m: InterestMap, rng: random.Random | None = None,
     question about a removed name in other words is dropped. ``real`` is the map itself when
     ``m`` is the race view: probes are checked against it. A second question naming two of
     ``cars`` goes to ``spare``: one car comparison a set (v3.42). ``tally`` counts repeats and
-    car comparisons set aside, for the log.
+    car comparisons set aside, for the log; ``compared`` counts ones already kept (v4.2).
+    ``by_goal`` (labels by lowercase goal name) apply only to their own goal; ``concepts`` to
+    every goal (v4.2). ``reviews`` are the due (goal, idea) pairs in the prompt's order: a
+    question on the right goal naming one's id ("R1") takes that idea's label, once each.
     """
     tally = tally if tally is not None else Counter()
-    names, compared = [c.casefold() for c in cars if c], 0
+    names = [c.casefold() for c in cars if c]
+    own: dict[str, list[str]] = {g.casefold(): [*cs] for g, cs in (by_goal or {}).items()}
+    taken: set[int] = set()  # review ids already used
     rng = rng or random.Random()
     seen_ideas, seen_texts = {normalize(c) for c in concepts}, [*texts]
     seen_labels = [*concepts]  # as written, for the check by meaning
@@ -573,10 +610,16 @@ def check_questions(raw: Any, m: InterestMap, rng: random.Random | None = None,
                 or (goals and not probe and goal.casefold() not in goals)
                 or not normalize(concept)):
             continue
-        repeat = normalize(concept) in seen_ideas or _alike(normalize(q), seen_texts)
+        own_key = "" if probe else goal.casefold()  # this question's goal, for its own ideas
+        if (n := _review(item.get("review"), reviews, own_key, taken)) is not None:
+            concept = reviews[n][1]  # its due idea's label, so the answer moves that review
+        mine = [] if probe else own.get(own_key, [])  # a probe is checked against every goal
+        everyone = [c for cs in own.values() for c in cs] if probe else []
+        repeat = (normalize(concept) in seen_ideas | {normalize(c) for c in [*mine, *everyone]}
+                  or _alike(normalize(q), seen_texts))
         reworded = (not repeat and meaning is not None
                     and not any(_same_idea(concept, d) for d in due)
-                    and meaning.repeat(concept, seen_labels))  # the same idea in other words
+                    and meaning.repeat(concept, [*seen_labels, *mine, *everyone]))
         answer_text = choices[right]
         key = _number(answer_text)
         value = _arith(_plain(item.get("math"))) if item.get("math") else None
@@ -605,10 +648,30 @@ def check_questions(raw: Any, m: InterestMap, rng: random.Random | None = None,
             continue
         compared += cars_named
         kept.append(question)
-        seen_ideas.add(normalize(concept))
-        seen_labels.append(concept)
+        if probe:  # no goal: every goal steers clear of it
+            seen_ideas.add(normalize(concept))
+            seen_labels.append(concept)
+        else:
+            own.setdefault(own_key, []).append(concept)
         seen_texts.append(normalize(q))
     return kept
+
+
+def _compares(q: Question, cars: Sequence[Car]) -> bool:
+    """Whether a question names two of the cars: a car comparison."""
+    return sum(c.name.casefold() in q.question.casefold() for c in cars if c.name) >= 2
+
+
+def _review(value: Any, reviews: Sequence[tuple[str, str]], goal: str,
+            taken: set[int]) -> int | None:
+    """The index of the due idea a question's "review" id names, if it's on that question's goal
+    and not taken yet (it's then taken)."""
+    match = re.fullmatch(r"R(\d+)", _plain(value).upper()) if value else None
+    n = int(match.group(1)) - 1 if match else -1
+    if 0 <= n < len(reviews) and n not in taken and reviews[n][0].casefold() == goal:
+        taken.add(n)
+        return n
+    return None
 
 
 @dataclass(frozen=True)
@@ -1036,6 +1099,7 @@ class RaceDesk:
         self.suggestions: Any = None  # the morning plan's store (v3.44); set by the app
         self._races: dict[str, Race] = {}
         self._busy: dict[str, threading.Event] = {}  # writing ahead now; set when done
+        self._car_fact: dict[str, str] = {}  # the car number each student's last set compared
         self._starting: dict[str, threading.Lock] = {}  # each person's starts, one at a time
         self._started: dict[str, float] = {}  # when each person's race began
         self._last_tap: dict[str, float] = {}  # when they last answered
@@ -1072,13 +1136,18 @@ class RaceDesk:
             print(f"Race checks by meaning skipped ({type(exc).__name__}).", flush=True)
             return None
 
-    def _avoid(self, username: str, today: date,
-                recent: Sequence[str]) -> tuple[list[str], list[str]]:
-        """Ideas and texts a new question mustn't repeat: ``recent``, or held for a race."""
+    def _avoid(self, username: str, today: date, recent: Sequence[str]
+               ) -> tuple[list[str], list[str], dict[str, list[str]]]:
+        """Ideas and texts a new question mustn't repeat: ``recent`` and held probes (every
+        goal), held questions' texts, and held ideas by lowercase goal name (only their goal)."""
         with self._lock:
             held = self._held(username, today)
             texts = [*self._asked.get(username, ()), *(normalize(q.question) for q in held)]
-        return [*recent, *(q.concept for q in held)], texts
+        by_goal: dict[str, list[str]] = {}
+        for q in held:
+            if q.goal and not q.probe:
+                by_goal.setdefault(q.goal.casefold(), []).append(q.concept)
+        return [*recent, *(q.concept for q in held if not q.goal or q.probe)], texts, by_goal
 
     def _due(self, username: str, m: InterestMap, today: date) -> list[tuple[str, str]]:
         """Missed ideas to ask again: their goal still on the map, nothing set aside."""
@@ -1148,9 +1217,14 @@ class RaceDesk:
         labels = {normalize(idea) for _, idea in due}  # due ideas may come back
         history = {i: [c for c in cs if normalize(c) not in labels] for i, cs in history.items()}
         loose = [c for c in by_goal.get("", []) if normalize(c) not in labels]
-        concepts, texts = self._avoid(username, today,
-                                      [*(c for cs in history.values() for c in cs), *loose])
+        concepts, texts, held_by_goal = self._avoid(username, today, loose)
         concepts = [c for c in concepts if normalize(c) not in labels]
+        names = {e.id: e.name for name in picked if (e := m.find(name)) is not None}
+        scoped: dict[str, list[str]] = {}  # each goal's own ideas to steer clear of (v4.2)
+        for gid, cs in history.items():
+            scoped.setdefault(names.get(gid, "").casefold(), []).extend(cs)
+        for g, cs in held_by_goal.items():
+            scoped.setdefault(g, []).extend(c for c in cs if normalize(c) not in labels)
         recent = list(dict.fromkeys(loose))  # the "recently asked" line: ideas with no goal
         used = self.concepts.settings_since(username, today) if self.concepts else {}
         with self._lock:  # held sets count too, so each set written ahead turns further (review)
@@ -1172,6 +1246,10 @@ class RaceDesk:
                  *(g for g in picked if g.casefold() not in firsts)]
         p = self.points.get(username)
         cars = self.garage.in_reach(p.cars, p.balance) if self.garage else []
+        with self._lock:  # one car number a set, never the last set's (v4.2)
+            last = self._car_fact.get(username, "")
+            car_fact = self.dice.choice([f for f in CAR_FACTS if f != last])
+            self._car_fact[username] = car_fact
         kept: list[Question] = []
         spare: list[Question] = []  # good but repeated: better than no race
         for _ in range(2):  # one more try if too few questions pass the checks
@@ -1179,7 +1257,7 @@ class RaceDesk:
                 raw = self.quizzer.write(QUIZ_SYSTEM, quiz_input(
                     m, today, supervised, recent, levels, cars, due, picked or None, probed,
                     history, deal(m, dealt, used, self.dice, targets=targets),
-                    connections=targets, steps=steps))
+                    connections=targets, steps=steps, car_fact=car_fact))
             except RaceUnavailable:
                 raise
             except Exception as exc:  # never show what went wrong inside
@@ -1187,11 +1265,16 @@ class RaceDesk:
             # both tries count together, each new one unlike the ones before
             new_spare: list[Question] = []
             # due ideas may be a bonus too: only recent, held, and this set's ideas are out
-            seen = [*concepts, *(q.concept for q in kept)]
-            meaning = self._meaning(raw, m, seen)  # outside the lock: about 5 s
+            seen = [*concepts, *(q.concept for q in kept if q.probe)]
+            mine = {g: [*cs] for g, cs in scoped.items()}  # each goal's, with this write's kept
+            for k in kept:
+                if not k.probe:
+                    mine.setdefault(k.goal.casefold(), []).append(k.concept)
+            every = [*seen, *(c for cs in mine.values() for c in cs)]  # a bonus avoids them all
+            meaning = self._meaning(raw, m, every)  # outside the lock: about 5 s
             due_ideas = [idea for _, idea in due]
             self._keep_bonus(username, today, [replace(b, level=levels.get(b.goal_id, START_LEVEL))
-                                               for b in check_bonus(raw, m, seen, meaning,
+                                               for b in check_bonus(raw, m, every, meaning,
                                                                     due_ideas)])
             tally: Counter[str] = Counter()
             bonus_repeats = meaning.repeats if meaning else 0  # the log counts questions only
@@ -1200,7 +1283,9 @@ class RaceDesk:
                                   spare=new_spare,
                                   probed=[*probed, *(q.probe for q in kept if q.probe)],
                                   probes=bool(nearby(m, today)), meaning=meaning, due=due_ideas,
-                                  real=real, cars=[c.name for c in cars], tally=tally)
+                                  real=real, cars=[c.name for c in cars], tally=tally,
+                                  by_goal=mine, reviews=due,
+                                  compared=sum(_compares(k, cars) for k in kept))
             varied = pick_varied(new, SET_SIZE - len(kept), meaning, history, due_ideas)
             # the good ones not picked come before repeats, if the blind check leaves too few
             new_spare[:0] = [q for q in new if all(q is not v for v in varied)]

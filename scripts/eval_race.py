@@ -42,7 +42,7 @@ def write(m: InterestMap, supervised: bool = True, before: list | None = None,
     print(f"Claude reused {len(reused)} of the ideas it was told were asked")
     REUSED.append(len(reused))
     kept = check_questions(raw, m, concepts=recent,
-                           texts=[normalize(q.question) for q in before or []])
+                           texts=[normalize(q.question) for q in before or []], reviews=due or [])
     for q in kept:
         about = q.goal or f"probe: {q.probe}"
         print(f"[{about} · {q.concept}] {q.question} → {q.choices} ✓{q.choices[q.answer]}")
@@ -120,6 +120,8 @@ def main() -> None:
     back = [q for q in again if SequenceMatcher(None, normalize(q.concept),
                                                 "halves of odd numbers").ratio() >= 0.8]
     results.append(("a due idea comes back", bool(back)))
+    results.append(("with its review id, under its own label (v4.2)",
+                    any(q.concept == "halves of odd numbers" for q in again)))
     results.append(("in new words", all(SequenceMatcher(None, normalize(q.question), normalize(
         missed.question)).ratio() < 0.9 for q in back)))
     # the dice (v3.42): a rolled plan brings several formats and at most one car comparison

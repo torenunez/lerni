@@ -29,9 +29,16 @@ UP_AT, DOWN_AT = 4, 2  # this many right of 5 or more: harder; this many or fewe
 GOAL_DAYS = (1, 3, 7, 14)  # a goal's boxes: days until it comes back (v3.28)
 
 
+# a number (with its decimal point or fraction bar), a math sign, a spaced or leading minus,
+# or a word (v4.2: "1/2 + 1/4" and "1/2 - 1/4" are different ideas)
+_TOKENS = re.compile(r"\d+(?:[./]\d+)*|[+−×÷*=<>%]|(?:(?<=\s)|^)-(?=\s|\d)|\w+")
+
+
 def normalize(text: str) -> str:
-    """Lowercase words only, single-spaced, for comparing labels and questions."""
-    return " ".join(re.sub(r"[^\w]+", " ", text.casefold()).split())
+    """Lowercase words, numbers, and math signs, single-spaced, for comparing labels and
+    questions; a hyphen inside words or ranges ("top-speed", "0-60") reads as a space."""
+    folded = re.sub(r"(?<=\d),(?=\d{3})", "", text.casefold())  # 1,000 is 1000
+    return " ".join(_TOKENS.findall(folded))
 
 
 def _level(v: Any) -> int:
