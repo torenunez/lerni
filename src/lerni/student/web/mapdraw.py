@@ -15,12 +15,12 @@ import math
 from datetime import date
 from functools import lru_cache
 
-from lerni.student.interests import InterestMap, backed_off, faded, strength
+from lerni.student.interests import InterestMap, backed_off, faded, group_days, picture_view
 
-GREEN, CORAL, GREY, DARK = "#009E73", "#D55E00", "#9a9a9a", "#555555"  # color-blind safe
+GREEN, CORAL, GREY = "#009E73", "#D55E00", "#9a9a9a"  # color-blind safe
 SIZE = 400
 CENTER = SIZE / 2
-RADII = {"strong": 20, "growing": 14, "faint": 10, "not yet": 11}  # the list's strength
+NOT_YET, MAX_RADIUS = 11, 40  # never discussed; the biggest circle (about 48 days)
 SPACING = 42  # how far apart linked entries settle
 GOAL_RING = 45  # goals sit on a small ring in the middle
 LABEL_H = 18  # the label under a circle, with a little room
@@ -29,6 +29,11 @@ LABEL_H = 18  # the label under a circle, with a little room
 def owner_key(owner: str) -> str:
     """A short, opaque key for the page to remember zoom per map (never the username)."""
     return hashlib.sha256(owner.encode()).hexdigest()[:10]
+
+
+def radius(days: int) -> int:
+    """A circle's radius from the days it came up: area grows with days, up to a cap."""
+    return NOT_YET if not days else min(MAX_RADIUS, round(9 + 4.5 * math.sqrt(days)))
 
 
 def _seed(entry_id: str) -> tuple[float, float]:
@@ -113,10 +118,10 @@ def map_svg(m: InterestMap, today: date, key: str = "") -> str:
     """
     if not m.entries:
         return ""
-    radius = {e.id: RADII[strength(e, today, m)] for e in m.entries}  # a group counts its kinds
-    shown = [k for k in m.links if k.kind != "not_kind_of"]  # an undone group isn't drawn
-    shape = tuple((e.id, e.kind, radius[e.id], len(e.name) * 6 + 4) for e in m.entries)
-    at = _layout(shape, tuple((k.a, k.b, k.kind == "kind_of") for k in shown))
+    entries, shown = picture_view(m)  # general interests and goals; kinds stay in the list
+    size = {e.id: radius(len(group_days(m, e))) for e in entries}  # a group counts its kinds
+    shape = tuple((e.id, e.kind, size[e.id], len(e.name) * 6 + 4) for e in entries)
+    at = _layout(shape, tuple((k.a, k.b, False) for k in shown))
     frame = _frame(at, {e[0]: (max(2 * e[2], e[3]), 2 * e[2] + LABEL_H) for e in shape})
     parts = [
         f'<div class="lerni-map-wrap" data-key="{html.escape(key)}">',
@@ -129,15 +134,14 @@ def map_svg(m: InterestMap, today: date, key: str = "") -> str:
             (x1, y1), (x2, y2) = at[k.a], at[k.b]
             style = {
                 "bridge": f'stroke="{CORAL}" stroke-width="2" stroke-dasharray="6 4"',
-                "kind_of": f'stroke="{DARK}" stroke-width="2"',  # a kind and its group
             }.get(k.kind, f'stroke="{GREY}" stroke-width="1"')
             parts.append(
                 f'<line data-a="{k.a}" data-b="{k.b}" data-k="{k.kind}" '
                 f'x1="{x1:.0f}" y1="{y1:.0f}" '
                 f'x2="{x2:.0f}" y2="{y2:.0f}" {style}/>'
             )
-    for e in m.entries:
-        (x, y), r = at[e.id], radius[e.id]
+    for e in entries:
+        (x, y), r = at[e.id], size[e.id]
         color = GREEN if e.kind == "interest" else CORAL
         fill = "white" if e.kind == "goal" and not e.days else color  # not discussed yet
         dash = ' stroke-dasharray="4 3"' if e.kind == "goal" and backed_off(e, today) else ""
