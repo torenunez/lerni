@@ -70,6 +70,7 @@ Versions 1 and 2 also need sessions, not code: the educator sets goals, rehearse
 ### Later: Version 3 Play and points
 
 - [ ] Embeddings, later uses ([spec 10](../plans/specs/10-local-embeddings.md#later-uses-described-not-built)): Chat's goals ranked by the student's message (if wanted), the "same as" shortlist once items rest, and near-duplicate ideas grouped in `lerni stats`; the 2026-11-10 review's deferred uses, each with its trigger ([options](../plans/v4.1-repeats-by-theme.md#the-reviews-verdicts-on-more-embedding-uses)).
+- [ ] Bonus questions are sometimes missing from a set (the race eval, 2026-11-11: the old prompt wrote none in 2 runs, the new one 0, 1, and 2 in 3): find out why before Version 6 leans on them.
 - [ ] A week after v3.40: read the server log's counts of questions dropped by meaning; add made-up Spanish pairs to the bake-off when a Spanish miss is seen.
 - [ ] Pit stop: fill a toy car's fuel gauge with quarters, then the same amount with eighths (fixed math, no Claude calls); the educator sketches the scene first.
 - [ ] An educator "reset points", and Games for independent students.

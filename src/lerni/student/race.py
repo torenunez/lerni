@@ -54,8 +54,8 @@ WRITE_SIZE = 15  # questions Claude writes for a set; the 10 most different race
 FORMATS = ("how it works", "compare two things", "what happens if", "odd one out",
            "what comes next", "closest guess", "spot the rival's mistake",
            "a number from their interest")  # dealt to question slots (v3.42)
-TWISTS = ("a record (biggest, fastest, oldest)", "a bit of history", "at home or school",
-          "a mystery to solve", "")  # rolled per slot; "" is none
+TWISTS = ("a record (biggest, fastest, oldest)", "at home or school", "a mystery to solve",
+          "")  # rolled per slot; "" is none; no history: it came out as trivia (v4.5)
 QUANTITY = ("compare two things", "closest guess", "a number from their interest")  # 1 a goal
 CAR_FACTS = ("0-60 time", "horsepower", "price")  # one a set may compare, in turn (v4.2)
 STEP_RIGHT, STEP_WRONG = 2.2, 0.7  # how far the student moves
@@ -148,7 +148,18 @@ wrong, and the choices say what's wrong with it.
 - When the right answer is a number worked out from numbers in the question, put that \
 arithmetic in "math" ("400 / 2", "3 / 4 * 12"); otherwise leave "math" out.
 - One right answer and two wrong ones that someone might believe; "why" says in one short \
-line why the right one is right.
+line why the right one is right. Each choice is only an answer (a number, word, or short \
+phrase), never an explanation or a method (except a rival's mistake); the reasoning goes \
+in "why". When the answer is a number or a time, ask for it, and the choices are just that.
+- Numbers fit the setting as it really is (a soccer score is 0 to 5, a team has 11 players). \
+When a number couldn't really happen there, count something else that fits (fans, seats, \
+cards) or use the interest in brackets.
+- When a question depends on a word or part they may not know yet (a clock's short and long \
+hands), say what it is in the question first, unless learning that word is the goal.
+- A twist frames the question itself (a record to compare, a mystery to solve); \
+when it doesn't fit, leave it out. Never add a sentence the question doesn't need, and \
+no label in front ("Mystery:").
+- Use each question's planned interest only; never bring another interest into it.
 - When their cars are listed and a goal works with numbers or how things move, at most 1 \
 question in the whole set compares two of their cars, by the one number named for this set, \
 to practice it (speeding up, power, ratios, big numbers). With no goals, compare how \
@@ -167,7 +178,8 @@ rules apply: kind, never scary or sad, never anything set aside.
 choices clearly off; 2, one step in a new setting; 3, apply it to one of their interests, \
 wrong choices plausible; 4, two steps or a comparison, wrong choices common mistakes; \
 5, a what-if or work back from an answer, wrong choices near misses.
-- Short questions (under {MAX_QUESTION} characters) and short choices (under {MAX_CHOICE}).
+- Short questions (under {MAX_QUESTION} characters) in short sentences and everyday words, \
+and short choices (under {MAX_CHOICE}).
 - Never violence, weapons, sexual content, self-harm, drugs, anything scary or sad, anything \
 set aside, or a real person's name (car names like McLaren are fine). No trick questions.
 - Write new questions as good as the ones marked good, never copies; avoid the mistakes \
