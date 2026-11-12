@@ -39,13 +39,13 @@ def test_the_picture_shows_general_interests_sized_by_their_days():
     goal = add_goal(m, "Telling time")
     trains, steam, soccer = (add_interest(m, n) for n in ("trains", "steam trains", "soccer"))
     group(m, steam.id, trains.id)
-    steam.days, soccer.days = days(9), days(1)
-    m.links.append(Link(steam.id, goal.id, "bridge", TODAY.isoformat()))
+    steam.days, soccer.days = days(9), days(1)  # only the kind came up, on 9 days
+    m.links.append(Link(steam.id, goal.id, "bridge", TODAY.isoformat()))  # bridged from the kind
     svg = map_svg(m, TODAY, "k")
     assert f'data-id="{steam.id}"' not in svg  # the kind stays in the list
     assert f'data-a="{trains.id}" data-b="{goal.id}" data-k="bridge"' in svg  # its bridge moves up
 
     def r(entry_id: str) -> int:
-        return int(re.search(rf'data-id="{entry_id}".*?r="(\d+)"', svg).group(1))
+        return int(re.search(rf'data-id="{entry_id}".*?r="(\d+)"', svg).group(1))  # its circle
 
     assert r(trains.id) > r(soccer.id)  # a group counts its kinds' days

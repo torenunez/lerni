@@ -33,6 +33,7 @@ def owner_key(owner: str) -> str:
 
 def radius(days: int) -> int:
     """A circle's radius from the days it came up: area grows with days, up to a cap."""
+    # √days keeps area in step with days: 1 day is 14, 9 days 22, 48 days hits the cap
     return NOT_YET if not days else min(MAX_RADIUS, round(9 + 4.5 * math.sqrt(days)))
 
 
@@ -121,7 +122,7 @@ def map_svg(m: InterestMap, today: date, key: str = "") -> str:
     entries, shown = picture_view(m)  # general interests and goals; kinds stay in the list
     size = {e.id: radius(len(group_days(m, e))) for e in entries}  # a group counts its kinds
     shape = tuple((e.id, e.kind, size[e.id], len(e.name) * 6 + 4) for e in entries)
-    at = _layout(shape, tuple((k.a, k.b, False) for k in shown))
+    at = _layout(shape, tuple((k.a, k.b, False) for k in shown))  # no kind lines: no close pull
     frame = _frame(at, {e[0]: (max(2 * e[2], e[3]), 2 * e[2] + LABEL_H) for e in shape})
     parts = [
         f'<div class="lerni-map-wrap" data-key="{html.escape(key)}">',

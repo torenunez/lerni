@@ -938,14 +938,14 @@ def picture_view(m: InterestMap) -> tuple[list[Entry], list[Link]]:
     ids = {e.id for e in m.entries}
     top = {i: [r for r in roots(m, i) if r in ids] or [i] for i in ids}  # a missing group: itself
     drawn = {r for rs in top.values() for r in rs}  # only roots get a circle
-    rank = {"bridge": 2, "related": 1}
-    best: dict[tuple[str, str], Link] = {}
+    rank = {"bridge": 2, "related": 1}  # a bridge outranks a related line
+    best: dict[tuple[str, str], Link] = {}  # the strongest link per pair of roots
     for k in m.links:
         if k.kind not in rank or k.a not in ids or k.b not in ids:
             continue  # kind-of lines, and links to anything gone
         for a in top[k.a]:  # move each end up to its roots
             for b in top[k.b]:
-                pair = (min(a, b), max(a, b))
+                pair = (min(a, b), max(a, b))  # same key either way round
                 if a == b:  # inside one group
                     continue
                 if pair in best and rank[best[pair].kind] >= rank[k.kind]:  # already as strong
