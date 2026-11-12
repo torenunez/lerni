@@ -15,7 +15,12 @@ from typing import Any
 import gradio as gr
 
 from lerni.student.conversation import MAX_MESSAGE, ConversationUnavailable
-from lerni.student.educator_agent import EducatorChats, apply_educator_proposals
+from lerni.student.educator_agent import (
+    QUESTIONS,
+    EducatorChats,
+    apply_educator_proposals,
+    save_question_proposals,
+)
 from lerni.student.feedback import FeedbackStore
 from lerni.student.garage import Garage
 from lerni.student.interests import MapStore
@@ -81,11 +86,14 @@ def educator_add(
     chosen = [p for p in chats.proposals(v.username, owner) if p.label in set(ticked)]
     if not chosen:
         return "⚠️ Tick something to add first."
-    on_map = [p for p in chosen if p.kind not in ("feedback", "note")]
+    on_map = [p for p in chosen if p.kind not in ("feedback", "note", *QUESTIONS)]
     done, skipped = 0, []
     if on_map:  # one change: nothing else edits the map in between
         done, skipped = maps.change(owner, lambda m: apply_educator_proposals(m, on_map),
                                     by="educator chat")
+    about = [p for p in chosen if p.kind in QUESTIONS]  # guidance, levels, keys (v4.7)
+    saved = save_question_proposals(owner, about, maps.get(owner), chats.guidance,
+                                    chats.concepts, chats.bank, date.today()) if about else 0
     sent = noted = 0
     for p in chosen:
         if p.kind == "feedback" and feedback is not None:
@@ -97,6 +105,7 @@ def educator_add(
     lines = [f"✅ Added {done} to the map."] if done else []
     lines += [f"📨 Sent {sent} to the admin."] if sent else []
     lines += ["📝 Noted for tomorrow's suggestions."] if noted else []
+    lines += [f"🧭 Saved {saved} for Lerni's questions."] if saved else []
     lines += [f"Skipped {s}" for s in skipped]
     return "\n\n".join(lines) or "⚠️ Nothing was added."
 
@@ -107,8 +116,8 @@ def preticked(found: list[Any]) -> list[str]:
 
 
 def add_button(n: int) -> Any:
-    """The Add button for ``n`` ticked suggestions: "Add 2 to the map", hidden for none."""
-    return gr.update(value=f"Add {n} to the map", visible=n > 0)
+    """The Add button for ``n`` ticked suggestions: "Add 2 ticked", hidden for none."""
+    return gr.update(value=f"Add {n} ticked", visible=n > 0)  # not all change the map (v4.7)
 
 
 def educator_tab(
@@ -131,8 +140,8 @@ def educator_tab(
         # any value: a page open across a restart sends its old pick; map_owner checks it
         who = gr.Dropdown(label="Student", choices=[], value=None, allow_custom_value=True)
         # suggest a goal: first on the page, so the phone keyboard never pushes it around
-        gr.Markdown("### Tell Lerni\nA new goal, a change to one, or what you think of the "
-                    "suggestions below.")
+        gr.Markdown("### Tell Lerni\nA new goal, a change to one, feedback on questions, or "
+                    "an answer key.")
         with gr.Row(elem_classes="lerni-type"):
             text = gr.Textbox(
                 show_label=False,
@@ -157,8 +166,14 @@ def educator_tab(
         reply = gr.Markdown()  # Lerni's answer, right under the box
         # suggestions come ticked: untick any, then one tap adds them (nothing before it)
         ticks = gr.CheckboxGroup(show_label=False, choices=[], visible=False)
-        add = gr.Button("Add to the map", variant="primary", visible=False)
+        add = gr.Button("Add ticked", variant="primary", visible=False)
         status = gr.Markdown()
+        # the guidance notes kept (v4.7): folded, shown only when there are some
+        with gr.Accordion("Guidance for Lerni", open=False, visible=False) as guide_box:
+            guide_ticks = gr.CheckboxGroup(show_label=False, choices=[])
+            gr.Markdown("Read by every question and the morning plan. No names.")
+            guide_remove = gr.Button("Remove ticked", min_width=90)
+            guide_status = gr.Markdown()
         # Lerni's morning suggestions (v3.44): ticks and two buttons, no box of their own
         lerni_head = gr.Markdown("### Suggestions from Lerni", visible=False)
         lerni_ticks = gr.CheckboxGroup(show_label=False, choices=[], visible=False)
@@ -218,6 +233,31 @@ def educator_tab(
             shown = bool(waiting)
             return [gr.update(visible=shown), gr.update(choices=waiting, value=[], visible=shown),
                     gr.update(visible=shown)]
+
+        def guide_list(requested: str | None, request: gr.Request) -> list[Any]:
+            # the notes for the student shown, as (label, id) ticks; folded away when none
+            store = chats.guidance if chats is not None else None
+            try:
+                who = map_owner(students, signin.viewer(request.username), requested or "")
+                notes = store.notes(who) if store is not None else []
+                names = {e.id: e.name for e in maps.get(who).entries}
+            except NotAllowed:
+                notes, names = [], {}
+            picks = [(f"{names.get(n.get('goal_id'), '') or 'All goals'} · {n['text']}",
+                      n.get("id", "")) for n in notes]  # a gone goal's note reads as all
+            return [gr.update(label=f"Guidance for Lerni ({len(picks)})", visible=bool(picks)),
+                    gr.update(choices=picks, value=[])]
+
+        def on_remove(ids: list[str], requested: str | None, request: gr.Request) -> list[Any]:
+            try:  # the viewer and student are checked again, as for every change
+                who = map_owner(students, require_educator(signin.viewer(request.username)),
+                                requested or "")
+            except NotAllowed as exc:
+                return [gr.update(), gr.update(), f"⚠️ {exc}"]
+            if not ids:
+                return [gr.update(), gr.update(), "⚠️ Tick one first."]
+            gone = chats.guidance.remove(who, ids) if chats and chats.guidance else 0
+            return [*guide_list(requested, request), f"Removed {gone}." if gone else ""]
 
         def on_decide(use_them: bool) -> Any:
             def handler(picked: list[str], requested: str | None, v: int,
@@ -331,8 +371,12 @@ def educator_tab(
         for button, use_them in ((use, True), (skip, False)):
             button.click(on_decide(use_them), [lerni_ticks, who, version],
                          [*lerni_out, lerni_status, version], **PRIVATE)
+        guide_out = [guide_box, guide_ticks]
         add.click(on_add, [ticks, owner_state, version], [status, ticks, add, picture, version],
-                  **PRIVATE)
+                  **PRIVATE).then(guide_list, who, guide_out, **PRIVATE)  # a note just saved
+        who.change(guide_list, who, guide_out, **PRIVATE)  # the student picked: their notes
+        tab.select(guide_list, who, guide_out, **PRIVATE)
+        guide_remove.click(on_remove, [guide_ticks, who], [*guide_out, guide_status], **PRIVATE)
         ticks.change(lambda picked: add_button(len(picked or [])), ticks, add, **PRIVATE)
         tab.select(bump, None, version, **PRIVATE)  # opening redraws the picture and the list
         tab.select(progress, who, points_line, **PRIVATE)  # and racing, while races go on

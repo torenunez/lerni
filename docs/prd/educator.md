@@ -110,8 +110,9 @@ The educator is a continuous improvement partner and auditor, not a gatekeeper (
 
 As an educator, I want to tell Lerni in my own words what to do better, or hand it an answer key, so that every question after gets better and races ask what I'm teaching.
 
-- WHEN the educator gives broad feedback in Tell Lerni ("too easy", "use metric units") THE SYSTEM SHALL propose a guidance note, and once ticked, the question writer and the morning plan SHALL follow it.
-- WHEN the educator shares questions with answers (typed, or attached with 📎) THE SYSTEM SHALL propose each as a question with its right answer and two wrong choices Claude wrote, for a goal, and keep only the ones ticked, in that goal's checked bank.
+- WHEN the educator gives broad feedback in Tell Lerni ("use metric units") THE SYSTEM SHALL propose a guidance note for all goals or one goal, and once ticked, the question writer and the morning plan SHALL follow it; the latest 10 are kept, and the educator can remove any.
+- WHEN the educator says a goal's questions are too easy or too hard THE SYSTEM SHALL propose moving that goal one level, to tick, never a guidance note.
+- WHEN the educator shares questions with answers (typed, or attached with 📎) THE SYSTEM SHALL propose each as a question with its right answer and two wrong choices Claude wrote, for a goal, say when Lerni's blind check picked another answer (the educator's wins), and keep only the ones ticked, in that goal's checked bank as examples.
 - WHEN the educator names another student THE SYSTEM SHALL ask them to pick that student first, and never propose for a student who isn't shown.
 
 ### Story: Rate questions in bulk

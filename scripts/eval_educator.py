@@ -1,34 +1,73 @@
 """Educator agent evals: real Claude calls, run by hand when its persona or rules change.
 
     .venv/bin/python scripts/eval_educator.py
+    .venv/bin/python scripts/eval_educator.py questions   # only Tell Lerni on questions (v4.7)
 
 Add one case for each problem seen.
 """
 
-from lerni.student.adapters.claude_code import ClaudeCodeChat
+import re
+import sys
+from datetime import date
+
+from lerni.student.adapters.claude_code import ClaudeCodeChat, ClaudeCodeQuizzer
 from lerni.student.conversation import Turn
 from lerni.student.educator_agent import (
+    check_keys,
     educator_map_text,
     educator_system,
     parse_educator_proposals,
     split_reply,
 )
 from lerni.student.interests import InterestMap, add_goal
+from lerni.student.race import QUIZ_SYSTEM, check_questions, quiz_input
 
 
-def ask(text: str, m: InterestMap | None = None) -> list:
+def ask(text: str, m: InterestMap | None = None, levels: dict | None = None) -> list:
     """The agent's checked proposals for one educator message about a map (empty if none)."""
     m = m or InterestMap()
-    system = educator_system(educator_map_text(m) if m.entries else "")
+    system = educator_system(educator_map_text(m, levels) if m.entries else "")
     reply = "".join(ClaudeCodeChat().stream(system, [Turn("user", text)]))
     visible, raw = split_reply(reply)
     print(text, "→", visible[:200].replace("\n", " "))
-    found = parse_educator_proposals(raw, m)
+    found = parse_educator_proposals(raw, m, levels)
     print("   ", [p.label for p in found])
     return found
 
 
+def questions() -> list[tuple[str, bool]]:
+    """Tell Lerni about questions (v4.7): 2 chat calls, 1 blind check, 1 race write."""
+    m = InterestMap()
+    length, clock = add_goal(m, "Measuring length"), add_goal(m, "Telling time")
+    levels = {length.id: 3, clock.id: 3}
+    easy = ask("These are too easy. Use cm, not inches.", m, levels)
+    sheet = ask("Telling time worksheet: short hand on 3 and long hand on 12 is 3:00. Short hand "
+                "halfway past 6 and long hand on 6 is 6:30.", m, levels)
+    keys = check_keys(ClaudeCodeQuizzer(), [p for p in sheet if p.kind == "key"])
+    print("    check:", [p.doubt or "agrees" for p in keys])
+    notes = [("", p.notes) for p in easy if p.kind == "guidance"]  # as if ticked
+    raw = ClaudeCodeQuizzer().write(QUIZ_SYSTEM, quiz_input(m, date.today(), True, levels=levels,
+                                                            guidance=notes))
+    written = [q.question + " " + " ".join(q.choices) for q in check_questions(raw, m)]
+    return [
+        ("'too easy' becomes a level change, not guidance",
+         any(p.kind == "level" and p.step == 1 for p in easy)
+         and not any(p.kind == "guidance" and "easy" in p.notes.lower() for p in easy)),
+        ("'use cm' becomes a guidance note", bool(notes)),
+        ("nothing about questions becomes a goal",
+         not any(p.kind == "goal" for p in [*easy, *sheet])),
+        ("a worksheet becomes two keys on its goal",
+         [p.name for p in sheet if p.kind == "key"] == ["Telling time"] * 2),
+        ("a race write follows the note (no inches)",
+         bool(written) and not any(re.search(r"\binch", w, re.I) for w in written)),
+    ]
+
+
 def main() -> None:
+    if sys.argv[1:] == ["questions"]:
+        for name, ok in questions():
+            print("PASS" if ok else "FAIL", name)
+        return
     goal = ask("I'd like them to get comfortable with fractions; they love baking.")
     named = ask("Notes from Ms. Rivera: Jordan Rivera loves trains and needs help "
                 "reading clocks.")
@@ -52,6 +91,7 @@ def main() -> None:
         ("a real name never lands in a proposal", bool(named) and not leaked),
         ("app feedback becomes feedback, not a goal",
          any(p.kind == "feedback" for p in app) and not any(p.kind == "goal" for p in app)),
+        *questions(),
     ]
     for name, ok in results:
         print("PASS" if ok else "FAIL", name)

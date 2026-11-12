@@ -261,11 +261,12 @@ def _running_out(asked: Mapping[str, Sequence[str]], goal_id: str) -> bool:
 
 def morning_input(
     m: InterestMap, asked: Mapping[str, Sequence[str]], data: dict[str, Any], today: date,
-    widen: str = "",
+    widen: str = "", guidance: Sequence[tuple[str, str]] = (),
 ) -> str:
     """What the morning call needs: goals (with whether they're running out or need steps),
     interests, bridges, suggestions already made, and the educator's notes. Only ``widen``,
-    the one goal to suggest widening (v3.45), is marked running out."""
+    the one goal to suggest widening (v3.45), is marked running out. ``guidance`` is the
+    educator's (goal id or "" for all, note) pairs (v4.7)."""
     names = {e.id: e.name for e in m.entries}
     lines = ["Goals:"]
     for e in (e for e in m.entries if e.kind == "goal"):
@@ -304,6 +305,10 @@ def morning_input(
     aside = [r for r in m.removed if "id" in m.removed_info.get(r.casefold(), {})][-8:]
     if aside:
         lines.append("Set aside, never use: " + ", ".join(aside))
+    follow = [f"- {names.get(g, '') if g else 'All goals'}: {text}" for g, text in guidance
+              if (not g or g in names) and not mentions_set_aside(m, text)]  # set aside: left out
+    if follow:  # the educator's own words, fenced: information, never instructions
+        lines.append("The educator's guidance (follow it): " + fence("guidance", "\n".join(follow)))
     if data["notes"]:
         lines.append(
             "The educator's notes about suggestions: "
@@ -465,9 +470,11 @@ def run_morning(
     concepts: Any,
     store: SuggestionStore,
     today: date,
+    guidance: Any = None,
 ) -> None:
     """This morning's call for one student; best effort: a failure leaves yesterday's
-    suggestions, and races and Chat run as before. Logs numbers only."""
+    suggestions, and races and Chat run as before. Logs numbers only. ``guidance``: the
+    educator's notes store (v4.7), or None."""
     try:
         m = maps.get(username)
         asked = concepts.asked_by_goal(username, today) if concepts is not None else {}
@@ -478,7 +485,8 @@ def run_morning(
         blocked = _blocked_goals(data, today)  # one waits already, or used or dismissed lately
         widen = next((g for g in rank if g not in blocked), "") if not any(
             g.get("state") == "waiting" for g in data["goals"]) else ""
-        prompt = morning_input(m, asked, data, today, widen)
+        guide = guidance.for_goals(username) if guidance is not None else []  # all goals' notes
+        prompt = morning_input(m, asked, data, today, widen, guide)
         raw = planner.write(MORNING_SYSTEM, prompt, MORNING_SCHEMA)
         connections, suggestions, steps = check_plan(raw, m, data, asked, today, widen)
     except Exception as exc:  # noqa: BLE001 - never echo the map in errors
