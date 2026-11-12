@@ -1,12 +1,14 @@
 """Race question evals: real Claude calls, run by hand when the race instructions or model change.
 
-    .venv/bin/python scripts/eval_race.py
+    .venv/bin/python scripts/eval_race.py           # every case
+    .venv/bin/python scripts/eval_race.py quality   # only question quality (v4.5): 1 call
 
 Uses the admin's Claude account. Add one case for each problem seen.
 """
 
 import random
 import re
+import sys
 from collections import Counter
 from datetime import date
 from difflib import SequenceMatcher
@@ -52,7 +54,47 @@ def write(m: InterestMap, supervised: bool = True, before: list | None = None,
     return kept
 
 
+def quality() -> list:
+    """Question quality from the admin's ratings (v4.5): one dealt set on two goals."""
+    m = InterestMap()
+    for g in ("Adding to 100", "Telling time"):
+        add_goal(m, g)
+    for name in ("soccer", "trains"):
+        add_interest(m, name).days = [date.today().isoformat()]
+    slots = deal(m, ["Adding to 100", "Telling time"], {}, random.Random(3))
+    raw = ClaudeCodeQuizzer().write(QUIZ_SYSTEM, quiz_input(m, date.today(), True, plan=slots))
+    kept = check_questions(raw, m)
+    for q in kept:
+        print(f"[{q.goal} · {q.setting} · {q.format}] {q.question} → {q.choices} "
+              f"✓{q.choices[q.answer]}")
+    plain = [q for q in kept if q.format != "spot the rival's mistake"]
+    scores = [q for q in kept if re.search(r"\bscor|\bgoals\b", q.question.casefold())]
+    hands = [q for q in kept if "hand" in q.question.casefold()]
+    return [
+        ("a quality set still makes a race", len(kept) >= 5),
+        # the admin: "an answer should just say the answer is 100"
+        ("a number or time answer has plain choices (3 words at most)",
+         all(len(re.findall(r"[a-z]+", c.casefold())) <= 3 for q in plain
+             if any(d.isdigit() for d in q.choices[q.answer]) for c in q.choices)),
+        # the admin: "more realistic for a basketball team, not soccer"
+        ("a soccer score or goal count stays realistic (12 at most)",
+         all(int(n) <= 12 for q in scores for n in re.findall(r"\d+", q.question))),
+        # the admin: "you may need to explain what the long and short hand are"
+        ("a clock's hands are explained (hour or minute named)",
+         all("hour" in q.question.casefold() or "minute" in q.question.casefold()
+             for q in hands)),
+        # the admin: "the sun thing is just useless information"
+        ("no tacked-on history or label ('Long ago', 'Mystery:')",
+         all("long ago" not in q.question.casefold()
+             and not q.question.casefold().startswith(("mystery", "fun fact")) for q in kept)),
+    ]
+
+
 def main() -> None:
+    if sys.argv[1:] == ["quality"]:
+        for name, ok in quality():
+            print("PASS" if ok else "FAIL", name)
+        return
     m = InterestMap()
     add_goal(m, "Fractions", "halves and quarters")
     add_goal(m, "Acceleration")
@@ -178,6 +220,7 @@ def main() -> None:
                     1 <= len(probes) <= 2))
     results.append(("no probe Claude wrote names a set-aside",
                     all("earthquake" not in t.casefold() for t in tried)))
+    results += quality()
     for name, ok in results:
         print("PASS" if ok else "FAIL", name)
 
