@@ -34,7 +34,7 @@ When something changes, update this section and add a log entry below.
 
 ### 2026-11-12 (Tell Lerni on questions; v4.7 built)
 
-- v4.7 ([plan](../plans/v4.7-tell-lerni.md)): Tell Lerni proposes guidance notes (`guidance.py`, up to 10, all goals or one), one-level changes for "too easy" or "too hard", and answer keys with two wrong choices, answered blind on the small model; each is saved only from a tick, and the race writer and the morning plan follow the notes. The educator eval's new cases pass (11 of 11). A ✗'s why moved to v4.9, with the sample it marks.
+- v4.7 ([plan](../plans/v4.7-tell-lerni.md)): Tell Lerni proposes guidance notes (`guidance.py`, up to 10, all goals or one), one-level changes for "too easy" or "too hard", and answer keys with two wrong choices, answered blind on the small model; each is saved only from a tick, and the race writer and the morning plan follow the notes. The educator eval's new cases pass (11 of 11). A ✗'s why moved to v4.9, with the sample it marks. A fresh review's fixes: a key touching something set aside is never proposed, the rating batch follows guidance, a tick sets the level its label showed, a failed save waits to be ticked again, and both system prompts say guidance never overrides their rules.
 
 ### 2026-11-12 (words-only race questions; v4.6.2 built)
 

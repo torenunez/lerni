@@ -76,8 +76,9 @@ for tomorrow's; only when they talk about the suggestions), guidance (notes: how
 should change, followed by every question after; name: a goal on the map, or "" for all \
 goals), level (name: a goal on the map; direction: "harder" or "easier"; for "too easy" or \
 "too hard", never guidance), key (one per question with its answer the educator shares: \
-name: its goal on the map; question; answer: the right one, short; wrong: two short wrong \
-answers someone might believe; why: one short line).
+name: its goal on the map; question, under {MAX_QUESTION} characters; answer: the right one, \
+under {MAX_CHOICE} characters; wrong: two wrong answers someone might believe, as short; why: \
+one short line).
 - Up to {MAX_EDU_PROPOSALS} proposals, only what the educator said or the notes support. \
 Area proposals don't count toward that: when asked to sort the goals into areas, propose an \
 area for every goal with no area, all of them, however many.
@@ -161,7 +162,7 @@ def educator_map_text(m: InterestMap, levels: Mapping[str, int] | None = None,
              for e in m.entries if e.kind == "goal"]
     names = {e.id: e.name for e in m.entries if e.kind == "goal"}
     kept = [f"- {names.get(g, '') if g else 'All goals'}: {text}" for g, text in guidance
-            if not g or g in names]  # a note for a goal that's gone is left out
+            if (not g or g in names) and not mentions_set_aside(m, text)]  # gone or set aside
     if not loves and not goals and not m.removed:  # the starters, for a first goal's area
         return f"{MAP_HEADER}\n(empty so far)\nAreas to choose from: {', '.join(areas(m))}"
     lines = [MAP_HEADER]
@@ -222,7 +223,7 @@ def _short(value: Any, limit: int) -> str:
 
 
 def _about_questions(kind: str, raw: dict[str, Any], m: InterestMap,
-                     levels: Mapping[str, int]) -> EducatorProposal | None:
+                     levels: Mapping[str, int] | None) -> EducatorProposal | None:
     """A guidance, level, or key proposal, checked; None when it can't be used (v4.7)."""
     goal = m.find(str(raw.get("name") or "").strip()) if raw.get("name") else None
     if goal is not None and goal.kind != "goal":
@@ -235,6 +236,8 @@ def _about_questions(kind: str, raw: dict[str, Any], m: InterestMap,
     if goal is None:
         return None  # a level or key needs its goal
     if kind == "level":
+        if levels is None:
+            return None  # levels couldn't be read: a label would guess
         step = {"harder": 1, "easier": -1}.get(str(raw.get("direction") or "").casefold(), 0)
         now = levels.get(goal.id, START_LEVEL)  # a goal never raced is at the start level
         if not step or not MIN_LEVEL <= now + step <= MAX_LEVEL:
@@ -248,10 +251,13 @@ def _about_questions(kind: str, raw: dict[str, Any], m: InterestMap,
     if not question or len(picks) != 3 or not all(picks) or len(
             {c.casefold() for c in picks}) != 3:
         return None  # a key needs a question and three different short choices
+    why = _short(raw.get("why"), MAX_WHY)
+    if mentions_set_aside(m, " ".join([question, *picks, why])):
+        return None  # never a key about something set aside
     at = int(hashlib.sha256(question.encode()).hexdigest(), 16) % 3  # the right one's place
     choices = (*wrong[:at], right, *wrong[at:])
     return EducatorProposal("key", goal.name, question=question, choices=choices, answer=at,
-                            why=_short(raw.get("why"), MAX_WHY))
+                            why=why)
 
 
 def parse_educator_proposals(raw_block: str, m: InterestMap,
@@ -270,7 +276,7 @@ def parse_educator_proposals(raw_block: str, m: InterestMap,
             continue
         kind = raw["kind"]
         if kind in QUESTIONS:  # about race questions (v4.7): checked on their own
-            made = _about_questions(kind, raw, m, levels or {})
+            made = _about_questions(kind, raw, m, levels)
             mark = (kind, made.name.casefold() + "|" + (made.question or made.notes).casefold()
                     ) if made else ("", "")
             if made is not None and mark not in seen:
@@ -375,28 +381,36 @@ def apply_educator_proposals(
 
 
 def save_question_proposals(owner: str, chosen: list[EducatorProposal], m: InterestMap,
-                            guidance: Any, concepts: Any, bank: Any, today: date) -> int:
-    """Save the ticked guidance, level, and key proposals (v4.7); returns how many were saved.
+                            guidance: Any, concepts: Any, bank: Any,
+                            today: date) -> tuple[list[EducatorProposal], list[str]]:
+    """Save the ticked guidance, level, and key proposals (v4.7), each on its own.
 
     Only what a person ticked reaches here (CLAUDE.md rule 5); a store that isn't there skips.
+
+    Returns:
+        The ones saved, and a line for each one that couldn't be (it stays to tick again).
     """
-    saved = 0
+    saved, skipped = [], []
     for p in chosen:
         goal = m.find(p.name) if p.name else None
-        if p.kind == "guidance" and guidance is not None and (goal or not p.name):
-            guidance.add(owner, p.notes, goal.id if goal else "", today)  # "" is all goals
-        elif p.kind == "level" and concepts is not None and goal is not None:
-            concepts.nudge_level(owner, goal.id, p.step)  # one step; answers move it after
-        elif p.kind == "key" and bank is not None and goal is not None:
-            row = {"goal_id": goal.id, "goal": goal.name, "question": p.question,
-                   "choices": list(p.choices), "answer": p.answer, "why": p.why,
-                   "rating": "Good", "notes": "from an answer key"}  # an example for its goal
-            saved += bank.add_labels(owner, [row], m, today)[0]
+        try:
+            if p.kind == "guidance" and guidance is not None and (goal or not p.name):
+                guidance.add(owner, p.notes, goal.id if goal else "", today)  # "" is all goals
+            elif p.kind == "level" and concepts is not None and goal is not None:
+                concepts.set_level(owner, goal.id, p.level + p.step)  # the level its label showed
+            elif p.kind == "key" and bank is not None and goal is not None:
+                row = {"goal_id": goal.id, "goal": goal.name, "question": p.question,
+                       "choices": list(p.choices), "answer": p.answer, "why": p.why,
+                       "rating": "Good", "notes": "from an answer key"}  # an example for its goal
+                if not bank.add_labels(owner, [row], m, today)[0]:
+                    raise ValueError("not saved")
+            else:
+                continue  # not a question change, or its goal or store is gone
+        except Exception as exc:  # noqa: BLE001 - an unreadable file: this one waits, never twice
+            skipped.append(f"{p.name or 'a note'}: couldn't save ({type(exc).__name__})")
             continue
-        else:
-            continue  # not a question change, or its goal or store is gone
-        saved += 1
-    return saved
+        saved.append(p)
+    return saved, skipped
 
 
 def check_keys(checker: Any, keys: list[EducatorProposal]) -> list[EducatorProposal]:

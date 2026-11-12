@@ -5,8 +5,14 @@ import re
 from datetime import date
 
 from lerni.student.bank import BankStore
+from lerni.student.batch import write_batch
 from lerni.student.concepts import ConceptStore
-from lerni.student.educator_agent import EducatorChats, save_question_proposals
+from lerni.student.educator_agent import (
+    EducatorChats,
+    educator_map_text,
+    parse_educator_proposals,
+    save_question_proposals,
+)
 from lerni.student.guidance import GuidanceStore
 from lerni.student.interests import MapStore, add_goal, add_interest, remove
 from lerni.student.points import PointsStore
@@ -64,9 +70,9 @@ def test_ticked_guidance_level_and_key_reach_the_next_race(tmp_path):
     found = chats.proposals("ed", "sam")  # the reply's checked proposals, none saved yet
     assert [p.kind for p in found] == ["guidance", "level", "key"]
     assert found[2].doubt == "12:15" and "yours wins" in found[2].label  # the check disagreed
-    saved = save_question_proposals("sam", found, maps.get("sam"), chats.guidance,
-                                    chats.concepts, chats.bank, TODAY)  # all three ticked
-    assert saved == 3
+    saved, _ = save_question_proposals("sam", found, maps.get("sam"), chats.guidance,
+                                       chats.concepts, chats.bank, TODAY)  # all three ticked
+    assert saved == found
     length = maps.get("sam").find("Measuring length")
     assert chats.concepts.levels("sam")[length.id] == 4  # one step up from 3
     time_id = maps.get("sam").find("Telling time").id
@@ -97,3 +103,43 @@ def test_a_note_touching_something_set_aside_never_reaches_a_prompt(tmp_path):
     races._write("sam", supervised=True, today=TODAY)
     prompt = races.quizzer.prompts[0]
     assert "dinosaur questions" not in prompt and "guidance" not in prompt  # only "never use"
+
+
+def test_review_v47_a_key_or_kept_note_on_a_set_aside_never_reaches_a_prompt(tmp_path):
+    maps = MapStore(tmp_path)
+    maps.change("sam", lambda m: [add_goal(m, "Telling time"), add_interest(m, "dinosaurs")])
+    maps.change("sam", lambda m: remove(m, m.find("dinosaurs").id))
+    m = maps.get("sam")
+    block = "```proposals\n" + json.dumps({"proposals": [
+        {"kind": "key", "name": "Telling time", "question": "A dinosaur wakes at 3. What time?",
+         "answer": "3:00", "wrong": ["12:15", "3:12"], "why": "o'clock"}]}) + "\n```"
+    assert parse_educator_proposals(block, m, {}) == []  # never proposed, so never checked
+    text = educator_map_text(m, {}, [("", "More dinosaur questions.")])  # kept before
+    assert "dinosaur questions" not in text
+
+
+def test_review_v47_a_batch_follows_guidance(tmp_path):
+    maps = MapStore(tmp_path)
+    maps.change("sam", lambda m: add_goal(m, "Measuring length"))
+    GuidanceStore(tmp_path).add("sam", "Use cm, not inches.", "", TODAY)
+    quizzer = Quizzer()
+    write_batch(tmp_path, "sam", quizzer, supervised=True, today=TODAY, per_goal=1)
+    assert "Use cm, not inches." in quizzer.prompts[0]  # read from the batch's copy
+
+
+class BrokenBank:
+    """A bank whose file can't be read."""
+
+    def add_labels(self, *args):
+        raise OSError("unreadable")
+
+
+def test_review_v47_a_tick_sets_its_shown_level_and_a_failed_save_waits(tmp_path):
+    maps, chats = setup(tmp_path)
+    found = chats.proposals("ed", "sam")  # the level label says 3 → 4
+    length = maps.get("sam").find("Measuring length").id
+    chats.concepts.set_level("sam", length, 4)  # races moved it before the tick
+    saved, skipped = save_question_proposals("sam", found, maps.get("sam"), chats.guidance,
+                                             chats.concepts, BrokenBank(), TODAY)
+    assert chats.concepts.levels("sam")[length] == 4  # the shown level, never 5
+    assert [p.kind for p in saved] == ["guidance", "level"] and len(skipped) == 1  # key waits

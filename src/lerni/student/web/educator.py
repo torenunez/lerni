@@ -92,8 +92,10 @@ def educator_add(
         done, skipped = maps.change(owner, lambda m: apply_educator_proposals(m, on_map),
                                     by="educator chat")
     about = [p for p in chosen if p.kind in QUESTIONS]  # guidance, levels, keys (v4.7)
-    saved = save_question_proposals(owner, about, maps.get(owner), chats.guidance,
-                                    chats.concepts, chats.bank, date.today()) if about else 0
+    saved, unsaved = save_question_proposals(owner, about, maps.get(owner), chats.guidance,
+                                             chats.concepts, chats.bank, date.today()
+                                             ) if about else ([], [])
+    skipped += unsaved  # a failed one stays ticked to try again
     sent = noted = 0
     for p in chosen:
         if p.kind == "feedback" and feedback is not None:
@@ -101,11 +103,12 @@ def educator_add(
         elif p.kind == "note" and suggestions is not None:  # for tomorrow's suggestions
             suggestions.add_note(owner, p.notes, date.today())
             noted += 1
-    chats.taken(v.username, owner, chosen)
+    chats.taken(v.username, owner,
+                [p for p in chosen if p.kind not in QUESTIONS or p in saved])  # never twice
     lines = [f"✅ Added {done} to the map."] if done else []
     lines += [f"📨 Sent {sent} to the admin."] if sent else []
     lines += ["📝 Noted for tomorrow's suggestions."] if noted else []
-    lines += [f"🧭 Saved {saved} for Lerni's questions."] if saved else []
+    lines += [f"🧭 Saved {len(saved)} for Lerni's questions."] if saved else []
     lines += [f"Skipped {s}" for s in skipped]
     return "\n\n".join(lines) or "⚠️ Nothing was added."
 
@@ -243,8 +246,11 @@ def educator_tab(
                 names = {e.id: e.name for e in maps.get(who).entries}
             except NotAllowed:
                 notes, names = [], {}
-            picks = [(f"{names.get(n.get('goal_id'), '') or 'All goals'} · {n['text']}",
-                      n.get("id", "")) for n in notes]  # a gone goal's note reads as all
+            def where(goal_id: str) -> str:  # whose note: all goals, a goal, or one gone
+                return names.get(goal_id, "A goal that's gone") if goal_id else "All goals"
+
+            picks = [(f"{where(n.get('goal_id', ''))} · {n['text']}", n.get("id", ""))
+                     for n in notes]
             return [gr.update(label=f"Guidance for Lerni ({len(picks)})", visible=bool(picks)),
                     gr.update(choices=picks, value=[])]
 
