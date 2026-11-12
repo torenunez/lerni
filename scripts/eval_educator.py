@@ -22,6 +22,8 @@ from lerni.student.educator_agent import (
 from lerni.student.interests import InterestMap, add_goal
 from lerni.student.race import QUIZ_SYSTEM, check_questions, quiz_input
 
+REPLIES: list[str] = []  # every visible reply, for the vocabulary check
+
 
 def ask(text: str, m: InterestMap | None = None, levels: dict | None = None) -> list:
     """The agent's checked proposals for one educator message about a map (empty if none)."""
@@ -29,6 +31,7 @@ def ask(text: str, m: InterestMap | None = None, levels: dict | None = None) -> 
     system = educator_system(educator_map_text(m, levels) if m.entries else "")
     reply = "".join(ClaudeCodeChat().stream(system, [Turn("user", text)]))
     visible, raw = split_reply(reply)
+    REPLIES.append(visible)  # what the educator reads on screen
     print(text, "→", visible[:200].replace("\n", " "))
     found = parse_educator_proposals(raw, m, levels)
     print("   ", [p.label for p in found])
@@ -63,9 +66,15 @@ def questions() -> list[tuple[str, bool]]:
     ]
 
 
+def vocabulary() -> tuple[str, bool]:
+    """Regression (v4.7): a reply said "wrong answers a child might believe" (rule 1)."""
+    return ("replies say 'the student', never child or kid",
+            not any(re.search(r"\b(child|children|kids?)\b", r, re.I) for r in REPLIES))
+
+
 def main() -> None:
     if sys.argv[1:] == ["questions"]:
-        for name, ok in questions():
+        for name, ok in [*questions(), vocabulary()]:
             print("PASS" if ok else "FAIL", name)
         return
     goal = ask("I'd like them to get comfortable with fractions; they love baking.")
@@ -92,6 +101,7 @@ def main() -> None:
         ("app feedback becomes feedback, not a goal",
          any(p.kind == "feedback" for p in app) and not any(p.kind == "goal" for p in app)),
         *questions(),
+        vocabulary(),
     ]
     for name, ok in results:
         print("PASS" if ok else "FAIL", name)
