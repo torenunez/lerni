@@ -902,6 +902,58 @@ def group_days(m: InterestMap, entry: Entry) -> list[str]:
     return sorted({d for e in family(m, entry) for d in e.days})
 
 
+def roots(m: InterestMap, entry_id: str, seen: frozenset[str] = frozenset()) -> list[str]:
+    """The top-level groups above an item, each once and sorted (v4.6, the map picture).
+
+    Follows ``parents`` up until an item is in no group; the item itself when it's in no
+    group. A parent already in ``seen`` is a stored loop: skip it, and if no parent is
+    left, the item counts as its own root.
+
+    Args:
+        m: The map.
+        entry_id: The item to start from.
+        seen: Items already visited on the way up (callers leave it empty).
+
+    Returns:
+        Sorted ids, never empty.
+
+    Example:
+        steam trains is a kind of trains, and trains is in no group: the roots of
+        steam trains' id are ``[trains' id]``.
+    """
+    seen = seen | {entry_id}  # this item is now on the path up
+    ups = [p for p in parents(m, entry_id) if p not in seen]  # skip a loop back down
+    if not ups:
+        return [entry_id]  # nothing above: this is a top-level item
+    # each group's own roots, merged: an item in two groups can have two roots
+    return sorted({r for p in ups for r in roots(m, p, seen)})
+
+
+def picture_view(m: InterestMap) -> tuple[list[Entry], list[Link]]:
+    """The map picture's items and lines: top-level items only, links moved to their roots.
+
+    A link inside one group isn't drawn; two links on the same pair draw once, a bridge
+    before a related line; kind-of lines aren't drawn (v4.6).
+    """
+    ids = {e.id for e in m.entries}
+    top = {i: [r for r in roots(m, i) if r in ids] or [i] for i in ids}  # a missing group: itself
+    drawn = {r for rs in top.values() for r in rs}  # only roots get a circle
+    rank = {"bridge": 2, "related": 1}  # a bridge outranks a related line
+    best: dict[tuple[str, str], Link] = {}  # the strongest link per pair of roots
+    for k in m.links:
+        if k.kind not in rank or k.a not in ids or k.b not in ids:
+            continue  # kind-of lines, and links to anything gone
+        for a in top[k.a]:  # move each end up to its roots
+            for b in top[k.b]:
+                pair = (min(a, b), max(a, b))  # same key either way round
+                if a == b:  # inside one group
+                    continue
+                if pair in best and rank[best[pair].kind] >= rank[k.kind]:  # already as strong
+                    continue
+                best[pair] = Link(a, b, k.kind, k.day, list(k.days))  # keeps a bridge's direction
+    return [e for e in m.entries if e.id in drawn], list(best.values())
+
+
 def _levels(m: InterestMap, entry_id: str, step: Callable[[InterestMap, str], list[str]],
             seen: frozenset[str] = frozenset()) -> int:
     """The longest chain from this item, following ``parents`` or ``children``."""

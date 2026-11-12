@@ -28,7 +28,7 @@ The conversation is the whole activity. There are no cards, plans, or approvals.
 
 Only educators see a supervised student's map; the student never does. An independent student's map is visible only to them: no educator screen shows it (privacy by default, as in spec 03). Maps refreshes every 30 seconds while open, so the educator sees it grow during a conversation.
 
-**The picture:** drawn on the server as inline SVG in an HTML component, returned only to a viewer allowed to see that map, every name escaped, styles as attributes; never a file or a URL (Gradio serves cached files to anyone signed in). Every entry is drawn: linked ones settle together and goals stay in the middle, from a layout seeded by each id, so the same map always draws the same picture (since v2.19). Sizes follow the list's strength. Colors are color-blind safe (green `#009E73`, coral `#D55E00`), with the outline and dashes as a second cue.
+**The picture:** drawn on the server as inline SVG in an HTML component, returned only to a viewer allowed to see that map, every name escaped, styles as attributes; never a file or a URL (Gradio serves cached files to anyone signed in). General interests and goals are drawn, with a kind's links moved to its group (since v4.6; kinds stay in the list): linked ones settle together and goals stay in the middle, from a layout seeded by each id, so the same map always draws the same picture (since v2.19). Sizes grow with all-time days (since v4.6). Colors are color-blind safe (green `#009E73`, coral `#D55E00`), with the outline and dashes as a second cue.
 
 ## Data
 
