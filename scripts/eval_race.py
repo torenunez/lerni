@@ -2,6 +2,7 @@
 
     .venv/bin/python scripts/eval_race.py           # every case
     .venv/bin/python scripts/eval_race.py quality   # only question quality (v4.5): 1 call
+    .venv/bin/python scripts/eval_race.py words     # only words-alone questions (v4.6.2): 1 call
 
 Uses the admin's Claude account. Add one case for each problem seen.
 """
@@ -90,9 +91,37 @@ def quality() -> list:
     ]
 
 
+# what only a picture or a sound shows: a note's look, a tune (v4.6.2)
+SEEN_OR_HEARD = re.compile(r"\b(looks?|hollow|filled|stem|shaded|sounds? like|hear|listen)\b")
+STAFF = re.compile(r"\b(line|lines|space|spaces|staff)\b")  # in words is fine; shown to read
+
+
+def words() -> list:
+    """Words alone (v4.6.2): music goals with no staff to see and no notes to hear."""
+    m = InterestMap()
+    for g in ("Reading notes on the staff", "How long notes last"):
+        add_goal(m, g)
+    add_interest(m, "race cars").days = [date.today().isoformat()]
+    slots = deal(m, ["Reading notes on the staff", "How long notes last"], {}, random.Random(5))
+    raw = ClaudeCodeQuizzer().write(QUIZ_SYSTEM, quiz_input(m, date.today(), True, plan=slots))
+    kept = check_questions(raw, m)
+    for q in kept:
+        print(f"[{q.goal} · {q.format}] {q.question} → {q.choices} ✓{q.choices[q.answer]}")
+    seen = [q.question for q in kept if SEEN_OR_HEARD.search(q.question.casefold())]
+    for text in seen:
+        print(f"  needs a picture or sound: {text}")
+    staff = sum(bool(STAFF.search(q.question.casefold())) for q in kept)
+    print(f"  {staff} of {len(kept)} name the staff's lines or spaces (the educator's call)")
+    return [
+        ("a music set still makes a race", len(kept) >= 5),
+        # the admin: "he can hear no notes and can't see the music staff"
+        ("no question asks what a note looks or sounds like", not seen),
+    ]
+
+
 def main() -> None:
-    if sys.argv[1:] == ["quality"]:
-        for name, ok in quality():
+    if sys.argv[1:] in (["quality"], ["words"]):  # one case alone
+        for name, ok in (quality() if sys.argv[1] == "quality" else words()):
             print("PASS" if ok else "FAIL", name)
         return
     m = InterestMap()
@@ -221,6 +250,7 @@ def main() -> None:
     results.append(("no probe Claude wrote names a set-aside",
                     all("earthquake" not in t.casefold() for t in tried)))
     results += quality()
+    results += words()
     for name, ok in results:
         print("PASS" if ok else "FAIL", name)
 

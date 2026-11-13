@@ -157,6 +157,10 @@ When a number couldn't really happen there, count something else that fits (fans
 cards) or use the interest in brackets.
 - When a question depends on a word or part they may not know yet (a clock's short and long \
 hands), say what it is in the question first, unless learning that word is the goal.
+- Every question is answered from words alone: the student sees no picture and hears no \
+sound. Never ask them to read, picture, or hear something (where a note sits on a staff, \
+what a note or shape looks like, how a tune sounds); ask about the idea in words instead \
+(which note lasts longer, what comes after G).
 - A twist frames the question itself (a record to compare, a mystery to solve); \
 when it doesn't fit, leave it out. Never add a sentence the question doesn't need, and \
 no label in front ("Mystery:").
