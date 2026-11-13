@@ -22,6 +22,7 @@ import gradio as gr  # noqa: E402
 from fastapi import FastAPI, Request  # noqa: E402
 from fastapi.responses import FileResponse, PlainTextResponse, RedirectResponse  # noqa: E402
 
+from lerni.student.ahead import AheadStore  # noqa: E402
 from lerni.student.area_sorter import AreaSorter  # noqa: E402
 from lerni.student.bank import BankStore  # noqa: E402
 from lerni.student.concepts import ConceptStore  # noqa: E402
@@ -227,6 +228,7 @@ def write_ahead(races: Any, students: Any, morning: Any = None) -> None:
     except Exception as exc:  # noqa: BLE001 - a broken file never stops the server
         print(f"Writing races ahead skipped ({type(exc).__name__}).", flush=True)
         return
+    races.purge_ahead(date.today())  # yesterday's questions on disk go (rule 6)
     for username in players:
         if morning is not None:  # first, so the races written next can use its steps
             try:
@@ -325,7 +327,8 @@ def build_app(
                       log=log,  # a worrying bonus answer is kept where Chat's are
                       speech=speech,  # reads questions aloud
                       embedder=embedder,  # rewordings and set-asides by meaning
-                      bank=BankStore(root))  # the educator's ratings steer each write (v4.5)
+                      bank=BankStore(root),  # the educator's ratings steer each write (v4.5)
+                      ahead=AheadStore(root))  # held questions survive a restart (v4.6.1)
              if quizzer is not None else None)
     if quizzer is not None:  # Lerni sorts goals with no area after each save, and once now
         sorter = AreaSorter(quizzer, maps)
