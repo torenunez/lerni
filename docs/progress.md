@@ -16,7 +16,7 @@ When something changes, update this section and add a log entry below.
 
 ### 2026-11-12 (questions ahead on disk; v4.6.1 built)
 
-- v4.6.1 ([plan](../plans/v4.6.1-ahead-on-disk.md)): the student's race hung on production after the day's two deploys. Each restart threw away the questions written ahead (memory only), and the live write that replaced them timed out. Held questions and bonuses now go to `ahead/<user>.json` after each write and each race, are loaded at start-up, and are deleted once their day ends (`ahead.py`). Pulled forward from v4.9, with v4.7 rebased after it.
+- v4.6.1 ([plan](../plans/v4.6.1-ahead-on-disk.md)): the student's race hung on production after the day's two deploys. Each restart threw away the questions written ahead (memory only), and the live write that replaced them timed out. Held questions and bonuses now go to `ahead/<user>.json` after each write and each race, are loaded at start-up, and are deleted once their day ends (`ahead.py`). Pulled forward from v4.9, with v4.7 rebased after it. Also: one real write was timed at 139 s against a 150 s limit (the code assumed 70 s), so about half timed out; the limit is now 300 s.
 
 ### 2026-11-12 (the map picture; v4.6 built)
 

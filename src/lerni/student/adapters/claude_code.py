@@ -42,7 +42,7 @@ TIMEOUT_SECONDS = 120
 CHAT_TIMEOUT_SECONDS = 60
 DEFAULT_TAGGER_MODEL = "claude-haiku-5-5"  # small and fast: it runs after every answer
 TAG_TIMEOUT_SECONDS = 30
-QUIZ_TIMEOUT_SECONDS = 150  # a set of 15 takes about 70 s; written ahead, so no one waits
+QUIZ_TIMEOUT_SECONDS = 300  # a set of 15 took 139 s on a full map (2026-11-12); 2x headroom
 
 
 def _isolated() -> dict[str, Any]:
