@@ -104,7 +104,7 @@ The family uses whatever is on `main` while new features are built on branches. 
 
 Caveats:
 
-- A restart clears open conversations (they live in memory); accounts, maps, logs, and feedback stay. Restart between sessions, not during one.
+- A restart clears open conversations (they live in memory); accounts, maps, logs, feedback, and today's questions written ahead stay. Restart between sessions, not during one.
 - Never run a branch as production; test branches as development ("Two environments" above).
 - Each PR's Deploying section says whether it's safe to use yet and anything extra to do; if it says not yet, leave the server on the previous `main` (the merge can wait, or `git checkout <the previous merge>` on the server).
 
