@@ -188,7 +188,7 @@ v3.19 (race questions from the garage), v3.20 (a map journal and nightly backups
 
 - **Writing:** the same call that writes 10 questions writes up to 2 bonus questions (`bonus`: goal, concept, question, `key_ideas` of 2 or 3 short phrases).
   - **Checks:** like a question (lengths, goal on the map, set-asides, repeats); a key idea is at most 60 characters.
-  - **Kept:** in memory only, like questions.
+  - **Kept:** in memory, and on disk until their day ends (v4.6.1), like questions.
 - **When:** at question 4, if this race drew the 1-in-4 chance at its start; being 3rd no longer brings it (v3.31), so losing on purpose never pays more.
   - The multiple-choice question it replaces goes back into the set.
   - With no bonus written, the race goes on as normal.
@@ -250,7 +250,7 @@ v3.19 (race questions from the garage), v3.20 (a map journal and nightly backups
 - **Only people set goals:**
   - levels, review, probes, and the Practice line never add or change a goal;
   - a probe topic joins the map only from the student's words in Chat.
-- **Text on disk:** the concept file holds labels, ids, dates, and numbers; the results log, labels and numbers. Question texts and bonus answers stay in memory, except a worrying or unread bonus answer, which goes to the conversation log (v3.31).
+- **Text on disk:** the concept file holds labels, ids, dates, and numbers; the results log, labels and numbers. Question texts stay in memory (unraced ones also on disk until their day ends, v4.6.1), and bonus answers in memory, except a worrying or unread bonus answer, which goes to the conversation log (v3.31).
 - **Safety and set-asides:** the supervised safety rules cover questions, bonus questions, grading, and probes. Nothing set aside is asked, probed, or reviewed.
 - **Points:** no point is taken away for a wrong or skipped answer, and no screen compares one student with another.
 

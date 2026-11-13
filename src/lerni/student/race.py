@@ -20,12 +20,13 @@ import uuid
 import zlib
 from collections import Counter, deque
 from collections.abc import Callable, Collection, Mapping, Sequence
-from dataclasses import dataclass, field, replace
+from dataclasses import asdict, dataclass, field, fields, replace
 from datetime import date, datetime, timedelta
 from difflib import SequenceMatcher
 from importlib import metadata
 from typing import Any, Protocol
 
+from lerni.student.ahead import AheadStore
 from lerni.student.bank import BankStore
 from lerni.student.concepts import MAX_CONCEPT, START_LEVEL, ConceptStore, normalize
 from lerni.student.fence import fence
@@ -752,6 +753,16 @@ class Bonus:
     level: int = START_LEVEL
 
 
+def _rebuild(cls: Any, data: dict[str, Any]) -> Any:
+    """A Question or Bonus from its saved dict (v4.6.1); None when it no longer fits."""
+    names = {f.name for f in fields(cls)}  # a field added later just takes its default
+    kept = {k: tuple(v) if isinstance(v, list) else v for k, v in data.items() if k in names}
+    try:
+        return cls(**kept)  # lists back to tuples: choices, key ideas
+    except TypeError:
+        return None  # a field it needs is missing: dropped, a new write replaces it
+
+
 def check_bonus(raw: Any, m: InterestMap, concepts: Sequence[str] = (),
                 meaning: Meaning | None = None, due: Sequence[str] = ()) -> list[Bonus]:
     """Keep only well-formed bonus questions on the map's goals, new, and clear of set-asides;
@@ -1144,7 +1155,8 @@ class RaceDesk:
                  concepts: ConceptStore | None = None, checker: Checker | None = None,
                  results: ResultsLog | None = None, garage: Garage | None = None,
                  grader: Checker | None = None, log: Any = None, speech: Any = None,
-                 embedder: Embedder | None = None, bank: BankStore | None = None) -> None:
+                 embedder: Embedder | None = None, bank: BankStore | None = None,
+                 ahead: AheadStore | None = None) -> None:
         self.bank = bank  # the educator's ratings steer each write (v4.5); None: no bank
         self.quizzer, self.maps, self.points, self.concepts = quizzer, maps, points, concepts
         self.embedder = embedder  # race checks by meaning (v3.40); None: words only
@@ -1159,6 +1171,9 @@ class RaceDesk:
         self._asked: dict[str, deque[str]] = {}  # recent question texts, normalized; memory only
         self._sets: dict[str, tuple[str, list[Question]]] = {}  # username: (day written, questions)
         self._bonuses: dict[str, tuple[str, list[Bonus]]] = {}  # bonus questions written ahead
+        self.ahead = ahead  # today's held questions on disk (v4.6.1); None: memory only
+        if ahead is not None:
+            self._load_ahead(date.today())  # a restart picks up where it left off
         self._grading: set[str] = set()  # a bonus answer being graded now, per race
         self.rng = random.Random()  # the 1-in-4 bonus draw; tests may replace it
         self.dice = random.Random()  # each question's format and twist (v3.42)
@@ -1397,6 +1412,37 @@ class RaceDesk:
             return _as_due(kept, due)
         raise RaceUnavailable(NOT_READY)
 
+    def _load_ahead(self, today: date) -> None:
+        # at start-up: earlier days' files go, and today's are held again as if just written
+        try:
+            self.ahead.purge(today)
+            for username, (qs, bs) in self.ahead.load(today).items():
+                kept = [q for q in (_rebuild(Question, d) for d in qs) if q is not None]
+                extra = [b for b in (_rebuild(Bonus, d) for d in bs) if b is not None]
+                self._sets[username] = (today.isoformat(), kept)
+                self._bonuses[username] = (today.isoformat(), extra)
+        except Exception as exc:  # noqa: BLE001 - a broken file never stops the server
+            print(f"Questions ahead not loaded ({type(exc).__name__}).", flush=True)
+
+    def _persist(self, username: str, day: date) -> None:
+        # what's held now goes to disk, stamped with the day; call it with the lock held
+        if self.ahead is None:
+            return
+        _, qs = self._sets.get(username, ("", []))
+        _, bs = self._bonuses.get(username, ("", []))
+        try:
+            self.ahead.save(username, day, [asdict(q) for q in qs], [asdict(b) for b in bs])
+        except Exception as exc:  # noqa: BLE001 - a full disk: memory still holds them
+            print(f"Questions ahead not saved ({type(exc).__name__}).", flush=True)
+
+    def purge_ahead(self, today: date) -> None:
+        """Delete earlier days' questions on disk (each morning); never raises."""
+        try:
+            if self.ahead is not None:
+                self.ahead.purge(today)
+        except Exception as exc:  # noqa: BLE001
+            print(f"Old questions ahead not deleted ({type(exc).__name__}).", flush=True)
+
     def _held(self, username: str, today: date) -> list[Question]:
         _, held = self._sets.get(username, ("", []))
         return held  # kept past midnight: each is checked against the map at the start
@@ -1425,6 +1471,7 @@ class RaceDesk:
                     with self._lock:
                         held = spread(few_probes(self._held(username, today) + fresh))
                         self._sets[username] = (today.isoformat(), held)
+                        self._persist(username, today)  # a restart keeps them
                         if not fresh or enough(held, want):
                             break
                         busy.set()  # a race waiting on this write can start now
@@ -1489,6 +1536,7 @@ class RaceDesk:
             if not enough(held):
                 with self._lock:  # keep the ones that still fit for the next tap
                     self._sets[username] = (day.isoformat(), spread(held))
+                    self._persist(username, day)
                 raise RaceUnavailable(NOT_READY)  # before the race is counted
             questions, rest = line_up(held, self.rng)  # a probe at question 2 or 3
             self.points.start_race(username, day)
@@ -1504,6 +1552,7 @@ class RaceDesk:
             with self._lock:
                 later = [q for q in self._held(username, day) if id(q) not in before]  # meanwhile
                 self._sets[username] = (day.isoformat(), spread(few_probes(rest + later)))
+                self._persist(username, day)  # the raced ones and the taken bonus are gone
                 self._races[username] = race
                 self._started[username] = self.clock()
         self.prefill(username, supervised)  # the next race starts quickly
@@ -1577,6 +1626,7 @@ class RaceDesk:
             known = {normalize(b.concept) for b in held}
             held += [b for b in new if normalize(b.concept) not in known]
             self._bonuses[username] = (day.isoformat(), held[-2 * BONUS_PER_SET:])
+            self._persist(username, day)
 
     def _take_bonus(self, username: str, day: date, m: InterestMap) -> Bonus | None:
         # the oldest held bonus that still fits the map (a goal or a set-aside may have changed)
@@ -1637,6 +1687,7 @@ class RaceDesk:
                 if turn is not None:  # the question it replaced goes back for another race
                     self._sets.setdefault(username, (date.today().isoformat(), []))[1].append(
                         race.questions[BONUS_AT])
+                    self._persist(username, date.today())
                     self._last_tap[username] = self.clock()
         finally:
             with self._lock:

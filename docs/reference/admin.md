@@ -76,7 +76,7 @@ lerni serve                                 # binds 0.0.0.0:7860
 
   `lerni student list`, `lerni student reset-password USERNAME`, and `lerni student educator USERNAME [--off]` cover recovery.
 - A supervised student's iPad is signed in only as that student. Try the app as yourself on your own device or in a private tab.
-- Data lives in `~/.lerni/student/` (or `$LERNI_STUDENT_DATA`): `students/` (accounts, password hashes only), `secret.key` (signs the sign-in cookie; keep it private; deleting it signs everyone out), `maps/` (interest maps, with resting items), `logs/` (each exchange, deleted after a year), `concepts/` (every race idea and how it went), and `feedback.jsonl`.
+- Data lives in `~/.lerni/student/` (or `$LERNI_STUDENT_DATA`): `students/` (accounts, password hashes only), `secret.key` (signs the sign-in cookie; keep it private; deleting it signs everyone out), `maps/` (interest maps, with resting items), `logs/` (each exchange, deleted after a year), `concepts/` (every race idea and how it went), `ahead/` (today's questions written ahead, so a restart keeps them), and `feedback.jsonl`.
 - `--port` changes the default port; `--host 127.0.0.1` keeps it on this computer only; `--label Development` marks a development server on every page. Startup prints the running version (number, branch, commit, date), and the sign-in page shows it at the bottom: check it there after updating.
 - Run it with `lerni service` ("Running on its own" below), or in a Terminal window on the home server's own desktop; never inside `tmux` or over SSH: there macOS `say` makes empty audio, so answers show as text but are never spoken.
 - It never touches the admin tool's database.
@@ -104,7 +104,7 @@ The family uses whatever is on `main` while new features are built on branches. 
 
 Caveats:
 
-- A restart clears open conversations (they live in memory); accounts, maps, logs, and feedback stay. Restart between sessions, not during one.
+- A restart clears open conversations (they live in memory); accounts, maps, logs, feedback, and today's questions written ahead stay. Restart between sessions, not during one.
 - Never run a branch as production; test branches as development ("Two environments" above).
 - Each PR's Deploying section says whether it's safe to use yet and anything extra to do; if it says not yet, leave the server on the previous `main` (the merge can wait, or `git checkout <the previous merge>` on the server).
 
