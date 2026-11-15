@@ -102,7 +102,7 @@
 
 ## Order
 
-v4.5 (bulk ratings and question quality) → v4.6 the map picture (general interests only) → v4.7 Tell Lerni → **v4.8 A, the usage meter**, with minimal CI → **v4.9 B, overnight write-ahead**, with check a few questions → **v4.10 C, lighter chat** → **v4.11 D, local tagger in shadow** → Versions 5–7.
+v4.5 (bulk ratings and question quality) → v4.6 the map picture (general interests only) → v4.7 Tell Lerni → **v4.8 A, the usage meter**, with minimal CI → **v4.9 B, overnight write-ahead**, with check a few questions → **v4.10 C, lighter chat** → **v4.11 D, local tagger in shadow** → Versions 5–7. *Replaced 2026-11-14:* away from home is v4.8, so A–D are v4.9–v4.12.
 
 **Data check-in:** about a week after A ships, read the meter. It may reorder B, C and D.
 

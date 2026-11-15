@@ -65,6 +65,7 @@ SLOW = 0.4  # each rival moves this much less on a turn the student gets right
 PLACE_POINTS = {1: 15, 2: 10, 3: 5}
 BONUS_PER_SET = 2  # explain-it questions written with each set of 10
 GOALS_PER_SET = 5  # goals a set of 10 covers, about 2 questions each (v3.28)
+AREA_CAP = 2  # a set's goals from one area at most, while other areas have goals (v4.6.2)
 PICK_DAYS = 14  # "least practiced" counts questions over this many days
 BONUS_AT = 3  # the bonus takes question 4's place (0-based)
 BONUS_ODDS = 4  # about 1 race in this many has one, ahead or behind
@@ -157,6 +158,10 @@ When a number couldn't really happen there, count something else that fits (fans
 cards) or use the interest in brackets.
 - When a question depends on a word or part they may not know yet (a clock's short and long \
 hands), say what it is in the question first, unless learning that word is the goal.
+- Every question is answered from words alone: the student sees no picture and hears no \
+sound. Never ask them to read, picture, or hear something (where a note sits on a staff, \
+what a note or shape looks like, how a tune sounds); ask about the idea in words instead \
+(which note lasts longer, what comes after G).
 - A twist frames the question itself (a record to compare, a mystery to solve); \
 when it doesn't fit, leave it out. Never add a sentence the question doesn't need, and \
 no label in front ("Mystery:").
@@ -826,25 +831,23 @@ def meaning_texts(raw: Any, m: InterestMap, ideas: Sequence[str]) -> list[str]:
 def pick_goals(m: InterestMap, schedule: Mapping[str, tuple[date, int]],
                asked: Mapping[str, int], today: date, k: int = GOALS_PER_SET) -> list[Any]:
     """The goals a set covers: those due (never raced is due now) before the rest, the most
-    overdue and then the least practiced first, taking one area at a time so a set mixes
-    subjects."""
+    overdue and then the least practiced first, at most ``AREA_CAP`` from one area so a set
+    mixes subjects. Each goal takes its own turn, so a small area's goals don't come up more
+    often than a big one's (v4.6.2)."""
     def due(e: Any) -> date:
         return schedule.get(e.id, (date.min, 0))[0]
 
     goals = sorted((e for e in m.entries if e.kind == "goal"),
-                   key=lambda e: (due(e), asked.get(e.id, 0), e.id))
-
-    def mixed(es: list[Any]) -> list[Any]:  # one from each area in turn, in order
-        areas: dict[str, list[Any]] = {}
-        for e in es:
-            areas.setdefault(e.area.casefold(), []).append(e)
-        out: list[Any] = []
-        while any(areas.values()):
-            out += [q.pop(0) for q in areas.values() if q]
-        return out
-
-    ready = [e for e in goals if due(e) <= today]
-    return (mixed(ready) + mixed([e for e in goals if due(e) > today]))[:k]
+                   key=lambda e: (due(e) > today, due(e), asked.get(e.id, 0), e.id))
+    out: list[Any] = []
+    per_area: dict[str, int] = {}  # goals taken from each area so far
+    for e in goals:
+        area = e.area.casefold()
+        if len(out) < k and per_area.get(area, 0) < AREA_CAP:
+            out.append(e)
+            per_area[area] = per_area.get(area, 0) + 1
+    # too few areas for the cap: fill from the rest, in the same order
+    return out + [e for e in goals if e not in out][:k - len(out)]
 
 
 def notes_key(notes: str) -> str:
