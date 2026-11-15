@@ -143,7 +143,7 @@ PRIORITIES = [RANK_NAMES[r] for r in sorted(RANK_NAMES)]  # High, Medium, Low (v
 
 def follow_label(m: InterestMap, area: str) -> str:
     """The open goal's choice to follow its area: "Math's (High)"."""
-    shown = area if area and area.casefold() != "other" else "Other"
+    shown = area if area and area.casefold() != "other" else "Other"  # no area is Other too
     return f"{shown}'s ({RANK_NAMES[area_rank(m, area)]})"
 
 
@@ -151,7 +151,7 @@ def rank_area(
     maps, students, viewer, requested, area: str, priority: str, expected: str | None = None
 ) -> str:
     """Set an area's priority; its goals without their own follow it."""
-    rank = next((r for r, n in RANK_NAMES.items() if n == priority), 0)
+    rank = next((r for r, n in RANK_NAMES.items() if n == priority), 0)  # the word → 1–3
     if not rank:
         return "⚠️ Pick High, Medium, or Low."
     return _act(maps, students, viewer, requested,
@@ -461,7 +461,7 @@ def mental_list(
                             pick_rank = gr.Dropdown(
                                 PRIORITIES, show_label=False, container=False,
                                 value=RANK_NAMES[area_rank(m, area)],
-                                interactive=True, scale=0, min_width=110,
+                                interactive=True, scale=0, min_width=110,  # fits "Medium"
                                 preserved_by_key=None,  # a redraw shows what's saved
                                 key=f"ar-{area.casefold()}")
                         wire_area_rank(who, area, pick_rank)

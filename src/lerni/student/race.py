@@ -839,9 +839,9 @@ def meaning_texts(raw: Any, m: InterestMap, ideas: Sequence[str]) -> list[str]:
 def goal_weight(m: InterestMap, e: Any, asked: int, right: int) -> float:
     """A goal's share of race questions: its priority, nudged by how it's going lately."""
     weight = RANK_WEIGHT[rank_of(m, e)]
-    if asked >= 3 and right < STRUGGLING * asked:  # missed often lately: a bit more
+    if asked >= 3 and right < STRUGGLING * asked:  # 3+ answers, mostly missed: a bit more
         return weight * 1.5
-    if asked >= 4 and right >= MASTERED * asked:  # nearly always right: a bit less
+    if asked >= 4 and right >= MASTERED * asked:  # 4+ answers, nearly all right: a bit less
         return weight * 0.5
     return weight
 
@@ -853,7 +853,7 @@ def pick_goals(m: InterestMap, tally: Mapping[str, tuple[int, int]],
     so a set mixes subjects. ``tally``: (asked, right) by goal id over ``PICK_DAYS``."""
     def behind(e: Any) -> tuple[float, int, str]:
         asked, right = tally.get(e.id, (0, 0))
-        return asked / goal_weight(m, e, asked, right), asked, e.id
+        return asked / goal_weight(m, e, asked, right), asked, e.id  # lowest: furthest behind
 
     goals = sorted((e for e in m.entries if e.kind == "goal"), key=behind)
     out: list[Any] = []

@@ -128,7 +128,7 @@ def _day(value: Any) -> date | None:
         return None
 
 
-MORNING_TRIES = 3  # a failed morning call is tried again this many times a day at most (v4.6.3)
+MORNING_TRIES = 3  # a failing morning call: at most this many tries a day (v4.6.3)
 
 class SuggestionStore:
     """Each student's morning suggestions on disk, changed one at a time."""

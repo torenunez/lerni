@@ -95,7 +95,7 @@ class ResultsLog:
         for r in self.read(username):
             if "right" in r and r.get("goal_id") and str(r.get("day", "")) >= since.isoformat():
                 asked, right = counts.get(str(r["goal_id"]), (0, 0))
-                counts[str(r["goal_id"])] = (asked + 1, right + bool(r["right"]))
+                counts[str(r["goal_id"])] = (asked + 1, right + bool(r["right"]))  # with right
         return counts
 
     def probes(self, username: str, since: date) -> list[tuple[str, str, bool]]:
