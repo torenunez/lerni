@@ -553,7 +553,7 @@ def _known(cls: Any, data: dict[str, Any]) -> Any:
 def _from_dict(data: dict[str, Any]) -> InterestMap:
     entries = [_known(Entry, e) for e in data.get("entries", [])]
     for e in entries:
-        e.rank = e.rank if e.rank in RANKS else 0  # a hand edit outside 1–3 follows its area
+        e.rank = e.rank if type(e.rank) is int and e.rank in RANKS else 0  # odd: follows its area
     ids = {e.id for e in entries}
     links = [_known(Link, k) for k in data.get("links", [])]
     links = [k for k in links if k.a in ids and k.b in ids]  # heals a map an older bug broke
@@ -579,8 +579,9 @@ def _from_dict(data: dict[str, Any]) -> InterestMap:
         dict(data.get("removed_info", {})),
         archived,
         split,
-        {str(k).casefold(): v for k, v in dict(data.get("area_ranks") or {}).items()
-         if v in RANKS},  # an odd value from a hand edit is dropped
+        {str(k).casefold(): v for k, v in (data.get("area_ranks") if isinstance(
+            data.get("area_ranks"), dict) else {}).items()
+         if type(v) is int and v in RANKS},  # an odd value from a hand edit is dropped
     )
 
 

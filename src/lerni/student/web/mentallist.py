@@ -461,7 +461,9 @@ def mental_list(
                             pick_rank = gr.Dropdown(
                                 PRIORITIES, show_label=False, container=False,
                                 value=RANK_NAMES[area_rank(m, area)],
-                                interactive=True, scale=0, min_width=110, key=f"ar-{e.id}")
+                                interactive=True, scale=0, min_width=110,
+                                preserved_by_key=None,  # a redraw shows what's saved
+                                key=f"ar-{area.casefold()}")
                         wire_area_rank(who, area, pick_rank)
                     with gr.Row(elem_classes="lerni-item"):
                         alive = STRENGTH_LABELS[strength(e, today, m)]
@@ -510,7 +512,8 @@ def mental_list(
                                 pick_own = gr.Dropdown(
                                     [follow, *PRIORITIES], label="Priority",
                                     value=RANK_NAMES[e.rank] if e.rank else follow,
-                                    interactive=True, key=f"rp-{e.id}", scale=2)
+                                    interactive=True, key=f"rp-{e.id}", scale=2,
+                                    preserved_by_key=None)  # a redraw shows what's saved
                                 set_btn = gr.Button("Set", size="sm", scale=1, key=f"rs-{e.id}")
                             wire_rank(who, e.id, pick_own, set_btn)
                             notes_box = gr.Textbox(

@@ -40,6 +40,7 @@ from lerni.student.race import (  # noqa: E402
     AHEAD_RACES,
     AHEAD_RETRY_SECONDS,
     AHEAD_TRIES,
+    AHEAD_WAIT_SECONDS,
     Quizzer,
     RaceDesk,
     seconds_until,
@@ -221,37 +222,45 @@ def _theme() -> gr.themes.Base:
     return gr.themes.Base(font=_SYSTEM_FONTS, font_mono=_MONO_FONTS)
 
 
-def write_ahead(races: Any, students: Any, morning: Any = None) -> None:
+def write_ahead(races: Any, students: Any, morning: Any = None, wait: float = 0) -> bool:
     """For each supervised student, this morning's plan (v3.44, once a day) and then a few
-    races' worth (v3.42); never raises, so one bad morning never stops the next."""
+    races' worth (v3.42); never raises, so one bad morning never stops the next. With
+    ``wait``, waits up to that many seconds for the writes and says whether all are done."""
     try:
         players = [s.username for s in students.list_students()
                    if s.kind is Kind.SUPERVISED and not s.archived]
     except Exception as exc:  # noqa: BLE001 - a broken file never stops the server
         print(f"Writing races ahead skipped ({type(exc).__name__}).", flush=True)
-        return
+        return False
     races.purge_ahead(date.today())  # yesterday's questions on disk go (rule 6)
+    done = True  # every plan ran and every student has enough held
     for username in players:
         if morning is not None:  # first, so the races written next can use its steps
             try:
-                morning(username)
+                done = morning(username) is not False and done  # False: it failed, try again
             except Exception as exc:  # noqa: BLE001 - the races are still written (review)
                 print(f"Morning plan skipped for one ({type(exc).__name__}).", flush=True)
+                done = False
         try:  # one student's broken file never stops the others'
-            races.prefill(username, supervised=True, races=AHEAD_RACES)
+            writing = races.prefill(username, supervised=True, races=AHEAD_RACES)
+            if wait:  # the morning tries: wait, then check what's held
+                writing.wait(wait)
+                done = races.ready(username, AHEAD_RACES) and done
         except Exception as exc:  # noqa: BLE001
             print(f"Writing races ahead skipped for one ({type(exc).__name__}).", flush=True)
+            done = False
+    return done
 
 
 def morning_tries(races: Any, students: Any, morning: Any = None,
                   wait: Any = time.sleep) -> None:
-    """The morning's write-ahead, then again every half hour until 9:00 (v4.6.3): each try
-    skips what's done (the plan once a day, races once enough are held), so a failed call is
-    simply tried again."""
+    """The morning's write-ahead, tried again every half hour until 9:00 while something
+    failed (v4.6.3); each try skips what's done (a plan that ran, races already held)."""
     for n in range(AHEAD_TRIES):
         if n:
             wait(AHEAD_RETRY_SECONDS)
-        write_ahead(races, students, morning)
+        if write_ahead(races, students, morning, wait=AHEAD_WAIT_SECONDS):
+            return  # all written: no more tries today
 
 
 def build_app(
@@ -353,11 +362,13 @@ def build_app(
     if races is not None:
         races.suggestions = suggestions
 
-    def morning(username: str) -> None:  # once a day per student; best effort inside
+    def morning(username: str) -> bool:  # once a day per student; best effort inside
         today = date.today()
-        if quizzer is not None and races is not None and not suggestions.ran_today(username,
-                                                                                    today):
+        if quizzer is None or races is None:
+            return True  # nothing to plan with
+        if not suggestions.ran_today(username, today):
             run_morning(username, quizzer, maps, races.concepts, suggestions, today)
+        return suggestions.ran_today(username, today)  # False: failed, tried again later
 
     log.purge()  # at startup; then once a day as exchanges are logged
     # production only (a labelled server is development): a restart loses held questions

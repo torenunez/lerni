@@ -1,10 +1,20 @@
 """v4.6.3: goal priorities and a fair share; the morning write-ahead tries again."""
 
+import threading
 from collections import Counter
+from datetime import date
 from types import SimpleNamespace
 
 from lerni.student.adapters.claude_code import _failed
-from lerni.student.interests import InterestMap, add_goal, rank_of, set_area_rank, set_rank
+from lerni.student.interests import (
+    InterestMap,
+    MapStore,
+    add_goal,
+    rank_of,
+    set_area_rank,
+    set_rank,
+)
+from lerni.student.morning import MORNING_TRIES, SuggestionStore, run_morning
 from lerni.student.race import pick_goals
 from lerni.student.students import Kind
 from lerni.student.web.app import morning_tries
@@ -35,20 +45,30 @@ def test_shares_follow_priorities_and_a_goal_can_differ_from_its_area():
     assert 0.4 <= count["Rhythm"] / count["Rain"] <= 0.6  # Low gets half
 
 
-def test_a_failed_morning_is_tried_again():
-    # 2026-11-13 and 14: the 5:00 calls failed, and nothing tried again that day
-    calls = []
+def test_a_failed_morning_is_tried_again(tmp_path):
+    # 2026-11-13 and 14: the 5:00 call failed, was marked as run, and nothing tried again
+    class Busy:
+        def write(self, *args):
+            raise RuntimeError("Claude was busy")
 
-    def morning(username):
-        calls.append(username)
-        if len(calls) == 1:
-            raise RuntimeError("Claude was busy")  # the first try fails
-
-    races = SimpleNamespace(purge_ahead=lambda day: 0, prefill=lambda *a, **k: None)
+    maps, store, day = MapStore(tmp_path), SuggestionStore(tmp_path), date(2026, 11, 13)
+    maps.change("sam", lambda m: add_goal(m, "Fractions"))
+    run_morning("sam", Busy(), maps, None, store, day)
+    assert not store.ran_today("sam", day)  # failed: the next try runs it
+    for _ in range(MORNING_TRIES - 1):
+        run_morning("sam", Busy(), maps, None, store, day)
+    assert store.ran_today("sam", day)  # given up for the day after its tries
+    # the half-hourly tries stop as soon as everything is written (review)
+    plans = []
+    done = threading.Event()
+    done.set()
+    races = SimpleNamespace(purge_ahead=lambda day: 0, prefill=lambda *a, **k: done,
+                            ready=lambda *a: True)
     sam = SimpleNamespace(username="sam", kind=Kind.SUPERVISED, archived=False)
     students = SimpleNamespace(list_students=lambda: [sam])
-    morning_tries(races, students, morning, wait=lambda seconds: None)
-    assert len(calls) >= 2  # tried again after the failure
+    morning_tries(races, students, lambda u: plans.append(u) or len(plans) > 1,
+                  wait=lambda seconds: None)
+    assert len(plans) == 2  # failed once, ran on the second try, then no more
 
 
 def test_a_failed_call_logs_why_without_its_text(capsys):

@@ -35,6 +35,7 @@ from lerni.student.interests import (
     InterestMap,
     MapError,
     MapStore,
+    area_group,
     check_name,
     faded,
     family,
@@ -83,6 +84,7 @@ AHEAD_RACES = 4  # races' worth written each morning and at start-up, so no one 
 AHEAD_HOUR = 5  # the morning write-ahead, local time
 AHEAD_TRIES = 9  # 5:00, then every half hour until 9:00 while a write fails (v4.6.3)
 AHEAD_RETRY_SECONDS = 30 * 60
+AHEAD_WAIT_SECONDS = 15 * 60  # each try waits this long at most for its writes
 PROBES_PER_SET = 2  # nearby ideas off the map a set of 10 may try (v3.36)
 PROBE_AT = (1, 2)  # a probe is question 2 or 3; question 4 is the bonus's
 PROBE_LEVEL = 2  # pitched simply: the idea is new
@@ -857,7 +859,7 @@ def pick_goals(m: InterestMap, tally: Mapping[str, tuple[int, int]],
     out: list[Any] = []
     per_area: dict[str, int] = {}  # goals taken from each area so far
     for e in goals:
-        area = e.area.casefold()
+        area = area_group(e.area).casefold()  # "Other" and no area are one group
         if len(out) < k and per_area.get(area, 0) < AREA_CAP:
             out.append(e)
             per_area[area] = per_area.get(area, 0) + 1
@@ -1463,6 +1465,13 @@ class RaceDesk:
     def _held(self, username: str, today: date) -> list[Question]:
         _, held = self._sets.get(username, ("", []))
         return held  # kept past midnight: each is checked against the map at the start
+
+    def ready(self, username: str, races: int) -> bool:
+        """Whether ``races`` races' worth are held today (or the day's races are used up)."""
+        today = date.today()
+        want = min(races, self.points.races_left(username, today))
+        with self._lock:
+            return want <= 0 or enough(self._held(username, today), want)
 
     def prefill(self, username: str, supervised: bool, races: int = 1) -> threading.Event:
         """Write questions in the background until ``races`` races' worth are held (the next

@@ -128,6 +128,8 @@ def _day(value: Any) -> date | None:
         return None
 
 
+MORNING_TRIES = 3  # a failed morning call is tried again this many times a day at most (v4.6.3)
+
 class SuggestionStore:
     """Each student's morning suggestions on disk, changed one at a time."""
 
@@ -155,8 +157,19 @@ class SuggestionStore:
             return out
 
     def ran_today(self, username: str, today: date) -> bool:
-        """Whether this morning's call has run (or been tried) already."""
-        return self.get(username).get("day") == today.isoformat()
+        """Whether this morning's call has run, or failed ``MORNING_TRIES`` times, today."""
+        data = self.get(username)
+        tries = data.get("tries") if data.get("tried") == today.isoformat() else 0
+        return data.get("day") == today.isoformat() or (
+            isinstance(tries, int) and tries >= MORNING_TRIES)
+
+    def failed(self, username: str, today: date) -> None:
+        """Count one failed try today; the next try runs until the day's tries are used."""
+        def count(d: dict[str, Any]) -> None:
+            same = d.get("tried") == today.isoformat() and isinstance(d.get("tries"), int)
+            d.update(tried=today.isoformat(), tries=(d["tries"] if same else 0) + 1)
+
+        self._change(username, count)
 
     def waiting(self, username: str) -> list[str]:
         """The suggestions waiting for a tick, as shown: connections, then goal suggestions."""
@@ -470,7 +483,7 @@ def run_morning(
         connections, suggestions, steps = check_plan(raw, m, data, asked, today, widen)
     except Exception as exc:  # noqa: BLE001 - never echo the map in errors
         print(f"Morning plan skipped ({type(exc).__name__}).", flush=True)
-        store._change(username, lambda d: d.update(day=today.isoformat()))  # tried today
+        store.failed(username, today)  # tried again later, up to MORNING_TRIES (v4.6.3)
         return
     def save(d: dict[str, Any]) -> None:
         kept = _tidy(d, m, today, rank)
