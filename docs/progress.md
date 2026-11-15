@@ -16,7 +16,7 @@ When something changes, update this section and add a log entry below.
 
 ### 2026-11-12 (words-only race questions; v4.6.2 built)
 
-- v4.6.2 ([plan](../plans/v4.6.2-words-only.md)): music questions came up often and were missed, because they asked about a staff the student can't see (where a note sits, what a note looks like); each miss brought the goal back the next day. The race writer now answers from words alone: no picture or sound the screen doesn't show. The new eval case (`eval_race.py words`) found 7 staff questions on the old prompt; on the new one the facts are given in words and no question asks what a note looks or sounds like. A goal about the staff itself is the educator's to reword. Also checked and set aside: equal turns per area (a 2-goal area gets as many turns as an 8-goal one) barely changed Music's simulated share; misses, not area turns, drive it.
+- v4.6.2 ([plan](../plans/v4.6.2-words-only.md)): music questions came up often and were missed, because they asked about a staff the student can't see (where a note sits, what a note looks like); each miss brought the goal back the next day. The race writer now answers from words alone: no picture or sound the screen doesn't show. The new eval case (`eval_race.py words`) found 7 staff questions on the old prompt; on the new one the facts are given in words and no question asks what a note looks or sounds like. A goal about the staff itself is the educator's to reword. And each goal now takes its own turn, at most 2 from one area a set (before, each area got one turn, so a 2-goal area's goals came up far more often); a simulation showed it's fairer but a small shift, since misses drive most of it.
 
 ### 2026-11-12 (questions ahead on disk; v4.6.1 built)
 

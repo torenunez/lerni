@@ -823,14 +823,16 @@ def test_a_race_tap_never_writes_while_another_write_runs(tmp_path, monkeypatch)
 
 
 def test_each_set_goes_to_due_goals_mixed_by_area(tmp_path):
-    # v3.28: goals come back on a spaced schedule; a set mixes areas
+    # v3.28: goals come back on a spaced schedule; v4.6.2: each goal takes its own turn,
+    # at most 2 from one area
     from lerni.student.concepts import ConceptStore
     from lerni.student.race import pick_goals, quiz_input
 
     m = InterestMap()
-    added = {name: add_goal(m, name) for name in ("Fractions", "Place value", "Nouns", "Rain")}
+    names = ("Fractions", "Place value", "Nouns", "Rain", "Decimals")
+    added = {name: add_goal(m, name) for name in names}
     for name, area in (("Fractions", "Math"), ("Place value", "Math"), ("Nouns", "Language"),
-                       ("Rain", "Science")):
+                       ("Rain", "Science"), ("Decimals", "Math")):
         added[name].area = area
     concepts = ConceptStore(tmp_path)
     ids = {n: e.id for n, e in added.items()}
@@ -844,9 +846,10 @@ def test_each_set_goes_to_due_goals_mixed_by_area(tmp_path):
     from lerni.student.interests import set_area  # review: one spelling per area
 
     assert set_area(m, ids["Rain"], "math").area == "Math"
-    # today: Fractions and Place value were never raced; Math waits while Language is due
-    picked = pick_goals(m, schedule, {}, TODAY + timedelta(days=1), k=2)
-    assert [e.name for e in picked] in (["Fractions", "Nouns"], ["Place value", "Nouns"])
+    # three Math goals never raced come first, but only 2 of them: then Nouns, due today
+    picked = pick_goals(m, schedule, {}, TODAY + timedelta(days=1), k=3)
+    got = [e.name for e in picked]
+    assert got[2] == "Nouns" and set(got[:2]) <= {"Fractions", "Place value", "Decimals"}
     prompt = quiz_input(m, TODAY, True, goals=[e.name for e in picked])
     assert "Nouns" in prompt and "Rain" not in prompt
     # a finished race moves its goal's box
