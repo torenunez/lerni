@@ -21,6 +21,7 @@ from gradio.context import get_blocks_context
 from lerni.student.interests import (
     MAX_NAME,
     MAX_NOTES,
+    RANK_NAMES,
     STRENGTH_LABELS,
     Entry,
     InterestMap,
@@ -28,6 +29,7 @@ from lerni.student.interests import (
     MapStore,
     add_goal,
     add_interest,
+    area_rank,
     areas,
     by_area,
     children,
@@ -41,7 +43,9 @@ from lerni.student.interests import (
     remove,
     rename,
     set_area,
+    set_area_rank,
     set_notes,
+    set_rank,
     strength,
     ungroup,
 )
@@ -132,6 +136,37 @@ def move_area(
         "Moved.",
         expected,
     )
+
+
+PRIORITIES = [RANK_NAMES[r] for r in sorted(RANK_NAMES)]  # High, Medium, Low (v4.6.3)
+
+
+def follow_label(m: InterestMap, area: str) -> str:
+    """The open goal's choice to follow its area: "Math's (High)"."""
+    shown = area if area and area.casefold() != "other" else "Other"
+    return f"{shown}'s ({RANK_NAMES[area_rank(m, area)]})"
+
+
+def rank_area(
+    maps, students, viewer, requested, area: str, priority: str, expected: str | None = None
+) -> str:
+    """Set an area's priority; its goals without their own follow it."""
+    rank = next((r for r, n in RANK_NAMES.items() if n == priority), 0)
+    if not rank:
+        return "⚠️ Pick High, Medium, or Low."
+    return _act(maps, students, viewer, requested,
+                lambda m: set_area_rank(m, area or "", rank), f"{area}: {priority}.", expected)
+
+
+def rank_goal(
+    maps, students, viewer, requested, entry_id: str, choice: str, expected: str | None = None
+) -> str:
+    """Set a goal's own priority, or (the "Math's (High)" choice) follow its area again."""
+    rank = next((r for r, n in RANK_NAMES.items() if n == choice), 0)  # 0: its area's
+    if not choice:
+        return "⚠️ Pick a priority first."
+    return _act(maps, students, viewer, requested,
+                lambda m: set_rank(m, entry_id or "", rank), "Priority set.", expected)
 
 
 def save_notes(
@@ -311,6 +346,22 @@ def mental_list(
 
         move.click(on_move, [pick_area, requested, version], [status, version], **PRIVATE)
 
+    def wire_area_rank(who: str, area: str, pick: Any) -> None:
+        """An area heading's priority, saved when a person picks one (not on a redraw)."""
+
+        def on_pick(priority: str, req: Any, v: int, request: gr.Request) -> list[Any]:
+            return done(run(rank_area, req, who, area, priority, request=request), v)
+
+        pick.input(on_pick, [pick, requested, version], [status, version], **PRIVATE)
+
+    def wire_rank(who: str, e_id: str, pick: Any, set_btn: Any) -> None:
+        """An open goal's Set for the priority picked."""
+
+        def on_set(choice: str, req: Any, v: int, request: gr.Request) -> list[Any]:
+            return done(run(rank_goal, req, who, e_id, choice, request=request), v)
+
+        set_btn.click(on_set, [pick, requested, version], [status, version], **PRIVATE)
+
     def wire_splits(who: str, e_id: str, splits: list[tuple[str, Any]]) -> None:
         """An open item's Not the same, one per other name."""
         for alias, btn in splits:
@@ -395,19 +446,27 @@ def mental_list(
                 if not folded:  # open lists keep their heading
                     gr.Markdown(f"**{title}**" + ("" if items else ": none yet"),
                                 key=f"h-{kind_}")
-                rows, headings = _tree(m, items), {}  # headings: entry id → its area's title
+                rows, headings = _tree(m, items), {}  # headings: entry id → (title, area)
                 if kind_ == "goal" and any(e.area for e in items):  # goals under their areas
                     rows = []
                     for area, under in by_area(items):
-                        headings[under[0].id] = f"{area} ({len(under)})"
+                        headings[under[0].id] = (f"{area} ({len(under)})", area)
                         rows += [(e, 0) for e in under]
                 for e, depth in rows:
-                    if e.id in headings:
-                        gr.Markdown(f"**{headings[e.id]}**", key=f"area-{e.id}",
-                                    elem_classes="lerni-area")
+                    if e.id in headings:  # the area's title, and its priority (v4.6.3)
+                        title, area = headings[e.id]
+                        with gr.Row(key=f"arow-{e.id}", elem_classes="lerni-area-row"):
+                            gr.Markdown(f"**{title}**", key=f"area-{e.id}",
+                                        elem_classes="lerni-area")
+                            pick_rank = gr.Dropdown(
+                                PRIORITIES, show_label=False, container=False,
+                                value=RANK_NAMES[area_rank(m, area)],
+                                interactive=True, scale=0, min_width=110, key=f"ar-{e.id}")
+                        wire_area_rank(who, area, pick_rank)
                     with gr.Row(elem_classes="lerni-item"):
                         alive = STRENGTH_LABELS[strength(e, today, m)]
-                        label = "↳ " * depth + f"{e.name} · {alive}"
+                        own = f" · {RANK_NAMES[e.rank]}" if e.rank else ""  # its own priority
+                        label = "↳ " * depth + f"{e.name} · {alive}{own}"
                         row = gr.Button(label, scale=1, key=f"open-{e.id}")
                         trash = gr.Button("🗑", scale=0, min_width=48, key=f"rm-{e.id}")
                     if open_id != e.id:
@@ -446,6 +505,14 @@ def mental_list(
                                                         key=f"ap-{e.id}", scale=2)
                                 move = gr.Button("Move", size="sm", scale=1, key=f"am-{e.id}")
                             wire_area(who, e.id, pick_area, move)
+                            follow = follow_label(m, e.area)  # its area's, as one choice
+                            with gr.Row(key=f"r-{e.id}"):
+                                pick_own = gr.Dropdown(
+                                    [follow, *PRIORITIES], label="Priority",
+                                    value=RANK_NAMES[e.rank] if e.rank else follow,
+                                    interactive=True, key=f"rp-{e.id}", scale=2)
+                                set_btn = gr.Button("Set", size="sm", scale=1, key=f"rs-{e.id}")
+                            wire_rank(who, e.id, pick_own, set_btn)
                             notes_box = gr.Textbox(
                                 e.notes,
                                 label="Notes for Lerni",

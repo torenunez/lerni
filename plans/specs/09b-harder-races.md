@@ -182,7 +182,7 @@ v3.19 (race questions from the garage), v3.20 (a map journal and nightly backups
 
 - **Each goal has a box,** kept beside its level: 1, 3, 7, or 14 days. A goal never raced is due now.
 - **After a race,** for each goal it asked: all right on a due goal moves it up a box; half or fewer back one box (box 0 is tomorrow; v3.42); otherwise, or when it was asked early (a set's second race), it stays. Bonus answers don't move boxes.
-- **Each set of 10** goes to about 5 goals (about 2 each, one in each of its two races): due ones first, most overdue then least practiced in 14 days, one subject area at a time, then the soonest due. Due ideas (v3.22) add their goals.
+- **Each set of 10** goes to about 5 goals (about 2 each, one in each of its two races): those furthest behind their fair share (v4.6.3), at most 2 from one area. A goal's share is its priority (High 2×, Medium 1×, Low 0.5×; its own, else its area's) times how it's going over 14 days (under 60% right 1.5×, 90% or more 0.5×); questions in 14 days ÷ share, lowest first. Boxes still move but no longer pick goals. Due ideas (v3.22) add their goals.
 
 ### The bonus round (v3.24, `race.py`, `web/games.py`, `web/talk.js`)
 

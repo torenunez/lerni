@@ -54,6 +54,7 @@ class Entry:
     bounces: list[str] = field(default_factory=list)
     aliases: list[str] = field(default_factory=list)  # other names the student used for it
     area: str = ""  # goals only: a subject area a person chose (Math, Language…)
+    rank: int = 0  # goals only: 0 follows its area; 1 High, 2 Medium, 3 Low (v4.6.3)
 
 
 @dataclass
@@ -85,6 +86,7 @@ class InterestMap:
     removed_info: dict[str, dict[str, Any]] = field(default_factory=dict)  # for Put back
     archived: list[Entry] = field(default_factory=list)  # rested to make room; back when named
     not_same: list[list[str]] = field(default_factory=list)  # name pairs a person split apart
+    area_ranks: dict[str, int] = field(default_factory=dict)  # lowercase area: 1–3 (v4.6.3)
 
     def find(self, name: str) -> Entry | None:
         """The entry with this name or alias, ignoring case, or None; "car" finds "cars",
@@ -407,6 +409,50 @@ def set_area(m: InterestMap, entry_id: str, area: str) -> Entry:
     return entry
 
 
+# a goal's priority: how often it comes up in races (v4.6.3)
+RANKS = (1, 2, 3)  # High, Medium, Low
+RANK_NAMES = {1: "High", 2: "Medium", 3: "Low"}  # what the screens say
+DEFAULT_RANK = 2  # an area nobody set is Medium
+
+
+def area_rank(m: InterestMap, area: str) -> int:
+    """An area's priority, Medium until a person sets it ("Other" and no area are one)."""
+    return m.area_ranks.get(area_group(area).casefold(), DEFAULT_RANK)
+
+
+def rank_of(m: InterestMap, entry: Entry) -> int:
+    """A goal's priority: its own, else its area's."""
+    return entry.rank if entry.rank in RANKS else area_rank(m, entry.area)
+
+
+def set_rank(m: InterestMap, entry_id: str, rank: int) -> Entry:
+    """A person sets a goal's own priority (1–3), or 0 to follow its area again.
+
+    Raises:
+        MapError: Unknown entry, not a goal, or not a priority.
+    """
+    entry = m.get(entry_id)
+    if entry.kind != "goal":
+        raise MapError("Only goals have a priority.")
+    if rank not in (0, *RANKS):
+        raise MapError("Pick High, Medium, or Low.")
+    entry.rank = rank
+    m.edits += 1
+    return entry
+
+
+def set_area_rank(m: InterestMap, area: str, rank: int) -> None:
+    """A person sets an area's priority (1–3); its goals without their own follow it.
+
+    Raises:
+        MapError: Not a priority.
+    """
+    if rank not in RANKS:
+        raise MapError("Pick High, Medium, or Low.")
+    m.area_ranks[area_group(area).casefold()] = rank  # "Other" and no area share one
+    m.edits += 1
+
+
 def set_notes(m: InterestMap, entry_id: str, notes: str) -> Entry:
     """A person rewrites a goal's notes for Lerni.
 
@@ -506,6 +552,8 @@ def _known(cls: Any, data: dict[str, Any]) -> Any:
 
 def _from_dict(data: dict[str, Any]) -> InterestMap:
     entries = [_known(Entry, e) for e in data.get("entries", [])]
+    for e in entries:
+        e.rank = e.rank if e.rank in RANKS else 0  # a hand edit outside 1–3 follows its area
     ids = {e.id for e in entries}
     links = [_known(Link, k) for k in data.get("links", [])]
     links = [k for k in links if k.a in ids and k.b in ids]  # heals a map an older bug broke
@@ -531,6 +579,8 @@ def _from_dict(data: dict[str, Any]) -> InterestMap:
         dict(data.get("removed_info", {})),
         archived,
         split,
+        {str(k).casefold(): v for k, v in dict(data.get("area_ranks") or {}).items()
+         if v in RANKS},  # an odd value from a hand edit is dropped
     )
 
 

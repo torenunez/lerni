@@ -38,6 +38,8 @@ from lerni.student.points import PointsStore  # noqa: E402
 from lerni.student.race import (  # noqa: E402
     AHEAD_HOUR,
     AHEAD_RACES,
+    AHEAD_RETRY_SECONDS,
+    AHEAD_TRIES,
     Quizzer,
     RaceDesk,
     seconds_until,
@@ -241,6 +243,17 @@ def write_ahead(races: Any, students: Any, morning: Any = None) -> None:
             print(f"Writing races ahead skipped for one ({type(exc).__name__}).", flush=True)
 
 
+def morning_tries(races: Any, students: Any, morning: Any = None,
+                  wait: Any = time.sleep) -> None:
+    """The morning's write-ahead, then again every half hour until 9:00 (v4.6.3): each try
+    skips what's done (the plan once a day, races once enough are held), so a failed call is
+    simply tried again."""
+    for n in range(AHEAD_TRIES):
+        if n:
+            wait(AHEAD_RETRY_SECONDS)
+        write_ahead(races, students, morning)
+
+
 def build_app(
     *,
     data_root: Path | None = None,
@@ -352,7 +365,7 @@ def build_app(
         def mornings() -> None:  # and again each morning, before anyone races
             while True:
                 time.sleep(seconds_until(AHEAD_HOUR, datetime.now()))
-                write_ahead(races, students, morning)
+                morning_tries(races, students, morning)
 
         # in the background: the morning call takes a minute, and the server starts now
         threading.Thread(target=write_ahead, args=(races, students, morning),
