@@ -74,7 +74,13 @@ def _failed(usage: Usage | None, what: str, exc: BaseException) -> None:
         usage.failed(signin)
     # while signed out, any failure is most likely that; otherwise the error's own kind
     kind = "sign-in expired" if signin or (usage and usage.signed_out()) else type(exc).__name__
-    print(f"Claude call failed ({what}): {kind}", flush=True)
+    # why it failed, as the SDK's labels and status number only, never its text (v4.6.3)
+    why = [str(v) for v in (getattr(exc, "terminal_reason", None) or getattr(exc, "subtype", None),
+                            getattr(exc, "api_error_status", None))
+           # one short label ("api_error") or a status (529), so no message text slips in
+           if isinstance(v, (str, int)) and str(v).replace("_", "").isalnum() and len(str(v)) <= 40]
+    print(f"Claude call failed ({what}): {kind}" + (f" ({', '.join(why)})" if why else ""),
+          flush=True)
 
 
 def _note_limits(usage: Usage | None, message: Any) -> None:

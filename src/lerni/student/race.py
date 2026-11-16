@@ -35,12 +35,14 @@ from lerni.student.interests import (
     InterestMap,
     MapError,
     MapStore,
+    area_group,
     check_name,
     faded,
     family,
     group_days,
     mentions_set_aside,
     parents,
+    rank_of,
     same_name,
 )
 from lerni.student.meaning import Embedder, Meaning, skipped
@@ -66,7 +68,10 @@ PLACE_POINTS = {1: 15, 2: 10, 3: 5}
 BONUS_PER_SET = 2  # explain-it questions written with each set of 10
 GOALS_PER_SET = 5  # goals a set of 10 covers, about 2 questions each (v3.28)
 AREA_CAP = 2  # a set's goals from one area at most, while other areas have goals (v4.6.2)
-PICK_DAYS = 14  # "least practiced" counts questions over this many days
+RANK_WEIGHT = {1: 2.0, 2: 1.0, 3: 0.5}  # High, Medium, Low: shares of race questions
+STRUGGLING = 0.6  # under this share right lately: a goal gets 1.5× (v4.6.3)
+MASTERED = 0.9  # at least this share right lately: a goal gets 0.5×
+PICK_DAYS = 14  # a goal's fair share counts questions over this many days
 BONUS_AT = 3  # the bonus takes question 4's place (0-based)
 BONUS_ODDS = 4  # about 1 race in this many has one, ahead or behind
 BONUS_POINTS = {"nailed": 15, "partly": 7, "tried": 5, "none": 0, "care": 0}
@@ -77,6 +82,9 @@ MAX_KEY_IDEA = 60
 BRIDGED_AS = 3  # a group already bridged to a slot's goal counts as this many more uses (v3.43)
 AHEAD_RACES = 4  # races' worth written each morning and at start-up, so no one waits (v3.42)
 AHEAD_HOUR = 5  # the morning write-ahead, local time
+AHEAD_TRIES = 9  # 5:00, then every half hour until 9:00 while a write fails (v4.6.3)
+AHEAD_RETRY_SECONDS = 30 * 60
+AHEAD_WAIT_SECONDS = 15 * 60  # each try waits this long at most for its writes
 PROBES_PER_SET = 2  # nearby ideas off the map a set of 10 may try (v3.36)
 PROBE_AT = (1, 2)  # a probe is question 2 or 3; question 4 is the bonus's
 PROBE_LEVEL = 2  # pitched simply: the idea is new
@@ -828,21 +836,30 @@ def meaning_texts(raw: Any, m: InterestMap, ideas: Sequence[str]) -> list[str]:
     return out
 
 
-def pick_goals(m: InterestMap, schedule: Mapping[str, tuple[date, int]],
-               asked: Mapping[str, int], today: date, k: int = GOALS_PER_SET) -> list[Any]:
-    """The goals a set covers: those due (never raced is due now) before the rest, the most
-    overdue and then the least practiced first, at most ``AREA_CAP`` from one area so a set
-    mixes subjects. Each goal takes its own turn, so a small area's goals don't come up more
-    often than a big one's (v4.6.2)."""
-    def due(e: Any) -> date:
-        return schedule.get(e.id, (date.min, 0))[0]
+def goal_weight(m: InterestMap, e: Any, asked: int, right: int) -> float:
+    """A goal's share of race questions: its priority, nudged by how it's going lately."""
+    weight = RANK_WEIGHT[rank_of(m, e)]
+    if asked >= 3 and right < STRUGGLING * asked:  # 3+ answers, mostly missed: a bit more
+        return weight * 1.5
+    if asked >= 4 and right >= MASTERED * asked:  # 4+ answers, nearly all right: a bit less
+        return weight * 0.5
+    return weight
 
-    goals = sorted((e for e in m.entries if e.kind == "goal"),
-                   key=lambda e: (due(e) > today, due(e), asked.get(e.id, 0), e.id))
+
+def pick_goals(m: InterestMap, tally: Mapping[str, tuple[int, int]],
+               k: int = GOALS_PER_SET) -> list[Any]:
+    """The goals a set covers (v4.6.3): those furthest behind their fair share (questions
+    lately ÷ weight, so a goal never asked comes first), at most ``AREA_CAP`` from one area
+    so a set mixes subjects. ``tally``: (asked, right) by goal id over ``PICK_DAYS``."""
+    def behind(e: Any) -> tuple[float, int, str]:
+        asked, right = tally.get(e.id, (0, 0))
+        return asked / goal_weight(m, e, asked, right), asked, e.id  # lowest: furthest behind
+
+    goals = sorted((e for e in m.entries if e.kind == "goal"), key=behind)
     out: list[Any] = []
     per_area: dict[str, int] = {}  # goals taken from each area so far
     for e in goals:
-        area = e.area.casefold()
+        area = area_group(e.area).casefold()  # "Other" and no area are one group
         if len(out) < k and per_area.get(area, 0) < AREA_CAP:
             out.append(e)
             per_area[area] = per_area.get(area, 0) + 1
@@ -1271,14 +1288,13 @@ class RaceDesk:
         real = self.maps.get(username)
         m = race_view(real, self._skips(username, real))
         levels = self.concepts.levels(username) if self.concepts else {}
-        try:  # best effort: without the schedule or the log, every goal is due
-            schedule = self.concepts.schedule(username) if self.concepts else {}
-            asked = (self.results.asked_since(username, today - timedelta(days=PICK_DAYS - 1))
+        try:  # best effort: without the log, every goal starts even
+            tally = (self.results.tally_since(username, today - timedelta(days=PICK_DAYS - 1))
                      if self.results else {})
         except Exception as exc:  # noqa: BLE001 - a broken file never stops a race
-            print(f"Goal picking skipped ({type(exc).__name__}); every goal counts as due.",
+            print(f"Goal picking skipped ({type(exc).__name__}); every goal starts even.",
                   flush=True)
-            schedule, asked = {}, {}
+            tally = {}
         try:  # best effort: without the log, only held probes are avoided
             probed = [t for t, _, _ in self.results.probes(
                 username, today - timedelta(days=PROBE_DAYS - 1))] if self.results else []
@@ -1291,7 +1307,7 @@ class RaceDesk:
         # a due idea already in a held question isn't asked twice
         due = [(g, idea) for g, idea in self._due(username, m, today)
                if normalize(idea) not in held]
-        picked = [e.name for e in pick_goals(m, schedule, asked, today)]
+        picked = [e.name for e in pick_goals(m, tally)]
         if goals is not None:  # only these goals, and only their due ideas
             chosen = {g.casefold() for g in goals}
             picked = [e.name for e in m.entries if e.kind == "goal" and e.name.casefold() in chosen]
@@ -1449,6 +1465,13 @@ class RaceDesk:
     def _held(self, username: str, today: date) -> list[Question]:
         _, held = self._sets.get(username, ("", []))
         return held  # kept past midnight: each is checked against the map at the start
+
+    def ready(self, username: str, races: int) -> bool:
+        """Whether ``races`` races' worth are held today (or the day's races are used up)."""
+        today = date.today()
+        want = min(races, self.points.races_left(username, today))
+        with self._lock:
+            return want <= 0 or enough(self._held(username, today), want)
 
     def prefill(self, username: str, supervised: bool, races: int = 1) -> threading.Event:
         """Write questions in the background until ``races`` races' worth are held (the next

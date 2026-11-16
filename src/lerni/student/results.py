@@ -89,12 +89,13 @@ class ResultsLog:
                 tally[key] = counts
         return [tuple(c) for c in reversed(tally.values())]  # type: ignore[misc]
 
-    def asked_since(self, username: str, since: date) -> dict[str, int]:
-        """Questions per goal id since ``since``, for picking the least practiced goals."""
-        counts: dict[str, int] = {}
+    def tally_since(self, username: str, since: date) -> dict[str, tuple[int, int]]:
+        """(asked, right) per goal id since ``since``, for each goal's fair share (v4.6.3)."""
+        counts: dict[str, tuple[int, int]] = {}
         for r in self.read(username):
             if "right" in r and r.get("goal_id") and str(r.get("day", "")) >= since.isoformat():
-                counts[str(r["goal_id"])] = counts.get(str(r["goal_id"]), 0) + 1
+                asked, right = counts.get(str(r["goal_id"]), (0, 0))
+                counts[str(r["goal_id"])] = (asked + 1, right + bool(r["right"]))  # with right
         return counts
 
     def probes(self, username: str, since: date) -> list[tuple[str, str, bool]]:
