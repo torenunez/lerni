@@ -157,6 +157,43 @@ Safari's saved password is for the old `http://` address; sign in once more and 
 
 Once a device has signed in over HTTPS, keep serving HTTPS: if the server goes back to plain HTTP (started without `--cert`, or rolled back to a `main` from before HTTPS), that device may fail to sign in until its website data for the server is cleared (Safari: Settings → Apps → Safari → Advanced → Website Data).
 
+### Away from home (Tailscale)
+
+The family reaches Lerni from anywhere over [Tailscale Serve](https://tailscale.com/kb/1312/serve): private to the family's tailnet, never public. Never use Funnel or open a port on the router.
+
+**Once, on the home server:**
+
+1. Install the Tailscale app and sign in with the admin's account.
+2. In the admin console's DNS page, turn on MagicDNS and HTTPS certificates.
+3. Serve both environments (they stay on after a restart):
+
+   ```bash
+   tailscale serve --bg --https=443 https+insecure://localhost:7860    # production
+   tailscale serve --bg --https=8443 https+insecure://localhost:7861   # development
+   ```
+
+   Tailscale holds a trusted certificate for the `.ts.net` name and forwards to Lerni's own HTTPS (`insecure`: it doesn't check the mkcert certificate, which is fine on the same computer).
+4. Tag the home server `tag:server` (Machines → the server → Edit ACL tags).
+
+**The access rules** (Access controls; [grants](https://tailscale.com/kb/1324/grants) deny anything not listed). Everyone in the tailnet (the admin, the educator) reaches both environments; the student's iPad only production:
+
+```json
+{
+  "tagOwners": {"tag:server": ["autogroup:admin"], "tag:ipad": ["autogroup:admin"]},
+  "grants": [
+    {"src": ["autogroup:member"], "dst": ["tag:server"], "ip": ["tcp:443", "tcp:8443"]},
+    {"src": ["tag:ipad"], "dst": ["tag:server"], "ip": ["tcp:443"]}
+  ]
+}
+```
+
+**Each device:** install Tailscale and sign in; invite the educator with their own login. Turn on VPN On Demand in the iOS app, so it connects by itself.
+
+- **The student's iPad:** sign in with the admin's account, then tag it `tag:ipad` (as above), so it reaches only production.
+- **Bookmarks:** production at `https://<home-server>.<tailnet>.ts.net/`, development at `…ts.net:8443/`; no certificate profile is needed. Replace the home-screen icon with the new address. Safari saves the password and sign-in again for the new address.
+- **Check:** `tailscale status` lists each device and its tags; `tailscale serve status` shows both environments.
+- The home Wi-Fi addresses (`.local`, above) keep working.
+
 ### Voice
 
 Hold to talk needs HTTPS and two tools on the home server, run as commands (nothing else to keep running):

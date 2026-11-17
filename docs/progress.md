@@ -4,7 +4,7 @@ Where things really stand, then a dated log, newest first. Completed work is rec
 
 Record each kind of "done" only when it actually happens, with the date: code built, content approved, app ready, a student session held. Passing tests show code behaves as specified; they don't make anything ready for a student.
 
-## Current state (2026-11-16, v4.6.4 on the home server: Versions 1 and 2 built: the conversation, MentalMaps, HTTPS, and voice; Version 3's race, garage, and Chat points)
+## Current state (2026-11-17, v4.6.5 on the home server, reachable away from home over Tailscale: Versions 1 and 2 built: the conversation, MentalMaps, HTTPS, and voice; Version 3's race, garage, and Chat points)
 
 - **Built:** the student app's core (student accounts, sign-in, Lerni's conversations, the MentalMap with its tagger and logs kept a year, Upload and educator feedback, and the educator agent); `lerni serve` with a sign-in page and one app with a ☰ menu by role: an independent student's Chat, My MentalMap (an editable list, the picture, and Upload), and Settings; an educator's student page (a Suggest a goal box, goal progress this week by area, the folded list, and the picture), opened at sign-in, with Students in Settings; a supervised student's Chat, full screen, and Games (a race for points spent on real cars; educators race too); good answers in Chat earn points too. Hold to talk with spoken answers; a Claude usage warning and rest; race checks by meaning, on the home server's own model. Both servers run as LaunchAgents (`lerni service`). The admin tool (`lerni`, with `lerni student`, `lerni logs`, `lerni feedback`, and `lerni stats`). A [code manifest](code-manifest.md) of every file. Tests: 286 passed.
 - **Designed:** the interest map, goals, the tagger, upload, feedback, and the supervised conversation ([specs/04-interest-map.md](../plans/specs/04-interest-map.md)); approved with PR #12. Harder races, practice on the map, and probes ([spec 09b](../plans/specs/09b-harder-races.md)). Local embeddings ([spec 10](../plans/specs/10-local-embeddings.md)). The order from here: Versions 4–7 ([roadmap](roadmap.md)).
@@ -13,6 +13,11 @@ Record each kind of "done" only when it actually happens, with the date: code bu
 When something changes, update this section and add a log entry below.
 
 ## Log
+
+### 2026-11-17 (away from home documented, v4.8; new ways to answer planned)
+
+- v4.8 ([plan](../plans/v4.8-away-from-home.md)): the Tailscale setup in the admin reference (placeholders only) and a Version 8 story in the student PRD. The iPad is tagged and reaches only production; both phones follow the members rule. Timing on cellular and a deploy over SSH were dropped.
+- Version 9, new ways to answer ([spec 11](../plans/specs/11-new-ways-to-answer.md)): from the admin's notes after a meeting with the supervised student's teacher: typed answers and spelling, picture math (blocks, coins and bills, rulers), reading in three kinds of text with the 5 Ws, and a first paragraph. Spelling and picture math come before the usage meter, reading and the paragraph after it (v4.9–v4.13; the rows after them move to v4.14–v4.16).
 
 ### 2026-11-16 (Tailscale live; a home-screen icon, v4.6.5 built)
 
