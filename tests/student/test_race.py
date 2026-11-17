@@ -578,6 +578,7 @@ def test_a_strong_goal_at_level_5_moves_up_to_6(tmp_path):
     assert concepts.levels("sam") == {"g": 6} and MAX_LEVEL == 6
     assert "; 6, three steps" in QUIZ_SYSTEM  # the writer knows what level 6 means
 
+
 def test_a_missed_idea_comes_back_on_schedule(tmp_path):
     # spaced review: a miss is due tomorrow, then 3 days, then 7, then retired
     d0 = date(2026, 10, 22)

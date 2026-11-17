@@ -3,6 +3,7 @@
     .venv/bin/python scripts/eval_race.py           # every case
     .venv/bin/python scripts/eval_race.py quality   # only question quality (v4.5): 1 call
     .venv/bin/python scripts/eval_race.py words     # only words-alone questions (v4.6.2): 1 call
+    .venv/bin/python scripts/eval_race.py levels    # one goal at levels 1, 5, 6 (v4.6.4): 3 calls
 
 Uses the admin's Claude account. Add one case for each problem seen.
 """
@@ -124,17 +125,18 @@ def levels_map() -> InterestMap:
     one = InterestMap()
     add_goal(one, "Fractions", "halves and quarters")
     trucks = add_interest(one, "monster trucks")
-    trucks.days = [date.today().isoformat()]
+    trucks.days = [date.today().isoformat()]  # talked about today: a fresh interest
     return one
 
 
 def levels(one: InterestMap) -> list[tuple[str, bool]]:
     """The map's goal written at levels 1, 5, and 6 (v4.6.4), printed to compare by eye."""
-    goal = next(e for e in one.entries if e.kind == "goal")
+    goal = next(e for e in one.entries if e.kind == "goal")  # its only goal
     results = []
     for level in (1, 5, 6):
         print(f"--- level {level}")
         sets = write(one, levels={goal.id: level})
+        # 5 questions make a race, after the checks drop any
         results.append((f"level {level} still makes a race", len(sets) >= 5))
     return results
 

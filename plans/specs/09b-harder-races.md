@@ -158,7 +158,7 @@ v3.19 (race questions from the garage), v3.20 (a map journal and nightly backups
   3. apply it to one of their interests; wrong choices plausible (today's questions);
   4. two steps, or a comparison; wrong choices are common mistakes;
   5. a what-if, or work back from an answer; wrong choices are near misses;
-  6. three steps, or find the mistake in a worked answer, or say which reason is right; wrong choices are near misses only a careful thinker catches (v4.6.4: level 5 was answered right far above the aim).
+  6. three steps, or the wrong step in a rival's worked answer; wrong choices are near misses only a careful thinker catches (v4.6.4: level 5 was answered right far above the aim).
 - **Checks:** the server can't check a level; the eval does.
 - **The aim:** about 50–75% right. Two weeks after v3.18, the results log says whether it's working (a to-do item).
 
