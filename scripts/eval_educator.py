@@ -1,7 +1,7 @@
 """Educator agent evals: real Claude calls, run by hand when its persona or rules change.
 
     .venv/bin/python scripts/eval_educator.py
-    .venv/bin/python scripts/eval_educator.py questions   # only Tell Lerni on questions (v4.7)
+    .venv/bin/python scripts/eval_educator.py questions   # only Tell Lerni on questions (v4.9)
 
 Add one case for each problem seen.
 """
@@ -39,7 +39,7 @@ def ask(text: str, m: InterestMap | None = None, levels: dict | None = None) -> 
 
 
 def questions() -> list[tuple[str, bool]]:
-    """Tell Lerni about questions (v4.7): 2 chat calls, 1 blind check, 1 race write."""
+    """Tell Lerni about questions (v4.9): 2 chat calls, 1 blind check, 1 race write."""
     m = InterestMap()
     length, clock = add_goal(m, "Measuring length"), add_goal(m, "Telling time")
     levels = {length.id: 3, clock.id: 3}
@@ -67,7 +67,7 @@ def questions() -> list[tuple[str, bool]]:
 
 
 def vocabulary() -> tuple[str, bool]:
-    """Regression (v4.7): a reply said "wrong answers a child might believe" (rule 1)."""
+    """Regression (v4.9): a reply said "wrong answers a child might believe" (rule 1)."""
     return ("replies say 'the student', never child or kid",
             not any(re.search(r"\b(child|children|kids?)\b", r, re.I) for r in REPLIES))
 

@@ -55,7 +55,7 @@ Kind = Literal["goal", "interest", "reword", "remove", "group", "feedback", "are
                "guidance", "level", "key"]
 KINDS = ("goal", "interest", "reword", "remove", "group", "feedback", "area", "note",
          "guidance", "level", "key")
-QUESTIONS = ("guidance", "level", "key")  # about race questions, not the map (v4.7)
+QUESTIONS = ("guidance", "level", "key")  # about race questions, not the map (v4.9)
 _ON_MAP = ("reword", "remove", "area")  # kinds that name an entry already on the map
 MAX_AREA_PROPOSALS = 40  # sorting a whole map's goals into areas: one each
 
@@ -150,7 +150,7 @@ class EducatorProposal:
 def educator_map_text(m: InterestMap, levels: Mapping[str, int] | None = None,
                       guidance: Sequence[tuple[str, str]] = ()) -> str:
     """The whole map for the educator agent: every interest and goal, talked about or not,
-    with each goal's race level and the guidance notes kept (v4.7)."""
+    with each goal's race level and the guidance notes kept (v4.9)."""
     def tree(e: Entry) -> str:  # a group with its kinds, so the agent can see what's grouped
         kinds = [x.name for x in family(m, e) if x.id != e.id]
         return e.name + (f" (kinds: {', '.join(kinds)})" if kinds else "")
@@ -224,7 +224,7 @@ def _short(value: Any, limit: int) -> str:
 
 def _about_questions(kind: str, raw: dict[str, Any], m: InterestMap,
                      levels: Mapping[str, int] | None) -> EducatorProposal | None:
-    """A guidance, level, or key proposal, checked; None when it can't be used (v4.7)."""
+    """A guidance, level, or key proposal, checked; None when it can't be used (v4.9)."""
     goal = m.find(str(raw.get("name") or "").strip()) if raw.get("name") else None
     if goal is not None and goal.kind != "goal":
         goal = None  # only goals have questions
@@ -275,7 +275,7 @@ def parse_educator_proposals(raw_block: str, m: InterestMap,
         if not isinstance(raw, dict) or raw.get("kind") not in KINDS:
             continue
         kind = raw["kind"]
-        if kind in QUESTIONS:  # about race questions (v4.7): checked on their own
+        if kind in QUESTIONS:  # about race questions (v4.9): checked on their own
             made = _about_questions(kind, raw, m, levels)
             mark = (kind, made.name.casefold() + "|" + (made.question or made.notes).casefold()
                     ) if made else ("", "")
@@ -383,7 +383,7 @@ def apply_educator_proposals(
 def save_question_proposals(owner: str, chosen: list[EducatorProposal], m: InterestMap,
                             guidance: Any, concepts: Any, bank: Any,
                             today: date) -> tuple[list[EducatorProposal], list[str]]:
-    """Save the ticked guidance, level, and key proposals (v4.7), each on its own.
+    """Save the ticked guidance, level, and key proposals (v4.9), each on its own.
 
     Only what a person ticked reaches here (CLAUDE.md rule 5); a store that isn't there skips.
 
@@ -416,7 +416,7 @@ def save_question_proposals(owner: str, chosen: list[EducatorProposal], m: Inter
 def check_keys(checker: Any, keys: list[EducatorProposal]) -> list[EducatorProposal]:
     """Answer the keys blind on the small model; a key it answers differently carries its pick.
 
-    Best effort: if the check can't run, the keys come back as they were (v4.7).
+    Best effort: if the check can't run, the keys come back as they were (v4.9).
     """
     if checker is None or not keys:
         return keys
@@ -448,10 +448,10 @@ class EducatorChats:
     ) -> None:
         self.model, self.maps, self.log = model, maps, log
         self.suggestions: Any = None  # the morning plan's store (v3.44); set by the app
-        self.guidance: Any = None  # the guidance notes (v4.7); set by the app
-        self.concepts: Any = None  # goal levels (v4.7)
-        self.bank: Any = None  # the checked bank, for answer keys (v4.7)
-        self.checker: Any = None  # answers keys blind (v4.7)
+        self.guidance: Any = None  # the guidance notes (v4.9); set by the app
+        self.concepts: Any = None  # goal levels (v4.9)
+        self.bank: Any = None  # the checked bank, for answer keys (v4.9)
+        self.checker: Any = None  # answers keys blind (v4.9)
         self._turns: dict[tuple[str, str], list[Turn]] = {}
         self._proposals: dict[tuple[str, str], list[EducatorProposal]] = {}
         self._lock = threading.Lock()

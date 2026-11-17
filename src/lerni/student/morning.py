@@ -267,7 +267,7 @@ def morning_input(
     """What the morning call needs: goals (with whether they're running out or need steps),
     interests, bridges, suggestions already made, and the educator's notes. Only ``widen``,
     the one goal to suggest widening (v3.45), is marked running out. ``guidance`` is the
-    educator's (goal id or "" for all, note) pairs (v4.7)."""
+    educator's (goal id or "" for all, note) pairs (v4.9)."""
     names = {e.id: e.name for e in m.entries}
     lines = ["Goals:"]
     for e in (e for e in m.entries if e.kind == "goal"):
@@ -475,7 +475,7 @@ def run_morning(
 ) -> None:
     """This morning's call for one student; best effort: a failure leaves yesterday's
     suggestions, and races and Chat run as before. Logs numbers only. ``guidance``: the
-    educator's notes store (v4.7), or None."""
+    educator's notes store (v4.9), or None."""
     try:
         m = maps.get(username)
         asked = concepts.asked_by_goal(username, today) if concepts is not None else {}

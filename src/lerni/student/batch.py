@@ -75,7 +75,7 @@ def write_batch(
             garage=Garage(copy),
             embedder=embedder,
             bank=BankStore(copy),
-            guidance=GuidanceStore(copy),  # the educator's notes steer a batch too (v4.7)
+            guidance=GuidanceStore(copy),  # the educator's notes steer a batch too (v4.9)
         )
         desk.suggestions = SuggestionStore(copy)
         m = race_view(desk.maps.get(username), frozenset())

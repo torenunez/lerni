@@ -91,7 +91,7 @@ def educator_add(
     if on_map:  # one change: nothing else edits the map in between
         done, skipped = maps.change(owner, lambda m: apply_educator_proposals(m, on_map),
                                     by="educator chat")
-    about = [p for p in chosen if p.kind in QUESTIONS]  # guidance, levels, keys (v4.7)
+    about = [p for p in chosen if p.kind in QUESTIONS]  # guidance, levels, keys (v4.9)
     saved, unsaved = save_question_proposals(owner, about, maps.get(owner), chats.guidance,
                                              chats.concepts, chats.bank, date.today()
                                              ) if about else ([], [])
@@ -120,7 +120,7 @@ def preticked(found: list[Any]) -> list[str]:
 
 def add_button(n: int) -> Any:
     """The Add button for ``n`` ticked suggestions: "Add 2 ticked", hidden for none."""
-    return gr.update(value=f"Add {n} ticked", visible=n > 0)  # not all change the map (v4.7)
+    return gr.update(value=f"Add {n} ticked", visible=n > 0)  # not all change the map (v4.9)
 
 
 def educator_tab(
@@ -171,7 +171,7 @@ def educator_tab(
         ticks = gr.CheckboxGroup(show_label=False, choices=[], visible=False)
         add = gr.Button("Add ticked", variant="primary", visible=False)
         status = gr.Markdown()
-        # the guidance notes kept (v4.7): folded, shown only when there are some
+        # the guidance notes kept (v4.9): folded, shown only when there are some
         with gr.Accordion("Guidance for Lerni", open=False, visible=False) as guide_box:
             guide_ticks = gr.CheckboxGroup(show_label=False, choices=[])
             gr.Markdown("Read by every question and the morning plan. No names.")

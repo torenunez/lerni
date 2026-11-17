@@ -344,7 +344,7 @@ def build_app(
         return FileResponse(path, media_type="audio/mpeg",  # revalidated, so a swapped clip plays
                             headers={"Cache-Control": "private, no-cache"})
 
-    guidance = GuidanceStore(root)  # the educator's ticked notes (v4.7)
+    guidance = GuidanceStore(root)  # the educator's ticked notes (v4.9)
     races = (RaceDesk(quizzer, maps, points, ConceptStore(root), results=ResultsLog(root),
                       checker=quizzer,  # the same small model answers each question blind
                       garage=garage, grader=quizzer,  # and grades bonus answers
@@ -353,7 +353,7 @@ def build_app(
                       embedder=embedder,  # rewordings and set-asides by meaning
                       bank=BankStore(root),  # the educator's ratings steer each write (v4.5)
                       ahead=AheadStore(root),  # held questions survive a restart (v4.6.1)
-                      guidance=guidance)  # and the educator's ticked notes (v4.7)
+                      guidance=guidance)  # and the educator's ticked notes (v4.9)
              if quizzer is not None else None)
     if quizzer is not None:  # Lerni sorts goals with no area after each save, and once now
         sorter = AreaSorter(quizzer, maps)
@@ -401,7 +401,7 @@ def build_app(
         educator_chats.guidance = guidance  # and the notes, levels, and bank to save ticks to
         educator_chats.concepts = races.concepts if races is not None else ConceptStore(root)
         educator_chats.bank = races.bank if races is not None else BankStore(root)
-        educator_chats.checker = quizzer  # answer keys are checked blind (v4.7)
+        educator_chats.checker = quizzer  # answer keys are checked blind (v4.9)
     conversations = (
         Conversations(
             chat_model, context=keeper.context, on_exchange=keeper.after, spoken=speech is not None

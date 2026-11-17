@@ -1,4 +1,4 @@
-"""The educator's guidance notes (v4.7): short notes every race write and the morning plan
+"""The educator's guidance notes (v4.9): short notes every race write and the morning plan
 follow, for all goals or one goal, saved only from a tick in Tell Lerni (CLAUDE.md rule 5).
 
 Stored per student at ``<data root>/guidance/<user>.json``: the notes, goal ids, and days;

@@ -6,13 +6,17 @@ Record each kind of "done" only when it actually happens, with the date: code bu
 
 ## Current state (2026-11-17, v4.6.5 on the home server, reachable away from home over Tailscale: Versions 1 and 2 built: the conversation, MentalMaps, HTTPS, and voice; Version 3's race, garage, and Chat points)
 
-- **Built:** the student app's core (student accounts, sign-in, Lerni's conversations, the MentalMap with its tagger and logs kept a year, Upload and educator feedback, and the educator agent); `lerni serve` with a sign-in page and one app with a ☰ menu by role: an independent student's Chat, My MentalMap (an editable list, the picture, and Upload), and Settings; an educator's student page (a Suggest a goal box, goal progress this week by area, the folded list, and the picture), opened at sign-in, with Students in Settings; a supervised student's Chat, full screen, and Games (a race for points spent on real cars; educators race too); good answers in Chat earn points too. Hold to talk with spoken answers; a Claude usage warning and rest; race checks by meaning, on the home server's own model. Both servers run as LaunchAgents (`lerni service`). The admin tool (`lerni`, with `lerni student`, `lerni logs`, `lerni feedback`, and `lerni stats`). A [code manifest](code-manifest.md) of every file. Tests: 286 passed.
+- **Built:** the student app's core (student accounts, sign-in, Lerni's conversations, the MentalMap with its tagger and logs kept a year, Upload and educator feedback, and the educator agent); `lerni serve` with a sign-in page and one app with a ☰ menu by role: an independent student's Chat, My MentalMap (an editable list, the picture, and Upload), and Settings; an educator's student page (a Suggest a goal box, goal progress this week by area, the folded list, and the picture), opened at sign-in, with Students in Settings; a supervised student's Chat, full screen, and Games (a race for points spent on real cars; educators race too); good answers in Chat earn points too. Hold to talk with spoken answers; a Claude usage warning and rest; race checks by meaning, on the home server's own model. Both servers run as LaunchAgents (`lerni service`). The admin tool (`lerni`, with `lerni student`, `lerni logs`, `lerni feedback`, and `lerni stats`). A [code manifest](code-manifest.md) of every file. Tests: 294 passed.
 - **Designed:** the interest map, goals, the tagger, upload, feedback, and the supervised conversation ([specs/04-interest-map.md](../plans/specs/04-interest-map.md)); approved with PR #12. Harder races, practice on the map, and probes ([spec 09b](../plans/specs/09b-harder-races.md)). Local embeddings ([spec 10](../plans/specs/10-local-embeddings.md)). The order from here: Versions 4–7 ([roadmap](roadmap.md)).
 - **Not yet:** a recorded supervised session (the supervised student has used it informally).
 
 When something changes, update this section and add a log entry below.
 
 ## Log
+
+### 2026-11-17 (Tell Lerni ships as v4.9)
+
+- Tell Lerni on questions, built as v4.7, rebased onto v4.8 and renumbered v4.9 so versions stay in order (the admin's call); Version 9's PRs move to v4.10, v4.11, v4.13, and v4.14, and the rows after them to v4.15–v4.17. The morning plan's retries (v4.6.3) pass the guidance notes too. Tests: 294 pass.
 
 ### 2026-11-17 (away from home documented, v4.8; new ways to answer planned)
 
@@ -34,7 +38,7 @@ When something changes, update this section and add a log entry below.
 
 ### 2026-11-12 (Tell Lerni on questions; v4.7 built)
 
-- v4.7 ([plan](../plans/v4.7-tell-lerni.md)): Tell Lerni proposes guidance notes (`guidance.py`, up to 10, all goals or one), one-level changes for "too easy" or "too hard", and answer keys with two wrong choices, answered blind on the small model; each is saved only from a tick, and the race writer and the morning plan follow the notes. The educator eval's new cases pass (11 of 11). A ✗'s why moved to v4.9, with the sample it marks. A fresh review's fixes: a key touching something set aside is never proposed, the rating batch follows guidance, a tick sets the level its label showed, a failed save waits to be ticked again, and both system prompts say guidance never overrides their rules.
+- v4.7 ([plan](../plans/v4.9-tell-lerni.md)): Tell Lerni proposes guidance notes (`guidance.py`, up to 10, all goals or one), one-level changes for "too easy" or "too hard", and answer keys with two wrong choices, answered blind on the small model; each is saved only from a tick, and the race writer and the morning plan follow the notes. The educator eval's new cases pass (11 of 11). A ✗'s why moved to v4.9, with the sample it marks. A fresh review's fixes: a key touching something set aside is never proposed, the rating batch follows guidance, a tick sets the level its label showed, a failed save waits to be ticked again, and both system prompts say guidance never overrides their rules.
 
 ### 2026-11-12 (words-only race questions; v4.6.2 built)
 

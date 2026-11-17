@@ -1,4 +1,4 @@
-"""v4.7: guidance, level changes, and answer keys through Tell Lerni, saved only from a tick."""
+"""v4.9: guidance, level changes, and answer keys through Tell Lerni, saved only from a tick."""
 
 import json
 import re

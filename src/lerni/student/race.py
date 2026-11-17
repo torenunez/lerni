@@ -245,7 +245,7 @@ def quiz_input(m: InterestMap, today: date, supervised: bool, recent: Sequence[s
     lately by goal id; ``plan`` is each question's slot: goal, setting, format, and twist;
     ``connections`` (interest, hook) and ``steps`` by goal id come from the morning plan;
     ``marked`` (good, wrong) by goal id from the checked bank (v4.5); ``guidance`` is the
-    educator's (goal id or "" for all, note) pairs (v4.7)."""
+    educator's (goal id or "" for all, note) pairs (v4.9)."""
     picked = {g.casefold() for g in goals} if goals else None
 
     bridged: dict[str, list[str]] = {}  # goal id -> the interests bridged to it (v3.43)
@@ -1190,7 +1190,7 @@ class RaceDesk:
                  embedder: Embedder | None = None, bank: BankStore | None = None,
                  ahead: AheadStore | None = None, guidance: Any = None) -> None:
         self.bank = bank  # the educator's ratings steer each write (v4.5); None: no bank
-        self.guidance = guidance  # the educator's ticked notes (v4.7); None: none
+        self.guidance = guidance  # the educator's ticked notes (v4.9); None: none
         self.quizzer, self.maps, self.points, self.concepts = quizzer, maps, points, concepts
         self.embedder = embedder  # race checks by meaning (v3.40); None: words only
         self._skip: dict[str, frozenset[str]] = {}  # removed names goals win over; memory only

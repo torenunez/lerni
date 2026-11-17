@@ -143,7 +143,7 @@ class ConceptStore:
         return {g: _level(v) for g, v in self._levels(username).items()}
 
     def set_level(self, username: str, goal_id: str, level: int) -> None:
-        """Put a goal at the level a person ticked (v4.7), the one its label showed."""
+        """Put a goal at the level a person ticked (v4.9), the one its label showed."""
         def apply(by_goal: dict[str, dict[str, Any]]) -> None:
             # clamped to 1-5; answers count anew from here
             by_goal[goal_id] = {"level": _level({"level": level}), "right": 0, "asked": 0}
