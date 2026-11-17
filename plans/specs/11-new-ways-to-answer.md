@@ -4,7 +4,7 @@
 
 ## Where it lives
 
-- **Games gains Spelling, Reading, and Writing** beside Races. Each earns ⭐ the same way, so the garage still motivates. Picture math mixes into races for math goals.
+- **Spelling, Reading, and Writing** come beside Races (Spelling as its own ☰ section). Each earns ⭐ the same way, so the garage still motivates. Picture math mixes into races for math goals.
 - **Typed answers** use a field with autocorrect, suggestions, and capitals off (they would give spelling away), at 16px.
 - **Code grades whatever it can:** spelling, numbers, and choices. Claude grades only the student's own sentences.
 - **Rule 6 holds:** the student's typed words stay in the logs. Saved: counts, ✓ or "not yet" per checklist item, mistake labels, and the words Lerni or the educator chose.
@@ -12,7 +12,7 @@
 ## Spelling
 
 - **Two sources of words:**
-  - **The class list,** entered by the educator in a Spelling section (one word per line, or a photo through Upload, confirmed before it's saved). A new list replaces the old one; words still missed carry over.
+  - **The class list,** entered by the educator in a Spelling section (one word per line, or a photo through Upload, confirmed before it's saved). A new list replaces the old one; words not yet learned carry over.
   - **Lerni's picks,** a little above the student's level, from their interests: adjectives, and words with prefixes and suffixes ("unhappy", "careful"). They go straight into practice; the educator can remove any word.
 - **The class list comes first;** Lerni's picks fill in when it runs low or is mastered.
 - **A round:** hear the word, then the word in a short sentence (Claude writes it once, kept), type it, see the right spelling after a miss. Missed words come back sooner, as missed race ideas do.

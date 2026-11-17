@@ -25,6 +25,8 @@ NO_TOOLS = "install whisper.cpp and its model: admin reference, Voice"
 NO_SOUND = "say makes no sound here: start it from the Mac's own login, not over SSH or in tmux"
 SAY_FAILED = "say failed or took too long: check LERNI_SAY_VOICE names a voice in say -v '?'"
 _NOISE = re.compile(r"\[[^\]]*\]|\([^)]*\)")  # [BLANK_AUDIO], (music) and the like
+DICTATE_RATE = 100  # words a minute for spelling; say's default is near 175
+DICTATE_PAUSE = 1000  # ms of silence between the word and its sentence
 
 
 class MacSpeech:
@@ -61,12 +63,23 @@ class MacSpeech:
 
     def speak(self, text: str) -> bytes:
         """Return ``text`` spoken, as AAC audio Safari can play."""
+        return self._say(text)
+
+    def dictate(self, pieces: list[str]) -> bytes:
+        """Return ``pieces`` spoken slowly, with a pause between each, for spelling."""
+        # brackets dropped so a sentence can't carry say's own [[commands]]
+        clean = [p.replace("[", "").replace("]", "") for p in pieces]
+        return self._say(f" [[slnc {DICTATE_PAUSE}]] ".join(clean), ["-r", str(DICTATE_RATE)])
+
+    def _say(self, text: str, extra: list[str] | None = None) -> bytes:
+        """Run ``say`` into a temp file and return its audio."""
         with tempfile.TemporaryDirectory() as tmp:
             audio = Path(tmp) / "say.m4a"
             voice = ["-v", self.voice] if self.voice else []
             cmd = [
                 "say",
                 *voice,
+                *(extra or []),  # a slower rate for dictation
                 "-o",
                 str(audio),
                 "--file-format=m4af",

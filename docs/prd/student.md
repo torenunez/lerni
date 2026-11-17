@@ -163,6 +163,18 @@ As a student, I want to open Lerni away from home, so that I can keep learning o
 - THE SYSTEM SHALL stay unreachable from the public internet; the student's iPad reaches only production.
 - Supervised use with the educator nearby stays a family rule until Version 7.
 
+## Version 9: new ways to answer
+
+Practice beyond multiple choice ([spec 11](../../plans/specs/11-new-ways-to-answer.md)), starting with spelling.
+
+### Story: Spell what I hear
+
+As a student, I want to hear a word and type it, so that I learn to spell the words my class is learning and words about what I love.
+
+- WHEN the student starts a round THE SYSTEM SHALL say 5 words, one at a time, each with a short sentence, and grade each typed answer by code, with no autocorrect.
+- WHEN a word is spelled right THE SYSTEM SHALL award ⭐ and space it out further; WHEN it's missed THE SYSTEM SHALL show the right spelling and bring it back the next day.
+- THE SYSTEM SHALL keep only whether each word was right and the kind of mistake, never what the student typed.
+
 ## Out of scope
 
 Public access and a native iPad app.

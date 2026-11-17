@@ -57,3 +57,20 @@ def test_silent_audio_turns_voice_off(tmp_path, monkeypatch):
 
     speech, why = mac_speech.mac_speech_from_env(runner=bad_voice)
     assert speech is None and "LERNI_SAY_VOICE" in why and "SSH" not in why
+
+
+def test_dictation_is_slower_with_pauses_and_no_say_commands_from_text(tmp_path):
+    # the admin, 2026-11-17: the spelling sentence was read too fast, with no pause
+    seen = []
+
+    def run(cmd, **kwargs):
+        seen.append(cmd)
+        Path(cmd[cmd.index("-o") + 1]).write_bytes(b"m4a" * 400)
+        return subprocess.CompletedProcess(cmd, 0)
+
+    MacSpeech(tmp_path / "model.bin", runner=run).dictate(
+        ["fossil.", "Old [[rate 400]] bone.", "fossil."]
+    )
+    cmd = seen[0]
+    assert cmd[cmd.index("-r") + 1] == str(mac_speech.DICTATE_RATE)
+    assert cmd[-1] == "fossil. [[slnc 1000]] Old rate 400 bone. [[slnc 1000]] fossil."

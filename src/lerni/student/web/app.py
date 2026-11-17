@@ -48,6 +48,7 @@ from lerni.student.race import (  # noqa: E402
 )
 from lerni.student.results import ResultsLog  # noqa: E402
 from lerni.student.signin import SignIn, cookie_name, load_secret  # noqa: E402
+from lerni.student.spelling import SpellingDesk, SpellingStore
 from lerni.student.students import (  # noqa: E402
     AccountError,
     Kind,
@@ -128,6 +129,14 @@ _CSS = """
 .lerni-detail { padding-left: 12px; border-left: 3px solid #93c5fd; }
 /* Games: a coming-soon placeholder, centered */
 .lerni-soon { text-align: center; padding: 15vh 1rem; }
+/* Spelling (v4.10): the word card, the right spelling with the missed letters marked */
+.lerni-spell-card { text-align: center; padding: 1rem 0; }
+.lerni-spell-count { color: var(--body-text-color-subdued); font-size: 14px; }
+.lerni-spell-score { font-size: 28px; font-weight: 600; }
+.lerni-spell-word { font-family: ui-monospace, monospace; font-size: 24px; font-weight: 600; }
+.lerni-spell-word mark { background: #C0DD97; color: #173404; border-radius: 3px; }
+.lerni-spell-right { color: #3B6D11; font-size: 22px; font-weight: 600; }
+.lerni-spell-parts { color: var(--body-text-color-subdued); font-size: 18px; }
 .lerni-soon div { font-size: 120px; line-height: 1; }
 .lerni-soon p { font-size: 26px !important; font-weight: 700; margin-top: 1rem; }
 .lerni-dock { align-items: center; gap: 8px !important; }
@@ -345,6 +354,9 @@ def build_app(
                             headers={"Cache-Control": "private, no-cache"})
 
     guidance = GuidanceStore(root)  # the educator's ticked notes (v4.9)
+    # Spelling (v4.10): every word is heard, so only with the voice; the race's small model
+    spelling = (SpellingDesk(SpellingStore(root), points, maps, writer=quizzer, speech=speech)
+                if speech is not None else None)
     races = (RaceDesk(quizzer, maps, points, ConceptStore(root), results=ResultsLog(root),
                       checker=quizzer,  # the same small model answers each question blind
                       garage=garage, grader=quizzer,  # and grades bonus answers
@@ -423,6 +435,7 @@ def build_app(
         points=points,
         races=races,
         garage=garage,
+        spelling=spelling,
     )
     mounted = gr.mount_gradio_app(
         app,
