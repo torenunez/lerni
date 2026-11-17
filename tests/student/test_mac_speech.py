@@ -73,4 +73,4 @@ def test_dictation_is_slower_with_pauses_and_no_say_commands_from_text(tmp_path)
     )
     cmd = seen[0]
     assert cmd[cmd.index("-r") + 1] == str(mac_speech.DICTATE_RATE)
-    assert cmd[-1] == "fossil. [[slnc 900]] Old rate 400 bone. [[slnc 900]] fossil."
+    assert cmd[-1] == "fossil. [[slnc 1000]] Old rate 400 bone. [[slnc 1000]] fossil."
