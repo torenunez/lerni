@@ -70,7 +70,7 @@ v3.19 (race questions from the garage), v3.20 (a map journal and nightly backups
 |---|---|
 | Rival pace | set from the student's own car: the faster rival finishes between the student's 3-right and 4-right finishes, the slower one between 2 and 3 |
 | Sounds | 3 clips; the roar and sputter play at most 1.5 s, the finish 2.5 s, each faded out |
-| Level per goal | 1 to 5, starting at 3 |
+| Level per goal | 1 to 6 (6 since v4.6.4), starting at 3 |
 | Level change | after 5 answers on a goal since its last change: 4 or 5 right goes one harder, 2 or fewer one easier |
 | Review | a miss is due in 1 day; then right answers move it to 3 days, then 7; a right answer at 7 days retires it |
 | Due ideas | at most 2 a race |
@@ -149,7 +149,7 @@ v3.19 (race questions from the garage), v3.20 (a map journal and nightly backups
   - **What's stored:** goal ids and numbers only.
   - **Never the map:** levels are race data, not the student's interests.
 - **The rule:** after each answer, the server counts the goal's answers since its level last changed.
-  - At 5 answers, 4 or 5 right goes one harder (up to 5), and 2 or fewer one easier (down to 1).
+  - At 5 answers, 4 or 5 right goes one harder (up to 6), and 2 or fewer one easier (down to 1).
   - Either way the count starts again.
   - Bonus and probe answers don't count.
 - **In the prompt:** each goal line gets its level ("Fractions (level 4)"). `QUIZ_SYSTEM` says what each level means:
@@ -157,7 +157,8 @@ v3.19 (race questions from the garage), v3.20 (a map journal and nightly backups
   2. one step, in a new setting;
   3. apply it to one of their interests; wrong choices plausible (today's questions);
   4. two steps, or a comparison; wrong choices are common mistakes;
-  5. a what-if, or work back from an answer; wrong choices are near misses.
+  5. a what-if, or work back from an answer; wrong choices are near misses;
+  6. three steps, or find the mistake in a worked answer, or say which reason is right; wrong choices are near misses only a careful thinker catches (v4.6.4: level 5 was answered right far above the aim).
 - **Checks:** the server can't check a level; the eval does.
 - **The aim:** about 50–75% right. Two weeks after v3.18, the results log says whether it's working (a to-do item).
 

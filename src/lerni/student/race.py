@@ -191,7 +191,9 @@ rules apply: kind, never scary or sad, never anything set aside.
 - Pitch each goal's questions at its level: 1, one step in the goal's own words, wrong \
 choices clearly off; 2, one step in a new setting; 3, apply it to one of their interests, \
 wrong choices plausible; 4, two steps or a comparison, wrong choices common mistakes; \
-5, a what-if or work back from an answer, wrong choices near misses.
+5, a what-if or work back from an answer, wrong choices near misses; 6, three steps, or \
+find the mistake in a worked answer, or say which reason is right, wrong choices near misses \
+only a careful thinker catches.
 - Short questions (under {MAX_QUESTION} characters) in short sentences and everyday words, \
 and short choices (under {MAX_CHOICE}).
 - Never violence, weapons, sexual content, self-harm, drugs, anything scary or sad, anything \

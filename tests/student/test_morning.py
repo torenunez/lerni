@@ -3,7 +3,7 @@
 import random
 from datetime import date, timedelta
 
-from lerni.student.concepts import ConceptStore
+from lerni.student.concepts import MAX_LEVEL, ConceptStore
 from lerni.student.interests import MapStore, add_goal, add_interest, map_block, remove
 from lerni.student.morning import SuggestionStore, decide, run_morning
 from lerni.student.race import deal, quiz_input
@@ -40,7 +40,8 @@ def setup(tmp_path):
     maps.change("sam", fill)
     month = TODAY - timedelta(days=10)
     concepts.add("sam", [(ids["Fractions"], "Fractions", f"idea {n}") for n in range(12)], month)
-    top = {ids["Fractions"]: {"level": 5, "right": 0, "asked": 0}}  # outgrown: may widen (v3.45)
+    # at the top level: outgrown, may widen (v3.45)
+    top = {ids["Fractions"]: {"level": MAX_LEVEL, "right": 0, "asked": 0}}
     concepts._change("sam", levels=lambda by_goal: by_goal.update(top))
     return maps, concepts, store, ids
 
@@ -167,8 +168,8 @@ def test_only_one_outgrown_goal_gets_a_suggestion(tmp_path):
         concepts.add("sam", [(ids["Nouns"], "Nouns", f"Nouns idea {n}")], month)
         for _ in range(2):
             concepts.answered("sam", ids["Nouns"], f"Nouns idea {n}", True, month)
-    top = {ids["Fractions"]: {"level": 5, "right": 0, "asked": 0},
-           ids["Nouns"]: {"level": 5, "right": 0, "asked": 0}}  # Rain stays at level 3
+    top = {ids["Fractions"]: {"level": MAX_LEVEL, "right": 0, "asked": 0},
+           ids["Nouns"]: {"level": MAX_LEVEL, "right": 0, "asked": 0}}  # Rain stays at level 3
     concepts._change("sam", levels=lambda by_goal: by_goal.update(top))
     raw = {"connections": [], "steps": [],
            "goal_suggestions": [{"goal": g, "notes": "the basics, then more"} for g in ids]}

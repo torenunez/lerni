@@ -14,6 +14,10 @@ When something changes, update this section and add a log entry below.
 
 ## Log
 
+### 2026-11-16 (harder questions at the top; v4.6.4 built)
+
+- v4.6.4 ([plan](../plans/v4.6.4-harder-top.md)): v4.6.3 merged and deployed. The win-rate check-in found levels 4 and 5 answered right far above the 60% target and races won far above 1 in 3, with level 5 a ceiling; levels 1–3 sat near the target, and the rivals' pace matches it (a win needs 4 of 5). A level 6 now sits above 5: three steps, a mistake to find, or the right reason to pick. Levels, steps, and rivals are otherwise unchanged. The race eval's `levels` case passes at 1, 5, and 6; level 6 reads somewhat harder by eye. Tests: 287 pass.
+
 ### 2026-11-14 (goal priorities and a fair share; v4.6.3 built)
 
 - v4.6.3 ([plan](../plans/v4.6.3-goal-ranks.md)): v4.6.2 merged and deployed. Goals have a priority, High, Medium, or Low (the admin chose plain words over P1/P2/P3), set per area with a per-goal override, Medium until set. Race sets take the goals furthest behind their fair share: priority (2×, 1×, 0.5×) times how each is going over 14 days (1.5× under 60% right, 0.5× at 90% or more). The boxes' daily-to-14-day swing no longer picks goals. A 14-day simulation on a copy of production's data, with Math and Language on High: a 2-goal area fell from about 19% of questions to 10%, and every goal stayed between about 3% and 6%. Also: the 5:00 write-ahead failed two mornings running with only `ResultError` in the log; it now tries again every half hour until 9:00, and a failed call logs its reason and status (never its text).
