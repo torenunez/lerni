@@ -4,7 +4,7 @@
 
 ## Where it lives
 
-- **One game:** spelling and picture math are typed questions inside races (v4.11): at least one of each kind available, the spare questions to what needs practice most. Reading and Writing come beside them. Each earns ⭐ the same way, so the garage still motivates.
+- **One game:** spelling and picture math are typed questions inside races (v4.11; picture math as tracks, blocks and money, from v4.11.1): at least one of each kind available, the spare questions to what needs practice most. Reading and Writing come beside them. Each earns ⭐ the same way, so the garage still motivates.
 - **Typed answers** use a field with autocorrect, suggestions, and capitals off (they would give spelling away), at 16px.
 - **Code grades whatever it can:** spelling, numbers, and choices. Claude grades only the student's own sentences.
 - **Rule 6 holds:** the student's typed words stay in the logs. Saved: counts, ✓ or "not yet" per checklist item, mistake labels, and the words Lerni or the educator chose.

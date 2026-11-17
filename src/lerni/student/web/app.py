@@ -25,7 +25,6 @@ from fastapi.responses import FileResponse, PlainTextResponse, RedirectResponse 
 from lerni.student.ahead import AheadStore  # noqa: E402
 from lerni.student.area_sorter import AreaSorter  # noqa: E402
 from lerni.student.bank import BankStore  # noqa: E402
-from lerni.student.blocks import BlocksDesk, BlocksStore  # noqa: E402
 from lerni.student.concepts import ConceptStore  # noqa: E402
 from lerni.student.conversation import ChatModel, Conversations  # noqa: E402
 from lerni.student.educator_agent import EducatorChats
@@ -35,7 +34,9 @@ from lerni.student.guidance import GuidanceStore  # noqa: E402
 from lerni.student.interests import MapStore  # noqa: E402
 from lerni.student.logs import ConversationLog  # noqa: E402
 from lerni.student.meaning import Embedder  # noqa: E402
+from lerni.student.money import COINS  # noqa: E402
 from lerni.student.morning import SuggestionStore, run_morning  # noqa: E402
+from lerni.student.pictures import PicturesDesk, PicturesStore  # noqa: E402
 from lerni.student.points import PointsStore  # noqa: E402
 from lerni.student.race import (  # noqa: E402
     AHEAD_HOUR,
@@ -140,6 +141,18 @@ _CSS = """
 .lerni-pile { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; max-width: 320px; }
 .lerni-row-empty { height: 40px; border: 2px dashed #888780; border-radius: 8px; margin: 6px 0; }
 .lerni-pic-rows { max-width: 320px; margin: 0 auto; }
+/* money (v4.11.1): bills, a price tag, and coins at their real sizes, side by side */
+.lerni-money { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center;
+  align-items: center; margin: 4px auto 8px; max-width: 340px; }
+.lerni-coin { display: flex; flex-direction: column; align-items: center; font-size: 12px; }
+.lerni-coin img { border-radius: 50%; }
+.lerni-bill { width: 110px; height: 50px; border-radius: 6px; background: #C0DD97;
+  border: 2px solid #3B6D11; color: #173404; font-size: 22px; font-weight: 600;
+  display: flex; align-items: center; justify-content: center; }
+.lerni-price { display: flex; flex-direction: column; align-items: center; font-size: 36px; }
+.lerni-price small { font-size: 15px; border: 1px solid var(--border-color-primary);
+  border-radius: 4px; padding: 0 6px; }
+.lerni-credit { font-size: 11px; color: var(--body-text-color-subdued); text-align: center; }
 .lerni-soon div { font-size: 120px; line-height: 1; }
 .lerni-soon p { font-size: 26px !important; font-weight: 700; margin-top: 1rem; }
 .lerni-dock { align-items: center; gap: 8px !important; }
@@ -219,6 +232,9 @@ _MOUNT_OPTIONS = {
     # No API schema or docs pages on either app.
     "app_kwargs": {"openapi_url": None, "docs_url": None, "redoc_url": None},
 }
+
+
+COINS_DIR = Path(__file__).parent / "coins"  # the Mint's coin images, in the repo
 
 
 def _head(speech: bool) -> str:
@@ -345,6 +361,15 @@ def build_app(
             return PlainTextResponse("Not found.", status_code=404)
         return FileResponse(path, headers={"Cache-Control": "private, max-age=86400"})
 
+    @app.get("/coins/{name}")
+    def coin_picture(name: str) -> Any:
+        # public-domain United States Mint images in the repo (web/coins/): only these four
+        path = COINS_DIR / f"{name}.png"
+        if name not in COINS or not path.is_file():
+            return PlainTextResponse("Not found.", status_code=404)
+        return FileResponse(path, media_type="image/png",
+                            headers={"Cache-Control": "public, max-age=86400"})
+
     @app.get("/sounds/{name}")
     def race_sound(name: str, request: Request) -> Any:
         # the admin's own clips, kept out of the repo: only the race's names, only signed in
@@ -379,7 +404,7 @@ def build_app(
     if races is not None:
         races.suggestions = suggestions
         # typed questions in races (v4.11): spelling words (with the voice) and blocks
-        races.sources = {"spell": spelling, "picture": BlocksDesk(BlocksStore(root), maps)}
+        races.sources = {"spell": spelling, "picture": PicturesDesk(PicturesStore(root), maps)}
 
     def morning(username: str) -> bool:  # once a day per student; best effort inside
         today = date.today()

@@ -982,6 +982,7 @@ class Typed:
     label: str = ""  # for the results log: the word, or the track and level
     picture: dict[str, Any] | None = None  # what code draws: rows, cols, emoji, and how
     note: str = ""  # shown after the answer (how a picture adds up); never before
+    answer: str = ""  # the right answer as shown ("$1.35"); "" shows the key
 
 
 @dataclass(frozen=True)
@@ -1960,7 +1961,7 @@ class RaceDesk:
 
         def said(r: Race) -> str:
             if (t := r.typed.get(number)) is not None:  # a word spelled out, or the number
-                right = " ".join(t.key.upper()) if t.kind == "spell" else t.key
+                right = " ".join(t.key.upper()) if t.kind == "spell" else t.answer or t.key
                 return for_speaking(f"{miss_opener(r, number)} It's {right}. {t.note}")
             q = r.questions[number]
             return for_speaking(f"{miss_opener(r, number)} It's {q.choices[q.answer]}. {q.why}")

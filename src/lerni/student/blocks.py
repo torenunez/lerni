@@ -1,28 +1,20 @@
 """Blocks (v4.11): picture questions toward multiplication, drawn and graded by code (spec 11).
 
-A typed race question for a player with a goal in the Math area. One JSON file per player in
-``<data root>/blocks/``: the level and the last few answers as right or wrong, numbers only
-(rule 6). No Claude calls: code picks the sizes and works out the answer. Standard library only.
+A track of the picture questions in races (``pictures.py`` keeps its level), for a player
+with a goal in the Math area. No Claude calls: code picks the sizes and works out the answer.
+Standard library only.
 """
 
 from __future__ import annotations
 
 import random
 import re
-import threading
-from datetime import date
-from pathlib import Path
 from typing import Any
 
-from lerni.student.interests import InterestMap, MapStore, mentions_set_aside
-from lerni.student.jsonfiles import read_json, write_json_atomic
-from lerni.student.race import Checked, Typed, interest_groups, note_answer
-from lerni.student.students import check_username, default_data_dir
+from lerni.student.interests import InterestMap, mentions_set_aside
 
 MAX_LEVEL = 6
 SQUARE = ""  # no emoji matched: the page draws plain squares
-DUE_UNTIL_TOP = 3  # counts as 3 items due until the top level, so blocks keep coming
-DUE_AT_TOP = 1  # at the top level: a little practice still
 MAX_TYPED = 6  # characters of an answer read; a number is never longer
 SIZES = {  # level -> (rows from-to, columns from-to)
     1: ((2, 3), (2, 4)),  # up to 12, to count one by one
@@ -142,77 +134,3 @@ def typed_number(text: str) -> int | None:
     """The whole number typed ("12", " 12 "), or None for anything else."""
     t = "".join(text[: MAX_TYPED + 4].split())  # spaces anywhere don't count
     return int(t) if t.isascii() and t.isdigit() and len(t) <= MAX_TYPED else None  # not "²"
-
-
-class BlocksStore:
-    """Everyone's blocks level and recent answers on disk, changed one at a time."""
-
-    def __init__(self, root: Path | None = None) -> None:
-        self.root = (root or default_data_dir()) / "blocks"
-        self._lock = threading.Lock()  # one change at a time, so none is lost
-
-    def _path(self, username: str) -> Path:
-        return self.root / f"{check_username(username)}.json"  # a checked name: no ../ paths
-
-    def get(self, username: str) -> dict[str, Any]:
-        """The level (1-6) and recent answers; level 1 when missing or broken."""
-        data = read_json(self._path(username)) or {}
-        level = data.get("level", 1)
-        return {
-            "level": min(max(level, 1), MAX_LEVEL) if isinstance(level, int) else 1,
-            "recent": [bool(x) for x in data.get("recent") or []],
-        }
-
-    def change(self, username: str, right: bool) -> None:
-        """Note one answer; every 5, the level moves."""
-        with self._lock:
-            data = self.get(username)
-            note_answer(data, right, MAX_LEVEL)
-            write_json_atomic(self._path(username), {"schema": 1, **data})
-
-
-class BlocksDesk:
-    """Blocks as typed race questions (a ``TypedSource``)."""
-
-    kind = "picture"
-
-    def __init__(self, store: BlocksStore, maps: MapStore) -> None:
-        self.store, self.maps = store, maps
-        self.rng = random.Random()  # sizes and themes; tests may replace it
-
-    def due(self, username: str, today: date) -> int | None:
-        """Practice due: more until the top level; None without a Math goal."""
-        if not has_math_goal(self.maps.get(username)):
-            return None
-        return DUE_UNTIL_TOP if self.store.get(username)["level"] < MAX_LEVEL else DUE_AT_TOP
-
-    def item(self, username: str, today: date, avoid: set[str]) -> Typed | None:
-        """A question at the player's level, themed by one of their interests."""
-        m = self.maps.get(username)
-        names = [name for name, _, _ in interest_groups(m)]  # general interests, none set aside
-        matched = [n for n in names if emoji_for(n)]  # ones with an emoji first
-        theme = self.rng.choice(matched or names) if names else ""
-        level = self.store.get(username)["level"]
-        for _ in range(5):  # a few tries for an answer not already in this race
-            prompt, answer, draw, adds_up = question(
-                level, self.rng, theme.capitalize(), emoji_for(theme)
-            )
-            if str(answer) not in avoid:
-                break
-        return Typed(
-            self.kind,
-            prompt,
-            key=str(answer),
-            label=f"blocks-{level}",
-            picture={"kind": "blocks", **draw},
-            note=adds_up,  # shown after the answer, never sent before
-        )
-
-    def check(self, username: str, item: Typed, text: str, today: date) -> Checked:
-        """Right when the typed number is the answer; records it for the level."""
-        right = typed_number(text) == int(item.key)  # "12 " is right; "twelve" isn't
-        try:  # the level moves every 5 answers
-            self.store.change(username, right)
-        except OSError:
-            pass  # a full disk: the race goes on, unrecorded
-        return Checked(right, item.key, item.note)

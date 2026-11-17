@@ -4,8 +4,9 @@ for a choice, and nothing typed is kept."""
 import random
 from datetime import date, timedelta
 
-from lerni.student.blocks import MAX_LEVEL, BlocksDesk, BlocksStore, question, typed_number
+from lerni.student.blocks import MAX_LEVEL, question, typed_number
 from lerni.student.interests import MapStore, add_goal, add_interest
+from lerni.student.pictures import PicturesDesk, PicturesStore
 from lerni.student.points import PointsStore
 from lerni.student.race import (
     BONUS_AT,
@@ -44,7 +45,7 @@ def test_a_race_mixes_kinds_and_a_typed_answer_moves_the_cars(tmp_path):
     spelling = SpellingDesk(SpellingStore(tmp_path), maps, speech=Voice())  # no Claude
     spelling.set_class_list("sam", "because", TODAY)
     desk = RaceDesk(FakeQuizzer(), maps, points, results=results)
-    desk.sources = {"spell": spelling, "picture": BlocksDesk(BlocksStore(tmp_path), maps)}
+    desk.sources = {"spell": spelling, "picture": PicturesDesk(PicturesStore(tmp_path), maps)}
     desk.prefill = lambda *args: None  # no writing ahead in the background
     ticks = iter(range(0, 1000, 10))
     desk.clock = lambda: float(next(ticks))  # each answer a moment after the last
@@ -62,12 +63,13 @@ def test_a_race_mixes_kinds_and_a_typed_answer_moves_the_cars(tmp_path):
         assert desk.pick("sam", race.id, n, 0)[1] is None  # a tap on a typed slot: ignored
         typed = "Because " if t.kind == "spell" else "zqx 999"  # the word right, a number wrong
         _, turn, awarded = desk.typed_answer("sam", race.id, n, typed, TODAY)
-        assert turn.right is (t.kind == "spell") and turn.answer == t.key
+        assert turn.right is (t.kind == "spell") and turn.answer == (t.answer or t.key)
     assert race.done and points.get("sam").balance == awarded > 0  # pays at the finish
     assert desk.read_aloud("sam", race.id, 0) is None  # the race is over: nothing to read
     words = {w["word"]: w for w in SpellingStore(tmp_path).get("sam")["words"]}
     assert words["because"]["due"] == (TODAY + timedelta(days=1)).isoformat()  # box 1
-    assert BlocksStore(tmp_path).get("sam")["recent"] == [False] * kinds.count("picture")
+    answers = [x for t in PicturesStore(tmp_path).get("sam").values() for x in t["history"]]
+    assert answers == [False] * kinds.count("picture")  # each picture missed, on its track
     rows = results.read("sam")
     assert {r.get("kind") for r in rows if "right" in r} >= {"spell", "picture"}
     # rule 6: what was typed is never on disk
@@ -126,3 +128,21 @@ def test_a_check_that_fails_is_a_miss_not_a_stuck_question(tmp_path):
     _, turn, _ = desk.typed_answer("sam", race.id, n, "fossil", TODAY)
     assert turn is not None and not turn.right and turn.answer == "fossil"
     assert race.answered == n + 1  # the race moved on
+
+
+def test_the_neediest_picture_track_comes_and_an_old_blocks_level_carries_over(tmp_path):
+    (tmp_path / "blocks").mkdir()
+    (tmp_path / "blocks" / "sam.json").write_text('{"level": 4, "recent": [true]}')  # v4.11
+    store = PicturesStore(tmp_path)
+    assert store.get("sam")["blocks"]["level"] == 4  # read once, until the first answer here
+    maps = MapStore(tmp_path)
+    maps.change("sam", math_map)
+    desk = PicturesDesk(store, maps)
+    for _ in range(3):  # money missed three times: it needs more than blocks
+        store.change("sam", "money", False)
+    store.change("sam", "blocks", True)
+    item = desk.item("sam", TODAY, set())
+    assert item.label.startswith("money-") and item.picture["kind"] == "money"
+    got = desk.check("sam", item, item.answer.removeprefix("$"), TODAY)  # "1.35" for $1.35
+    assert got.right and got.shown == item.answer
+    assert store.get("sam")["blocks"]["level"] == 4  # kept after the first save
