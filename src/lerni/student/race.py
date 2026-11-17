@@ -1011,11 +1011,11 @@ def note_answer(data: dict[str, Any], right: bool, top: int) -> None:
     at 4 or 5 right, down at 2 or fewer, as race levels do."""
     recent = [bool(x) for x in data.get("recent") or []][-LEVEL_EVERY:] + [right]
     if len(recent) >= LEVEL_EVERY:  # five answers in: judge them, then start over
-        if sum(recent) >= LEVEL_UP_AT:
+        if sum(recent) >= LEVEL_UP_AT:  # 4 or 5 right: harder, up to the top
             data["level"] = min(int(data.get("level", 1)) + 1, top)
-        elif sum(recent) <= LEVEL_DOWN_AT:
+        elif sum(recent) <= LEVEL_DOWN_AT:  # 2 or fewer: easier, down to 1
             data["level"] = max(int(data.get("level", 1)) - 1, 1)
-        recent = []
+        recent = []  # 3 right: the level stays
     data["recent"] = recent
 
 
@@ -1763,13 +1763,15 @@ class RaceDesk:
         with self._lock:
             race = self._races.get(username)
             item = race.typed.get(number) if race is not None and race.id == race_id else None
+            # only the typed slot on screen, once, and not the half of a double tap
             if (race is None or item is None or number != race.answered or race.done
                     or race.bonus_live or race.id in self._checking
                     or self.clock() - self._last_tap.get(username, -1e9) < TAP_GAP_SECONDS):
                 return race, None, 0
             self._checking.add(race.id)  # one check at a time: a double send waits out
+            # shown when the race began, or when the last question was answered
             shown = (self._last_tap if number else self._started).get(username, 0.0)
-        turn, took = None, 0.0
+        turn, took = None, 0.0  # none until the cars move
         try:
             src = self.sources.get(item.kind)
             checked = (src.check(username, item, text or "", day) if src is not None
@@ -1784,8 +1786,8 @@ class RaceDesk:
             with self._lock:
                 self._checking.discard(race.id)
         if turn is None:
-            return race, None, 0
-        awarded = 0
+            return race, None, 0  # dropped or replaced meanwhile: nothing counts
+        awarded = 0  # paid only at the finish
         if race.done:  # the last answer: the race pays as always
             awarded = self.points.award(username, race.id, "race", race_points(race))
             self._spaced(username, race)

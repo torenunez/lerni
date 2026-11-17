@@ -108,11 +108,11 @@ def question(
         >>> question(2, random.Random(1), "Dinosaurs")[0]
         'Dinosaurs: 2 rows of 2. How many in all?'
     """
-    (r0, r1), (c0, c1) = SIZES[min(max(level, 1), MAX_LEVEL)]
-    rows, cols = rng.randint(r0, r1), rng.randint(c0, c1)
-    total, name = rows * cols, f"{theme}: " if theme else ""
+    (r0, r1), (c0, c1) = SIZES[min(max(level, 1), MAX_LEVEL)]  # a hand-edited level clamped
+    rows, cols = rng.randint(r0, r1), rng.randint(c0, c1)  # sizes drawn within the level
+    total, name = rows * cols, f"{theme}: " if theme else ""  # the label leads the prompt
     draw: dict[str, Any] = {"rows": rows, "cols": cols, "emoji": emoji, "empty": False}
-    adds_up = f"{rows} rows of {cols} is {total}."
+    adds_up = f"{rows} rows of {cols} is {total}."  # shown after the answer
     kind = level if level < MAX_LEVEL else rng.choice((4, 5))  # the top level mixes 4 and 5
     if kind == 1:  # count them one by one
         return f"{name}How many are there? Count them all.", total, draw, adds_up
@@ -210,8 +210,8 @@ class BlocksDesk:
 
     def check(self, username: str, item: Typed, text: str, today: date) -> Checked:
         """Right when the typed number is the answer; records it for the level."""
-        right = typed_number(text) == int(item.key)
-        try:
+        right = typed_number(text) == int(item.key)  # "12 " is right; "twelve" isn't
+        try:  # the level moves every 5 answers
             self.store.change(username, right)
         except OSError:
             pass  # a full disk: the race goes on, unrecorded

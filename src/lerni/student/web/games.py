@@ -295,8 +295,8 @@ def picture_html(pic: dict[str, Any] | None) -> str:
     """A picture question's blocks: a grid of emoji or squares, or for a missing piece, the
     pile and the empty rows to share it into; "" for none."""
     if not pic:
-        return ""
-    emoji = html.escape(str(pic.get("emoji") or ""))
+        return ""  # a spelling word: nothing to draw
+    emoji = html.escape(str(pic.get("emoji") or ""))  # escaped, though it comes from code
     one = f"<span>{emoji}</span>" if emoji else '<span class="lerni-sq"></span>'  # a block
     rows, cols = int(pic.get("rows", 0)), int(pic.get("cols", 0))
     if pic.get("empty"):  # the pile, then one empty row per row
@@ -304,6 +304,7 @@ def picture_html(pic: dict[str, Any] | None) -> str:
         empty = '<div class="lerni-row-empty"></div>' * rows
         return (f'<div class="lerni-pic"><div class="lerni-pile">{pile}</div></div>'
                 f'<div class="lerni-pic-rows">{empty}</div>')
+    # a grid: one column per block in a row, so the rows line up
     return (f'<div class="lerni-pic" style="grid-template-columns:repeat({cols},36px)" '
             f'aria-label="{rows} rows of {cols}">{one * (rows * cols)}</div>')
 
@@ -635,10 +636,11 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
             if desk is None or viewer is None:
                 return screen(viewer, None, "")
             if not (text or "").strip():  # an empty Check never counts as a miss
-                ups = [gr.update() for _ in outputs]
+                ups = [gr.update() for _ in outputs]  # the question stays; only the note
                 ups[outputs.index(note)] = TYPE_FIRST
                 return ups
             race, turn, awarded = desk.typed_answer(viewer.username, ref[0], ref[1], text)
+            # the next car to save for, once the race is over
             goal = goal_line(garage, points.get(viewer.username)) if race and race.done else ""
             shown = after_tap(race, ref, turn, awarded, goal)
             if shown is None:

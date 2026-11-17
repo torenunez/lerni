@@ -361,10 +361,11 @@ class SpellingDesk:
 
     def item(self, username: str, today: date, avoid: set[str]) -> Typed | None:
         """The neediest word not in ``avoid``, or None when there's none."""
+        # class words due first, then new ones, then Lerni's; none already in this race
         words = [w for w in next_words(self.store.get(username)["words"], today)
                  if w["word"] not in avoid]
         if not words:
-            return None
+            return None  # the slot stays a choice
         word = words[0]["word"]
         return Typed(self.kind, self.prompt, key=word, label=word)  # the word is the label
 
@@ -372,22 +373,24 @@ class SpellingDesk:
         """Grade ``text`` by code and record how it went; ``text`` itself goes no further."""
         label = mistake(item.key, text[:MAX_TYPED])  # "" when right
         parts = self._record(username, item.key, label, today)
-        return Checked(not label, item.key, " · ".join(parts) if not label and parts else label)
+        # right: its parts (un · happy); missed: the card marks the letters instead
+        return Checked(not label, item.key, " · ".join(parts) if not label else "")
 
     def read(self, username: str, item: Typed) -> bytes | None:
         """The word, a pause, its sentence, a pause, the word again; None without the voice."""
         if self.speech is None:
-            return None
+            return None  # no voice: the word can't be given
         word = item.key
         # the sentence from disk, so one written moments ago is read too
         sentence = next(
             (w["sentence"] for w in self.store.get(username)["words"] if w["word"] == word), ""
         )
+        # a word with no sentence yet is said once
         pieces = [f"{word}.", for_speaking(sentence), f"{word}."] if sentence else [f"{word}."]
         try:
-            return self.speech.dictate(pieces)
+            return self.speech.dictate(pieces)  # slower, with pauses
         except SpeechUnavailable:
-            return None
+            return None  # the card's 🔊 can try again
 
     def _record(self, username: str, word: str, label: str, day: date) -> list[str]:
         # counts, the next day due, and the level; returns the word's parts for the screen

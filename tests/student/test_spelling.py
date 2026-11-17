@@ -59,7 +59,7 @@ def test_words_are_graded_by_code_and_missed_words_come_back(tmp_path):
     word, got = ask(d, lambda w: "Because ")  # case and spaces don't count
     assert (word, got.right) == ("because", True)
     word, got = ask(d, lambda w: "frend")
-    assert (word, got.right, got.note, got.shown) == ("friend", False, "missing", "friend")
+    assert (word, got.right, got.note, got.shown) == ("friend", False, "", "friend")
     words = {w["word"]: w for w in SpellingStore(tmp_path).get("lee")["words"]}
     assert words["friend"]["due"] == (TODAY + timedelta(days=1)).isoformat()  # back tomorrow
     assert words["because"]["due"] == (TODAY + timedelta(days=1)).isoformat()  # first box: 1
