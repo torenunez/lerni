@@ -157,6 +157,16 @@ As an educator, I want to be asked before the app discusses a sensitive subject,
 
 - WHEN the student raises a sensitive subject THE SYSTEM SHALL ask the educator for consent.
 
+## Version 9: new ways to answer
+
+### Story: Set the spelling list
+
+As an educator, I want to give Lerni the class spelling list and see which words and mistakes keep coming back, so that practice at home matches school.
+
+- WHEN the educator saves a class list on the student's page THE SYSTEM SHALL practice it first, replacing the last list but keeping words still missed.
+- THE SYSTEM SHALL add its own words from the student's interests straight into practice, and the educator SHALL be able to remove any word for good.
+- THE SYSTEM SHALL show the words missed most and the kinds of mistakes (a doubled letter, ie or ei).
+
 ## Out of scope
 
 Running the admin tool. Editing app code or files directly.

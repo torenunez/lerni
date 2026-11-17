@@ -180,4 +180,17 @@
     autoAsk();
   }).observe(document.body, {childList: true, subtree: true, attributes: true,
                               attributeFilter: ['data-x', 'data-step', 'data-why', 'data-ask']});
+
+  // Spelling (v4.10): the iPad's keyboard must not fix the answer, so each new answer
+  // field gets no autocorrect, capitals, suggestions, or spell check
+  new MutationObserver(() => {
+    document.querySelectorAll('#lerni-spell input, #lerni-spell textarea').forEach(e => {
+      if (e.dataset.noHelp) return;  // once per field
+      e.dataset.noHelp = '1';
+      e.setAttribute('autocorrect', 'off');
+      e.setAttribute('autocapitalize', 'none');
+      e.setAttribute('autocomplete', 'off');
+      e.spellcheck = false;
+    });
+  }).observe(document.body, {childList: true, subtree: true});
 })();
