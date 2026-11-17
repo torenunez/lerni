@@ -189,6 +189,13 @@ As a student with a math goal, I want to count real-looking coins and bills and 
 - THE SYSTEM SHALL show coins at their real sizes beside each other, named but not valued, and bills labeled $1, $5, $20, $100.
 - THE SYSTEM SHALL grade amounts exactly, in cents, whether typed as 1.35 or $1.35.
 
+### Story: Measure it
+
+As a student with a math goal, I want to measure things on a ruler in centimeters and inches, so that I see how the two compare.
+
+- THE SYSTEM SHALL show a two-sided ruler, centimeters on one edge and inches on the other, at one real scale.
+- THE SYSTEM SHALL grade lengths exactly, whether typed as 1.5 or 1 1/2.
+
 ## Out of scope
 
 Public access and a native iPad app.
