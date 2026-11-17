@@ -104,6 +104,8 @@
 
 v4.5 (bulk ratings and question quality) → v4.6 the map picture (general interests only) → v4.7 Tell Lerni → **v4.8 A, the usage meter**, with minimal CI → **v4.9 B, overnight write-ahead**, with check a few questions → **v4.10 C, lighter chat** → **v4.11 D, local tagger in shadow** → Versions 5–7. *Replaced 2026-11-14:* away from home is v4.8, so A–D are v4.9–v4.12.
 
+*Replaced 2026-11-17:* the current order is in [upcoming versions](../docs/todo.md#upcoming-versions) (the meter v4.12, write-ahead v4.15, lighter chat v4.16, local tagger v4.17).
+
 **Data check-in:** about a week after A ships, read the meter. It may reorder B, C and D.
 
 ## Files (by version)

@@ -13,6 +13,7 @@ from typing import Any
 from lerni.student.bank import BankStore
 from lerni.student.concepts import ConceptStore
 from lerni.student.garage import Garage
+from lerni.student.guidance import GuidanceStore
 from lerni.student.interests import MapStore
 from lerni.student.meaning import Embedder
 from lerni.student.morning import SuggestionStore
@@ -20,7 +21,8 @@ from lerni.student.points import PointsStore
 from lerni.student.race import Checker, Quizzer, RaceDesk, RaceUnavailable, race_view
 from lerni.student.results import ResultsLog, question_hash
 
-COPIED = ("maps", "concepts", "points", "results", "suggestions", "bank", "cars", "garage.json")
+COPIED = ("maps", "concepts", "points", "results", "suggestions", "bank", "guidance", "cars",
+          "garage.json")
 CHUNK = 3  # goals a write covers: about 3 kept questions each
 ROUNDS = 4  # at most this many passes over the goals
 PROBES = "Nearby ideas"  # the sheet's goal for probes
@@ -73,6 +75,7 @@ def write_batch(
             garage=Garage(copy),
             embedder=embedder,
             bank=BankStore(copy),
+            guidance=GuidanceStore(copy),  # the educator's notes steer a batch too (v4.9)
         )
         desk.suggestions = SuggestionStore(copy)
         m = race_view(desk.maps.get(username), frozenset())

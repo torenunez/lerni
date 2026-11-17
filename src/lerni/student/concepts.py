@@ -142,6 +142,14 @@ class ConceptStore:
         """Each goal's level by goal id; a goal not listed is at the start level."""
         return {g: _level(v) for g, v in self._levels(username).items()}
 
+    def set_level(self, username: str, goal_id: str, level: int) -> None:
+        """Put a goal at the level a person ticked (v4.9), the one its label showed."""
+        def apply(by_goal: dict[str, dict[str, Any]]) -> None:
+            # clamped to 1-5; answers count anew from here
+            by_goal[goal_id] = {"level": _level({"level": level}), "right": 0, "asked": 0}
+
+        self._change(username, levels=apply)
+
     def practiced(self, username: str, goal_id: str, right: bool) -> None:
         """Count one answer on a goal; every 5, its level moves by how many were right."""
         if not goal_id:
