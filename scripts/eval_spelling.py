@@ -32,13 +32,13 @@ def picks_at(level: int) -> list[tuple[str, bool]]:
         root = Path(tmp)
         maps = MapStore(root)
         maps.change("eval", lambda m: [add_interest(m, n) for n in INTERESTS])
-        store = SpellingStore(root)
-        store.change("eval", lambda d: d.update(level=level))
-        desk = SpellingDesk(store, None, maps, writer=ClaudeCodeQuizzer())
-        kept = desk.write_picks("eval", date.today())
+        store = SpellingStore(root)  # a throwaway folder: nothing real is touched
+        store.change("eval", lambda d: d.update(level=level))  # start at this level
+        desk = SpellingDesk(store, None, maps, writer=ClaudeCodeQuizzer())  # no points
+        kept = desk.write_picks("eval", date.today())  # the one real call
         words = store.get("eval")["words"]
     print(f"\nLevel {level} ({LEVELS[level]}): {kept} kept of {PICKS_PER_CALL} asked")
-    for w in words:
+    for w in words:  # read by eye: does each fit the level and the interests?
         parts = f"  [{' · '.join(w['parts'])}]" if w["parts"] else ""
         print(f"  {w['word']:<12} {w['kind']:<9} {w['sentence']}{parts}")
     return [
@@ -56,10 +56,10 @@ def class_sentences() -> list[tuple[str, bool]]:
     with tempfile.TemporaryDirectory() as tmp:
         root = Path(tmp)
         store = SpellingStore(root)
-        desk = SpellingDesk(store, None, MapStore(root), writer=None)  # no background call
-        desk.set_class_list("eval", CLASS_LIST)
+        desk = SpellingDesk(store, None, MapStore(root), writer=None)  # no points, no Claude yet
+        desk.set_class_list("eval", CLASS_LIST)  # so no background sentence call
         desk.writer = ClaudeCodeQuizzer()
-        written = desk.write_sentences("eval")
+        written = desk.write_sentences("eval")  # the one real call, waited for
         words = store.get("eval")["words"]
     print(f"\nClass list sentences: {written} of {len(words)}")
     for w in words:
@@ -68,7 +68,7 @@ def class_sentences() -> list[tuple[str, bool]]:
 
 
 def main() -> None:
-    results = [*picks_at(1), *picks_at(5), *class_sentences()]
+    results = [*picks_at(1), *picks_at(5), *class_sentences()]  # 3 calls in all
     print()
     for name, ok in results:
         print(f"{'PASS' if ok else 'FAIL'}  {name}")
