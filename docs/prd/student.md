@@ -153,6 +153,16 @@ As a student, I want to keep talking about what interests me, so that I can lear
 - WHEN the student raises a sensitive subject (death, illness, the body, family matters, religion, politics) THE SYSTEM SHALL pause it, ask the educator, and offer something else meanwhile.
 - WHEN a question touches an excluded subject THE SYSTEM SHALL decline kindly and steer elsewhere.
 
+## Version 8: away from home
+
+### Story: Use Lerni anywhere
+
+As a student, I want to open Lerni away from home, so that I can keep learning on a trip or at a relative's house.
+
+- WHEN a family device opens Lerni outside the home network THE SYSTEM SHALL work as at home, Hold to talk included, over the family's private network.
+- THE SYSTEM SHALL stay unreachable from the public internet; the student's iPad reaches only production.
+- Supervised use with the educator nearby stays a family rule until Version 7.
+
 ## Out of scope
 
 Public access and a native iPad app.
