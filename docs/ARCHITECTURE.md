@@ -11,7 +11,7 @@ How Lerni works: what runs where, how a conversation grows a student's interest 
 - **Supervised students** see Chat, full screen, and **Games**: a race against two rival cars (from their garage and the Showroom, paced from their own car) answered by multiple choice, now and then with a bonus question explained in their own words (typed or spoken, graded by the small model), for points they spend on cars; real answers to Lerni's questions in Chat earn points too, judged by the tagger, once per exchange (educators can race too, and see a student's points on MentalMaps). They talk in the supervised voice, with an adult nearby (a household rule). **Spelling** says a word and a sentence; they type it and code grades it, for points too. Their map grows on the educator's MentalMaps.
 
 
-It assumes one household, a few students, one map per student. Students use an iPad or any browser on the home network. The admin tool (`lerni` in a terminal) is separate: the admin's own learning tool with its own data, plus `lerni student`, `lerni logs`, and `lerni feedback`.
+It assumes one household, a few students, one map per student. Students use an iPad or any browser on the home network or the family's tailnet. The admin tool (`lerni` in a terminal) is separate: the admin's own learning tool with its own data, plus `lerni student`, `lerni logs`, and `lerni feedback`.
 
 ## Context
 
@@ -20,7 +20,7 @@ flowchart LR
     student([Supervised student]) -- "types" --> ipad["iPad<br/>the conversation"]
     indep([Independent student]) -- "types, goals" --> idev["Own device<br/>Chat, My MentalMap, Settings"]
     educator([Educator]) -- "accounts, goals, feedback" --> edev["Phone or laptop<br/>Chat, the student's page, Settings"]
-    subgraph home[Home network only]
+    subgraph home[Home network or tailnet only]
         ipad -- "HTTP, sign-in" --> server["Home server<br/>always-on Mac"]
         idev -- "HTTP, sign-in" --> server
         edev -- "HTTP, sign-in" --> server
@@ -29,7 +29,7 @@ flowchart LR
     server -. "adapter: the admin's Claude account" .-> ai[Claude]
 ```
 
-The app runs on the home network only and is never exposed to the internet, as macOS LaunchAgents (`lerni service`) that start at login and restart after a crash. It serves plain HTTP, or HTTPS when `lerni serve` gets `--cert` and `--key` (a certificate made with mkcert and installed once on each device; Version 2), and voice needs HTTPS on the same server, because browsers allow the microphone only over HTTPS ([MDN](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia)). Speech-to-text (whisper.cpp's `whisper-cli`) and text-to-speech (macOS `say`) run on the home server behind one adapter (`Speech`); what was heard enters the conversation like typing, as text to Claude.
+The app is reached on the home network or privately over Tailscale Serve ([away from home](reference/admin.md#away-from-home-tailscale)) and is never public, as macOS LaunchAgents (`lerni service`) that start at login and restart after a crash. It serves plain HTTP, or HTTPS when `lerni serve` gets `--cert` and `--key` (a certificate made with mkcert and installed once on each device; Version 2), and voice needs HTTPS on the same server, because browsers allow the microphone only over HTTPS ([MDN](https://developer.mozilla.org/en-US/docs/Web/API/MediaDevices/getUserMedia)). Speech-to-text (whisper.cpp's `whisper-cli`) and text-to-speech (macOS `say`) run on the home server behind one adapter (`Speech`); what was heard enters the conversation like typing, as text to Claude.
 
 ## How a conversation grows the map
 
@@ -61,7 +61,7 @@ flowchart LR
 
 ## Trust boundaries
 
-- **The home network is the outer boundary:** no port forwarding, never Gradio's public share links.
+- **The home network and the family's tailnet are the outer boundary:** no port forwarding, no Tailscale Funnel, never Gradio's public share links.
 - **Everyone signs in** on our own sign-in page, and Gradio's `auth_dependency` re-checks the account on every request, so after an archive or password reset every device is refused at its next request (an answer already streaming finishes).
 - **Every handler resolves the signed-in account on the server** and checks every id the page sends against it. Hiding a tab, a component, or an event (`api_visibility="private"`) is not protection. Nothing per-user is built into the page layout, because Gradio sends every signed-in browser the same config. Passwords travel over HTTPS when the server is started with `--cert` and `--key` ([admin reference](reference/admin.md#https-for-voice)).
 - **Who can do what:**
@@ -107,7 +107,7 @@ If a change would break one of these, stop and ask.
 1. **People decide goals; agents may propose them.** A goal and its notes are saved only from a person's tap, through the server: a signed-in educator for a supervised student, or an independent student for their own map. Claude's proposals (Upload, the Tell Lerni box, later the educator's Chat and suggestions) stay proposals until a person accepts them. The tagger can add interests, time, and links, never goals. Feedback is summarized, never acted on.
 2. **Conversation text is kept only in the logs** on the home server, for a year while the family hosts it: never in other files, server output, or browser storage. Also saved: accounts; maps (short names drawn from the conversation, plus dates and links; a full map rests its least-seen interest, history and all, until it comes up again); feedback (an educator's own words and a summary); from Version 4, the checked bank.
 3. **The safety rules come last** in every prompt, after the persona and the map, and live in code, not in the editable persona files. That's how the prompt is built, not a guarantee of what Claude says; the evals check it.
-4. **Home network only.** See [trust boundaries](#trust-boundaries).
+4. **Home network or tailnet only, never public.** See [trust boundaries](#trust-boundaries).
 5. **Every request resolves the signed-in account on the server** by re-reading its record. A student never reaches another student's map or conversation, or an educator action.
 6. **Outside services go behind an adapter**, with credentials as `env:VAR` references. Tests use fakes.
 7. **The core never imports Gradio.** The core (`students`, `signin`, `jsonfiles`, `conversation`, `interests`, `tagging`, `logs`) uses only the standard library. Provider SDKs live only in `adapters/`; screens (`web/`) may import Gradio, an optional install. The student package never opens the admin tool's database.

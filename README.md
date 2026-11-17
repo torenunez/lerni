@@ -38,4 +38,4 @@ pytest
 lerni --help
 ```
 
-The admin tool stores data locally in `~/.lerni/`. The student app is for one household on its home network.
+The admin tool stores data locally in `~/.lerni/`. The student app is for one household, on its home network or privately over Tailscale.

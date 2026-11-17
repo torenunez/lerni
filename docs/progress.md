@@ -14,6 +14,10 @@ When something changes, update this section and add a log entry below.
 
 ## Log
 
+### 2026-11-17 (reach wording, v4.10.1)
+
+- v4.10.1: the startup line and the architecture said "home network only", out of date since Tailscale (v4.8); they now say the home network or the family's tailnet, never public.
+
 ### 2026-11-17 (Spelling, v4.10)
 
 - v4.10 ([plan](../plans/v4.10-spelling.md)): Spelling, its own ☰ section for a supervised student and educators. Lerni says a word, a sentence, and the word again, slowly with a 1 s pause each side (the admin's iPad check); the student types it and code grades it, with autocorrect off. The educator's class list comes first, then Lerni's picks from the student's interests; missed words come back the next day, and 4 right in a row (1, 3, 7, 14 days apart) is learned. 2 ⭐ a word and 5 for a perfect round, up to 50 a day. The eval passes 9 of 9; a fresh review's 7 findings are fixed. A photo of the list waits for Upload to read images. Tests: 309 pass.

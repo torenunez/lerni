@@ -178,7 +178,7 @@ def serve(
     )
     print("Race checks by meaning: " + ("on" if embedder else f"off ({why_words})"), flush=True)
     print("Conversation logs (a year): lerni logs", flush=True)
-    print("Home network only. Press Ctrl-C to stop.", flush=True)
+    print("Private: home network or tailnet only. Press Ctrl-C to stop.", flush=True)
     # Gradio keeps each open page connected; without a time limit, Ctrl-C waits forever
     uvicorn.run(
         app,
