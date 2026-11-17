@@ -335,7 +335,7 @@ def ruler_svg(pic: dict[str, Any]) -> str:
             ends.append(f'<line x1="{x:.1f}" y1="{y}" x2="{x:.1f}" y2="{top + RULER_H}" '
                         f'stroke="#0F6E56" stroke-width="1.5" stroke-dasharray="3 2"/>')
         if b.get("label"):  # 1 or 2, when two are compared
-            out.append(f'<text x="2" y="{y + 11}" font-size="12" fill="#444441">'
+            out.append(f'<text x="2" y="{y + 11}" font-size="12" fill="currentColor">'
                        f'{html.escape(str(b["label"]))}</text>')
     out.append(f'<rect x="{RULER_X - 8}" y="{top}" width="282" height="{RULER_H}" rx="4" '
                f'fill="#FAC775" stroke="#BA7517"/>')  # the ruler itself
@@ -351,8 +351,9 @@ def ruler_svg(pic: dict[str, Any]) -> str:
         if whole:
             out.append(f'<text x="{x:.1f}" y="{top + RULER_H - 22}" font-size="10" '
                        f'text-anchor="middle" fill="#412402">{half // 2}</text>')
-    out.append(f'<text x="0" y="{top + 28}" font-size="11" fill="#5F5E5A">cm</text>'
-               f'<text x="4" y="{top + RULER_H - 22}" font-size="11" fill="#5F5E5A">in</text>')
+    # outside the ruler, so in the page's own text color (light or dark)
+    out.append(f'<text x="0" y="{top + 28}" font-size="11" fill="currentColor">cm</text>'
+               f'<text x="4" y="{top + RULER_H - 22}" font-size="11" fill="currentColor">in</text>')
     out += ends  # across both edges, so either can be read
     height = top + RULER_H + 4
     return (f'<svg class="lerni-ruler" viewBox="0 0 320 {height}" role="img" '

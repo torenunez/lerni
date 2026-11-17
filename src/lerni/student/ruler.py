@@ -18,7 +18,7 @@ RULER_CM = 12  # the ruler's length: 0 to 12 cm on top, about 4¾ inches below
 CM_PER_INCH = Fraction(254, 100)  # exactly 2.54
 LINK = "An inch is about 2½ cm."  # said after inches, converting, and comparing
 _UNITS = re.compile(r"(centimeters?|cm|inch(es)?|in)$")  # "6 cm" or "2 inches" still reads
-_DECIMAL = re.compile(r"(\d{0,3})(?:\.(\d{1,2}))?")  # "6", "1.5", ".5"
+_DECIMAL = re.compile(r"(\d{0,3})(?:\.(\d{0,2}))?")  # "6", "1.5", ".5", "2."
 _MIXED = re.compile(r"(?:(\d{1,3}) +)?(\d{1,2})/(\d{1,2})")  # "1 1/2", "1/2"
 
 
@@ -36,7 +36,7 @@ def length_typed(text: str) -> Fraction | None:
         >>> length_typed("1 1/2") == length_typed("1.5") == Fraction(3, 2)
         True
     """
-    t = " ".join(text[:20].lower().replace("½", " 1/2").split())  # "1½" is "1 1/2"
+    t = " ".join(text.strip()[:20].lower().replace("½", " 1/2").split())  # "1½" is "1 1/2"
     t = _UNITS.sub("", t).strip()  # the unit is optional
     if not t.isascii() or not t:  # only plain digits: never "²"
         return None
@@ -102,39 +102,36 @@ def question(
         inches = Fraction(rng.randint(1, 4)) + Fraction(1, 2)  # 4½ in is 11.4 cm: it fits
         draw["bars"] = [_bar(Fraction(0), inches * CM_PER_INCH, thing)]
         return (
-            "How many inches long is it? A half is .5",
+            "How many inches long is it? A half is 0.5",
             inches,
             draw,
             f"It ends halfway past {int(inches)} on the inch edge. {LINK}",
             say_length(inches, "in"),
         )
     if kind == 5:  # converting: read the same object on the other edge
-        inches = rng.randint(1, 4)
-        cm = Fraction(round(inches * CM_PER_INCH))  # 3 in is 7.62 cm: 8
-        draw["bars"] = [_bar(Fraction(0), inches * CM_PER_INCH, thing)]
+        inches = Fraction(rng.randint(3, 8), 2)  # 1½ to 4 inches; none lands on a .5 tie
+        exact = inches * CM_PER_INCH  # 3 in is 7.62 cm
+        cm = Fraction(round(exact))  # the nearest whole centimeter: 8
+        other = int(exact) if cm > exact else int(exact) + 1  # the other side of it: 7
+        draw["bars"] = [_bar(Fraction(0), exact, thing)]
         return (
-            f"It's {inches} inch{'es' if inches > 1 else ''} long. How many centimeters, "
-            "to the nearest one?",
+            f"It's {say_length(inches)} inches long. How many centimeters, to the nearest one?",
             cm,
             draw,
-            f"{inches} in is about {float(inches * CM_PER_INCH):.1f} cm."
-            + (f" {LINK}" if inches > 1 else ""),
+            f"{say_length(inches)} in is {float(exact):.2f} cm, nearer {cm} than {other}.",
             say_length(cm, "cm"),
         )
-    while True:  # comparing: one in centimeters, one in inches, at least 1 cm apart
+    while True:  # comparing on the ruler alone: one in centimeters, one in inches
         cm, inches = rng.randint(2, RULER_CM - 1), rng.randint(1, 4)
-        if abs(cm - inches * CM_PER_INCH) >= 1:
+        if abs(cm - inches * CM_PER_INCH) >= 1:  # at least 1 cm apart
             break
     first = cm > inches * CM_PER_INCH  # which is longer, by real size
-    draw["bars"] = [
-        _bar(Fraction(0), Fraction(cm), thing, "1"),
-        _bar(Fraction(0), inches * CM_PER_INCH, thing, "2"),
-    ]
-    answer = Fraction(1 if first else 2)
-    longer = f"{cm} cm" if first else f"{inches} in"
+    answer = Fraction(1 if first else 2)  # no bars: he finds both on the ruler's two edges
+    unit = "inch" if inches == 1 else "inches"
+    longer = f"{cm} cm" if first else f"{inches} {unit}"
     return (
-        f"1 is {cm} cm. 2 is {inches} inch{'es' if inches > 1 else ''}. Which is longer? "
-        "Type 1 or 2",
+        f"Which is longer: {cm} cm or {inches} {unit}? Find both on the ruler. "
+        f"Type 1 for {cm} cm or 2 for {inches} {unit}",
         answer,
         draw,
         f"{longer} is longer. {LINK}",

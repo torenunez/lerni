@@ -35,6 +35,7 @@ DUE_UNTIL_TOP = 3  # counts as 3 items due while a track is below the top, so pi
 DUE_AT_TOP = 1  # every track at the top: a little practice still
 CLIMB_NEED = 0.1  # a track below the top level needs a little more than one at the top
 WAIT_NEED = 0.1  # each picture question a track sits out adds this to its need
+MIN_HISTORY = 3  # a miss rate from fewer answers counts as if from this many
 
 
 def _track(raw: Any) -> dict[str, Any]:
@@ -91,7 +92,8 @@ def track_need(t: dict[str, Any]) -> float:
     """How much a track needs practice: its recent miss rate, a little more below the top, and
     a little for each picture question it sat out, so a track done well still comes back."""
     history = t["history"]
-    rate = history.count(False) / len(history) if history else NO_HISTORY_NEED
+    # a short history counts as if 3 answers were in, so one early miss doesn't take over
+    rate = history.count(False) / max(len(history), MIN_HISTORY) if history else NO_HISTORY_NEED
     climb = CLIMB_NEED if t["level"] < MAX_LEVEL else 0.0
     return rate + climb + WAIT_NEED * t["waited"]
 

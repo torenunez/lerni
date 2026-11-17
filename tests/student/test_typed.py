@@ -6,7 +6,7 @@ from datetime import date, timedelta
 
 from lerni.student.blocks import MAX_LEVEL, question, typed_number
 from lerni.student.interests import MapStore, add_goal, add_interest
-from lerni.student.pictures import PicturesDesk, PicturesStore
+from lerni.student.pictures import PicturesDesk, PicturesStore, track_need
 from lerni.student.points import PointsStore
 from lerni.student.race import (
     BONUS_AT,
@@ -160,3 +160,6 @@ def test_a_track_done_well_still_comes_back(tmp_path):
     desk = PicturesDesk(store, maps)
     tracks = [desk.item("sam", TODAY, set()).label.split("-")[0] for _ in range(6)]
     assert tracks[0] == "blocks" and {"money", "ruler"} <= set(tracks)  # then the others too
+    # regression (review): one early miss on a new track doesn't outweigh real misses
+    assert track_need({"history": [False], "level": 1, "waited": 0}) < track_need(
+        {"history": [False] * 3 + [True] * 2, "level": 1, "waited": 0})
