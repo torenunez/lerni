@@ -488,8 +488,9 @@ class SpellingDesk:
         sentence = next(
             (w["sentence"] for w in self.store.get(username)["words"] if w["word"] == word), ""
         )
-        try:  # the word alone first, so it's clear which word to spell
-            audio = self.speech.speak(for_speaking(f"{word}. {sentence} {word}."))
+        pieces = [f"{word}.", for_speaking(sentence), f"{word}."] if sentence else [f"{word}."]
+        try:  # the word, a pause, the sentence, a pause, the word again
+            audio = self.speech.dictate(pieces)
         except SpeechUnavailable:
             return None
         with self._lock:  # kept for replays; a new round starts with no clips

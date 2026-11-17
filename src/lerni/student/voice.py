@@ -42,6 +42,7 @@ class Speech(Protocol):
 
     def transcribe(self, wav: bytes) -> str: ...  # 16 kHz mono WAV in, text out
     def speak(self, text: str) -> bytes: ...  # text in, audio Safari can play
+    def dictate(self, pieces: list[str]) -> bytes: ...  # slower, a pause between pieces
 
 
 def heard(speech: Speech, clip_b64: str) -> str:
