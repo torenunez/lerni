@@ -51,3 +51,6 @@ def stats_cmd(username: str = typer.Argument("", help="One student's report."),
         typer.echo(report(built.path, username, start, window))
     else:
         typer.echo(overview(built.path, start))
+        from lerni.student.meter import UsageLog, usage_report
+
+        typer.echo("\n" + usage_report(UsageLog(folder)))  # what each feature cost (v4.12)

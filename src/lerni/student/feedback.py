@@ -18,6 +18,7 @@ from datetime import date
 from pathlib import Path
 
 from lerni.student.conversation import ChatModel, Turn
+from lerni.student.meter import using
 from lerni.student.students import default_data_dir
 
 MAX_FEEDBACK = 2000  # characters
@@ -54,13 +55,17 @@ class Feedback:
 
 def summarize(model: ChatModel, text: str) -> str:
     """Claude's one- or two-line summary of an educator's feedback."""
-    return "".join(model.stream(FEEDBACK_SYSTEM, [Turn("user", text)])).strip()
+    with using("feedback"):  # the meter's name for this call
+        stream = model.stream(FEEDBACK_SYSTEM, [Turn("user", text)])
+    return "".join(stream).strip()
 
 
 def themes(model: ChatModel, entries: list[Feedback]) -> str:
     """Claude's grouping of open entries into themes, for ``lerni feedback --summary``."""
     lines = "\n".join(f"{f.number}. {f.text}" for f in entries)
-    return "".join(model.stream(THEMES_SYSTEM, [Turn("user", lines)])).strip()
+    with using("feedback"):
+        stream = model.stream(THEMES_SYSTEM, [Turn("user", lines)])
+    return "".join(stream).strip()
 
 
 class FeedbackStore:

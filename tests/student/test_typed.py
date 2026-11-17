@@ -4,6 +4,8 @@ for a choice, and nothing typed is kept."""
 import random
 from datetime import date, timedelta
 
+import pytest
+
 from lerni.student.blocks import MAX_LEVEL, question, typed_number
 from lerni.student.interests import MapStore, add_goal, add_interest
 from lerni.student.pictures import PicturesDesk, PicturesStore, track_need
@@ -20,6 +22,8 @@ from lerni.student.race import (
 from lerni.student.results import ResultsLog
 from lerni.student.spelling import SpellingDesk, SpellingStore
 from tests.student.test_race import FakeQuizzer
+
+pytestmark = pytest.mark.ci  # run on each PR by GitHub (v4.12)
 
 TODAY = date(2026, 11, 17)
 

@@ -46,6 +46,7 @@ from lerni.student.interests import (
     same_name,
 )
 from lerni.student.meaning import Embedder, Meaning, skipped
+from lerni.student.meter import using
 from lerni.student.morning import untried_steps_held
 from lerni.student.points import PointsStore
 from lerni.student.results import ResultsLog, question_hash
@@ -1394,8 +1395,9 @@ class RaceDesk:
         if self.checker is None or not questions:
             return questions
         try:
-            picks = self.checker.write(CHECK_SYSTEM, check_input(questions), CHECK_SCHEMA,
-                                       timeout=CHECK_TIMEOUT_SECONDS)["picks"]
+            with using("race-check"):  # the meter's name for this call
+                picks = self.checker.write(CHECK_SYSTEM, check_input(questions), CHECK_SCHEMA,
+                                           timeout=CHECK_TIMEOUT_SECONDS)["picks"]
         except Exception:  # never show what went wrong inside; a race beats no race
             picks = None
         if not isinstance(picks, list) or len(picks) != len(questions):
@@ -1505,11 +1507,12 @@ class RaceDesk:
         spare: list[Question] = []  # good but repeated: better than no race
         for _ in range(2):  # one more try if too few questions pass the checks
             try:
-                raw = self.quizzer.write(QUIZ_SYSTEM, quiz_input(
-                    m, today, supervised, recent, levels, cars, due, picked or None, probed,
-                    history, deal(m, dealt, used, self.dice, targets=targets),
-                    connections=targets, steps=steps, car_fact=car_fact, marked=marked,
-                    guidance=guide))
+                with using("race-write"):  # the meter's name for this call
+                    raw = self.quizzer.write(QUIZ_SYSTEM, quiz_input(
+                        m, today, supervised, recent, levels, cars, due, picked or None, probed,
+                        history, deal(m, dealt, used, self.dice, targets=targets),
+                        connections=targets, steps=steps, car_fact=car_fact, marked=marked,
+                        guidance=guide))
             except RaceUnavailable:
                 raise
             except Exception as exc:  # never show what went wrong inside
@@ -1890,8 +1893,9 @@ class RaceDesk:
         prompt = (f"{voice}\nQuestion: {bonus.question}\nKey ideas: "
                   f"{'; '.join(bonus.key_ideas)}\n{fence('answer', text[:MAX_ANSWER])}")
         try:
-            got = self.grader.write(GRADE_SYSTEM, prompt, GRADE_SCHEMA,
-                                    timeout=GRADE_TIMEOUT_SECONDS) if self.grader else None
+            with using("bonus-grade"):  # the meter's name for this call
+                got = self.grader.write(GRADE_SYSTEM, prompt, GRADE_SCHEMA,
+                                        timeout=GRADE_TIMEOUT_SECONDS) if self.grader else None
         except Exception:  # never show what went wrong inside
             got = None
         if isinstance(got, dict) and (got.get("care") is True or got.get("tier") == CARE):

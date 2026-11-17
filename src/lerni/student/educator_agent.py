@@ -38,6 +38,7 @@ from lerni.student.interests import (
     set_notes,
 )
 from lerni.student.logs import ConversationLog
+from lerni.student.meter import using
 from lerni.student.race import (
     CHECK_SCHEMA,
     CHECK_SYSTEM,
@@ -423,8 +424,9 @@ def check_keys(checker: Any, keys: list[EducatorProposal]) -> list[EducatorPropo
     asked = [Question(p.name, p.question, (p.choices[0], p.choices[1], p.choices[2]), p.answer,
                       p.why) for p in keys]  # the check sees questions and choices, never keys
     try:
-        picks = checker.write(CHECK_SYSTEM, check_input(asked), CHECK_SCHEMA,
-                              timeout=CHECK_TIMEOUT_SECONDS)["picks"]
+        with using("tell-lerni-check"):  # the meter's name for this call
+            picks = checker.write(CHECK_SYSTEM, check_input(asked), CHECK_SCHEMA,
+                                  timeout=CHECK_TIMEOUT_SECONDS)["picks"]
     except Exception:  # noqa: BLE001 - a failed check shows the keys unflagged
         return keys
     if not isinstance(picks, list) or len(picks) != len(keys):
@@ -500,7 +502,8 @@ class EducatorChats:
                 map_text += "\nLerni's suggestions waiting for a tick: " + "; ".join(waiting)
         system = educator_system(map_text)
         full: list[str] = []
-        stream = self.model.stream(system, turns)  # one call
+        with using("educator-chat"):  # the meter's name for this call
+            stream = self.model.stream(system, turns)  # one call
 
         def pieces() -> Iterator[str]:
             for piece in stream:

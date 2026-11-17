@@ -31,6 +31,7 @@ from lerni.student.interests import (
     set_notes,
 )
 from lerni.student.jsonfiles import read_json, write_json_atomic
+from lerni.student.meter import using
 from lerni.student.students import check_username, default_data_dir
 
 MAX_CONNECTIONS = 5  # waiting at once (the admin's choice, 2026-11-10)
@@ -488,7 +489,8 @@ def run_morning(
             g.get("state") == "waiting" for g in data["goals"]) else ""
         guide = guidance.for_goals(username) if guidance is not None else []  # all goals' notes
         prompt = morning_input(m, asked, data, today, widen, guide)
-        raw = planner.write(MORNING_SYSTEM, prompt, MORNING_SCHEMA)
+        with using("morning-plan"):  # the meter's name for this call
+            raw = planner.write(MORNING_SYSTEM, prompt, MORNING_SCHEMA)
         connections, suggestions, steps = check_plan(raw, m, data, asked, today, widen)
     except Exception as exc:  # noqa: BLE001 - never echo the map in errors
         print(f"Morning plan skipped ({type(exc).__name__}).", flush=True)

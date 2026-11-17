@@ -38,7 +38,13 @@ def list_cmd(
             console.print("[red]The claude CLI isn't installed here.[/red]")
             raise typer.Exit(1)
         console.print("\n[bold]Themes[/bold]")
-        console.print(themes(ClaudeCodeChat(), entries), markup=False)
+        from lerni.student.meter import UsageLog
+        from lerni.student.students import default_data_dir
+        from lerni.student.usage import Usage
+
+        usage = Usage()  # metered like the server's calls (v4.12)
+        usage.log = UsageLog(default_data_dir())
+        console.print(themes(ClaudeCodeChat(usage=usage), entries), markup=False)
 
 
 @feedback_app.command("done")

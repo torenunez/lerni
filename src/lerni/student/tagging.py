@@ -17,6 +17,7 @@ from typing import Any, Protocol
 from lerni.student.fence import fence
 from lerni.student.interests import InterestMap, MapStore, apply_tags, map_block, parse_tags
 from lerni.student.logs import ConversationLog
+from lerni.student.meter import using
 from lerni.student.points import PointsStore
 
 TAGGER_SYSTEM = """\
@@ -159,7 +160,8 @@ class MapKeeper:
         before = self.maps.get(ex.username)
         try:
             prompt = tagger_input(before, ex.previous, ex.question, ex.answer)
-            tags = parse_tags(self.tagger.tag(TAGGER_SYSTEM, prompt))  # type: ignore[union-attr]
+            with using("tagger"):  # the meter's name for this call
+                tags = parse_tags(self.tagger.tag(TAGGER_SYSTEM, prompt))  # type: ignore[union-attr]
         except Exception:  # noqa: BLE001 - a failure just skips this update
             return "failed"
         if (self.points is not None and tags.answered and "?" in ex.previous  # Lerni asked

@@ -19,6 +19,7 @@ from typing import Any, Protocol
 from lerni.student.fence import fence
 from lerni.student.interests import MapStore
 from lerni.student.jsonfiles import read_json, write_json_atomic
+from lerni.student.meter import using
 from lerni.student.race import Checked, RaceUnavailable, Typed, interest_groups, note_answer
 from lerni.student.students import check_username, default_data_dir
 from lerni.student.voice import Speech, SpeechUnavailable, for_speaking
@@ -537,7 +538,8 @@ class SpellingDesk:
             )
             system = PICK_SYSTEM.format(n=PICKS_PER_CALL, level=LEVELS[data["level"]])
             try:
-                reply = self.writer.write(system, prompt, PICK_SCHEMA, WRITE_SECONDS)
+                with using("spelling-words"):  # the meter's name for this call
+                    reply = self.writer.write(system, prompt, PICK_SCHEMA, WRITE_SECONDS)
             except RaceUnavailable:
                 return 0  # resting or failed: the next round asks again
             picks = checked_picks(reply, avoid)  # only words that pass every check
@@ -580,9 +582,11 @@ class SpellingDesk:
         # one call for the words without a sentence; each kept only if it uses its word
         assert self.writer is not None
         try:
-            reply = self.writer.write(
-                SENTENCE_SYSTEM, fence("words", "\n".join(need)), SENTENCE_SCHEMA, WRITE_SECONDS
-            )  # the educator's words go in fenced, as data
+            with using("spelling-words"):  # the meter's name for this call
+                reply = self.writer.write(
+                    SENTENCE_SYSTEM, fence("words", "\n".join(need)), SENTENCE_SCHEMA,
+                    WRITE_SECONDS,
+                )  # the educator's words go in fenced, as data
         except RaceUnavailable:
             return 0  # the word is read alone until a later list save tries again
         rows = reply.get("sentences") if isinstance(reply, dict) else None

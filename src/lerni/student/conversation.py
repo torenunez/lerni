@@ -18,6 +18,7 @@ from dataclasses import dataclass
 from importlib import resources
 from typing import Literal, Protocol
 
+from lerni.student.meter import using
 from lerni.student.tagging import Exchange
 
 MAX_MESSAGE = 2000  # characters in one question
@@ -174,7 +175,9 @@ class Conversations:
             # inside the try: a broken map must still free them below
             system = system_prompt(self.context(username), voice, self.spoken)
             # pass each piece on as it arrives, and keep it for the history
-            for piece in self.model.stream(system, turns):
+            with using(f"chat-{voice}"):  # the meter's name for this call
+                pieces = self.model.stream(system, turns)
+            for piece in pieces:
                 answer.append(piece)
                 yield piece
         except GeneratorExit:

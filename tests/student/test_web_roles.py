@@ -17,6 +17,8 @@ from lerni.student.web.accounts import (  # noqa: E402
 )
 from lerni.student.web.app import build_app  # noqa: E402
 
+pytestmark = pytest.mark.ci  # run on each PR by GitHub (v4.12)
+
 EDUCATOR = Viewer("alba", "Alba", Role.INDEPENDENT, educator=True)
 SAM = Viewer("sam", "Sam", Role.INDEPENDENT)
 
