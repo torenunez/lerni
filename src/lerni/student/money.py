@@ -19,7 +19,7 @@ COIN_PX = {name: round(QUARTER_PX * mm / COIN_MM["quarter"]) for name, mm in COI
 BILLS = (1, 5, 20, 100)  # dollars
 PAY_WITH = (1, 5, 20)  # bills a change question pays with
 TOY = "🎁"  # what's bought when no interest has an emoji
-_AMOUNT = re.compile(r"\$?(\d{1,4})(?:\.(\d{2}))?\$?")  # "1.35", "$1.35", "7", "7.00"
+_AMOUNT = re.compile(r"\$?(\d{0,4})(?:\.(\d{0,2}))?\$?")  # "1.35", "$1.5", ".65", "7."
 _CENTS = re.compile(r"(\d{1,4})")  # "35"
 
 
@@ -35,12 +35,16 @@ def cents_typed(text: str, dollars: bool) -> int | None:
         (135, 35)
     """
     t = "".join(text[:20].split())  # spaces anywhere don't count
-    t = t if dollars else t.removesuffix("¢")  # "35¢" is 35
+    cents = t.endswith("¢")  # "65¢" is cents, even where dollars are asked
+    t = t.removesuffix("¢")
     if not t.isascii():  # only plain digits and signs: never "²" or "३"
         return None
-    if dollars:
+    if dollars and not cents:
         m = _AMOUNT.fullmatch(t)
-        return int(m.group(1)) * 100 + int(m.group(2) or 0) if m else None  # never a float
+        if m is None or not (m.group(1) or m.group(2)):  # "$" or "." alone is nothing
+            return None
+        part = (m.group(2) or "").ljust(2, "0")  # "1.5" is $1.50
+        return int(m.group(1) or 0) * 100 + int(part)  # whole cents, never a float
     m = _CENTS.fullmatch(t)
     return int(m.group(1)) if m else None
 
@@ -60,8 +64,15 @@ def _coins_line(names: list[str]) -> str:
         n = names.count(name)
         plural = "pennies" if name == "penny" else f"{name}s"
         parts.append(f"a {name}" if n == 1 else f"{n} {plural}")
-    line = parts[0] if len(parts) == 1 else ", ".join(parts[:-1]) + f", and {parts[-1]}"
+    line = listing(parts)
     return line[0].upper() + line[1:]  # it starts the sentence
+
+
+def listing(parts: list[str]) -> str:
+    """"a", "a and b", or "a, b, and c"."""
+    if len(parts) < 3:
+        return " and ".join(parts)
+    return ", ".join(parts[:-1]) + f", and {parts[-1]}"
 
 
 def question(
@@ -107,14 +118,14 @@ def question(
         total = sum(bills) * 100
         draw["bills"] = bills
         # "$20, $5, and $1": what's added, for after the answer
-        listed = ", ".join(f"${b}" for b in bills[:-1]) + f", and ${bills[-1]}"
+        listed = listing([f"${b}" for b in bills])
         return ("How many dollars?", total, draw, f"{listed} make {say_cents(total, True)}.", True)
     if kind == 5:  # bills and coins together
         bills = sorted((rng.choice(BILLS[:3]) for _ in range(rng.randint(1, 2))), reverse=True)
         coins = sorted(
-            (rng.choice(list(COINS)) for _ in range(rng.randint(1, 4))), key=lambda c: -COINS[c]
-        )
-        change = sum(COINS[c] for c in coins)  # the coins' part, under a dollar or so
+            (rng.choice(list(COINS)) for _ in range(rng.randint(1, 3))), key=lambda c: -COINS[c]
+        )  # 3 coins at most: 75¢, so "and 35¢" never reaches a dollar
+        change = sum(COINS[c] for c in coins)  # the coins' part, under a dollar
         total = sum(bills) * 100 + change  # still whole cents
         draw.update(bills=bills, coins=coins)
         return (
@@ -130,7 +141,8 @@ def question(
     draw.update(bills=[paid], price=price, item=emoji or TOY)  # the toy: an interest's emoji
     back = paid * 100 - price  # always more than 0
     return (
-        f"You pay with ${paid} for a toy that costs {say_cents(price, True)}. How much change?",
+        f"You pay with ${paid} for a toy that costs {say_cents(price, True)}. How much change? "
+        "Write it like 1.35",
         back,
         draw,
         f"${paid} − {say_cents(price, True)} = {say_cents(back, True)}.",

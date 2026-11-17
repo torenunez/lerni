@@ -1780,7 +1780,7 @@ class RaceDesk:
             try:  # a check that fails (a full disk, odd text) is a miss, never a stuck question
                 checked = src.check(username, item, text or "", day)
             except Exception:  # noqa: BLE001 - the student sees the right answer either way
-                checked = Checked(False, item.key, item.note)
+                checked = Checked(False, item.answer or item.key, item.note)  # "$1.35"
             with self._lock:  # dropped or replaced while checking: it no longer counts
                 if self._races.get(username) is race:
                     turn = answer_typed(race, number, checked)

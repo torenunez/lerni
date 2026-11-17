@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import random
 import threading
-import time
 from datetime import date
 from pathlib import Path
 from typing import Any
@@ -34,6 +33,7 @@ MAX_LEVEL = 6  # both tracks run 1 to 6
 DUE_UNTIL_TOP = 3  # counts as 3 items due while a track is below the top, so pictures come
 DUE_AT_TOP = 1  # every track at the top: a little practice still
 CLIMB_NEED = 0.1  # a track below the top level needs a little more than one at the top
+WAIT_NEED = 0.1  # each picture question a track sits out adds this to its need
 
 
 def _track(raw: Any) -> dict[str, Any]:
@@ -44,7 +44,7 @@ def _track(raw: Any) -> dict[str, Any]:
         "level": min(max(level, 1), MAX_LEVEL) if isinstance(level, int) else 1,
         "recent": [bool(x) for x in raw.get("recent") or []],  # since the level last moved
         "history": [bool(x) for x in raw.get("history") or []][-RECENT:],  # for its need
-        "last": float(raw.get("last") or 0),  # when it was last asked, for ties
+        "waited": int(raw.get("waited") or 0),  # picture questions since it was last asked
     }
 
 
@@ -78,18 +78,21 @@ class PicturesStore:
             write_json_atomic(self._path(username), {"schema": 1, "tracks": tracks})
 
     def asked(self, username: str, track: str) -> None:
-        """Note when ``track`` was last asked, so a tie goes to the other one."""
+        """Note that ``track`` was asked: the others have waited one more question."""
         with self._lock:
             tracks = self.get(username)
-            tracks[track]["last"] = time.time()
+            for name, t in tracks.items():  # the one asked starts over; the rest wait longer
+                t["waited"] = 0 if name == track else t["waited"] + 1
             write_json_atomic(self._path(username), {"schema": 1, "tracks": tracks})
 
 
 def track_need(t: dict[str, Any]) -> float:
-    """How much a track needs practice: its recent miss rate, plus a little below the top."""
+    """How much a track needs practice: its recent miss rate, a little more below the top, and
+    a little for each picture question it sat out, so a track done well still comes back."""
     history = t["history"]
     rate = history.count(False) / len(history) if history else NO_HISTORY_NEED
-    return rate + (CLIMB_NEED if t["level"] < MAX_LEVEL else 0.0)
+    climb = CLIMB_NEED if t["level"] < MAX_LEVEL else 0.0
+    return rate + climb + WAIT_NEED * t["waited"]
 
 
 class PicturesDesk:
@@ -111,8 +114,8 @@ class PicturesDesk:
     def item(self, username: str, today: date, avoid: set[str]) -> Typed | None:
         """A question from the neediest track at its level, themed by an interest."""
         tracks = self.store.get(username)
-        # the neediest track; a tie goes to the one asked least recently
-        name = max(TRACKS, key=lambda n: (track_need(tracks[n]), -tracks[n]["last"]))
+        # the neediest track; a tie goes to the one that has waited longest
+        name = max(TRACKS, key=lambda n: (track_need(tracks[n]), tracks[n]["waited"]))
         level = tracks[name]["level"]
         names = [n for n, _, _ in interest_groups(self.maps.get(username))]  # nothing set aside
         matched = [n for n in names if blocks.emoji_for(n)]  # ones with an emoji first

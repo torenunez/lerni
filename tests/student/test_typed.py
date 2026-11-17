@@ -146,3 +146,16 @@ def test_the_neediest_picture_track_comes_and_an_old_blocks_level_carries_over(t
     got = desk.check("sam", item, item.answer.removeprefix("$"), TODAY)  # "1.35" for $1.35
     assert got.right and got.shown == item.answer
     assert store.get("sam")["blocks"]["level"] == 4  # kept after the first save
+
+
+def test_a_track_done_well_still_comes_back(tmp_path):
+    # regression (review): money all right and blocks missed sometimes left money out for good
+    maps, store = MapStore(tmp_path), PicturesStore(tmp_path)
+    maps.change("sam", math_map)
+    for right in [True] * 10:
+        store.change("sam", "money", right)
+    for right in [True] * 7 + [False] * 3:
+        store.change("sam", "blocks", right)
+    desk = PicturesDesk(store, maps)
+    tracks = [desk.item("sam", TODAY, set()).label.split("-")[0] for _ in range(6)]
+    assert tracks[0] == "blocks" and "money" in tracks  # the neediest first, then money too
