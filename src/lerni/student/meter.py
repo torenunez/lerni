@@ -107,6 +107,7 @@ def by_feature(lines: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 "in": 0,
                 "out": 0,
                 "cached": 0,
+                "cache_write": 0,
                 "seconds": 0.0,
                 "failed": 0,
                 "five_hour": 0.0,
@@ -114,7 +115,7 @@ def by_feature(lines: list[dict[str, Any]]) -> list[dict[str, Any]]:
             },
         )
         t["calls"] += 1
-        for key in ("in", "out", "cached"):  # tokens: a missing count is 0
+        for key in ("in", "out", "cached", "cache_write"):  # tokens: a missing count is 0
             t[key] += int(r.get(key) or 0)
         t["seconds"] += float(r.get("seconds") or 0)
         t["failed"] += bool(r.get("failed"))  # a call Claude answered with an error
@@ -145,8 +146,8 @@ def usage_report(log: UsageLog, today: date | None = None) -> str:
                  "moved on that feature's calls):",
                  f"  {'feature':<18}{'calls':>6}{'tokens in':>11}{'out':>8}{'secs':>7}"
                  f"{'failed':>7}{'5-hour':>8}{'weekly':>8}"]
-        for t in rows:  # most 5-hour movement first
-            lines.append(f"  {t['use'][:17]:<18}{t['calls']:>6}{t['in'] + t['cached']:>11,}"
+        for t in rows:  # most 5-hour movement first; tokens in counts the cache too
+            lines.append(f"  {t['use'][:17]:<18}{t['calls']:>6}{t['in'] + t['cached'] + t['cache_write']:>11,}"
                          f"{t['out']:>8,}{round(t['seconds']):>7}{t['failed']:>7}"
                          f"{t['five_hour']:>8.1%}{t['seven_day']:>8.1%}")
         parts.append("\n".join(lines))
