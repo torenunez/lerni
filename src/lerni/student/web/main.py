@@ -33,20 +33,18 @@ from lerni.student.web.educator import educator_tab
 from lerni.student.web.games import games_tab, require_player
 from lerni.student.web.mapdraw import map_svg, owner_key
 from lerni.student.web.maps import map_tab, supervised_choices
-from lerni.student.web.spelling import spelling_tab
 
 # Tab ids in page order. A supervised student gets Home (their conversation,
 # full screen, shown as Chat) and Games; independent students get Chat, My MentalMap,
 # and Settings; educators also get their student's page (maps) and Games, and Settings
 # holds Students for them.
-_TAB_IDS = ("home", "games", "spelling", "ask", "mymap", "maps", "account")
-_SUPERVISED_TABS = {"home", "games", "spelling"}
-_EDUCATOR_TABS = {"maps", "games", "spelling"}  # educators try Spelling too
+_TAB_IDS = ("home", "games", "ask", "mymap", "maps", "account")
+_SUPERVISED_TABS = {"home", "games"}
+_EDUCATOR_TABS = {"maps", "games"}
 _INDEPENDENT_TABS = {"ask", "mymap", "account"}
 _LABELS = {
     "home": "Chat",
     "games": "Games",
-    "spelling": "Spelling",
     "ask": "Chat",
     "mymap": "My MentalMap",
     "maps": "MentalMaps",
@@ -54,7 +52,6 @@ _LABELS = {
 }  # the menu's names for the tabs
 EARN = (
     "**How to earn ⭐**\n\n🏁 **Race** in Games: get answers right to win.\n\n"
-    "🔤 **Spelling**: ⭐ +2 for each word spelled right.\n\n"
     "💬 **Chat** with Lerni: answer its questions in your own words. "
     "⭐ +3 for a right answer, ⭐ +1 for a good try."
 )
@@ -175,11 +172,6 @@ def build_main_view(
                         "<p>Games are coming soon!</p></div>"
                     )
                 games_refresh, games_outputs, topic_btns = None, [], []
-            if spelling is not None:  # needs the voice: every word is heard
-                spelling_t = spelling_tab(signin, spelling, stars, points)
-            else:
-                with gr.Tab("Spelling", id="spelling", visible=False) as spelling_t:
-                    pass
             ask, chat, voice, ask_done = ask_tab(signin, conversations, speech=speech)
             mymap, picture, owner, version = map_tab(
                 signin, students, maps, uploader, races.results if races else None
@@ -202,8 +194,6 @@ def build_main_view(
         def on_load(request: gr.Request) -> list[Any]:
             viewer = signin.viewer(request.username)
             shown = visible_tabs(viewer)
-            if spelling is None:  # no voice on this server: no Spelling
-                shown = tuple(t for t in shown if t != "spelling")
             is_edu = viewer is not None and viewer.educator
             if viewer is None:
                 name = "nobody"
@@ -258,7 +248,6 @@ def build_main_view(
                 tabs,
                 home,
                 games,
-                spelling_t,
                 ask,
                 mymap,
                 maps_tab,

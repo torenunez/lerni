@@ -1,12 +1,11 @@
-"""v4.10: Spelling: a round of 5 graded by code, missed words back tomorrow, and nothing typed
-kept on disk."""
+"""Spelling (v4.10; in races since v4.11): words graded by code, missed words back tomorrow,
+and nothing typed kept on disk."""
 
 from datetime import date, timedelta
 
 import pytest
 
 from lerni.student.interests import MapStore, add_interest
-from lerni.student.points import PointsStore
 from lerni.student.spelling import SpellingDesk, SpellingStore, checked_picks, mistake
 
 TODAY = date(2026, 11, 17)
@@ -36,45 +35,53 @@ class Writer:
         return PICKS
 
 
+class Voice:
+    def dictate(self, pieces):
+        return b"slow audio"
+
+
 def desk(tmp_path, writer=None):
     maps = MapStore(tmp_path)
     maps.change("lee", lambda m: add_interest(m, "dinosaurs"))
-    return SpellingDesk(SpellingStore(tmp_path), PointsStore(tmp_path), maps,
-                        writer=writer or Writer())
+    return SpellingDesk(SpellingStore(tmp_path), maps, writer=writer, speech=Voice())
 
 
-def test_a_round_is_graded_by_code_and_missed_words_come_back(tmp_path):
+def ask(d, typed, day=TODAY):
+    # the next word, answered as typed; returns (the word, how it went)
+    item = d.item("lee", day, set())
+    return item.key, d.check("lee", item, typed(item.key), day)
+
+
+def test_words_are_graded_by_code_and_missed_words_come_back(tmp_path):
     d = desk(tmp_path)
     d.set_class_list("lee", "because\nfriend\n\nfriend\ntwo words", TODAY)  # one refused
-    r = d.start("lee", TODAY)  # the class list first, then Lerni's picks (written now)
-    assert r.words[:2] == ["because", "friend"] and len(r.words) == 5
-    typed = ["Because ", "frend", *r.words[2:]]  # case and spaces don't count; one missed
-    turns = [d.answer("lee", r.id, i, t, TODAY) for i, t in enumerate(typed)]
-    assert [t.right for t in turns] == [True, False, True, True, True]
-    assert turns[1].label == "missing" and turns[-1].done
-    assert PointsStore(tmp_path).get("lee").balance == 8  # 4 right × 2, no bonus
+    assert d.due("lee", TODAY) == 2  # both new
+    word, got = ask(d, lambda w: "Because ")  # case and spaces don't count
+    assert (word, got.right) == ("because", True)
+    word, got = ask(d, lambda w: "frend")
+    assert (word, got.right, got.note, got.shown) == ("friend", False, "", "friend")
     words = {w["word"]: w for w in SpellingStore(tmp_path).get("lee")["words"]}
     assert words["friend"]["due"] == (TODAY + timedelta(days=1)).isoformat()  # back tomorrow
     assert words["because"]["due"] == (TODAY + timedelta(days=1)).isoformat()  # first box: 1
     assert words["friend"]["mistakes"] == {"missing": 1}
-    assert SpellingStore(tmp_path).get("lee")["level"] == 2  # 4 of 5: up a level
-    assert d.answer("lee", r.id, 4, "again", TODAY) is None  # a repeated tap: nothing
+    assert d.due("lee", TODAY) == 0 and d.read("lee", d.item("lee", TODAY, set())) == b"slow audio"
     # regression: a word asked again before it's due doesn't move up a box (review, v4.10)
-    again = d.start("lee", TODAY)
-    for i, word in enumerate(again.words):
-        d.answer("lee", again.id, i, word, TODAY)
-    words = {w["word"]: w for w in SpellingStore(tmp_path).get("lee")["words"]}
-    assert words["because"]["streak"] == 1 and words["because"]["right"] == 2
+    word, _ = ask(d, lambda w: w)  # nothing due: the least recently asked comes anyway
+    w = {x["word"]: x for x in SpellingStore(tmp_path).get("lee")["words"]}[word]
+    assert w["streak"] <= 1 and w["right"] >= 1
     # a new list: earlier words stay, as Lerni's, with their counts (review, v4.10)
     d.set_class_list("lee", "said", TODAY)
     words = {w["word"]: w for w in SpellingStore(tmp_path).get("lee")["words"]}
     assert words["friend"]["source"] == "lerni" and words["friend"]["missed"] == 1
+    for _ in range(4):  # 5 answers in all since the level last moved, 4 of them right
+        ask(d, lambda w: w)
+    assert SpellingStore(tmp_path).get("lee")["level"] == 2  # up a level
 
 
 def test_nothing_typed_is_kept_on_disk(tmp_path):
     d = desk(tmp_path)
-    r = d.start("lee", TODAY)
-    d.answer("lee", r.id, 0, "zqxwv-typed", TODAY)
+    d.set_class_list("lee", "because", TODAY)
+    ask(d, lambda w: "zqxwv-typed")
     files = [p for p in tmp_path.rglob("*") if p.is_file()]
     assert files and not any(b"zqxwv" in p.read_bytes() for p in files)  # rule 6
 
@@ -83,7 +90,7 @@ def test_claudes_words_are_checked_and_removed_words_never_come_back(tmp_path):
     kept = [p["word"] for p in checked_picks(PICKS, {"speedy"})]
     assert kept == ["fossil", "enormous", "unhappy", "careful"]  # bad rows and known dropped
     assert checked_picks(PICKS, set())[2]["parts"] == ["un", "happy"]
-    d = desk(tmp_path)
+    d = desk(tmp_path, Writer())
     d.write_picks("lee", TODAY)
     d.remove("lee", ["fossil"])
     d.write_picks("lee", TODAY)  # the same picks again: fossil stays out

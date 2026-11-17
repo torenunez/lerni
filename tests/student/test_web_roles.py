@@ -60,8 +60,8 @@ def test_each_role_opens_on_a_tab_it_can_see():
     from lerni.student.web.main import opening_tab, visible_tabs
 
     lee = Viewer("lee", "Lee", Role.SUPERVISED)
-    assert visible_tabs(EDUCATOR) == ("games", "spelling", "ask", "mymap", "maps", "account")
-    assert visible_tabs(lee) == ("home", "games", "spelling")
+    assert visible_tabs(EDUCATOR) == ("games", "ask", "mymap", "maps", "account")
+    assert visible_tabs(lee) == ("home", "games")
     assert visible_tabs(SAM) == ("ask", "mymap", "account")
     assert (opening_tab(EDUCATOR), opening_tab(lee), opening_tab(SAM)) == ("ask", "home", "ask")
 

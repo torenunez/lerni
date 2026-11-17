@@ -25,8 +25,10 @@ FILE = "stats.sqlite"
 AIM = "50–75%"  # how often a student should be right (v3.16)
 MIN_HARDEST = 5  # a goal with fewer answers says too little to call it hard
 TOP = 5  # rows in the hardest and missed lists
+TYPED_NAMES = {"spell": "Spelling", "picture": "Pictures"}  # the report's names for them
 WHO = "username = ? AND day >= ?"  # every report query: one student, from a first day
-SCORED = "right IS NOT NULL AND probe IS NULL"  # a bonus has a tier, a probe its own line
+# a bonus has a tier, a probe its own line, and typed questions theirs (v4.11)
+SCORED = "right IS NOT NULL AND probe IS NULL AND kind = 'choice'"
 BAD = (ValueError, TypeError, AttributeError, KeyError,  # a line or file not as written
        OverflowError, sqlite3.InterfaceError, sqlite3.ProgrammingError)  # a value SQLite refuses
 
@@ -36,7 +38,7 @@ CREATE TABLE entries (username TEXT, entry_id TEXT, kind TEXT, name TEXT, area T
     mentions INTEGER, days INTEGER, explained_days INTEGER, state TEXT);
 CREATE TABLE answers (username TEXT, day TEXT, week TEXT, race TEXT, goal_id TEXT, goal TEXT,
     area TEXT, concept TEXT, question_hash TEXT, level INTEGER, attempt INTEGER, right INTEGER,
-    seconds REAL, probe TEXT, bonus_tier TEXT, format TEXT, setting TEXT);
+    seconds REAL, probe TEXT, bonus_tier TEXT, format TEXT, setting TEXT, kind TEXT);
 CREATE TABLE races (username TEXT, day TEXT, week TEXT, race TEXT, place INTEGER, points INTEGER);
 CREATE TABLE probe_taps (username TEXT, day TEXT, topic TEXT);
 CREATE TABLE concepts (username TEXT, goal_id TEXT, goal TEXT, concept TEXT, first TEXT,
@@ -128,11 +130,13 @@ def _add_result(db: sqlite3.Connection, user: str, m: InterestMap, r: dict[str, 
         goal_id, name = str(r.get("goal_id") or ""), str(r.get("goal") or "")
         e = _goal(m, goal_id, name)
         right = int(bool(r["right"])) if "right" in r else None
-        db.execute("INSERT INTO answers VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", (
+        db.execute("INSERT INTO answers VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", (
             user, day, week, r.get("race"), goal_id or (e.id if e else None),
-            e.name if e else name, _area(e), r.get("concept"), r.get("q"), r.get("level"),
+            e.name if e else name, _area(e), r.get("concept") or r.get("label"), r.get("q"),
+            r.get("level"),
             r.get("attempt"), right, r.get("seconds"), r.get("probe") or None, r.get("bonus"),
-            r.get("format") or None, r.get("setting") or None))
+            r.get("format") or None, r.get("setting") or None,
+            str(r.get("kind") or "choice")))  # typed questions (v4.11): spell or picture
     else:
         return False
     return True
@@ -363,6 +367,11 @@ def _extras(db: sqlite3.Connection, who: tuple[str, str]) -> str | None:
     lines = [f"Probes: {asked} asked, {right} right, {taps} tapped"] if asked or taps else []
     if tiers:
         lines.append("Bonus: " + ", ".join(f"{n} {tier}" for tier, n in tiers))
+    typed = db.execute(f"SELECT kind, COALESCE(SUM(right), 0), COUNT(*) FROM answers "
+                       f"WHERE {WHO} AND kind != 'choice' GROUP BY kind ORDER BY kind",
+                       who).fetchall()
+    for kind, right, asked in typed:  # spelling words and pictures, each on its own line
+        lines.append(f"{TYPED_NAMES.get(kind, kind)}: {right} of {asked} right")
     return "\n".join(lines) or None
 
 

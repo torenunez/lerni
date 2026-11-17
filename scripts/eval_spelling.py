@@ -34,7 +34,7 @@ def picks_at(level: int) -> list[tuple[str, bool]]:
         maps.change("eval", lambda m: [add_interest(m, n) for n in INTERESTS])
         store = SpellingStore(root)  # a throwaway folder: nothing real is touched
         store.change("eval", lambda d: d.update(level=level))  # start at this level
-        desk = SpellingDesk(store, None, maps, writer=ClaudeCodeQuizzer())  # no points
+        desk = SpellingDesk(store, maps, writer=ClaudeCodeQuizzer())
         kept = desk.write_picks("eval", date.today())  # the one real call
         words = store.get("eval")["words"]
     print(f"\nLevel {level} ({LEVELS[level]}): {kept} kept of {PICKS_PER_CALL} asked")
@@ -56,7 +56,7 @@ def class_sentences() -> list[tuple[str, bool]]:
     with tempfile.TemporaryDirectory() as tmp:
         root = Path(tmp)
         store = SpellingStore(root)
-        desk = SpellingDesk(store, None, MapStore(root), writer=None)  # no points, no Claude yet
+        desk = SpellingDesk(store, MapStore(root), writer=None)  # no Claude yet
         desk.set_class_list("eval", CLASS_LIST)  # so no background sentence call
         desk.writer = ClaudeCodeQuizzer()
         written = desk.write_sentences("eval")  # the one real call, waited for

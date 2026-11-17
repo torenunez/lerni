@@ -25,6 +25,7 @@ from fastapi.responses import FileResponse, PlainTextResponse, RedirectResponse 
 from lerni.student.ahead import AheadStore  # noqa: E402
 from lerni.student.area_sorter import AreaSorter  # noqa: E402
 from lerni.student.bank import BankStore  # noqa: E402
+from lerni.student.blocks import BlocksDesk, BlocksStore  # noqa: E402
 from lerni.student.concepts import ConceptStore  # noqa: E402
 from lerni.student.conversation import ChatModel, Conversations  # noqa: E402
 from lerni.student.educator_agent import EducatorChats
@@ -48,7 +49,7 @@ from lerni.student.race import (  # noqa: E402
 )
 from lerni.student.results import ResultsLog  # noqa: E402
 from lerni.student.signin import SignIn, cookie_name, load_secret  # noqa: E402
-from lerni.student.spelling import SpellingDesk, SpellingStore
+from lerni.student.spelling import SpellingDesk, SpellingStore  # noqa: E402
 from lerni.student.students import (  # noqa: E402
     AccountError,
     Kind,
@@ -129,14 +130,16 @@ _CSS = """
 .lerni-detail { padding-left: 12px; border-left: 3px solid #93c5fd; }
 /* Games: a coming-soon placeholder, centered */
 .lerni-soon { text-align: center; padding: 15vh 1rem; }
-/* Spelling (v4.10): the word card, the right spelling with the missed letters marked */
-.lerni-spell-card { text-align: center; padding: 1rem 0; }
-.lerni-spell-count { color: var(--body-text-color-subdued); font-size: 14px; }
-.lerni-spell-score { font-size: 28px; font-weight: 600; }
+/* typed questions in races (v4.11): a missed word's letters marked, and the blocks */
 .lerni-spell-word { font-family: ui-monospace, monospace; font-size: 24px; font-weight: 600; }
 .lerni-spell-word mark { background: #C0DD97; color: #173404; border-radius: 3px; }
-.lerni-spell-right { color: #3B6D11; font-size: 22px; font-weight: 600; }
-.lerni-spell-parts { color: var(--body-text-color-subdued); font-size: 18px; }
+.lerni-pic { display: grid; gap: 6px; justify-content: center; margin: 4px auto 8px; }
+.lerni-pic span { width: 36px; height: 36px; font-size: 28px; line-height: 36px;
+  text-align: center; }
+.lerni-pic .lerni-sq { background: #7F77DD; border-radius: 6px; }
+.lerni-pile { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; max-width: 320px; }
+.lerni-row-empty { height: 40px; border: 2px dashed #888780; border-radius: 8px; margin: 6px 0; }
+.lerni-pic-rows { max-width: 320px; margin: 0 auto; }
 .lerni-soon div { font-size: 120px; line-height: 1; }
 .lerni-soon p { font-size: 26px !important; font-weight: 700; margin-top: 1rem; }
 .lerni-dock { align-items: center; gap: 8px !important; }
@@ -354,9 +357,8 @@ def build_app(
                             headers={"Cache-Control": "private, no-cache"})
 
     guidance = GuidanceStore(root)  # the educator's ticked notes (v4.9)
-    # Spelling (v4.10): every word is heard, so only with the voice; the race's small model
-    spelling = (SpellingDesk(SpellingStore(root), points, maps, writer=quizzer, speech=speech)
-                if speech is not None else None)
+    # Spelling (v4.10): the class list and Lerni's words, written by the race's small model
+    spelling = SpellingDesk(SpellingStore(root), maps, writer=quizzer, speech=speech)
     races = (RaceDesk(quizzer, maps, points, ConceptStore(root), results=ResultsLog(root),
                       checker=quizzer,  # the same small model answers each question blind
                       garage=garage, grader=quizzer,  # and grades bonus answers
@@ -376,6 +378,8 @@ def build_app(
     suggestions = SuggestionStore(root)  # the morning plan (v3.44)
     if races is not None:
         races.suggestions = suggestions
+        # typed questions in races (v4.11): spelling words (with the voice) and blocks
+        races.sources = {"spell": spelling, "picture": BlocksDesk(BlocksStore(root), maps)}
 
     def morning(username: str) -> bool:  # once a day per student; best effort inside
         today = date.today()

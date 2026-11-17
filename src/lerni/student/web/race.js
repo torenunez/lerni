@@ -120,6 +120,19 @@
     button.setAttribute('aria-pressed', String(on));
     button.setAttribute('aria-label', on ? 'Sound on' : 'Sound off');
   }
+  function moveOn() {  // an answer or Race!: moving on stops a reading
+    unlock();
+    current++;
+    window.lerniTalk?.stop();
+    hold(false);
+    // inside the tap, so the iPad lets the right answer play later; with sound off the
+    // player stays untouched (an iPad's music keeps playing)
+    if (soundOn()) window.lerniTalk?.unlock();
+  }
+  // Return in a typed answer sends it, like a tap on Check
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Enter' && event.target.closest?.('#lerni-typed')) moveOn();
+  });
   document.addEventListener('click', event => {
     const at = selector => event.target.closest?.(selector);
     if (at('#lerni-next') && holdTimer) {  // still saying the right answer
@@ -128,15 +141,7 @@
       return;
     }
     // Race! and Next unlock sound; an answer tap wakes it again after the iPad paused it
-    if (at('.lerni-go, .lerni-choice')) unlock();
-    if (at('.lerni-go, .lerni-choice')) {  // moving on stops a reading
-      current++;
-      window.lerniTalk?.stop();
-      hold(false);
-      // inside the tap, so the iPad lets the right answer play later; with sound off the
-      // player stays untouched (an iPad's music keeps playing)
-      if (soundOn()) window.lerniTalk?.unlock();
-    }
+    if (at('.lerni-go, .lerni-choice, .lerni-check')) moveOn();
     // a tap on the card (or on the note when it holds the right answer) reads it aloud
     const svg = document.querySelector('#lerni-track svg[data-race]');
     const card = at('.lerni-question') || (at('#lerni-note') && svg?.dataset.why);
@@ -181,16 +186,21 @@
   }).observe(document.body, {childList: true, subtree: true, attributes: true,
                               attributeFilter: ['data-x', 'data-step', 'data-why', 'data-ask']});
 
-  // Spelling (v4.10): the iPad's keyboard must not fix the answer, so each new answer
-  // field gets no autocorrect, capitals, suggestions, or spell check
+  // typed questions (v4.10, in races v4.11): the iPad's keyboard must not fix the answer, so
+  // the field gets no autocorrect, capitals, suggestions, or spell check; a picture's number
+  // gets the number keyboard
   new MutationObserver(() => {
-    document.querySelectorAll('#lerni-spell input, #lerni-spell textarea').forEach(e => {
-      if (e.dataset.noHelp) return;  // once per field
-      e.dataset.noHelp = '1';
-      e.setAttribute('autocorrect', 'off');
-      e.setAttribute('autocapitalize', 'none');
-      e.setAttribute('autocomplete', 'off');
-      e.spellcheck = false;
+    const picture = !!document.querySelector('#lerni-dock-typed .lerni-pic');
+    document.querySelectorAll('#lerni-typed input, #lerni-typed textarea').forEach(e => {
+      if (!e.dataset.noHelp) {  // once per field
+        e.dataset.noHelp = '1';
+        e.setAttribute('autocorrect', 'off');
+        e.setAttribute('autocapitalize', 'none');
+        e.setAttribute('autocomplete', 'off');
+        e.spellcheck = false;
+      }
+      const mode = picture ? 'numeric' : 'text';  // follows the question on screen
+      if (e.inputMode !== mode) e.inputMode = mode;
     });
   }).observe(document.body, {childList: true, subtree: true});
 })();

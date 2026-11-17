@@ -953,6 +953,8 @@ class Race:
     bonus_tier: str = ""  # how it went, once answered
     marks: list[bool | None] = field(default_factory=list)  # each answer; None: the bonus
     attempts: list[int | None] = field(default_factory=list)  # each question's, for the log
+    typed: dict[int, Typed] = field(default_factory=dict)  # slots answered by typing (v4.11)
+    typed_right: dict[int, bool] = field(default_factory=dict)  # how each typed slot went
 
     @property
     def done(self) -> bool:
@@ -970,6 +972,90 @@ class Turn:
     slowed: str  # the rival just ahead, named as slowed ("" on a wrong answer, or when leading)
 
 
+@dataclass(frozen=True)
+class Typed:
+    """A question answered by typing (v4.11): a spelling word or a picture; its key stays here."""
+
+    kind: str  # "spell" or "picture"
+    prompt: str  # the words above the answer field
+    key: str  # what the source checks against; never sent to the page
+    label: str = ""  # for the results log: the word, or the track and level
+    picture: dict[str, Any] | None = None  # what code draws: rows, cols, emoji, and how
+    note: str = ""  # shown after the answer (how a picture adds up); never before
+
+
+@dataclass(frozen=True)
+class Checked:
+    """How a typed answer went, as the screen shows it; never what was typed."""
+
+    right: bool
+    shown: str  # the right answer
+    note: str = ""  # a word's parts, or how a picture adds up
+
+
+class TypedSource(Protocol):
+    """One kind of typed question: how much is due, the next one, and its check."""
+
+    kind: str
+
+    def due(self, username: str, today: date) -> int | None: ...  # None: not available now
+    def item(self, username: str, today: date, avoid: set[str]) -> Typed | None: ...
+    def check(self, username: str, item: Typed, text: str, today: date) -> Checked: ...
+
+
+LEVEL_EVERY, LEVEL_UP_AT, LEVEL_DOWN_AT = 5, 4, 2  # a typed kind's level moves every 5 answers
+
+
+def note_answer(data: dict[str, Any], right: bool, top: int) -> None:
+    """Add an answer to ``data["recent"]``; every 5, move ``data["level"]`` (1 to ``top``): up
+    at 4 or 5 right, down at 2 or fewer, as race levels do."""
+    recent = [bool(x) for x in data.get("recent") or []][-LEVEL_EVERY:] + [right]
+    if len(recent) >= LEVEL_EVERY:  # five answers in: judge them, then start over
+        if sum(recent) >= LEVEL_UP_AT:  # 4 or 5 right: harder, up to the top
+            data["level"] = min(int(data.get("level", 1)) + 1, top)
+        elif sum(recent) <= LEVEL_DOWN_AT:  # 2 or fewer: easier, down to 1
+            data["level"] = max(int(data.get("level", 1)) - 1, 1)
+        recent = []  # 3 right: the level stays
+    data["recent"] = recent
+
+
+KINDS = ("choice", "spell", "picture")  # a tie goes to the earlier kind
+RECENT = 10  # each kind's miss rate counts its last this many answers
+NO_HISTORY_NEED = 0.5  # a kind never answered yet: as needy as half its answers missed
+DUE_WEIGHT, MAX_DUE_NEED = 0.1, 0.5  # each item due adds a little, up to half a miss rate
+
+
+def need(misses: int, answered: int, due: int) -> float:
+    """How much a kind needs practice: its recent miss rate plus a little per item due."""
+    rate = misses / answered if answered else NO_HISTORY_NEED
+    return rate + min(DUE_WEIGHT * due, MAX_DUE_NEED)
+
+
+def mix(needs: Mapping[str, float], lucky: bool = False) -> list[str]:
+    """The kind of each of a race's questions: one of each kind in ``needs``, the rest to the
+    neediest (halved after each slot), spread out; question 4 stays a choice for a bonus."""
+    kinds = [k for k in KINDS if k in needs or k == "choice"]  # choice is always there
+    left = {k: 1 for k in kinds}  # one each first
+    left["choice"] += lucky  # a bonus race: one choice for the bonus, one still asked
+    score = {k: needs.get(k, 0.0) for k in kinds}
+    for _ in range(QUESTIONS_PER_RACE - sum(left.values())):  # each spare to the neediest
+        top = max(kinds, key=lambda k: (score[k], -kinds.index(k)))  # ties: the earlier kind
+        left[top] += 1
+        score[top] /= 2  # so a second spare slot usually goes elsewhere
+    order: list[str] = []
+    for i in range(QUESTIONS_PER_RACE):
+        if lucky and i == BONUS_AT:  # the bonus replaces a choice question
+            pick = "choice"
+        else:
+            spare = left["choice"] - (1 if lucky and i < BONUS_AT else 0)  # keep one for it
+            options = [k for k in kinds if left[k] > 0 and (k != "choice" or spare > 0)]
+            fresh = [k for k in options if not order or k != order[-1]] or options  # spread
+            pick = max(fresh, key=lambda k: (left[k], -kinds.index(k)))  # the most left first
+        left[pick] -= 1
+        order.append(pick)
+    return order
+
+
 def new_race(questions: list[Question], boost: float = 1.0, car: str = "",
              rivals: Sequence[tuple[str, str]] = BOT_RIVALS) -> Race:
     """A race over these questions, everyone at the start line, in this car with its gas boost.
@@ -985,10 +1071,19 @@ def new_race(questions: list[Question], boost: float = 1.0, car: str = "",
 def answer(race: Race, number: int, choice: int) -> Turn | None:
     """Answer question ``number`` (0-based); a repeat, stale, or odd tap returns None, and so
     does a choice while the bonus waits."""
-    if race.done or race.bonus_live or number != race.answered or choice not in (0, 1, 2):
+    if (race.done or race.bonus_live or number != race.answered or choice not in (0, 1, 2)
+            or number in race.typed):  # a typed slot takes typing, not a tap
         return None
     q = race.questions[number]
     right = choice == q.answer
+    named = _step(race, right)
+    race.marks.append(right)
+    _offer_bonus(race)
+    return Turn(right, q.choices[q.answer], q.why, named)
+
+
+def _step(race: Race, right: bool) -> str:
+    # move every car for one answer; returns the rival just passed ("" when none)
     ahead = [i for i, pos in enumerate(race.at) if pos >= race.me]
     nearest = min(ahead, key=lambda i: race.at[i]) if ahead else None  # ties: the fast lane
     named = race.rivals[nearest].name if right and nearest is not None else ""
@@ -997,9 +1092,18 @@ def answer(race: Race, number: int, choice: int) -> Turn | None:
         race.at[i] += rival.step - (SLOW if right else 0)  # a right answer slows both rivals
     race.answered += 1
     race.right += right
-    race.marks.append(right)
+    return named
+
+
+def answer_typed(race: Race, number: int, checked: Checked) -> Turn | None:
+    """Move the cars for a typed slot's answer, like a choice; None for a stale or odd one."""
+    if race.done or race.bonus_live or number != race.answered or number not in race.typed:
+        return None
+    named = _step(race, checked.right)
+    race.typed_right[number] = checked.right  # for the sound and the card
+    race.marks.append(None)  # a typed answer never moves a goal's box
     _offer_bonus(race)
-    return Turn(right, q.choices[q.answer], q.why, named)
+    return Turn(checked.right, checked.shown, checked.note, named)
 
 
 def _offer_bonus(race: Race) -> None:
@@ -1032,7 +1136,8 @@ def bonus_move(race: Race, tier: str, line: str) -> Turn | None:
 def miss_opener(race: Race, number: int) -> str:
     """The first words for a wrong answer to question ``number``: each race starts somewhere
     of its own, and each later miss moves on one, so two misses never share them."""
-    misses = race.marks[:number].count(False)
+    misses = race.marks[:number].count(False) + sum(  # typed misses count too
+        not ok for i, ok in race.typed_right.items() if i < number)
     return MISS_OPENERS[(zlib.crc32(race.id.encode()) + misses) % len(MISS_OPENERS)]
 
 
@@ -1051,6 +1156,9 @@ def public(race: Race) -> dict[str, Any]:
     bonus, its question alone)."""
     if race.bonus_live and race.bonus is not None:
         return {"race": race.id, "number": race.answered, "bonus": race.bonus.question}
+    if (t := race.typed.get(race.answered)) is not None:  # no key, no label
+        return {"race": race.id, "number": race.answered, "typed": t.kind, "prompt": t.prompt,
+                "picture": t.picture}
     q = race.questions[race.answered]
     return {"race": race.id, "number": race.answered, "question": q.question,
             "choices": list(q.choices)}
@@ -1060,6 +1168,8 @@ def spoken_question(race: Race) -> str:
     """What 🔊 says for the question on screen: its number, words, and choices (or the bonus)."""
     if race.bonus_live and race.bonus is not None:
         return for_speaking(f"Bonus question. {race.bonus.question}")
+    if (t := race.typed.get(race.answered)) is not None:  # a picture's words (a word: its source)
+        return for_speaking(f"Question {race.answered + 1}. {t.prompt}")
     q = race.questions[race.answered]
     choices = f"{q.choices[0]}, {q.choices[1]}, or {q.choices[2]}?"  # as the buttons show them
     said = f"Question {race.answered + 1}. {q.question} {choices}"
@@ -1211,6 +1321,8 @@ class RaceDesk:
         self.rng = random.Random()  # the 1-in-4 bonus draw; tests may replace it
         self.dice = random.Random()  # each question's format and twist (v3.42)
         self.suggestions: Any = None  # the morning plan's store (v3.44); set by the app
+        self.sources: dict[str, TypedSource] = {}  # typed questions by kind (v4.11); set by the app
+        self._checking: set[str] = set()  # a typed answer being checked now, per race
         self._races: dict[str, Race] = {}
         self._busy: dict[str, threading.Event] = {}  # writing ahead now; set when done
         self._car_fact: dict[str, str] = {}  # the car number each student's last set compared
@@ -1591,18 +1703,100 @@ class RaceDesk:
             race.lucky = self.rng.random() < 1 / BONUS_ODDS  # drawn now, so a reload can't redraw
             # the question the bonus will replace goes back unasked, so it isn't counted
             skip = BONUS_AT if race.lucky and race.bonus is not None else None
+            race.typed = self._typed_slots(username, day, m, skip is not None)  # v4.11
+            unasked = [q for i, q in enumerate(questions) if i in race.typed]  # back for later
             counted = iter(self._remember(username, [q for i, q in enumerate(questions)
-                                                     if i != skip], day))
-            race.attempts = [None if i == skip else next(counted, None)
+                                                     if i != skip and i not in race.typed], day))
+            race.attempts = [None if i == skip or i in race.typed else next(counted, None)
                              for i in range(len(questions))]
             with self._lock:
                 later = [q for q in self._held(username, day) if id(q) not in before]  # meanwhile
-                self._sets[username] = (day.isoformat(), spread(few_probes(rest + later)))
+                self._sets[username] = (day.isoformat(),
+                                        spread(few_probes(unasked + rest + later)))
                 self._persist(username, day)  # the raced ones and the taken bonus are gone
                 self._races[username] = race
                 self._started[username] = self.clock()
         self.prefill(username, supervised)  # the next race starts quickly
         return race
+
+    def _typed_slots(self, username: str, day: date, m: InterestMap,
+                     lucky: bool) -> dict[int, Typed]:
+        """Which questions are typed this race, and what each asks; {} with no sources."""
+        if not self.sources:
+            return {}
+        tally = self._tally(username)
+        needs = {"choice": need(*tally.get("choice", (0, 0)), len(self._due(username, m, day)))}
+        for kind, src in self.sources.items():
+            try:  # a broken source sits this race out; the race goes on
+                due = src.due(username, day)
+            except Exception:  # noqa: BLE001
+                due = None
+            if due is not None:  # None: not available now (no voice, no Math goal)
+                needs[kind] = need(*tally.get(kind, (0, 0)), due)
+        out: dict[int, Typed] = {}
+        avoid: set[str] = set()  # each word or answer once a race
+        for i, kind in enumerate(mix(needs, lucky)):
+            if kind == "choice":
+                continue
+            try:
+                item = self.sources[kind].item(username, day, avoid)
+            except Exception:  # noqa: BLE001 - nothing to ask: the slot stays a choice
+                item = None
+            if item is not None:
+                out[i] = item
+                avoid.add(item.key)
+        return out
+
+    def _tally(self, username: str) -> dict[str, tuple[int, int]]:
+        """(misses, answered) over each kind's last 10 answers, from the results log."""
+        if self.results is None:
+            return {}
+        recent: dict[str, list[bool]] = {}
+        for r in self.results.read(username):  # oldest first, so the newest win
+            if "right" in r and "bonus" not in r:  # a bonus is graded, not a kind of its own
+                recent.setdefault(str(r.get("kind") or "choice"), []).append(bool(r["right"]))
+        return {k: (v[-RECENT:].count(False), len(v[-RECENT:])) for k, v in recent.items()}
+
+    def typed_answer(self, username: str, race_id: str, number: int, text: str,
+                     today: date | None = None) -> tuple[Race | None, Turn | None, int]:
+        """Check a typed slot's answer once, move the cars, and pay at the finish. The text is
+        checked in memory and goes no further. A repeat, stale, or double send gives no turn."""
+        day = today or date.today()
+        with self._lock:
+            race = self._races.get(username)
+            item = race.typed.get(number) if race is not None and race.id == race_id else None
+            # only the typed slot on screen, once, and not the half of a double tap
+            if (race is None or item is None or number != race.answered or race.done
+                    or race.bonus_live or race.id in self._checking
+                    or self.clock() - self._last_tap.get(username, -1e9) < TAP_GAP_SECONDS):
+                return race, None, 0
+            self._checking.add(race.id)  # one check at a time: a double send waits out
+            # shown when the race began, or when the last question was answered
+            shown = (self._last_tap if number else self._started).get(username, 0.0)
+        turn, took = None, 0.0  # none until the cars move
+        try:
+            src = self.sources.get(item.kind)
+            try:  # a check that fails (a full disk, odd text) is a miss, never a stuck question
+                checked = src.check(username, item, text or "", day)
+            except Exception:  # noqa: BLE001 - the student sees the right answer either way
+                checked = Checked(False, item.key, item.note)
+            with self._lock:  # dropped or replaced while checking: it no longer counts
+                if self._races.get(username) is race:
+                    turn = answer_typed(race, number, checked)
+                if turn is not None:
+                    self._last_tap[username] = self.clock()
+                    took = self._last_tap[username] - shown
+        finally:
+            with self._lock:
+                self._checking.discard(race.id)
+        if turn is None:
+            return race, None, 0  # dropped or replaced meanwhile: nothing counts
+        awarded = 0  # paid only at the finish
+        if race.done:  # the last answer: the race pays as always
+            awarded = self.points.award(username, race.id, "race", race_points(race))
+            self._spaced(username, race)
+        self._log(username, race, number, turn.right, took)
+        return race, turn, awarded
 
     def _remember(self, username: str, questions: list[Question],
                   day: date) -> list[int | None]:
@@ -1748,23 +1942,34 @@ class RaceDesk:
     def read_aloud(self, username: str, race_id: str, number: int) -> bytes | None:
         """The question on screen spoken (memory only, once per question), or None for a stale
         or forged tap, no voice, or a voice that failed."""
+        with self._lock:
+            race = self._races.get(username)
+            item = race.typed.get(number) if race is not None and race.id == race_id else None
+        src = self.sources.get(item.kind) if item is not None else None
+        reader = getattr(src, "read", None)  # a spelling word: said slowly by its source
         return self._say(username, race_id, number,
-                         lambda r: not r.done and number == r.answered, spoken_question)
+                         lambda r: not r.done and number == r.answered, spoken_question,
+                         (lambda _text: reader(username, item)) if reader else None)
 
     def read_why(self, username: str, race_id: str, number: int) -> bytes | None:
         """The right answer and why, spoken after a wrong answer to question ``number`` (the
         last one answered, even the race's last), or None otherwise."""
         def wrong(r: Race) -> bool:  # the answer just given, and it was wrong
-            return number == r.answered - 1 and r.marks[number:number + 1] == [False]
+            return number == r.answered - 1 and (r.marks[number:number + 1] == [False]
+                                                 or r.typed_right.get(number) is False)
 
         def said(r: Race) -> str:
+            if (t := r.typed.get(number)) is not None:  # a word spelled out, or the number
+                right = " ".join(t.key.upper()) if t.kind == "spell" else t.key
+                return for_speaking(f"{miss_opener(r, number)} It's {right}. {t.note}")
             q = r.questions[number]
             return for_speaking(f"{miss_opener(r, number)} It's {q.choices[q.answer]}. {q.why}")
 
         return self._say(username, race_id, ("why", number), wrong, said)
 
     def _say(self, username: str, race_id: str, key: Any, still: Callable[[Race], bool],
-             text_of: Callable[[Race], str]) -> bytes | None:
+             text_of: Callable[[Race], str],
+             speak: Callable[[str], bytes | None] | None = None) -> bytes | None:
         # spoken once per race and key, kept in memory; checked again after speaking
         with self._lock:
             race = self._races.get(username)
@@ -1775,8 +1980,10 @@ class RaceDesk:
                 return clips[key]
             text = text_of(race)
         try:
-            audio = self.speech.speak(text)  # about a second on the Mac
+            audio = (speak or self.speech.speak)(text)  # about a second on the Mac
         except SpeechUnavailable:
+            return None
+        if audio is None:  # the source couldn't say it
             return None
         with self._lock:
             if self._races.get(username) is not race or not still(race):
@@ -1824,6 +2031,12 @@ class RaceDesk:
             return
         q, day = race.questions[number], date.today().isoformat()
         try:  # best effort: the race never stops for its record
+            if (t := race.typed.get(number)) is not None:  # a word or a picture, never the typing
+                self.results.add(username, {"day": day, "race": race.id, "kind": t.kind,
+                                            "label": t.label, "right": right,
+                                            "seconds": round(max(took, 0.0), 1)})
+                self._log_finish(username, race, day)
+                return
             attempt = race.attempts[number] if number < len(race.attempts) else None
             goal = goal_of(self.maps.get(username), q.goal_id, q.goal)  # its name today
             self.results.add(username, {
@@ -1834,11 +2047,15 @@ class RaceDesk:
                 **({"format": q.format} if q.format else {}),  # a fixed label (v3.42)
                 **({"setting": q.setting} if q.setting else {}),  # an interest's name (v3.43)
                 "right": right, "seconds": round(max(took, 0.0), 1)})
-            if race.done:
-                self.results.add(username, {"day": day, "race": race.id, "place": place(race),
-                                            "points": race_points(race), "version": _version()})
+            self._log_finish(username, race, day)
         except Exception:  # a broken map or a full disk: the answer still counts
             pass
+
+    def _log_finish(self, username: str, race: Race, day: str) -> None:
+        # the place and points, once the last answer is in
+        if race.done and self.results is not None:
+            self.results.add(username, {"day": day, "race": race.id, "place": place(race),
+                                        "points": race_points(race), "version": _version()})
 
     def _offered(self, username: str, today: date) -> list[tuple[str, str, bool]]:
         # probes from the last week, newest first, as (topic, race, tapped); best effort

@@ -171,9 +171,16 @@ Practice beyond multiple choice ([spec 11](../../plans/specs/11-new-ways-to-answ
 
 As a student, I want to hear a word and type it, so that I learn to spell the words my class is learning and words about what I love.
 
-- WHEN the student starts a round THE SYSTEM SHALL say 5 words, one at a time, each with a short sentence, and grade each typed answer by code, with no autocorrect.
-- WHEN a word is spelled right THE SYSTEM SHALL award ⭐ and space it out further; WHEN it's missed THE SYSTEM SHALL show the right spelling and bring it back the next day.
+- WHEN a race has a spelling question THE SYSTEM SHALL say the word slowly with a short sentence and grade the typed answer by code, with no autocorrect.
+- WHEN a word is spelled right THE SYSTEM SHALL move the car like a right answer and space the word out further; WHEN it's missed THE SYSTEM SHALL show the right spelling and bring it back the next day.
 - THE SYSTEM SHALL keep only whether each word was right and the kind of mistake, never what the student typed.
+
+### Story: Count the blocks
+
+As a student with a math goal, I want to count drawn blocks in my races, so that I build up to multiplication.
+
+- THE SYSTEM SHALL give each race at least one question of each kind available, and more of the kind that needs practice most.
+- WHEN a race has a picture question THE SYSTEM SHALL draw the blocks (an emoji from my interests, or squares) and grade the typed number by code.
 
 ## Out of scope
 
