@@ -19,7 +19,6 @@ from lerni.student.students import check_username, default_data_dir
 
 STARTER = "starter"  # every player starts with this car
 CHAT_CAP = 30  # Chat points a day
-SPELLING_CAP = 50  # Spelling points a day (v4.10); practice goes on after
 RACES_PER_DAY = 10
 KEEP_DAYS = 90  # awards are kept this long, only to spot repeats
 T = TypeVar("T")
@@ -82,9 +81,9 @@ class PointsStore:
             write_json_atomic(self._path(username), {"schema": 1, **asdict(p)})
             return result
 
-    def award(self, username: str, award_id: str, source: Literal["race", "chat", "spelling"],
+    def award(self, username: str, award_id: str, source: Literal["race", "chat"],
               amount: int, today: date | None = None) -> int:
-        """Add points once per ``award_id``; Chat and Spelling stop at their day's cap.
+        """Add points once per ``award_id``; Chat stops at the day's cap.
 
         Returns:
             The points added (0 for a repeat or a full day).
@@ -95,11 +94,10 @@ class PointsStore:
             if any(a["id"] == award_id for a in p.awards):
                 return 0  # a double tap, a refresh, or a late repeat
             give = amount
-            cap = {"chat": CHAT_CAP, "spelling": SPELLING_CAP}.get(source)
-            if cap is not None:  # the day's total from this source stops at its cap
+            if source == "chat":
                 so_far = sum(a["amount"] for a in p.awards
-                             if a["source"] == source and a["day"] == day.isoformat())
-                give = min(amount, cap - so_far)
+                             if a["source"] == "chat" and a["day"] == day.isoformat())
+                give = min(amount, CHAT_CAP - so_far)
             if give <= 0:
                 return 0
             _record(p, award_id, source, give, day)

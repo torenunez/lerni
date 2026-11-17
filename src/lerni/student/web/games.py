@@ -50,6 +50,7 @@ from lerni.student.voice import ClipRefused, Speech, SpeechUnavailable, heard
 from lerni.student.web.accounts import PRIVATE, NotAllowed
 from lerni.student.web.ask import MAX_AT_ONCE, talk_preview
 from lerni.student.web.maps import map_owner
+from lerni.student.web.spelling import spelled_html
 
 LANES = (12, 55, 98)  # the student's lane, then the fast and slow rivals'
 BOT_COLORS = {"Zippy": "#7F77DD", "Bolt": "#888780"}  # the bots' own paint
@@ -65,6 +66,9 @@ READS = {"why": ' data-why="1"', "question": ' data-ask="1"'}  # what race.js sa
 HEAR = " · tap to hear"  # on a card the server can read aloud
 ORDINAL = {1: "1st", 2: "2nd", 3: "3rd"}
 NO_CLAUDE = "Games need Claude, which isn't set up on this server."
+TYPED_MAX = 40  # characters of a typed answer (a word or a number)
+TYPE_FIRST = "Type your answer first, then tap Check."
+PLACEHOLDER = {"spell": "Type the word", "picture": "Type a number"}
 
 
 def require_player(viewer: Viewer | None) -> Viewer:
@@ -187,6 +191,8 @@ def step_sound(race: Race) -> str:
         return "finish"
     if not race.marks:
         return ""
+    if (race.answered - 1) in race.typed:  # a typed answer sounds like a choice
+        return "roar" if race.typed_right.get(race.answered - 1) else "sputter"
     if race.marks[-1] is None:  # the bonus
         return BONUS_SOUNDS.get(race.bonus_tier, "")
     return "roar" if race.marks[-1] else "sputter"
@@ -285,6 +291,23 @@ def hero_html(garage: Garage, p: Points | None) -> str:
             f'<div class="lerni-goal">{html.escape(goal_line(garage, p))}{bar}</div>')
 
 
+def picture_html(pic: dict[str, Any] | None) -> str:
+    """A picture question's blocks: a grid of emoji or squares, or for a missing piece, the
+    pile and the empty rows to share it into; "" for none."""
+    if not pic:
+        return ""
+    emoji = html.escape(str(pic.get("emoji") or ""))
+    one = f"<span>{emoji}</span>" if emoji else '<span class="lerni-sq"></span>'  # a block
+    rows, cols = int(pic.get("rows", 0)), int(pic.get("cols", 0))
+    if pic.get("empty"):  # the pile, then one empty row per row
+        pile = one * int(pic.get("total", 0))
+        empty = '<div class="lerni-row-empty"></div>' * rows
+        return (f'<div class="lerni-pic"><div class="lerni-pile">{pile}</div></div>'
+                f'<div class="lerni-pic-rows">{empty}</div>')
+    return (f'<div class="lerni-pic" style="grid-template-columns:repeat({cols},36px)" '
+            f'aria-label="{rows} rows of {cols}">{one * (rows * cols)}</div>')
+
+
 def after_tap(race: Race | None, ref: tuple[str, int], turn: Turn | None,
               awarded: int = 0, goal: str = "") -> tuple[Race | None, str] | None:
     """What an answer tap shows: the race and a line, or None when nothing changes (a repeat)."""
@@ -301,12 +324,23 @@ def _why_first(race: Race, last: tuple[int, Turn] | None) -> bool:
             and last[0] == race.answered - 1)
 
 
+def _typed_miss(race: Race, number: int, turn: Turn, typed: str) -> str:
+    # a missed typed answer: its question, then the right answer (a word's missed letters marked)
+    t = race.typed[number]
+    right = spelled_html(turn.answer, typed) if t.kind == "spell" else f"**{turn.answer}**"
+    return (f"Question {number + 1} of {QUESTIONS_PER_RACE}\n\n**{t.prompt}**\n\n"
+            f"{miss_opener(race, number)} It's {right}. {turn.why}").rstrip()
+
+
 def question_card(race: Race, last: tuple[int, Turn] | None = None,
-                  hear: str = "") -> tuple[str, bool]:
+                  hear: str = "", typed: str = "") -> tuple[str, bool]:
     """The question card, and whether its choices show: right after a wrong answer mid-race,
     the question just answered with its right answer and why (the next waits for Next);
     otherwise the current question. The bonus shows its question alone, then its grade.
-    ``hear`` ends the first line of a card that can be heard."""
+    ``hear`` ends the first line of a card that can be heard; ``typed`` is a typed answer
+    just checked, for marking a missed word (on screen only)."""
+    if _why_first(race, last) and last[0] in race.typed:  # a missed word or picture
+        return _typed_miss(race, *last, typed), False
     if _why_first(race, last):  # a wrong answer's why comes before anything, the bonus too
         number, turn = last
         return (f"Question {number + 1} of {QUESTIONS_PER_RACE}{hear}\n\n"
@@ -319,6 +353,11 @@ def question_card(race: Race, last: tuple[int, Turn] | None = None,
         number, turn = last  # a graded bonus waits for Next too, so its line is read
         return (f"Question {number + 1} of {QUESTIONS_PER_RACE}\n\n⭐ **{race.bonus.question}**"
                 f"\n\n{turn.why}", False)
+    if last is not None and not last[1].right and not race.done and last[0] in race.typed:
+        return _typed_miss(race, *last, typed), False
+    if (t := race.typed.get(race.answered)) is not None:  # typed: the dock shows, no choices
+        return (f"Question {race.answered + 1} of {QUESTIONS_PER_RACE}{hear}\n\n"
+                f"**{t.prompt}**", False)
     if last is not None and not last[1].right and not race.done:
         number, turn = last
         return (f"Question {number + 1} of {QUESTIONS_PER_RACE}\n\n"
@@ -333,8 +372,13 @@ def _feedback(race: Race, turn: Turn, awarded: int, goal: str = "") -> str:
     slowed = f"{turn.slowed} slowed down" if turn.slowed else "Both slowed down"
     if not turn.right and not race.done:
         return ""  # the card shows the right answer and its why, until Next
-    line = (f"Right answer: boost! {slowed} 💨" if turn.right
-            else f"{miss_opener(race, race.answered - 1)} It's **{turn.answer}**. {turn.why}")
+    typed = (race.answered - 1) in race.typed
+    if turn.right and typed:  # the word or number, with its parts or how it adds up
+        line = f"✓ **{turn.answer}**" + (f": {turn.why}" if turn.why else "")
+        line += f" Boost! {slowed} 💨"
+    else:
+        line = (f"Right answer: boost! {slowed} 💨" if turn.right
+                else f"{miss_opener(race, race.answered - 1)} It's **{turn.answer}**. {turn.why}")
     if race.done:
         line += f"\n\nYou finished {ORDINAL[place(race)]}! ⭐ +{awarded}"
         line += f"\n\n{goal}" if goal else ""
@@ -397,6 +441,16 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
                 heard_btn = gr.Button(elem_id="lerni-heard-bonus", elem_classes="lerni-hide")
                 peek = gr.Button(elem_id="lerni-peek-bonus", elem_classes="lerni-hide")
             skip = gr.Button("Skip", size="sm")
+        # a typed question (v4.11): its picture, the answer field, and Check
+        with gr.Column(elem_id="lerni-dock-typed", visible=False,
+                       elem_classes="lerni-dock") as tdock:
+            drawing = gr.HTML(padding=False)  # a picture's blocks; empty for a word
+            with gr.Row(elem_classes="lerni-type"):
+                typed_box = gr.Textbox(
+                    show_label=False, lines=1, max_lines=1, max_length=TYPED_MAX,
+                    container=False, scale=4, elem_id="lerni-typed")  # race.js: no autocorrect
+                check = gr.Button("Check", variant="primary", scale=1, min_width=80,
+                                  elem_classes="lerni-check")  # race.js counts it as a tap
         note = gr.Markdown(elem_id="lerni-note")
         # at the finish: up to two nearby ideas to talk about in Chat (v3.36)
         with gr.Column(visible=False, elem_classes="lerni-explore") as explore:
@@ -421,7 +475,7 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
                next_btn, shown, mine_title,
                *(x for pair in mine.values() for x in pair),
                *(x for parts in shop.values() for x in parts), garage_box, hear, explore,
-               *topic_btns]
+               *topic_btns, tdock, drawing, typed_box]
 
     def garage_updates(p: Points | None) -> list[Any]:
         """The My cars title, then each car's tile and button in both lists."""
@@ -447,8 +501,10 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
         return ups
 
     def screen(viewer: Viewer | None, race: Race | None, line: str,
-               last: tuple[int, Turn] | None = None) -> list[Any]:
-        """Every output, in order; ``last`` is the answer just given, for the waiting card."""
+               last: tuple[int, Turn] | None = None, typed: str = "") -> list[Any]:
+        """Every output, in order; ``last`` is the answer just given, for the waiting card, and
+        ``typed`` what was just typed, to mark a missed word (never kept)."""
+        pic, kind = None, ""  # a typed slot on screen: what to draw, and its kind
         p = points.get(viewer.username) if viewer else None
         driving = p.car if p else STARTER
         if race is None or race.done:
@@ -459,16 +515,21 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
             why = race is not None and last is not None and bool(last[1].answer) and not (
                 last[1].right)
             reads = "why" if why else ""
+            typed_live = False
         else:
-            ask, show = question_card(race, last, HEAR if talks else "")
+            ask, show = question_card(race, last, HEAR if talks else "", typed)
             # while the why shows, the hidden buttons don't get the next question yet
             buttons = ([gr.update(visible=True, value=c) for c in public(race)["choices"]] if show
                        else [gr.update(visible=False) for _ in choices])
             live = race.bonus_live and not _why_first(race, last)  # the dock, not Next
+            view = public(race)
+            typed_live = "typed" in view and not _why_first(race, last)  # its dock, not Next
+            if typed_live:
+                pic, kind = view.get("picture"), view["typed"]
             go_update, ref, waiting = gr.update(visible=False), (race.id, race.answered), not (
-                show or live)
+                show or live or typed_live)
             why = _why_first(race, last)
-            reads = "why" if why else "question" if show or live else ""
+            reads = "why" if why else "question" if show or live or typed_live else ""
         mine = stars(points, viewer)
         topics = (desk.probes_after(viewer.username, race)  # only at the finish
                   if desk is not None and viewer is not None and race is not None and race.done
@@ -482,7 +543,9 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
                 *garage_updates(p), gr.update(visible=race is None or race.done), reads,
                 gr.update(visible=bool(topics)),
                 *(gr.update(visible=True, value=f"🔭 {topics[i]}") if i < len(topics)
-                  else gr.update(visible=False) for i in range(len(topic_btns)))]
+                  else gr.update(visible=False) for i in range(len(topic_btns))),
+                gr.update(visible=typed_live), picture_html(pic),
+                gr.update(value="", placeholder=PLACEHOLDER.get(kind, ""))]  # empty for each
 
     def viewer_of(request: gr.Request) -> Viewer | None:
         viewer = signin.viewer(request.username)  # re-read on every request
@@ -565,6 +628,25 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
         except Exception:  # noqa: BLE001 - never show what went wrong inside
             return recover(request)
 
+    def on_typed(text: str, ref: tuple[str, int], request: gr.Request) -> list[Any]:
+        try:  # anything odd: the race as it stands, never a stuck screen
+            # checked by code on the server; the text is shown on screen once and never kept
+            viewer = viewer_of(request)
+            if desk is None or viewer is None:
+                return screen(viewer, None, "")
+            if not (text or "").strip():  # an empty Check never counts as a miss
+                ups = [gr.update() for _ in outputs]
+                ups[outputs.index(note)] = TYPE_FIRST
+                return ups
+            race, turn, awarded = desk.typed_answer(viewer.username, ref[0], ref[1], text)
+            goal = goal_line(garage, points.get(viewer.username)) if race and race.done else ""
+            shown = after_tap(race, ref, turn, awarded, goal)
+            if shown is None:
+                return [gr.update() for _ in outputs]  # a double send: nothing changes
+            return screen(viewer, *shown, last=(ref[1], turn) if turn else None, typed=text)
+        except Exception:  # noqa: BLE001 - never show what went wrong inside
+            return recover(request)
+
     def on_next(request: gr.Request) -> list[Any]:
         try:  # anything odd: the race as it stands, never a stuck screen
             # the next question, after the right answer and its why (a dropped race: the start)
@@ -613,6 +695,8 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
     for i, button in enumerate(choices):
         button.click(on_choice(i), shown, outputs, concurrency_limit=MAX_AT_ONCE, **PRIVATE)
     next_btn.click(on_next, None, outputs, concurrency_limit=MAX_AT_ONCE, **PRIVATE)
+    for trigger in (check.click, typed_box.submit):  # Check, or Return on the keyboard
+        trigger(on_typed, [typed_box, shown], outputs, concurrency_limit=MAX_AT_ONCE, **PRIVATE)
     reading = (lambda: ["Lerni is reading your answer… ⭐", gr.update(interactive=False)],
                None, [note, send])  # Send waits while Claude grades
     for trigger in (send.click, answer_box.submit):

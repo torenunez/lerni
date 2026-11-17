@@ -1,17 +1,16 @@
-"""Spelling (v4.10): the student hears a word, types it, and code grades it (spec 11).
+"""Spelling (v4.10; in races since v4.11): the student hears a word, types it, and code
+grades it (spec 11).
 
 One JSON file per player in ``<data root>/spelling/``: the words (chosen by the educator or
-by Lerni), the sentences Claude wrote for them, counts, mistake labels, and a level; never
-what the student typed (rule 6). Rounds live in memory. Standard library only.
+by Lerni), the sentences Claude wrote for them, counts, mistake labels, a level, and the last
+few answers as right or wrong; never what the student typed (rule 6). Standard library only.
 """
 
 from __future__ import annotations
 
 import re
 import threading
-import uuid
 from collections.abc import Callable
-from dataclasses import dataclass, field
 from datetime import date, timedelta
 from pathlib import Path
 from typing import Any, Protocol
@@ -19,18 +18,13 @@ from typing import Any, Protocol
 from lerni.student.fence import fence
 from lerni.student.interests import MapStore
 from lerni.student.jsonfiles import read_json, write_json_atomic
-from lerni.student.points import PointsStore
-from lerni.student.race import RaceUnavailable, interest_groups
+from lerni.student.race import Checked, RaceUnavailable, Typed, interest_groups, note_answer
 from lerni.student.students import check_username, default_data_dir
 from lerni.student.voice import Speech, SpeechUnavailable, for_speaking
 
-WORDS_PER_ROUND = 5  # a round as long as a race
-POINTS_PER_WORD = 2  # ⭐ for each word spelled right
-PERFECT_BONUS = 5  # all 5 right; a round pays up to 15 (a race up to 20)
 BOX_DAYS = (1, 3, 7, 14)  # days until a word comes back after 1, 2, 3, 4 right in a row
-LEARNED_AT = len(BOX_DAYS)  # right this many times in a row: learned, out of the rounds
+LEARNED_AT = len(BOX_DAYS)  # right this many times in a row: learned, no longer asked
 START_LEVEL, MAX_LEVEL = 1, 6
-UP_AT, DOWN_AT = 4, 2  # right in a round to move the level up, or down (as races do)
 PICKS_PER_CALL = 10  # Lerni's words asked for in one small-model call
 LOW_PICKS = 10  # fewer of Lerni's words never asked than this: write more
 MAX_CLASS_WORDS = 40  # a class list longer than this is cut
@@ -263,13 +257,13 @@ def _new_word(
 
 
 def learned(w: dict[str, Any]) -> bool:
-    """Right enough times in a row to leave the rounds."""
+    """Right enough times in a row to stop being asked."""
     return int(w.get("streak", 0)) >= LEARNED_AT
 
 
-def pick_round(words: list[dict[str, Any]], today: date) -> list[dict[str, Any]]:
-    """The next round's words: the class list first, due words before new ones."""
-    live = [w for w in words if not learned(w)]  # learned words are out of the rounds
+def next_words(words: list[dict[str, Any]], today: date) -> list[dict[str, Any]]:
+    """The words to ask next, in order: the class list first, due words before new ones."""
+    live = [w for w in words if not learned(w)]  # learned words aren't asked
     day = today.isoformat()  # ISO dates compare as text
 
     def due(source: str) -> list[dict[str, Any]]:  # asked before and due again, oldest first
@@ -281,13 +275,19 @@ def pick_round(words: list[dict[str, Any]], today: date) -> list[dict[str, Any]]
     def new(source: str) -> list[dict[str, Any]]:  # never asked, in the order added
         return [w for w in live if w["source"] == source and not w["last"]]
 
-    # not yet due: only when nothing else fills the round, least recently asked first
+    # not yet due: last, least recently asked first
     rest = sorted((w for w in live if w["last"] and w["due"] > day), key=lambda w: w["last"])
     out: list[dict[str, Any]] = []
     for w in [*due("class"), *new("class"), *due("lerni"), *new("lerni"), *rest]:
-        if w not in out:  # each word once a round
+        if w not in out:  # each word once
             out.append(w)
-    return out[:WORDS_PER_ROUND]
+    return out
+
+
+def due_count(words: list[dict[str, Any]], today: date) -> int:
+    """Words due now or never asked (learned ones aside)."""
+    day = today.isoformat()
+    return sum(1 for w in words if not learned(w) and (not w["last"] or w["due"] <= day))
 
 
 class SpellingStore:
@@ -313,6 +313,8 @@ class SpellingStore:
             "level": min(max(level, 1), MAX_LEVEL) if isinstance(level, int) else START_LEVEL,
             "words": words,
             "removed": [str(r) for r in data.get("removed") or []],  # lowercase, never picked
+            # right or wrong, since the level last moved
+            "recent": [bool(x) for x in data.get("recent") or []],
         }
 
     def change(self, username: str, fn: Callable[[dict[str, Any]], Any]) -> Any:
@@ -328,99 +330,67 @@ class SpellingStore:
             return out
 
 
-@dataclass
-class Round:
-    """One round in memory: its words and how each went; never what was typed."""
-
-    id: str
-    words: list[str]
-    marks: list[bool] = field(default_factory=list)
-    awarded: int = 0  # ⭐ actually added (the day's cap may stop them)
-
-    @property
-    def done(self) -> bool:
-        """All words answered."""
-        return len(self.marks) >= len(self.words)
-
-
-@dataclass
-class Turn:
-    """What the screen shows after an answer."""
-
-    word: str
-    right: bool
-    label: str  # the kind of mistake, "" when right
-    parts: list[str]  # un · happy, after a right answer
-    awarded: int
-    done: bool
-
-
 class SpellingDesk:
-    """Rounds per player, and Lerni's words written when they run low."""
+    """Spelling words as typed race questions (a ``TypedSource``), and Lerni's words written
+    when they run low."""
+
+    kind = "spell"
+    prompt = "Spell the word you hear."
 
     def __init__(
         self,
         store: SpellingStore,
-        points: PointsStore | None,
         maps: MapStore,
         writer: Writer | None = None,
         speech: Speech | None = None,
     ) -> None:
-        self.store, self.points, self.maps = store, points, maps
+        self.store, self.maps = store, maps
         self.writer, self.speech = writer, speech  # None: no Claude, or no voice
-        self._rounds: dict[str, Round] = {}  # each player's round on screen, memory only
-        self._spoken: dict[str, tuple[str, dict[int, bytes]]] = {}  # round id -> clips
         self._writing: set[str] = set()  # players whose words are being written now
-        self._lock = threading.Lock()  # guards the three dicts above
+        self._lock = threading.Lock()  # guards the set above
 
-    # -- rounds ---------------------------------------------------------------------------
+    # -- in races -------------------------------------------------------------------------
 
-    def start(self, username: str, today: date | None = None) -> Round:
-        """A new round of 5; writes Lerni's words first when there aren't enough.
+    def due(self, username: str, today: date) -> int | None:
+        """Words due or never asked; None without the voice or with nothing to ask."""
+        if self.speech is None:
+            return None  # every word is heard
+        words = self.store.get(username)["words"]
+        self._top_up(username, today)  # Lerni's picks, written in the background when low
+        return due_count(words, today) if next_words(words, today) else None
 
-        Raises:
-            SpellingUnavailable: Too few words, and none could be written now.
-        """
-        day = today or date.today()
-        chosen = pick_round(self.store.get(username)["words"], day)
-        if len(chosen) < WORDS_PER_ROUND:  # the first round, or everything learned
-            self.write_picks(username, day)  # the student waits for this one call
-            chosen = pick_round(self.store.get(username)["words"], day)
-            if len(chosen) < WORDS_PER_ROUND:
-                raise SpellingUnavailable(BUSY)  # Claude resting or failed: try later
-        r = Round(uuid.uuid4().hex[:12], [w["word"] for w in chosen])  # a fresh id per round
-        with self._lock:
-            self._rounds[username] = r  # replaces any unfinished round
-        if self._unasked_picks(username) < LOW_PICKS:  # write more while this round goes on
-            threading.Thread(target=self._quietly, args=(username, day), daemon=True).start()
-        return r
+    def item(self, username: str, today: date, avoid: set[str]) -> Typed | None:
+        """The neediest word not in ``avoid``, or None when there's none."""
+        words = [w for w in next_words(self.store.get(username)["words"], today)
+                 if w["word"] not in avoid]
+        if not words:
+            return None
+        word = words[0]["word"]
+        return Typed(self.kind, self.prompt, key=word, label=word)  # the word is the label
 
-    def current(self, username: str) -> Round | None:
-        """The round on screen, if any."""
-        with self._lock:
-            return self._rounds.get(username)
+    def check(self, username: str, item: Typed, text: str, today: date) -> Checked:
+        """Grade ``text`` by code and record how it went; ``text`` itself goes no further."""
+        label = mistake(item.key, text[:MAX_TYPED])  # "" when right
+        parts = self._record(username, item.key, label, today)
+        return Checked(not label, item.key, " · ".join(parts) if not label and parts else label)
 
-    def answer(
-        self, username: str, round_id: str, number: int, typed: str, today: date | None = None
-    ) -> Turn | None:
-        """Grade word ``number`` (0-based); None for a stale or repeated tap."""
-        day = today or date.today()
-        with self._lock:
-            r = self._rounds.get(username)
-            # only the word on screen, once: a double tap or an old page changes nothing
-            if r is None or r.id != round_id or number != len(r.marks) or r.done:
-                return None
-            word = r.words[number]
-            label = mistake(word, typed[:MAX_TYPED])  # "" when right
-            r.marks.append(not label)  # marked inside the lock, so a second tap sees it
-        parts = self._record(username, word, label, day)  # the typed text goes no further
-        awarded = self._award(username, r, number, not label, day)
-        if r.done:  # the last word: the level moves on the whole round
-            self._move_level(username, sum(r.marks))
-        return Turn(word, not label, label, parts if not label else [], awarded, r.done)
+    def read(self, username: str, item: Typed) -> bytes | None:
+        """The word, a pause, its sentence, a pause, the word again; None without the voice."""
+        if self.speech is None:
+            return None
+        word = item.key
+        # the sentence from disk, so one written moments ago is read too
+        sentence = next(
+            (w["sentence"] for w in self.store.get(username)["words"] if w["word"] == word), ""
+        )
+        pieces = [f"{word}.", for_speaking(sentence), f"{word}."] if sentence else [f"{word}."]
+        try:
+            return self.speech.dictate(pieces)
+        except SpeechUnavailable:
+            return None
 
     def _record(self, username: str, word: str, label: str, day: date) -> list[str]:
-        # counts and the next day due; returns the word's parts for the screen
+        # counts, the next day due, and the level; returns the word's parts for the screen
         def apply(data: dict[str, Any]) -> list[str]:
             for w in data["words"]:
                 if w["word"] == word:
@@ -430,73 +400,20 @@ class SpellingDesk:
                         w["missed"], w["streak"] = w["missed"] + 1, 0  # the streak starts over
                         w["mistakes"][label] = w["mistakes"].get(label, 0) + 1
                         w["due"] = (day + timedelta(days=1)).isoformat()
-                    elif not was_due:  # right, but asked early (a round ran short): no box
+                    elif not was_due:  # right, but asked early (little else due): no box
                         w["right"] += 1
                     else:  # right when due: a longer gap each time in a row
                         w["right"], w["streak"] = w["right"] + 1, w["streak"] + 1
                         gap = BOX_DAYS[min(w["streak"], LEARNED_AT) - 1]  # 1, 3, 7, then 14 days
                         w["due"] = (day + timedelta(days=gap)).isoformat()
+                    note_answer(data, not label, MAX_LEVEL)  # every 5 answers, the level moves
                     return list(w.get("parts") or [])
-            return []  # removed by the educator mid-round: nothing to record
+            return []  # removed by the educator mid-race: nothing to record
 
         try:
             return self.store.change(username, apply)
         except SpellingUnavailable:
-            return []  # an unreadable file: the round goes on, unrecorded
-
-    def _award(self, username: str, r: Round, number: int, right: bool, day: date) -> int:
-        if self.points is None or not right:
-            return 0  # a miss never takes points away
-        # one id per word, so a repeat never pays twice; the day's cap may give less
-        got = self.points.award(
-            username, f"spell-{r.id}-{number}", "spelling", POINTS_PER_WORD, day
-        )
-        if r.done and all(r.marks):  # all 5: the bonus, once
-            got += self.points.award(username, f"spell-{r.id}-all", "spelling", PERFECT_BONUS, day)
-        with self._lock:
-            r.awarded += got  # the round's total, for its finish
-        return got
-
-    def _move_level(self, username: str, right: int) -> None:
-        def apply(data: dict[str, Any]) -> None:
-            if right >= UP_AT:  # 4 or 5 right: harder picks, up to 6
-                data["level"] = min(data["level"] + 1, MAX_LEVEL)
-            elif right <= DOWN_AT:  # 2 or fewer: easier picks, down to 1
-                data["level"] = max(data["level"] - 1, 1)
-
-        try:
-            self.store.change(username, apply)
-        except SpellingUnavailable:
-            pass  # an unreadable file: the level waits for the next round
-
-    def read_word(self, username: str, round_id: str, number: int) -> bytes | None:
-        """Word ``number`` spoken: the word, its sentence, the word again (memory only)."""
-        with self._lock:
-            r = self._rounds.get(username)
-            if (
-                self.speech is None
-                or r is None
-                or r.id != round_id
-                or not (0 <= number < len(r.words))
-            ):
-                return None
-            of, clips = self._spoken.get(username, ("", {}))
-            if of == r.id and number in clips:
-                return clips[number]  # a replay costs nothing
-            word = r.words[number]
-        # the sentence from disk, so one written mid-round is read too; "" reads the word alone
-        sentence = next(
-            (w["sentence"] for w in self.store.get(username)["words"] if w["word"] == word), ""
-        )
-        pieces = [f"{word}.", for_speaking(sentence), f"{word}."] if sentence else [f"{word}."]
-        try:  # the word, a pause, the sentence, a pause, the word again
-            audio = self.speech.dictate(pieces)
-        except SpeechUnavailable:
-            return None
-        with self._lock:  # kept for replays; a new round starts with no clips
-            of, clips = self._spoken.get(username, ("", {}))
-            self._spoken[username] = (r.id, {**(clips if of == r.id else {}), number: audio})
-        return audio
+            return []  # an unreadable file: the race goes on, unrecorded
 
     # -- the educator's list --------------------------------------------------------------
 
@@ -574,6 +491,11 @@ class SpellingDesk:
         return sum(
             1 for w in self.store.get(username)["words"] if w["source"] == "lerni" and not w["last"]
         )
+
+    def _top_up(self, username: str, day: date) -> None:
+        # fewer than 10 of Lerni's words left: write more in the background, never waited for
+        if self.writer is not None and self._unasked_picks(username) < LOW_PICKS:
+            threading.Thread(target=self._quietly, args=(username, day), daemon=True).start()
 
     def _quietly(self, username: str, day: date) -> None:
         try:

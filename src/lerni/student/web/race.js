@@ -128,8 +128,8 @@
       return;
     }
     // Race! and Next unlock sound; an answer tap wakes it again after the iPad paused it
-    if (at('.lerni-go, .lerni-choice')) unlock();
-    if (at('.lerni-go, .lerni-choice')) {  // moving on stops a reading
+    if (at('.lerni-go, .lerni-choice, .lerni-check')) unlock();
+    if (at('.lerni-go, .lerni-choice, .lerni-check')) {  // moving on stops a reading
       current++;
       window.lerniTalk?.stop();
       hold(false);
@@ -181,16 +181,21 @@
   }).observe(document.body, {childList: true, subtree: true, attributes: true,
                               attributeFilter: ['data-x', 'data-step', 'data-why', 'data-ask']});
 
-  // Spelling (v4.10): the iPad's keyboard must not fix the answer, so each new answer
-  // field gets no autocorrect, capitals, suggestions, or spell check
+  // typed questions (v4.10, in races v4.11): the iPad's keyboard must not fix the answer, so
+  // the field gets no autocorrect, capitals, suggestions, or spell check; a picture's number
+  // gets the number keyboard
   new MutationObserver(() => {
-    document.querySelectorAll('#lerni-spell input, #lerni-spell textarea').forEach(e => {
-      if (e.dataset.noHelp) return;  // once per field
-      e.dataset.noHelp = '1';
-      e.setAttribute('autocorrect', 'off');
-      e.setAttribute('autocapitalize', 'none');
-      e.setAttribute('autocomplete', 'off');
-      e.spellcheck = false;
+    const picture = !!document.querySelector('#lerni-dock-typed .lerni-pic');
+    document.querySelectorAll('#lerni-typed input, #lerni-typed textarea').forEach(e => {
+      if (!e.dataset.noHelp) {  // once per field
+        e.dataset.noHelp = '1';
+        e.setAttribute('autocorrect', 'off');
+        e.setAttribute('autocapitalize', 'none');
+        e.setAttribute('autocomplete', 'off');
+        e.spellcheck = false;
+      }
+      const mode = picture ? 'numeric' : 'text';  // follows the question on screen
+      if (e.inputMode !== mode) e.inputMode = mode;
     });
   }).observe(document.body, {childList: true, subtree: true});
 })();
