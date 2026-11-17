@@ -182,6 +182,13 @@ As a student with a math goal, I want to count drawn blocks in my races, so that
 - THE SYSTEM SHALL give each race at least one question of each kind available, and more of the kind that needs practice most.
 - WHEN a race has a picture question THE SYSTEM SHALL draw the blocks (an emoji from my interests, or squares) and grade the typed number by code.
 
+### Story: Count the money
+
+As a student with a math goal, I want to count real-looking coins and bills and make change in my races, so that I can handle money.
+
+- THE SYSTEM SHALL show coins at their real sizes beside each other, named but not valued, and bills labeled $1, $5, $20, $100.
+- THE SYSTEM SHALL grade amounts exactly, in cents, whether typed as 1.35 or $1.35.
+
 ## Out of scope
 
 Public access and a native iPad app.

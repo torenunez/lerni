@@ -191,6 +191,7 @@
   // gets the number keyboard
   new MutationObserver(() => {
     const picture = !!document.querySelector('#lerni-dock-typed .lerni-pic');
+    const money = !!document.querySelector('#lerni-dock-typed .lerni-money');
     document.querySelectorAll('#lerni-typed input, #lerni-typed textarea').forEach(e => {
       if (!e.dataset.noHelp) {  // once per field
         e.dataset.noHelp = '1';
@@ -199,7 +200,8 @@
         e.setAttribute('autocomplete', 'off');
         e.spellcheck = false;
       }
-      const mode = picture ? 'numeric' : 'text';  // follows the question on screen
+      // follows the question on screen: a decimal point for money
+      const mode = money ? 'decimal' : picture ? 'numeric' : 'text';
       if (e.inputMode !== mode) e.inputMode = mode;
     });
   }).observe(document.body, {childList: true, subtree: true});

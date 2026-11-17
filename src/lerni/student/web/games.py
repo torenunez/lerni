@@ -28,6 +28,7 @@ from lerni.student.garage import (
     next_goal,
 )
 from lerni.student.interests import MapStore, area_group
+from lerni.student.money import COIN_PX, say_cents
 from lerni.student.points import STARTER, Points, PointsError, PointsStore
 from lerni.student.race import (
     BOT_RIVALS,
@@ -68,7 +69,7 @@ ORDINAL = {1: "1st", 2: "2nd", 3: "3rd"}
 NO_CLAUDE = "Games need Claude, which isn't set up on this server."
 TYPED_MAX = 40  # characters of a typed answer (a word or a number)
 TYPE_FIRST = "Type your answer first, then tap Check."
-PLACEHOLDER = {"spell": "Type the word", "picture": "Type a number"}
+PLACEHOLDER = {"spell": "Type the word", "picture": "Type your answer"}
 
 
 def require_player(viewer: Viewer | None) -> Viewer:
@@ -296,6 +297,8 @@ def picture_html(pic: dict[str, Any] | None) -> str:
     pile and the empty rows to share it into; "" for none."""
     if not pic:
         return ""  # a spelling word: nothing to draw
+    if pic.get("kind") == "money":
+        return money_html(pic)
     emoji = html.escape(str(pic.get("emoji") or ""))  # escaped, though it comes from code
     one = f"<span>{emoji}</span>" if emoji else '<span class="lerni-sq"></span>'  # a block
     rows, cols = int(pic.get("rows", 0)), int(pic.get("cols", 0))
@@ -307,6 +310,22 @@ def picture_html(pic: dict[str, Any] | None) -> str:
     # a grid: one column per block in a row, so the rows line up
     return (f'<div class="lerni-pic" style="grid-template-columns:repeat({cols},36px)" '
             f'aria-label="{rows} rows of {cols}">{one * (rows * cols)}</div>')
+
+
+def money_html(pic: dict[str, Any]) -> str:
+    """Coins at their real sizes beside each other, bills drawn, and a price for change."""
+    bills = "".join(f'<span class="lerni-bill">${int(b)}</span>' for b in pic.get("bills", []))
+    coins = "".join(  # the Mint's photo, named, never its worth
+        f'<span class="lerni-coin"><img src="/coins/{c}.png" alt="{c}" '
+        f'width="{COIN_PX[c]}" height="{COIN_PX[c]}"><small>{c}</small></span>'
+        for c in pic.get("coins", []) if c in COIN_PX)
+    price = ""
+    if pic.get("price"):  # making change: what's bought and its price tag
+        price = (f'<span class="lerni-price"><span>{html.escape(str(pic.get("item", "")))}'
+                 f'</span><small>{say_cents(int(pic["price"]), True)}</small></span>')
+    credit = ('<p class="lerni-credit">United States coin images from the United States '
+              'Mint.</p>' if coins else "")  # the Mint asks for this line
+    return f'<div class="lerni-money">{bills}{price}{coins}</div>{credit}'
 
 
 def after_tap(race: Race | None, ref: tuple[str, int], turn: Turn | None,

@@ -982,6 +982,7 @@ class Typed:
     label: str = ""  # for the results log: the word, or the track and level
     picture: dict[str, Any] | None = None  # what code draws: rows, cols, emoji, and how
     note: str = ""  # shown after the answer (how a picture adds up); never before
+    answer: str = ""  # the right answer as shown ("$1.35"); "" shows the key
 
 
 @dataclass(frozen=True)
@@ -1779,7 +1780,7 @@ class RaceDesk:
             try:  # a check that fails (a full disk, odd text) is a miss, never a stuck question
                 checked = src.check(username, item, text or "", day)
             except Exception:  # noqa: BLE001 - the student sees the right answer either way
-                checked = Checked(False, item.key, item.note)
+                checked = Checked(False, item.answer or item.key, item.note)  # "$1.35"
             with self._lock:  # dropped or replaced while checking: it no longer counts
                 if self._races.get(username) is race:
                     turn = answer_typed(race, number, checked)
@@ -1960,7 +1961,7 @@ class RaceDesk:
 
         def said(r: Race) -> str:
             if (t := r.typed.get(number)) is not None:  # a word spelled out, or the number
-                right = " ".join(t.key.upper()) if t.kind == "spell" else t.key
+                right = " ".join(t.key.upper()) if t.kind == "spell" else t.answer or t.key
                 return for_speaking(f"{miss_opener(r, number)} It's {right}. {t.note}")
             q = r.questions[number]
             return for_speaking(f"{miss_opener(r, number)} It's {q.choices[q.answer]}. {q.why}")
