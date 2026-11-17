@@ -3,6 +3,7 @@
     .venv/bin/python scripts/eval_race.py           # every case
     .venv/bin/python scripts/eval_race.py quality   # only question quality (v4.5): 1 call
     .venv/bin/python scripts/eval_race.py words     # only words-alone questions (v4.6.2): 1 call
+    .venv/bin/python scripts/eval_race.py levels    # one goal at levels 1, 5, 6 (v4.6.4): 3 calls
 
 Uses the admin's Claude account. Add one case for each problem seen.
 """
@@ -119,9 +120,31 @@ def words() -> list:
     ]
 
 
+def levels_map() -> InterestMap:
+    """One goal and one fresh interest, for the levels and garage cases."""
+    one = InterestMap()
+    add_goal(one, "Fractions", "halves and quarters")
+    trucks = add_interest(one, "monster trucks")
+    trucks.days = [date.today().isoformat()]  # talked about today: a fresh interest
+    return one
+
+
+def levels(one: InterestMap) -> list[tuple[str, bool]]:
+    """The map's goal written at levels 1, 5, and 6 (v4.6.4), printed to compare by eye."""
+    goal = next(e for e in one.entries if e.kind == "goal")  # its only goal
+    results = []
+    for level in (1, 5, 6):
+        print(f"--- level {level}")
+        sets = write(one, levels={goal.id: level})
+        # 5 questions make a race, after the checks drop any
+        results.append((f"level {level} still makes a race", len(sets) >= 5))
+    return results
+
+
 def main() -> None:
-    if sys.argv[1:] in (["quality"], ["words"]):  # one case alone
-        for name, ok in (quality() if sys.argv[1] == "quality" else words()):
+    if sys.argv[1:] in (["quality"], ["words"], ["levels"]):  # one case alone
+        case = {"quality": quality, "words": words, "levels": lambda: levels(levels_map())}
+        for name, ok in case[sys.argv[1]]():
             print("PASS" if ok else "FAIL", name)
         return
     m = InterestMap()
@@ -159,15 +182,9 @@ def main() -> None:
     print("blind picks:", picks)
     results.append(("both wrong keys are caught", picks[0] != "A" and picks[1] != "A"))
     results.append(("a right key is kept", picks[2] == "A"))
-    # levels (v3.18): the same goal at 1 and at 5, printed to compare by eye
-    one = InterestMap()
-    goal = add_goal(one, "Fractions", "halves and quarters")
-    trucks = add_interest(one, "monster trucks")
-    trucks.days = [date.today().isoformat()]
-    for level in (1, 5):
-        print(f"--- level {level}")
-        sets = write(one, levels={goal.id: level})
-        results.append((f"level {level} still makes a race", len(sets) >= 5))
+    # levels (v3.18; 6 since v4.6.4): the same goal at 1, 5, and 6, printed to compare by eye
+    one = levels_map()
+    results += levels(one)
     # the garage (v3.19): two cars in reach; the locked one is never given, so never named
     near = [Car("p1", "McLaren P1", 460, "#000", "", 1_150_000, 2.7, "3.8L twin-turbo V8 hybrid",
                 903, "Rear-wheel drive"),

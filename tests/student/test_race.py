@@ -7,11 +7,12 @@ from datetime import date, timedelta
 
 import pytest
 
-from lerni.student.concepts import ConceptStore, normalize
+from lerni.student.concepts import MAX_LEVEL, ConceptStore, normalize
 from lerni.student.interests import InterestMap, MapStore, add_goal, add_interest, remove
 from lerni.student.points import RACES_PER_DAY, PointsError, PointsStore
 from lerni.student.race import (
     QUESTIONS_PER_RACE,
+    QUIZ_SYSTEM,
     Question,
     RaceDesk,
     RaceUnavailable,
@@ -563,8 +564,19 @@ def test_a_goals_level_follows_its_last_five_answers(tmp_path):
     data = json.loads((tmp_path / "concepts" / "sam.json").read_text())
     data["levels"] = {"a": {"level": "x", "asked": "y"}, "b": {"level": 99}, "c": None}
     (tmp_path / "concepts" / "sam.json").write_text(json.dumps(data))
-    assert concepts.levels("sam") == {"a": 3, "b": 5}
+    assert concepts.levels("sam") == {"a": 3, "b": MAX_LEVEL}
     concepts.practiced("sam", "a", True)  # counts from a clean start, never a crash
+
+
+def test_a_strong_goal_at_level_5_moves_up_to_6(tmp_path):
+    # v4.6.4: level 5 was the ceiling, answered right far above the 60% target
+    concepts = ConceptStore(tmp_path)
+    concepts._change("sam", levels=lambda by_goal: by_goal.update(
+        {"g": {"level": 5, "right": 0, "asked": 0}}))
+    for right in (True, True, True, True, False):  # 4 of 5 right: one level harder
+        concepts.practiced("sam", "g", right)
+    assert concepts.levels("sam") == {"g": 6} and MAX_LEVEL == 6
+    assert "; 6, three steps" in QUIZ_SYSTEM  # the writer knows what level 6 means
 
 
 def test_a_missed_idea_comes_back_on_schedule(tmp_path):

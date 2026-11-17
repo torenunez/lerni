@@ -22,7 +22,7 @@ from lerni.student.students import check_username, default_data_dir
 MAX_CONCEPT = 40  # characters in a label
 IDEA_DAYS = 30  # a goal's ideas stay off its questions this long (v3.42)
 PER_GOAL = 30  # labels kept per goal for that
-START_LEVEL, MIN_LEVEL, MAX_LEVEL = 3, 1, 5  # 3 is the questions before levels
+START_LEVEL, MIN_LEVEL, MAX_LEVEL = 3, 1, 6  # 3 is the questions before levels; 6 since v4.6.4
 LEVEL_WINDOW = 5  # answers on a goal between level checks
 REVIEW_DAYS = (1, 3, 7)  # a missed idea comes back after these gaps, one per right answer
 UP_AT, DOWN_AT = 4, 2  # this many right of 5 or more: harder; this many or fewer: easier
@@ -46,7 +46,7 @@ def normalize(text: str) -> str:
 
 
 def _level(v: Any) -> int:
-    """A stored level as 1 to 5; anything odd (a hand edit) is the start level."""
+    """A stored level as 1 to 6; anything odd (a hand edit) is the start level."""
     try:
         level = int(v.get("level", START_LEVEL)) if isinstance(v, dict) else START_LEVEL
     except (TypeError, ValueError):
