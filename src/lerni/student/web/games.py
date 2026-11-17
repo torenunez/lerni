@@ -299,6 +299,8 @@ def picture_html(pic: dict[str, Any] | None) -> str:
         return ""  # a spelling word: nothing to draw
     if pic.get("kind") == "money":
         return money_html(pic)
+    if pic.get("kind") == "ruler":
+        return ruler_svg(pic)
     emoji = html.escape(str(pic.get("emoji") or ""))  # escaped, though it comes from code
     one = f"<span>{emoji}</span>" if emoji else '<span class="lerni-sq"></span>'  # a block
     rows, cols = int(pic.get("rows", 0)), int(pic.get("cols", 0))
@@ -310,6 +312,52 @@ def picture_html(pic: dict[str, Any] | None) -> str:
     # a grid: one column per block in a row, so the rows line up
     return (f'<div class="lerni-pic" style="grid-template-columns:repeat({cols},36px)" '
             f'aria-label="{rows} rows of {cols}">{one * (rows * cols)}</div>')
+
+
+RULER_X, PX_CM = 30, 22  # the ruler's 0, and pixels per centimeter (an inch: 2.54 × 22)
+BAR_ROW, RULER_H = 20, 72  # each object's row above the ruler, and the ruler's height
+
+
+def ruler_svg(pic: dict[str, Any]) -> str:
+    """A two-sided ruler (centimeters on top, inches below, one real scale) with each object
+    above it, a dashed line from its end across both edges, and the units named at the left."""
+    bars = pic.get("bars", [])[:2]
+    top = 4 + BAR_ROW * len(bars)  # the ruler starts below the objects
+    px = lambda cm: RULER_X + float(cm) * PX_CM  # noqa: E731 - centimeters to x
+    out, ends = [], []  # the dashed lines go last, over the ruler
+    for i, b in enumerate(bars):  # each object: a bar, its emoji at the end, a dashed line
+        y, end = 4 + BAR_ROW * i, px(b["end"])
+        out.append(f'<rect x="{px(b["start"]):.1f}" y="{y}" width="{end - px(b["start"]):.1f}" '
+                   f'height="12" rx="4" fill="#1D9E75"/>'
+                   f'<text x="{end + 3:.1f}" y="{y + 12}" font-size="16">'
+                   f'{html.escape(str(b.get("emoji", "")))}</text>')
+        for x in (px(b["start"]), end) if b["start"] else (end,):  # its start too, past 0
+            ends.append(f'<line x1="{x:.1f}" y1="{y}" x2="{x:.1f}" y2="{top + RULER_H}" '
+                        f'stroke="#0F6E56" stroke-width="1.5" stroke-dasharray="3 2"/>')
+        if b.get("label"):  # 1 or 2, when two are compared
+            out.append(f'<text x="2" y="{y + 11}" font-size="12" fill="currentColor">'
+                       f'{html.escape(str(b["label"]))}</text>')
+    out.append(f'<rect x="{RULER_X - 8}" y="{top}" width="282" height="{RULER_H}" rx="4" '
+               f'fill="#FAC775" stroke="#BA7517"/>')  # the ruler itself
+    for cm in range(13):  # the top edge: every centimeter, numbered
+        x = px(cm)
+        out.append(f'<line x1="{x:.1f}" y1="{top}" x2="{x:.1f}" y2="{top + 16}" stroke="#633806"/>'
+                   f'<text x="{x:.1f}" y="{top + 28}" font-size="10" text-anchor="middle" '
+                   f'fill="#412402">{cm}</text>')
+    for half in range(10):  # the bottom edge: every half inch, whole inches numbered
+        x, whole = px(half * 1.27), half % 2 == 0  # half an inch is 1.27 cm
+        out.append(f'<line x1="{x:.1f}" y1="{top + RULER_H}" x2="{x:.1f}" '
+                   f'y2="{top + RULER_H - (18 if whole else 10)}" stroke="#633806"/>')
+        if whole:
+            out.append(f'<text x="{x:.1f}" y="{top + RULER_H - 22}" font-size="10" '
+                       f'text-anchor="middle" fill="#412402">{half // 2}</text>')
+    # outside the ruler, so in the page's own text color (light or dark)
+    out.append(f'<text x="0" y="{top + 28}" font-size="11" fill="currentColor">cm</text>'
+               f'<text x="4" y="{top + RULER_H - 22}" font-size="11" fill="currentColor">in</text>')
+    out += ends  # across both edges, so either can be read
+    height = top + RULER_H + 4
+    return (f'<svg class="lerni-ruler" viewBox="0 0 320 {height}" role="img" '
+            f'aria-label="A ruler: centimeters on top, inches below">{"".join(out)}</svg>')
 
 
 def money_html(pic: dict[str, Any]) -> str:

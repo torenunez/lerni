@@ -152,6 +152,8 @@ _CSS = """
 .lerni-price { display: flex; flex-direction: column; align-items: center; font-size: 36px; }
 .lerni-price small { font-size: 15px; border: 1px solid var(--border-color-primary);
   border-radius: 4px; padding: 0 6px; }
+.lerni-ruler { display: block; width: 100%; max-width: 360px; margin: 4px auto 8px;
+  color: var(--body-text-color-subdued); }
 .lerni-credit { font-size: 11px; color: var(--body-text-color-subdued); text-align: center; }
 .lerni-soon div { font-size: 120px; line-height: 1; }
 .lerni-soon p { font-size: 26px !important; font-weight: 700; margin-top: 1rem; }

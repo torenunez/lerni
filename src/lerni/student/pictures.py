@@ -1,5 +1,5 @@
-"""Picture questions in races (v4.11; tracks since v4.11.1): blocks and money, drawn and graded
-by code (spec 11).
+"""Picture questions in races (v4.11; tracks since v4.11.1): blocks, money, and rulers, drawn
+and graded by code (spec 11).
 
 One source for the picture kind, with a track for each: a race's picture slot goes to the
 track that needs it most. One JSON file per player in ``<data root>/pictures/``: each track's
@@ -12,10 +12,11 @@ from __future__ import annotations
 import random
 import threading
 from datetime import date
+from fractions import Fraction
 from pathlib import Path
 from typing import Any
 
-from lerni.student import blocks, money
+from lerni.student import blocks, money, ruler
 from lerni.student.interests import MapStore
 from lerni.student.jsonfiles import read_json, write_json_atomic
 from lerni.student.race import (
@@ -28,12 +29,13 @@ from lerni.student.race import (
 )
 from lerni.student.students import check_username, default_data_dir
 
-TRACKS = ("blocks", "money")  # the picture kind's tracks; rulers come in v4.11.2
+TRACKS = ("blocks", "money", "ruler")  # the picture kind's tracks
 MAX_LEVEL = 6  # both tracks run 1 to 6
 DUE_UNTIL_TOP = 3  # counts as 3 items due while a track is below the top, so pictures come
 DUE_AT_TOP = 1  # every track at the top: a little practice still
 CLIMB_NEED = 0.1  # a track below the top level needs a little more than one at the top
 WAIT_NEED = 0.1  # each picture question a track sits out adds this to its need
+MIN_HISTORY = 3  # a miss rate from fewer answers counts as if from this many
 
 
 def _track(raw: Any) -> dict[str, Any]:
@@ -90,7 +92,8 @@ def track_need(t: dict[str, Any]) -> float:
     """How much a track needs practice: its recent miss rate, a little more below the top, and
     a little for each picture question it sat out, so a track done well still comes back."""
     history = t["history"]
-    rate = history.count(False) / len(history) if history else NO_HISTORY_NEED
+    # a short history counts as if 3 answers were in, so one early miss doesn't take over
+    rate = history.count(False) / max(len(history), MIN_HISTORY) if history else NO_HISTORY_NEED
     climb = CLIMB_NEED if t["level"] < MAX_LEVEL else 0.0
     return rate + climb + WAIT_NEED * t["waited"]
 
@@ -125,6 +128,10 @@ class PicturesDesk:
             self.store.asked(username, name)
         except OSError:
             pass  # a full disk: the question still comes
+        if name == "ruler":  # its key an exact fraction ("3/2"); shown as "1½ in"
+            prompt, length, draw, adds_up, shown = ruler.question(level, self.rng, emoji)
+            return Typed(self.kind, prompt, key=str(length), label=f"ruler-{level}",
+                         picture=draw, note=adds_up, answer=shown)
         if name == "money":  # its key in whole cents; shown as "$1.35" or "35¢"
             prompt, cents, draw, adds_up, dollars = money.question(level, self.rng, emoji)
             return Typed(
@@ -157,6 +164,8 @@ class PicturesDesk:
         if track == "money":  # amounts in whole cents: "1.35" and "$1.35" are both 135
             dollars = item.answer.startswith("$")
             right = money.cents_typed(text, dollars) == int(item.key)
+        elif track == "ruler":  # exact: "1.5" and "1 1/2" are both 3/2
+            right = ruler.length_typed(text) == Fraction(item.key)
         else:
             right = blocks.typed_number(text) == int(item.key)  # "12 " is right
         try:  # the level moves every 5 answers
