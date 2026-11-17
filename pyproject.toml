@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "lerni"
-version = "4.6.4"
+version = "4.6.5"
 description = "Local-first learning system combining Feynman Technique with SM-2 spaced repetition"
 readme = "README.md"
 license = {text = "MIT"}
@@ -49,7 +49,7 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 "lerni.student.personas" = ["*.md"]
-"lerni.student.web" = ["*.js"]
+"lerni.student.web" = ["*.js", "*.png"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

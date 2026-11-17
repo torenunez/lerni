@@ -7,9 +7,10 @@ sends the browser to the app. Signed-out visits to the app come here.
 from __future__ import annotations
 
 from html import escape
+from importlib.resources import files
 
 from fastapi import FastAPI, Form, Request
-from fastapi.responses import HTMLResponse, RedirectResponse, Response
+from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, Response
 
 from lerni.student.signin import SESSION_SECONDS, SignIn, cookie_name
 
@@ -20,6 +21,7 @@ _PAGE = """<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Lerni: sign in</title>
+{icons}
 <style>
 body {{ font-family: -apple-system, system-ui, sans-serif; margin: 0; min-height: 100vh;
   display: flex; align-items: center; justify-content: center;
@@ -56,6 +58,20 @@ NO_ACCOUNTS_HINT = (
 )
 
 
+def icon_head(label: str = "") -> str:
+    """The home-screen icon and name tags for a page's head (v4.6.5).
+
+    Args:
+        label: The server's label; development gets its own name.
+    Returns:
+        HTML for the head.
+    """
+    name = "Lerni Dev" if label else "Lerni"  # the name iOS offers for a new bookmark
+    return ('<link rel="apple-touch-icon" href="/apple-touch-icon.png">'
+            '<link rel="icon" type="image/png" href="/apple-touch-icon.png">'
+            f'<meta name="apple-mobile-web-app-title" content="{name}">')
+
+
 def _page(
     message: str = "", status: int = 200, first_start: bool = False, label: str = "",
     version: str = "",
@@ -65,6 +81,7 @@ def _page(
     strip = f'<div class="env">{escape(label)}</div>' if label else ""
     return HTMLResponse(
         _PAGE.format(message=escape(message), hint=escape(hint), label=strip,
+                     icons=icon_head(label),
                      version=f'<p class="version">{escape(version)}</p>' if version else ""),
         status_code=status,
     )
@@ -73,7 +90,8 @@ def _page(
 def add_signin_routes(
     app: FastAPI, signin: SignIn, label: str = "", version: str = ""
 ) -> None:
-    """Add ``/``, ``/signin``, ``/signout``, and the signed-out redirect for the app page."""
+    """Add ``/``, ``/signin``, ``/signout``, the home-screen icon, and the signed-out redirect
+    for the app page."""
     cookie_key = cookie_name(label)  # development keeps its own, so production stays signed in
 
     @app.middleware("http")
@@ -88,6 +106,15 @@ def add_signin_routes(
     def root(request: Request) -> Response:
         signed_in = signin.viewer_from_cookie(request.cookies.get(cookie_key))
         return RedirectResponse(APP_PATH + "/" if signed_in else "/signin", status_code=303)
+
+    # development's icon is dark with a DEV band, so the two bookmarks never mix (v4.6.5)
+    icon = files("lerni.student.web").joinpath("icon-dev.png" if label else "icon.png")
+
+    @app.get("/apple-touch-icon.png")
+    def home_screen_icon() -> FileResponse:
+        # public: the phone fetches it before anyone signs in
+        return FileResponse(str(icon), media_type="image/png",
+                            headers={"Cache-Control": "public, max-age=86400"})
 
     @app.get("/signin")
     def signin_form() -> HTMLResponse:
