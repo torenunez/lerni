@@ -25,8 +25,8 @@ NO_TOOLS = "install whisper.cpp and its model: admin reference, Voice"
 NO_SOUND = "say makes no sound here: start it from the Mac's own login, not over SSH or in tmux"
 SAY_FAILED = "say failed or took too long: check LERNI_SAY_VOICE names a voice in say -v '?'"
 _NOISE = re.compile(r"\[[^\]]*\]|\([^)]*\)")  # [BLANK_AUDIO], (music) and the like
-DICTATE_RATE = 125  # words a minute for spelling; say's default is near 175
-DICTATE_PAUSE = 1200  # ms of silence between the word and its sentence
+DICTATE_RATE = 110  # words a minute for spelling; say's default is near 175
+DICTATE_PAUSE = 900  # ms of silence between the word and its sentence
 
 
 class MacSpeech:
