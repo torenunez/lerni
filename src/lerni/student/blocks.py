@@ -141,7 +141,7 @@ def question(
 def typed_number(text: str) -> int | None:
     """The whole number typed ("12", " 12 "), or None for anything else."""
     t = "".join(text[: MAX_TYPED + 4].split())  # spaces anywhere don't count
-    return int(t) if t.isdigit() and len(t) <= MAX_TYPED else None
+    return int(t) if t.isascii() and t.isdigit() and len(t) <= MAX_TYPED else None  # not "²"
 
 
 class BlocksStore:

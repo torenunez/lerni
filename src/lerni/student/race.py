@@ -1036,8 +1036,9 @@ def mix(needs: Mapping[str, float], lucky: bool = False) -> list[str]:
     neediest (halved after each slot), spread out; question 4 stays a choice for a bonus."""
     kinds = [k for k in KINDS if k in needs or k == "choice"]  # choice is always there
     left = {k: 1 for k in kinds}  # one each first
+    left["choice"] += lucky  # a bonus race: one choice for the bonus, one still asked
     score = {k: needs.get(k, 0.0) for k in kinds}
-    for _ in range(QUESTIONS_PER_RACE - len(kinds)):  # each spare slot to the neediest
+    for _ in range(QUESTIONS_PER_RACE - sum(left.values())):  # each spare to the neediest
         top = max(kinds, key=lambda k: (score[k], -kinds.index(k)))  # ties: the earlier kind
         left[top] += 1
         score[top] /= 2  # so a second spare slot usually goes elsewhere
@@ -1135,7 +1136,8 @@ def bonus_move(race: Race, tier: str, line: str) -> Turn | None:
 def miss_opener(race: Race, number: int) -> str:
     """The first words for a wrong answer to question ``number``: each race starts somewhere
     of its own, and each later miss moves on one, so two misses never share them."""
-    misses = race.marks[:number].count(False)
+    misses = race.marks[:number].count(False) + sum(  # typed misses count too
+        not ok for i, ok in race.typed_right.items() if i < number)
     return MISS_OPENERS[(zlib.crc32(race.id.encode()) + misses) % len(MISS_OPENERS)]
 
 
@@ -1710,7 +1712,7 @@ class RaceDesk:
             with self._lock:
                 later = [q for q in self._held(username, day) if id(q) not in before]  # meanwhile
                 self._sets[username] = (day.isoformat(),
-                                        spread(few_probes(rest + later + unasked)))
+                                        spread(few_probes(unasked + rest + later)))
                 self._persist(username, day)  # the raced ones and the taken bonus are gone
                 self._races[username] = race
                 self._started[username] = self.clock()
@@ -1774,8 +1776,10 @@ class RaceDesk:
         turn, took = None, 0.0  # none until the cars move
         try:
             src = self.sources.get(item.kind)
-            checked = (src.check(username, item, text or "", day) if src is not None
-                       else Checked(False, ""))  # its source gone: counted as a miss
+            try:  # a check that fails (a full disk, odd text) is a miss, never a stuck question
+                checked = src.check(username, item, text or "", day)
+            except Exception:  # noqa: BLE001 - the student sees the right answer either way
+                checked = Checked(False, item.key, item.note)
             with self._lock:  # dropped or replaced while checking: it no longer counts
                 if self._races.get(username) is race:
                     turn = answer_typed(race, number, checked)
@@ -1951,9 +1955,13 @@ class RaceDesk:
         """The right answer and why, spoken after a wrong answer to question ``number`` (the
         last one answered, even the race's last), or None otherwise."""
         def wrong(r: Race) -> bool:  # the answer just given, and it was wrong
-            return number == r.answered - 1 and r.marks[number:number + 1] == [False]
+            return number == r.answered - 1 and (r.marks[number:number + 1] == [False]
+                                                 or r.typed_right.get(number) is False)
 
         def said(r: Race) -> str:
+            if (t := r.typed.get(number)) is not None:  # a word spelled out, or the number
+                right = " ".join(t.key.upper()) if t.kind == "spell" else t.key
+                return for_speaking(f"{miss_opener(r, number)} It's {right}. {t.note}")
             q = r.questions[number]
             return for_speaking(f"{miss_opener(r, number)} It's {q.choices[q.answer]}. {q.why}")
 

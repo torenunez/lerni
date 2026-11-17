@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import re
 import threading
+import time
 from collections.abc import Callable
 from datetime import date, timedelta
 from pathlib import Path
@@ -31,6 +32,7 @@ MAX_CLASS_WORDS = 40  # a class list longer than this is cut
 MAX_SENTENCE = 120  # characters
 MAX_TYPED = 40  # characters of an answer; longer is cut before grading
 WRITE_SECONDS = 120  # one small-model call
+RETRY_SECONDS = 3600  # background writes for one player: at most one an hour
 VOWELS = set("aeiouy")  # y too: "gym" for "gem" is a vowel mix-up
 PICK_RE = re.compile(r"[a-z]{3,14}")  # Lerni's words: plain lowercase, 3-14 letters
 CLASS_RE = re.compile(r"[A-Za-z][A-Za-z'’-]{0,23}")  # a class word may be "don't" or "Monday"
@@ -347,6 +349,7 @@ class SpellingDesk:
         self.store, self.maps = store, maps
         self.writer, self.speech = writer, speech  # None: no Claude, or no voice
         self._writing: set[str] = set()  # players whose words are being written now
+        self._tried: dict[str, float] = {}  # when each player's last background write began
         self._lock = threading.Lock()  # guards the set above
 
     # -- in races -------------------------------------------------------------------------
@@ -497,7 +500,10 @@ class SpellingDesk:
 
     def _top_up(self, username: str, day: date) -> None:
         # fewer than 10 of Lerni's words left: write more in the background, never waited for
-        if self.writer is not None and self._unasked_picks(username) < LOW_PICKS:
+        now = time.monotonic()
+        if (self.writer is not None and self._unasked_picks(username) < LOW_PICKS
+                and now - self._tried.get(username, -RETRY_SECONDS) >= RETRY_SECONDS):
+            self._tried[username] = now  # at most one try an hour, even when Claude fails
             threading.Thread(target=self._quietly, args=(username, day), daemon=True).start()
 
     def _quietly(self, username: str, day: date) -> None:

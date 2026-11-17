@@ -7,7 +7,15 @@ from datetime import date, timedelta
 from lerni.student.blocks import MAX_LEVEL, BlocksDesk, BlocksStore, question, typed_number
 from lerni.student.interests import MapStore, add_goal, add_interest
 from lerni.student.points import PointsStore
-from lerni.student.race import BONUS_AT, QUESTIONS_PER_RACE, RaceDesk, mix, need, public
+from lerni.student.race import (
+    BONUS_AT,
+    QUESTIONS_PER_RACE,
+    RaceDesk,
+    Typed,
+    mix,
+    need,
+    public,
+)
 from lerni.student.results import ResultsLog
 from lerni.student.spelling import SpellingDesk, SpellingStore
 from tests.student.test_race import FakeQuizzer
@@ -73,7 +81,8 @@ def test_the_neediest_kind_gets_the_spare_slots_and_the_bonus_spot_stays_a_choic
     assert all(a != b for a, b in zip(order, order[1:], strict=False))  # spread out
     assert mix({"choice": 0.5}) == ["choice"] * QUESTIONS_PER_RACE  # nothing else available
     lucky = mix({"choice": 0.0, "spell": 1.0, "picture": 1.0}, lucky=True)
-    assert lucky[BONUS_AT] == "choice" and lucky.count("choice") == 1
+    # regression (review): a bonus race still asks a choice question besides the bonus
+    assert lucky[BONUS_AT] == "choice" and lucky.count("choice") == 2
     assert need(0, 0, 0) == 0.5 and need(3, 10, 10) == 0.8  # no history; misses plus due
 
 
@@ -87,3 +96,33 @@ def test_each_blocks_answer_matches_its_drawing():
             else:
                 assert answer == draw["rows"] * draw["cols"]
     assert typed_number(" 1 2 ") == 12 and typed_number("12a") is None
+    assert typed_number("²") is None  # regression (review): not a digit int() can read
+
+
+def test_a_check_that_fails_is_a_miss_not_a_stuck_question(tmp_path):
+    # regression (review): an error inside a check left the race on that question for good
+    class Broken:
+        kind = "spell"
+
+        def due(self, username, today):
+            return 1
+
+        def item(self, username, today, avoid):
+            return Typed("spell", "Spell the word you hear.", key="fossil", label="fossil")
+
+        def check(self, username, item, text, today):
+            raise OSError("disk full")
+
+    maps, points = MapStore(tmp_path), PointsStore(tmp_path)
+    maps.change("sam", lambda m: add_goal(m, "Fractions"))
+    desk = RaceDesk(FakeQuizzer(), maps, points)
+    desk.sources, desk.prefill = {"spell": Broken()}, lambda *args: None
+    ticks = iter(range(0, 1000, 10))
+    desk.clock = lambda: float(next(ticks))
+    race = desk.start("sam", supervised=True, today=TODAY)
+    n = min(race.typed)
+    for i in range(n):  # the choices before it
+        desk.pick("sam", race.id, i, race.questions[i].answer)
+    _, turn, _ = desk.typed_answer("sam", race.id, n, "fossil", TODAY)
+    assert turn is not None and not turn.right and turn.answer == "fossil"
+    assert race.answered == n + 1  # the race moved on

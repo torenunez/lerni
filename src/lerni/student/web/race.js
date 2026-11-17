@@ -120,6 +120,19 @@
     button.setAttribute('aria-pressed', String(on));
     button.setAttribute('aria-label', on ? 'Sound on' : 'Sound off');
   }
+  function moveOn() {  // an answer or Race!: moving on stops a reading
+    unlock();
+    current++;
+    window.lerniTalk?.stop();
+    hold(false);
+    // inside the tap, so the iPad lets the right answer play later; with sound off the
+    // player stays untouched (an iPad's music keeps playing)
+    if (soundOn()) window.lerniTalk?.unlock();
+  }
+  // Return in a typed answer sends it, like a tap on Check
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Enter' && event.target.closest?.('#lerni-typed')) moveOn();
+  });
   document.addEventListener('click', event => {
     const at = selector => event.target.closest?.(selector);
     if (at('#lerni-next') && holdTimer) {  // still saying the right answer
@@ -128,15 +141,7 @@
       return;
     }
     // Race! and Next unlock sound; an answer tap wakes it again after the iPad paused it
-    if (at('.lerni-go, .lerni-choice, .lerni-check')) unlock();
-    if (at('.lerni-go, .lerni-choice, .lerni-check')) {  // moving on stops a reading
-      current++;
-      window.lerniTalk?.stop();
-      hold(false);
-      // inside the tap, so the iPad lets the right answer play later; with sound off the
-      // player stays untouched (an iPad's music keeps playing)
-      if (soundOn()) window.lerniTalk?.unlock();
-    }
+    if (at('.lerni-go, .lerni-choice, .lerni-check')) moveOn();
     // a tap on the card (or on the note when it holds the right answer) reads it aloud
     const svg = document.querySelector('#lerni-track svg[data-race]');
     const card = at('.lerni-question') || (at('#lerni-note') && svg?.dataset.why);
