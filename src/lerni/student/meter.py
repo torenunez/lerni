@@ -44,10 +44,14 @@ class UsageLog:
     def __init__(self, root: Path | None = None) -> None:
         self.root = (root or default_data_dir()) / "usage"
         self._lock = threading.Lock()  # one line at a time, never interleaved
+        self._pruned: date | None = None  # the day old files were last deleted
 
     def add(self, record: dict[str, Any], now: datetime | None = None) -> None:
         """Append one call's numbers to today's file (best effort: never fails a call)."""
         now = now or datetime.now()
+        if self._pruned != now.date():  # once a day, so 90 days holds without a restart
+            self._pruned = now.date()
+            self.prune(now.date())
         line = {"at": now.isoformat(timespec="seconds"), **record}  # to the second: enough
         try:
             with self._lock:
@@ -97,7 +101,7 @@ def by_feature(lines: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Each use's totals, most window movement first: calls, tokens, seconds, failures, and
     how far each window moved on its calls (a window's share since the call before)."""
     totals: dict[str, dict[str, Any]] = {}
-    last: dict[str, tuple[float, int]] = {}  # window -> (share, resets at) at the call before
+    last: dict[str, tuple[float, int]] = {}  # window -> (highest share seen, resets at)
     for r in sorted(lines, key=lambda r: str(r.get("at", ""))):  # in time order
         t = totals.setdefault(  # a feature's first call starts its row at zero
             str(r.get("use") or "unknown"),
@@ -125,10 +129,12 @@ def by_feature(lines: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 continue
             share, resets = float(now[0]), int(now[1])
             before = last.get(window)
-            # the first sighting is the baseline; a new window starts from 0; else the rise
+            # the first sighting is the baseline; a new window starts from 0; else only the
+            # rise above the highest share yet, so lines written out of order never count twice
             moved = 0.0 if before is None else share if before[1] != resets else share - before[0]
-            t[field] += max(moved, 0.0)  # a window never moves back mid-way: no credit
-            last[window] = (share, resets)  # the baseline for the next call
+            t[field] += max(moved, 0.0)
+            high = share if before is None or before[1] != resets else max(share, before[0])
+            last[window] = (high, resets)  # the high-water mark for the next call
     return sorted(totals.values(), key=lambda t: (-t["five_hour"], -t["calls"]))
 
 

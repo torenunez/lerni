@@ -225,7 +225,7 @@ Ask Claude Code to "write a batch for rating" for a student. It runs `lerni race
 
 ### Checks on GitHub and secret scanning
 
-Each pull request runs `.github/workflows/check.yml`: ruff on the Python files it changes, the tests marked `ci` (fakes only), and a gitleaks scan of the whole history. The commit gate still runs the full suite. To scan here: `gitleaks git --redact .`; a false positive goes in `.gitleaksignore` by its fingerprint. To block secrets before each commit too (optional, not set up): add `gitleaks git --pre-commit --redact --staged` to `.claude/hooks/quality-gate.sh`.
+Each pull request runs `.github/workflows/check.yml`: ruff on the Python files it changes, the tests marked `ci` (fakes only), and a gitleaks scan of its commits; every Monday (or by hand from the Actions tab) the scan covers the whole history. The commit gate still runs the full suite. To scan here: `gitleaks git --redact .`; a false positive goes in `.gitleaksignore` by its fingerprint. To block secrets before each commit too (optional, not set up): add `gitleaks git --pre-commit --redact --staged` to `.claude/hooks/quality-gate.sh`.
 
 ### If Claude stops working
 

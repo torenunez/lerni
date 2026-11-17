@@ -3,12 +3,16 @@ name: check
 on:
   pull_request:
     branches: [main]
+  schedule:
+    - cron: "0 9 * * 1"  # Mondays: the secrets job scans the whole history
+  workflow_dispatch:  # or by hand, from the Actions tab
 
 permissions:
   contents: read  # read the code; nothing else
 
 jobs:
   lint:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -18,13 +22,14 @@ jobs:
       - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
-      - run: pip install ruff
+      - run: pip install ruff==0.15.1  # pinned: a new release never fails a PR by itself
       # only the Python files this PR changes: src/ has known older debt
       - run: |
           files=$(git diff --name-only --diff-filter=ACMR "origin/$GITHUB_BASE_REF...HEAD" -- '*.py')
           if [ -n "$files" ]; then ruff check $files; else echo "No Python changes."; fi
 
   tests:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -39,10 +44,13 @@ jobs:
 
   secrets:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read  # the action lists a PR's commits
     steps:
       - uses: actions/checkout@v7
         with:
-          fetch-depth: 0  # scan full history
+          fetch-depth: 0  # a PR's commits, or on schedule the whole history
           persist-credentials: false
       - uses: gitleaks/gitleaks-action@v3
         env:

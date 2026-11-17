@@ -1,6 +1,7 @@
 """v4.12: the usage meter: each Claude call leaves one line, named by its feature, with
 numbers only; the report shares each window's movement out by feature."""
 
+from contextlib import suppress
 from datetime import date, datetime
 
 import pytest
@@ -44,3 +45,33 @@ def test_each_feature_gets_the_window_movement_of_its_own_calls(tmp_path):
     assert round(rows["race-write"]["five_hour"], 2) == 0.08  # 0.04 + 0.04
     assert round(rows["chat-supervised"]["five_hour"], 2) == 0.01  # the first is the baseline
     assert "race-write" in usage_report(log, day.date())
+
+
+def test_lines_out_of_order_never_count_twice_and_a_dead_call_still_leaves_a_line(tmp_path):
+    # regression (review): calls at once wrote shares out of order and over-counted
+    log = UsageLog(tmp_path)
+    day = datetime(2026, 11, 17, 9)
+    for minute, share in enumerate((0.08, 0.12, 0.10, 0.13)):
+        log.add({"use": "race-write", "five_hour": [share, 99]}, now=day.replace(minute=minute))
+    moved = sum(t["five_hour"] for t in by_feature(log.read(day.date(), day.date())))
+    assert round(moved, 2) == 0.05  # 0.08 to 0.13, once
+    # regression (review): a call that died before its result left no line at all
+    import asyncio
+
+    from lerni.student.adapters.claude_code import _metered
+
+    usage = Usage()
+    usage.log = UsageLog(tmp_path / "dead")
+
+    async def dies():  # a call that times out before any result
+        raise TimeoutError
+        yield  # an async generator, like the SDK's query
+
+    async def run():
+        with suppress(TimeoutError):
+            async for _ in _metered(dies(), usage, "tagger", "claude-haiku-5-5"):
+                pass
+
+    asyncio.run(run())
+    [line] = usage.log.read(date.today())
+    assert line["use"] == "tagger" and line["failed"] is True
