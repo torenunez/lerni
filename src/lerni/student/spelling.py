@@ -145,7 +145,9 @@ def mistake(word: str, typed: str) -> str:
         >>> mistake("rabbit", "rabit")
         'double'
     """
-    w, t = word.casefold(), " ".join(typed.split()).casefold()
+    straight = str.maketrans("‘’", "''")  # the iPad types curly apostrophes: don’t = don't
+    w = word.translate(straight).casefold()
+    t = " ".join(typed.split()).translate(straight).casefold()
     if t == w:
         return ""
     for a, b in (("ie", "ei"), ("ei", "ie")):  # "recieve" for "receive"
@@ -422,12 +424,15 @@ class SpellingDesk:
         def apply(data: dict[str, Any]) -> list[str]:
             for w in data["words"]:
                 if w["word"] == word:
+                    was_due = not w["last"] or w["due"] <= day.isoformat()  # new, or due
                     w["last"] = day.isoformat()  # asked today
                     if label:  # missed: tomorrow, from the first box again
                         w["missed"], w["streak"] = w["missed"] + 1, 0  # the streak starts over
                         w["mistakes"][label] = w["mistakes"].get(label, 0) + 1
                         w["due"] = (day + timedelta(days=1)).isoformat()
-                    else:  # right: a longer gap each time in a row
+                    elif not was_due:  # right, but asked early (a round ran short): no box
+                        w["right"] += 1
+                    else:  # right when due: a longer gap each time in a row
                         w["right"], w["streak"] = w["right"] + 1, w["streak"] + 1
                         gap = BOX_DAYS[min(w["streak"], LEARNED_AT) - 1]  # 1, 3, 7, then 14 days
                         w["due"] = (day + timedelta(days=gap)).isoformat()
@@ -497,23 +502,21 @@ class SpellingDesk:
     def set_class_list(
         self, username: str, text: str, today: date | None = None
     ) -> tuple[int, int, list[str]]:
-        """Replace the class list; words still missed carry over.
+        """Replace the class list; earlier words stay in practice, as Lerni's, until learned.
 
         Returns:
-            (words now on the list, words carried over, lines refused).
+            (words now on the list, earlier words still being missed, lines refused).
         """
         day = today or date.today()
         words, refused = class_words(text)
         keys = {w.casefold() for w in words}  # the new list, any case
 
         def apply(data: dict[str, Any]) -> int:
-            kept, carried = [], 0
-            for w in data["words"]:
-                if w["source"] != "class" or w["word"].casefold() in keys:
-                    kept.append(w)  # Lerni's words, and class words still on the list
-                elif w["missed"] and not learned(w):
-                    kept.append(w)  # off the list but still being missed: carried over
-                    carried += 1
+            kept, carried = data["words"], 0  # nothing is deleted: counts stay
+            for w in kept:
+                if w["source"] == "class" and w["word"].casefold() not in keys:
+                    w["source"] = "lerni"  # off the list: practiced with Lerni's until learned
+                    carried += int(not learned(w) and w["missed"] > 0 and not w["streak"])
             have = {w["word"].casefold(): w for w in kept}
             for word in words:
                 old = have.get(word.casefold())
@@ -590,12 +593,14 @@ class SpellingDesk:
             avoid = {w["word"].casefold() for w in data["words"]} | set(data["removed"])
             # general interests only (set-aside ones excluded), at most 12
             names = [g[0] for g in interest_groups(self.maps.get(username))][:12]
+            # the newest 200 (older ones Claude repeats are dropped by checked_picks)
+            recent = [w["word"] for w in data["words"]][-150:] + data["removed"][-50:]
             prompt = "\n".join(
                 [
                     "The student's interests:",
                     # fenced as data; an empty map gets broad topics
                     fence("interests", "\n".join(names) or "animals, games, and the outdoors"),
-                    f"Avoid: {', '.join(sorted(avoid)[-200:]) or 'nothing yet'}",  # a cap on length
+                    f"Avoid: {', '.join(recent) or 'nothing yet'}",
                 ]
             )
             system = PICK_SYSTEM.format(n=PICKS_PER_CALL, level=LEVELS[data["level"]])
@@ -628,8 +633,20 @@ class SpellingDesk:
     def write_sentences(self, username: str) -> int:
         """Sentences for class words that have none; returns how many were written."""
         need = [w["word"] for w in self.store.get(username)["words"] if not w["sentence"]]
-        if self.writer is None or not need:
-            return 0  # no Claude, or every word has one
+        key = f"{username}#sentences"  # its own guard: picks may be written meanwhile
+        with self._lock:
+            if self.writer is None or not need or key in self._writing:
+                return 0  # no Claude, every word has one, or a write under way
+            self._writing.add(key)
+        try:
+            return self._sentences(username, need)
+        finally:
+            with self._lock:
+                self._writing.discard(key)
+
+    def _sentences(self, username: str, need: list[str]) -> int:
+        # one call for the words without a sentence; each kept only if it uses its word
+        assert self.writer is not None
         try:
             reply = self.writer.write(
                 SENTENCE_SYSTEM, fence("words", "\n".join(need)), SENTENCE_SCHEMA, WRITE_SECONDS

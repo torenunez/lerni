@@ -176,7 +176,7 @@ def build_main_view(
                     )
                 games_refresh, games_outputs, topic_btns = None, [], []
             if spelling is not None:  # needs the voice: every word is heard
-                spelling_t = spelling_tab(signin, spelling)
+                spelling_t = spelling_tab(signin, spelling, stars, points)
             else:
                 with gr.Tab("Spelling", id="spelling", visible=False) as spelling_t:
                     pass

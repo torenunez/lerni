@@ -16,6 +16,7 @@ from typing import Any
 
 import gradio as gr
 
+from lerni.student.points import PointsStore
 from lerni.student.signin import SignIn, Viewer
 from lerni.student.spelling import (
     MAX_TYPED,
@@ -29,7 +30,7 @@ from lerni.student.spelling import (
 from lerni.student.students import StudentStore
 from lerni.student.web.accounts import PRIVATE, NotAllowed, require_educator
 from lerni.student.web.ask import MAX_AT_ONCE
-from lerni.student.web.games import require_player
+from lerni.student.web.games import require_player, stars
 from lerni.student.web.maps import map_owner
 
 UNLOCK = "() => { window.lerniTalk?.unlock(); }"  # a tap unlocks sound (iPad Safari)
@@ -93,7 +94,8 @@ def finish(right: int, awarded: int) -> str:
     )
 
 
-def spelling_tab(signin: SignIn, desk: SpellingDesk) -> gr.Tab:
+def spelling_tab(signin: SignIn, desk: SpellingDesk, header_stars: gr.Button | None = None,
+                 points: PointsStore | None = None) -> gr.Tab:
     """The Spelling section: Start, hear a word, type it, Check, Next, the round's score."""
     with gr.Tab("Spelling", id="spelling", visible=False) as tab:
         note = gr.Markdown(INTRO)  # the intro, or why a round can't start
@@ -203,8 +205,15 @@ def spelling_tab(signin: SignIn, desk: SpellingDesk) -> gr.Tab:
         go.click(on_start, None, outputs, concurrency_limit=MAX_AT_ONCE, **PRIVATE).then(**speak)
         nxt.click(on_next, shown, outputs, **PRIVATE).then(**speak)
         hear.click(**speak)
+        def header(request: gr.Request) -> Any:  # the header's ⭐ after a word pays
+            viewer = viewer_of(request)
+            return stars(points, viewer) if points is not None and viewer else gr.update()
+
         for trigger in (check.click, typed.submit):  # Return checks too
-            trigger(on_check, [typed, shown], outputs, concurrency_limit=MAX_AT_ONCE, **PRIVATE)
+            checked = trigger(on_check, [typed, shown], outputs, concurrency_limit=MAX_AT_ONCE,
+                              **PRIVATE)
+            if header_stars is not None:
+                checked.then(header, None, header_stars, **PRIVATE)
         clip.change(None, clip, None, js=PLAY)  # a new clip plays in the browser
         tab.select(None, js=UNLOCK)  # opening Spelling is a tap too
     return tab

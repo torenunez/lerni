@@ -59,6 +59,16 @@ def test_a_round_is_graded_by_code_and_missed_words_come_back(tmp_path):
     assert words["friend"]["mistakes"] == {"missing": 1}
     assert SpellingStore(tmp_path).get("lee")["level"] == 2  # 4 of 5: up a level
     assert d.answer("lee", r.id, 4, "again", TODAY) is None  # a repeated tap: nothing
+    # regression: a word asked again before it's due doesn't move up a box (review, v4.10)
+    again = d.start("lee", TODAY)
+    for i, word in enumerate(again.words):
+        d.answer("lee", again.id, i, word, TODAY)
+    words = {w["word"]: w for w in SpellingStore(tmp_path).get("lee")["words"]}
+    assert words["because"]["streak"] == 1 and words["because"]["right"] == 2
+    # a new list: earlier words stay, as Lerni's, with their counts (review, v4.10)
+    d.set_class_list("lee", "said", TODAY)
+    words = {w["word"]: w for w in SpellingStore(tmp_path).get("lee")["words"]}
+    assert words["friend"]["source"] == "lerni" and words["friend"]["missed"] == 1
 
 
 def test_nothing_typed_is_kept_on_disk(tmp_path):
@@ -91,6 +101,7 @@ def test_claudes_words_are_checked_and_removed_words_never_come_back(tmp_path):
     ("cat", "cart", "extra"),
     ("because", "becuz", "other"),
     ("Monday", " monday ", ""),
+    ("don't", "don’t", ""),  # regression: the iPad's curly apostrophe is right (review)
 ])
 def test_mistake_labels(word, typed, label):
     assert mistake(word, typed) == label
