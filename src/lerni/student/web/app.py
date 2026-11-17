@@ -59,7 +59,7 @@ from lerni.student.usage import Usage  # noqa: E402
 from lerni.student.voice import Speech  # noqa: E402
 from lerni.student.web.games import SOUNDS  # noqa: E402
 from lerni.student.web.main import build_main_view  # noqa: E402
-from lerni.student.web.signin_page import APP_PATH, add_signin_routes  # noqa: E402
+from lerni.student.web.signin_page import APP_PATH, add_signin_routes, icon_head  # noqa: E402
 
 # Upload's 5 MB limit plus room for the form around the file.
 MAX_UPLOAD_REQUEST = 5_000_000 + 64_000
@@ -424,7 +424,7 @@ def build_app(
         auth_dependency=current_user,
         theme=_theme(),
         css=_CSS,
-        head=_head(speech is not None),
+        head=_head(speech is not None) + icon_head(label),  # the home-screen icon too
         **_MOUNT_OPTIONS,
     )
     # Gradio refuses file paths outside its upload folder only once launched; mounted apps never are

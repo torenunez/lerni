@@ -14,6 +14,11 @@ When something changes, update this section and add a log entry below.
 
 ## Log
 
+### 2026-11-16 (Tailscale live; a home-screen icon, v4.6.5 built)
+
+- Away from home: v4.6.4 merged and deployed. Production and development are served over Tailscale, tailnet only (ports 443 and 8443), and production works on the admin's phone over cellular. The tailnet's access rules were already in place: members reach only Lerni's two ports, a device tagged for the iPad only production, and only the admin applies tags. The docs PR stays v4.8.
+- v4.6.5 ([plan](../plans/v4.6.5-app-icon.md)): bookmarks on the home screen showed a plain gray letter. The admin picked the MentalMap icon from a mockup: green for production, gray with a red DEV band for development. The icon is served to anyone (the phone fetches it signed out), and the pages name the bookmark Lerni or Lerni Dev.
+
 ### 2026-11-16 (harder questions at the top; v4.6.4 built)
 
 - v4.6.4 ([plan](../plans/v4.6.4-harder-top.md)): v4.6.3 merged and deployed. The win-rate check-in found levels 4 and 5 answered right far above the 60% target and races won far above 1 in 3, with level 5 a ceiling; levels 1–3 sat near the target, and the rivals' pace matches it (a win needs 4 of 5). A level 6 now sits above 5: three steps, or the wrong step in a rival's worked answer. Levels, steps, and rivals are otherwise unchanged. The race eval's `levels` case passes at 1, 5, and 6; level 6 reads somewhat harder by eye. Tests: 287 pass.

@@ -128,3 +128,12 @@ def test_car_pictures_and_sounds_are_only_for_someone_signed_in_and_only_known_n
         assert client.get(bad).status_code == 404
     client.cookies.clear()
     assert client.get("/sounds/roar").status_code in (302, 303, 401)  # signed out
+
+
+def test_the_home_screen_icon_loads_before_sign_in(client, tmp_path):
+    # v4.6.5: the bookmark showed a gray "L"; the phone fetches the icon signed out
+    icon = client.get("/apple-touch-icon.png")
+    assert icon.status_code == 200 and icon.content.startswith(b"\x89PNG")
+    assert 'rel="apple-touch-icon"' in client.get("/signin").text
+    dev = TestClient(build_app(data_root=tmp_path, label="Development"))
+    assert dev.get("/apple-touch-icon.png").content != icon.content  # development's own
