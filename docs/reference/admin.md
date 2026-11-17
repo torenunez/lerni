@@ -127,7 +127,7 @@ Both servers run as macOS LaunchAgents: they start when the admin logs in (after
 
 `lerni stats` rebuilds a read-only copy of the student data, then prints; it reads production's data unless `--data` says otherwise.
 
-- `lerni stats`: one line per active student, over the last 4 weeks (`--weeks N`, or `--all`).
+- `lerni stats`: one line per active student, over the last 4 weeks (`--weeks N`, or `--all`), then Claude use by feature for today and the last 7 days: calls, tokens, seconds, failures, and how far the 5-hour and weekly windows moved on each feature's calls (the usage meter, v4.12: `usage/<day>.jsonl`, numbers only, kept 90 days).
 - `lerni stats USER`: right answers by area and week, the hardest goals (5+ answers), the ideas missed most, a Variety line (questions, distinct ideas, ideas asked before, and the formats and settings used), then probes, bonus answers, and typed questions (spelling, pictures) on their own lines. Weeks are whole, Monday first. The 95% range says how far to trust a percentage: with few answers it's wide. Those aren't in the percentages.
 - `lerni stats --sql "SELECT goal, SUM(right), COUNT(*) FROM answers WHERE right IS NOT NULL AND probe IS NULL GROUP BY goal"`: any one query, tab-separated; a write is refused.
 - The copy is `~/.lerni/student/stats.sqlite`, also rebuilt each night, so `sqlite3 -readonly` on it is at most a day old. Never edit it, and don't back it up: it's replaced whole.
@@ -222,6 +222,10 @@ Spelling and blocks are typed questions inside races (v4.11): every race has at 
 ### Rating questions in bulk
 
 Ask Claude Code to "write a batch for rating" for a student. It runs `lerni race batch --user U --out FILE` (about 8 checked questions per goal, written on a copy of the data so nothing is recorded; it says the number of Claude calls first), makes a Google Sheet from the file in your account, and deletes the file. Rate each row Good, Needs a fix, or Bad (the dropdown beside Goal), with notes on what's wrong. Then ask Claude Code to read it back: it infers each row's problem from your notes (wrong answer, confusing, format doesn't fit, too easy, too hard, off the goal, unrealistic, or same as another), runs `lerni race labels FILE --user U` (good ones become examples for their goal; wrong ones are avoided and never race), deletes the file, and offers to delete the sheet. The file is a list of rows (`{"rows": [...]}`) with the sheet's headers as keys (Goal, Rating, Notes, Question, A, B, C, Right answer, Why, Interest, Format, id; plus the inferred Problem). `--goal NAME` (repeatable) writes for one goal only; `--data ~/.lerni/student-dev` works on development's data. Takes effect at the next question write; no restart.
+
+### Checks on GitHub and secret scanning
+
+Each pull request runs `.github/workflows/check.yml`: ruff on the Python files it changes, the tests marked `ci` (fakes only), and a gitleaks scan of the whole history. The commit gate still runs the full suite. To scan here: `gitleaks git --redact .`; a false positive goes in `.gitleaksignore` by its fingerprint. To block secrets before each commit too (optional, not set up): add `gitleaks git --pre-commit --redact --staged` to `.claude/hooks/quality-gate.sh`.
 
 ### If Claude stops working
 

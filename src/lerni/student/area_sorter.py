@@ -20,6 +20,7 @@ from lerni.student.interests import (
     check_name,
     set_area,
 )
+from lerni.student.meter import using
 from lerni.student.race import Checker
 
 AREA_TIMEOUT_SECONDS = 20  # a save waits for it, so short; a goal left unsorted shows in Other
@@ -100,8 +101,9 @@ class AreaSorter:
             return 0
         picks: dict[str, str] | None = None  # None: no answer came back
         try:
-            raw = self.writer.write(AREA_SYSTEM, area_input(m, todo), AREA_SCHEMA,
-                                    AREA_TIMEOUT_SECONDS)
+            with using("area-sort"):  # the meter's name for this call
+                raw = self.writer.write(AREA_SYSTEM, area_input(m, todo), AREA_SCHEMA,
+                                        AREA_TIMEOUT_SECONDS)
             picks = parse_areas(raw, todo)
 
             def apply(m: InterestMap) -> int:

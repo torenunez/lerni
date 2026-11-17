@@ -1,0 +1,49 @@
+name: check
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read  # read the code; nothing else
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0  # to compare with main
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - run: pip install ruff
+      # only the Python files this PR changes: src/ has known older debt
+      - run: |
+          files=$(git diff --name-only --diff-filter=ACMR "origin/$GITHUB_BASE_REF...HEAD" -- '*.py')
+          if [ -n "$files" ]; then ruff check $files; else echo "No Python changes."; fi
+
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - run: pip install -e ".[student,dev]"
+      # a few key tests (marked ci): fakes only, no secrets, never an eval
+      - run: python -m pytest -q -m ci
+
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0  # scan full history
+          persist-credentials: false
+      - uses: gitleaks/gitleaks-action@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

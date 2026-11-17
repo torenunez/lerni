@@ -11,6 +11,7 @@ API-key adapter; Anthropic doesn't allow offering claude.ai login to others.
 from __future__ import annotations
 
 import asyncio
+import contextvars
 import json
 import queue
 import shutil
@@ -32,6 +33,7 @@ from claude_agent_sdk import (
 
 from lerni.student.conversation import ConversationUnavailable, Turn
 from lerni.student.fence import fence
+from lerni.student.meter import current_use
 from lerni.student.race import QUIZ_SCHEMA, RaceUnavailable
 from lerni.student.tagging import TAG_SCHEMA
 from lerni.student.upload import UPLOAD_SCHEMA, UploaderUnavailable, UploadSource
@@ -83,9 +85,10 @@ def _failed(usage: Usage | None, what: str, exc: BaseException) -> None:
           flush=True)
 
 
-def _note_limits(usage: Usage | None, message: Any) -> None:
-    """Pass a rate-limit event's numbers on to ``usage``, and note a call's result."""
+def _note_limits(usage: Usage | None, message: Any, kind: str = "", model: str = "") -> None:
+    """Pass a rate-limit event's numbers on to ``usage``, note a call's result, and meter it."""
     if usage is not None and isinstance(message, ResultMessage):
+        _meter(usage, message, kind, model)
         if not message.is_error:
             usage.succeeded()  # signed in again, if it wasn't
         elif getattr(message, "api_error_status", None) == 401 or _signin(
@@ -104,6 +107,24 @@ def _note_limits(usage: Usage | None, message: Any) -> None:
     if info.status == "rejected" and info.rate_limit_type and info.resets_at:
         windows[info.rate_limit_type] = (1.0, info.resets_at)  # this one is full
     usage.record(windows, overage=bool(raw.get("isUsingOverage") or raw.get("overageInUse")))
+
+
+def _meter(usage: Usage, result: ResultMessage, kind: str, model: str) -> None:
+    # one line for the usage meter (v4.12): numbers and labels, never the prompt or reply
+    if usage.log is None:
+        return
+    tokens = result.usage if isinstance(result.usage, dict) else {}
+    usage.log.add({
+        "use": current_use(kind),  # "race-write", or the adapter's kind when unnamed
+        "model": model,
+        "in": int(tokens.get("input_tokens") or 0),
+        "out": int(tokens.get("output_tokens") or 0),
+        "cached": int(tokens.get("cache_read_input_tokens") or 0),  # read from the cache
+        "cache_write": int(tokens.get("cache_creation_input_tokens") or 0),
+        "seconds": round((result.duration_ms or 0) / 1000, 1),
+        "failed": bool(result.is_error),
+        **usage.shares(),  # each window's share right after, for its movement by feature
+    })
 
 
 def claude_cli_available() -> bool:
@@ -135,6 +156,11 @@ class ClaudeCodeChat:
         Raises:
             ConversationUnavailable: Claude didn't answer in time or at all, or Lerni is resting.
         """
+        # the caller's context now, when asked: the meter learns which feature is talking
+        return self._stream(system, turns, contextvars.copy_context())
+
+    def _stream(self, system: str, turns: Sequence[Turn],
+                ctx: contextvars.Context) -> Iterator[str]:
         if self.usage is not None and (resting := self.usage.paused()):
             raise ConversationUnavailable(resting)  # near the limit: no call at all
         pieces: queue.Queue[str | BaseException | None] = queue.Queue()
@@ -153,7 +179,7 @@ class ClaudeCodeChat:
             finally:
                 pieces.put(None)
 
-        threading.Thread(target=run, daemon=True).start()
+        threading.Thread(target=ctx.run, args=(run,), daemon=True).start()  # the caller's use
         sent = False
         try:
             while (piece := pieces.get()) is not None:
@@ -176,7 +202,7 @@ class ClaudeCodeChat:
         with tempfile.TemporaryDirectory(prefix="lerni-ask-") as workdir:
             options = self.options(system, workdir)
             async for message in query(prompt=_prompt_with_history(turns), options=options):
-                _note_limits(self.usage, message)
+                _note_limits(self.usage, message, "chat", self.model)
                 if isinstance(message, ResultMessage) and message.is_error:
                     raise ConversationUnavailable("Claude didn't finish.")  # don't save it as done
                 if not isinstance(message, StreamEvent):
@@ -223,7 +249,7 @@ class ClaudeCodeTagger:
         with tempfile.TemporaryDirectory(prefix="lerni-tag-") as workdir:
             result: ResultMessage | None = None
             async for message in query(prompt=prompt, options=self.options(system, workdir)):
-                _note_limits(self.usage, message)
+                _note_limits(self.usage, message, "tagger", self.model)
                 if isinstance(message, ResultMessage):
                     result = message
         if result is None or result.is_error or not isinstance(result.structured_output, dict):
@@ -270,7 +296,7 @@ class ClaudeCodeQuizzer:
             result: ResultMessage | None = None
             async for message in query(prompt=prompt,
                                        options=self.options(system, workdir, schema)):
-                _note_limits(self.usage, message)
+                _note_limits(self.usage, message, "small-model", self.model)
                 if isinstance(message, ResultMessage):
                     result = message
         if result is None or result.is_error or not isinstance(result.structured_output, dict):
@@ -334,7 +360,7 @@ class ClaudeCodeUploader:
             options = self.options(system, workdir, pdf_path, only_this_pdf if pdf_path else None)
             result: ResultMessage | None = None
             async for message in query(prompt=_prompt_stream(prompt), options=options):
-                _note_limits(self.usage, message)
+                _note_limits(self.usage, message, "upload", self.model)
                 if isinstance(message, ResultMessage):
                     result = message
         if result is None or result.is_error or not isinstance(result.structured_output, dict):

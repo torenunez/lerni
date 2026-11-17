@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import threading
 from datetime import datetime, timedelta
+from typing import Any
 
 WARN_AT = {"five_hour": 0.80}  # per window; the weekly ones warn at WEEK_WARN
 WEEK_WARN = 0.75
@@ -35,6 +36,7 @@ class Usage:
         self._overage_until: datetime | None = None
         self._signed_out = False  # set by a failed sign-in, cleared by any call that works
         self._lock = threading.Lock()
+        self.log: Any = None  # the usage meter (v4.12): a UsageLog, set by the server
 
     def failed(self, signin: bool) -> None:
         """Note a failed call; ``signin``: Claude Code's sign-in has expired."""
@@ -62,6 +64,12 @@ class Usage:
             if overage:  # paid credits: stop until the full windows reset
                 full = [at for used, at in self._windows.values() if used >= PAUSE_AT and at > now]
                 self._overage_until = max(full, default=now + OVERAGE_PAUSE)
+
+    def shares(self) -> dict[str, list[float | int]]:
+        """Each window's share used (0–1) and reset time (Unix seconds), for the meter."""
+        with self._lock:
+            return {name: [round(used, 4), int(at.timestamp())]
+                    for name, (used, at) in self._windows.items()}
 
     def warning(self, now: datetime | None = None) -> str:
         """A line for educators when the admin must sign in again, or a window is getting full;

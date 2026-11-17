@@ -16,6 +16,7 @@ import gradio as gr
 
 from lerni.student.feedback import FeedbackError, FeedbackStore
 from lerni.student.interests import MapError, MapStore
+from lerni.student.meter import using
 from lerni.student.results import ResultsLog
 from lerni.student.signin import Role, SignIn, Viewer
 from lerni.student.students import AccountError, Kind, StudentStore
@@ -106,7 +107,8 @@ def propose_for(
             raise UploaderUnavailable("Claude isn't set up on this server yet.")
         source = extract_upload(text, name, data)
         own = requested is None  # My map: their own notes
-        proposals, notes = parse_proposals(uploader.propose(upload_system(own), source))
+        with using("upload"):  # the meter's name for this call
+            proposals, notes = parse_proposals(uploader.propose(upload_system(own), source))
     except (NotAllowed, UploadError, UploaderUnavailable) as exc:
         return [], [], f"⚠️ {exc}"
     if not proposals:

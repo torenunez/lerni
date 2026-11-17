@@ -2,6 +2,10 @@
 
 from pathlib import Path
 
+import pytest
+
+pytestmark = pytest.mark.ci  # run on each PR by GitHub (v4.12)
+
 ROOT = Path(__file__).resolve().parents[1]
 
 

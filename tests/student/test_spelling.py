@@ -78,6 +78,7 @@ def test_words_are_graded_by_code_and_missed_words_come_back(tmp_path):
     assert SpellingStore(tmp_path).get("lee")["level"] == 2  # up a level
 
 
+@pytest.mark.ci  # rule 6, checked on each PR
 def test_nothing_typed_is_kept_on_disk(tmp_path):
     d = desk(tmp_path)
     d.set_class_list("lee", "because", TODAY)

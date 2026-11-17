@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "lerni"
-version = "4.11.2"
+version = "4.12"
 description = "Local-first learning system combining Feynman Technique with SM-2 spaced repetition"
 readme = "README.md"
 license = {text = "MIT"}
@@ -56,6 +56,7 @@ testpaths = ["tests"]
 pythonpath = ["src"]
 markers = [
     "distribution: builds and installs the package; slow, needs build tooling",
+    "ci: a few key tests GitHub runs on each PR (fakes only, no secrets)",
 ]
 
 [tool.mypy]
