@@ -58,6 +58,11 @@ def spelling_fold(
         stats = gr.Markdown()  # level, missed most, kinds of mistakes
         words = gr.CheckboxGroup(label="Words in practice (tick to remove)", choices=[])
         remove = gr.Button("Remove ticked", min_width=90)
+        # a paragraph's misspelled words (v4.14): added only on the educator's tap (rule 5)
+        suggested = gr.CheckboxGroup(
+            label="Suggested from writing (tick to add)", choices=[], visible=False
+        )
+        add = gr.Button("Add ticked", min_width=90, visible=False)
 
     def student(requested: str | None, request: gr.Request) -> str:
         # checked again on every request, as for every change on this page
@@ -95,7 +100,29 @@ def spelling_fold(
         box_text, summary, practice = show(requested, request)
         return [box_text, f"Removed {gone}.", summary, practice]
 
+    def show_suggested(requested: str | None, request: gr.Request) -> list[Any]:
+        # shown only when there are some
+        try:
+            words = desk.summary(student(requested, request))["suggested"]
+        except NotAllowed:
+            words = []
+        return [gr.update(choices=words, value=[], visible=bool(words)),
+                gr.update(visible=bool(words))]
+
+    def on_add(picked: list[str], requested: str | None, request: gr.Request) -> list[Any]:
+        if not picked:
+            return [gr.update(), gr.update(), "⚠️ Tick one first.", gr.update(), gr.update()]
+        try:
+            n = desk.add_suggested(student(requested, request), picked)
+        except (NotAllowed, SpellingUnavailable) as exc:
+            return [gr.update(), gr.update(), f"⚠️ {exc}", gr.update(), gr.update()]
+        _, summary, practice = show(requested, request)  # the words now in practice
+        return [*show_suggested(requested, request), f"✅ Added {n}.", summary, practice]
+
     out = [box, stats, words]
+    for event in (who.change, tab.select):  # the suggestions, beside the words
+        event(show_suggested, who, [suggested, add], **PRIVATE)
+    add.click(on_add, [suggested, who], [suggested, add, status, stats, words], **PRIVATE)
     who.change(show, who, out, **PRIVATE)  # the student picked: their words
     tab.select(show, who, out, **PRIVATE)  # and fresh counts each time the page opens
     save.click(on_save, [box, who], [box, status, stats, words], **PRIVATE)

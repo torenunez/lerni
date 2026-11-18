@@ -53,6 +53,7 @@ from lerni.student.web.accounts import PRIVATE, NotAllowed
 from lerni.student.web.ask import MAX_AT_ONCE, talk_preview
 from lerni.student.web.maps import map_owner
 from lerni.student.web.spelling import spelled_html
+from lerni.student.writing import CHECKLIST, MAX_PARAGRAPH, WRITE_FIRST
 
 LANES = (12, 55, 98)  # the student's lane, then the fast and slow rivals'
 BOT_COLORS = {"Zippy": "#7F77DD", "Bolt": "#888780"}  # the bots' own paint
@@ -333,16 +334,39 @@ def hero_html(garage: Garage, p: Points | None) -> str:
     )
 
 
-def passage_html(p: Any) -> str:
+def passage_html(p: Any, opened: bool = True) -> str:
     """A reading race's passage (v4.13): its title and paragraphs, folded by a tap; no kind
-    label, since question 1 asks it."""
+    label, since question 1 asks it. A writing race shows it folded (v4.14)."""
     if p is None:
         return ""
     paras = "".join(f"<p>{html.escape(para)}</p>" for para in p.text.split("\n\n"))
+    fold = " open" if opened else ""  # a writing race: the prompt and the field come first
     return (
-        f'<details class="lerni-passage" open><summary>📖 {html.escape(p.title)}</summary>'
+        f'<details class="lerni-passage"{fold}><summary>📖 {html.escape(p.title)}</summary>'
         f'<div class="lerni-passage-text">{paras}</div></details>'
     )
+
+
+def checklist_html(graded: Any) -> str:
+    """A writing race's checklist (v4.14): empty boxes before the first Check, then ✓ or
+    "not yet" per item, with one thing done well and one to try."""
+    if graded is not None and graded.care:  # a worry: the caring words alone
+        return f'<div class="lerni-checklist"><p>{html.escape(graded.well)}</p></div>'
+    rows = []
+    for n, (_, name) in enumerate(CHECKLIST):
+        if graded is None:
+            rows.append(f"<li>⬜ {html.escape(name)}</li>")  # before writing: what to aim for
+        elif graded.marks[n]:
+            rows.append(f'<li class="lerni-met">✅ {html.escape(name)}</li>')
+        else:
+            rows.append(f'<li class="lerni-not-yet">🔸 {html.escape(name)}: not yet</li>')
+    lines = ""
+    if graded is not None:  # Claude's two lines, and what the revision fixed
+        if graded.better:
+            lines += f"<p>Better than before: {html.escape(', '.join(graded.better))} ✅</p>"
+        lines += f"<p>Done well: {html.escape(graded.well)}</p>" if graded.well else ""
+        lines += f"<p>Try: {html.escape(graded.tip)}</p>" if graded.tip else ""
+    return f'<div class="lerni-checklist"><ul>{"".join(rows)}</ul>{lines}</div>'
 
 
 def order_html(pic: dict[str, Any]) -> str:
@@ -527,6 +551,8 @@ def question_card(
     otherwise the current question. The bonus shows its question alone, then its grade.
     ``hear`` ends the first line of a card that can be heard; ``typed`` is a typed answer
     just checked, for marking a missed word (on screen only)."""
+    if race.paragraph is not None:  # a writing race (v4.14): the prompt, the dock below
+        return f"✏️ **Write a paragraph**\n\n**{race.paragraph.prompt}**", False
     if _why_first(race, last) and last[0] in race.typed:  # a missed word or picture
         return _typed_miss(race, *last, typed), False
     if _why_first(race, last):  # a wrong answer's why comes before anything, the bonus too
@@ -690,6 +716,23 @@ def games_tab(
                 check = gr.Button(
                     "Check", variant="primary", scale=1, min_width=80, elem_classes="lerni-check"
                 )  # race.js counts it as a tap
+        # a writing race (v4.14): the checklist, the paragraph, Check, and Done
+        with gr.Column(
+            elem_id="lerni-dock-write", visible=False, elem_classes="lerni-dock"
+        ) as wdock:
+            checklist = gr.HTML(padding=False)
+            para_box = gr.Textbox(
+                show_label=False,
+                placeholder="Write your paragraph here…",
+                lines=5,
+                max_lines=10,
+                max_length=MAX_PARAGRAPH,
+                container=False,
+                elem_id="lerni-paragraph",
+            )  # race.js: no autocorrect, capitals, or spell check
+            with gr.Row():
+                para_check = gr.Button("Check", variant="primary", min_width=90)
+                para_done = gr.Button("Done", min_width=90, visible=False)
         note = gr.Markdown(elem_id="lerni-note")
         # at the finish: up to two nearby ideas to talk about in Chat (v3.36)
         with gr.Column(visible=False, elem_classes="lerni-explore") as explore:
@@ -736,6 +779,11 @@ def games_tab(
         drawing,
         typed_box,
         passage,
+        wdock,
+        checklist,
+        para_box,
+        para_check,
+        para_done,
     ]
 
     def garage_updates(p: Points | None) -> list[Any]:
@@ -775,9 +823,13 @@ def games_tab(
         line: str,
         last: tuple[int, Turn] | None = None,
         typed: str = "",
+        fresh: bool = False,
     ) -> list[Any]:
         """Every output, in order; ``last`` is the answer just given, for the waiting card, and
-        ``typed`` what was just typed, to mark a missed word (never kept)."""
+        ``typed`` what was just typed, to mark a missed word (never kept); ``fresh`` empties
+        the paragraph field (a new race), which otherwise keeps its text for a revision."""
+        writes = race is not None and race.paragraph is not None  # a writing race (v4.14)
+        writing = writes and not race.done  # its field and buttons, until the finish
         pic, kind = None, ""  # a typed slot on screen: what to draw, and its kind
         p = points.get(viewer.username) if viewer else None
         driving = p.car if p else STARTER
@@ -795,7 +847,7 @@ def games_tab(
             reads = "why" if why else ""
             typed_live = False
         else:
-            ask, show = question_card(race, last, HEAR if talks else "", typed)
+            ask, show = question_card(race, last, HEAR if talks and not writes else "", typed)
             # while the why shows, the hidden buttons don't get the next question yet
             buttons = (
                 [gr.update(visible=True, value=c) for c in public(race)["choices"]]
@@ -814,10 +866,11 @@ def games_tab(
             go_update, ref, waiting = (
                 gr.update(visible=False),
                 (race.id, race.answered),
-                not (show or live or typed_live),
+                not (show or live or typed_live or writing),
             )
             why = _why_first(race, last)
             reads = "why" if why else "question" if show or live or typed_live else ""
+            reads = "" if writes else reads  # a paragraph's prompt is read, not heard
         mine = stars(points, viewer)
         topics = (
             desk.probes_after(viewer.username, race)  # only at the finish
@@ -854,9 +907,18 @@ def games_tab(
             picture_html(pic),
             gr.update(value="", placeholder=PLACEHOLDER.get(kind, "")),  # empty for each
             gr.update(
-                value=passage_html(race.passage if race else None),  # above the track
+                value=passage_html(race.passage if race else None, opened=not writes),
                 visible=bool(race and race.passage and not race.done),
+            ),  # above the track
+            gr.update(visible=writes),  # the checklist stays up at the finish
+            checklist_html(race.graded if writes else None),
+            gr.update(value="", visible=writing) if fresh else gr.update(visible=writing),
+            gr.update(
+                visible=writing,
+                interactive=True,
+                value="Check again" if writes and race.graded is not None else "Check",
             ),
+            gr.update(visible=writing and race.graded is not None),  # Done, after a first try
         ]
 
     def viewer_of(request: gr.Request) -> Viewer | None:
@@ -890,7 +952,7 @@ def games_tab(
         except Exception:  # noqa: BLE001 - never show what went wrong inside
             return screen(viewer, None, NOT_READY)
         race, message = start_race(desk, viewer, gas, driving, rivals)
-        return screen(viewer, race, message)
+        return screen(viewer, race, message, fresh=True)
 
     def recover(request: gr.Request) -> list[Any]:
         # after an error: the race as it stands, or the start; never "Lerni is reading…"
@@ -967,6 +1029,33 @@ def games_tab(
             if shown is None:
                 return [gr.update() for _ in outputs]  # a double send: nothing changes
             return screen(viewer, *shown, last=(ref[1], turn) if turn else None, typed=text)
+        except Exception:  # noqa: BLE001 - never show what went wrong inside
+            return recover(request)
+
+    def on_paragraph(
+        text: str, ref: tuple[str, int], request: gr.Request, done: bool = False
+    ) -> list[Any]:
+        try:  # anything odd: the race as it stands, and the paragraph stays in its field
+            # graded on the server; the text goes to Claude and the logs, never kept elsewhere
+            viewer = viewer_of(request)
+            if desk is None or viewer is None:
+                return screen(viewer, None, "")
+            race, graded, awarded = desk.paragraph_answer(
+                viewer.username, ref[0], text or "", done=done
+            )
+            if graded is None and race is not None and desk.grading(race.id):
+                return [gr.update() for _ in outputs]  # the first Check is still being read
+            if graded is None:  # blank, a double send, or the race ended
+                if race is not None and race.id == ref[0] and race.done:
+                    return [gr.update() for _ in outputs]  # a second Done: the finish stays
+                ended = race is None or race.id != ref[0]
+                return screen(viewer, race, "That race ended. Tap Race! 🏁" if ended else
+                              WRITE_FIRST)
+            if not race.done:  # the first try: fix what's not yet, or Done
+                return screen(viewer, race, "Fix what's not yet, then Check again. Or tap Done.")
+            goal = goal_line(garage, points.get(viewer.username))
+            line = f"You finished {ORDINAL[place(race)]}! ⭐ +{awarded}"
+            return screen(viewer, race, line + (f"\n\n{goal}" if goal else ""))
         except Exception:  # noqa: BLE001 - never show what went wrong inside
             return recover(request)
 
@@ -1047,6 +1136,20 @@ def games_tab(
         trigger(*reading, **PRIVATE).then(
             on_bonus, [answer_box, shown], outputs, concurrency_limit=MAX_AT_ONCE, **PRIVATE
         )
+
+    marking = (
+        lambda: ["Lerni is reading your paragraph… ✏️", gr.update(interactive=False)],
+        None,
+        [note, para_check],
+    )  # Check waits while Claude grades
+    para_check.click(*marking, **PRIVATE).then(
+        on_paragraph, [para_box, shown], outputs, concurrency_limit=MAX_AT_ONCE, **PRIVATE
+    )
+
+    def on_para_done(ref: tuple[str, int], request: gr.Request) -> list[Any]:
+        return on_paragraph("", ref, request, done=True)  # the first try's checklist stands
+
+    para_done.click(on_para_done, [shown], outputs, concurrency_limit=MAX_AT_ONCE, **PRIVATE)
 
     def on_skip(ref: tuple[str, int], request: gr.Request) -> list[Any]:
         return on_bonus("", ref, request)  # nothing to grade: no points, never called wrong

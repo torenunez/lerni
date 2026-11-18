@@ -203,6 +203,14 @@ As a student, I want to read a short passage about things I like and answer ques
 - WHEN a reading race starts THE SYSTEM SHALL show the passage above the track, at my reading level, and ask what kind of text it is, why, a choice, the sentences in order, and one open answer.
 - THE SYSTEM SHALL let me say or type an open answer, and nudge me once to add a describing word.
 
+### Story: Write a paragraph
+
+As a student, I want to write a short paragraph in a race and see what to fix, so that my writing gets better.
+
+- WHEN the day's first reading race is done THE SYSTEM SHALL make the next race a writing race: one prompt and a checklist shown before I write.
+- WHEN I tap Check THE SYSTEM SHALL mark each item ✓ or not yet, say one thing I did well and one to try, and let me revise once.
+- THE SYSTEM SHALL move my car one step for each item marked ✓.
+
 ## Out of scope
 
 Public access and a native iPad app.

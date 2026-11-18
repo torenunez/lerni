@@ -189,6 +189,7 @@ def build_main_view(
                 or (races.suggestions if races else None),
                 spelling,
                 races.reading if races else None,  # the Reading fold (v4.13)
+                races.writing if races else None,  # and its writing lines (v4.14)
             )
             account, students_table, students_box = settings_tab(signin, students)
 

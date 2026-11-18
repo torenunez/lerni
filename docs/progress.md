@@ -4,7 +4,7 @@ Where things really stand, then a dated log, newest first. Completed work is rec
 
 Record each kind of "done" only when it actually happens, with the date: code built, content approved, app ready, a student session held. Passing tests show code behaves as specified; they don't make anything ready for a student.
 
-## Current state (2026-11-17, v4.13 on the home server, reachable away from home over Tailscale: Versions 1 and 2 built: the conversation, MentalMaps, HTTPS, and voice; Version 3's race, garage, and Chat points; Version 9's spelling, blocks, money, rulers, and reading in races)
+## Current state (2026-11-18, v4.14 on the home server, reachable away from home over Tailscale: Versions 1 and 2 built: the conversation, MentalMaps, HTTPS, and voice; Version 3's race, garage, and Chat points; Version 9's spelling, blocks, money, rulers, reading, and writing in races)
 
 - **Built:** the student app's core (student accounts, sign-in, Lerni's conversations, the MentalMap with its tagger and logs kept a year, Upload and educator feedback, and the educator agent); `lerni serve` with a sign-in page and one app with a ☰ menu by role: an independent student's Chat, My MentalMap (an editable list, the picture, and Upload), and Settings; an educator's student page (a Suggest a goal box, goal progress this week by area, the folded list, and the picture), opened at sign-in, with Students in Settings; a supervised student's Chat, full screen, and Games (a race for points spent on real cars; educators race too); good answers in Chat earn points too. Hold to talk with spoken answers; a Claude usage warning and rest; race checks by meaning, on the home server's own model. Both servers run as LaunchAgents (`lerni service`). The admin tool (`lerni`, with `lerni student`, `lerni logs`, `lerni feedback`, and `lerni stats`). A [code manifest](code-manifest.md) of every file. Tests: 294 passed.
 - **Designed:** the interest map, goals, the tagger, upload, feedback, and the supervised conversation ([specs/04-interest-map.md](../plans/specs/04-interest-map.md)); approved with PR #12. Harder races, practice on the map, and probes ([spec 09b](../plans/specs/09b-harder-races.md)). Local embeddings ([spec 10](../plans/specs/10-local-embeddings.md)). The order from here: Versions 4–7 ([roadmap](roadmap.md)).
@@ -13,6 +13,10 @@ Record each kind of "done" only when it actually happens, with the date: code bu
 When something changes, update this section and add a log entry below.
 
 ## Log
+
+### 2026-11-18 (writing races, v4.14)
+
+- v4.14 ([plan](../plans/v4.14-paragraph.md)): writing races. Once a day, the race right after the first reading race is one typed paragraph to a prompt written with that passage (a response or a creative one, taking turns, at no extra Claude call). A 5-item checklist (capitals and the sentence count by code, the rest by the small model), one thing done well and one to try, one revision; each ✓ moves the car. Misspellings go to the Spelling fold as suggestions, added on the educator's tick. The paragraph only in the conversation logs. The admin's calls: a writing race, once a day.
 
 ### 2026-11-17 (reading races, v4.13)
 

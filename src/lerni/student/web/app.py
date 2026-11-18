@@ -65,6 +65,7 @@ from lerni.student.voice import Speech  # noqa: E402
 from lerni.student.web.games import SOUNDS  # noqa: E402
 from lerni.student.web.main import build_main_view  # noqa: E402
 from lerni.student.web.signin_page import APP_PATH, add_signin_routes, icon_head  # noqa: E402
+from lerni.student.writing import WritingDesk, WritingStore  # noqa: E402
 
 # Upload's 5 MB limit plus room for the form around the file.
 MAX_UPLOAD_REQUEST = 5_000_000 + 64_000
@@ -174,6 +175,14 @@ _CSS = """
 .lerni-order-hint { font-size: 14px; color: var(--body-text-color-subdued); margin: 0;
   text-align: center; }
 #lerni-dock-typed:has(.lerni-order) #lerni-typed { display: none !important; }
+/* writing races (v4.14): the checklist above the paragraph field */
+.lerni-checklist { width: 100%; max-width: 480px; margin: 0 auto; font-size: 17px; }
+.lerni-checklist ul { list-style: none; padding: 0; margin: 4px 0; }
+.lerni-checklist li { margin: 4px 0; }
+.lerni-checklist p { margin: 6px 0; }
+#lerni-paragraph textarea { font-size: 16px !important; }
+#lerni-dock-write .lerni-checklist, #lerni-dock-write #lerni-paragraph { width: 100%; }
+#lerni-dock-write .gr-button { min-height: 44px; }
 .lerni-soon div { font-size: 120px; line-height: 1; }
 .lerni-soon p { font-size: 26px !important; font-weight: 700; margin-top: 1rem; }
 .lerni-dock { align-items: center; gap: 8px !important; }
@@ -449,6 +458,8 @@ def build_app(
         # reading races (v4.13): passages from the educator's sources, by the same small model
         races.reading = ReadingDesk(ReadingStore(root), maps, writer=quizzer, log=log)
         races.sources["read"] = races.reading  # its order and open answers are typed slots
+        # writing races (v4.14): a paragraph after the reading race; misspellings to Spelling
+        races.writing = WritingDesk(WritingStore(root), writer=quizzer, spelling=spelling, log=log)
 
     def morning(username: str) -> bool:  # once a day per student; best effort inside
         today = date.today()

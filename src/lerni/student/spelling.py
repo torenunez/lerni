@@ -34,6 +34,8 @@ MAX_SENTENCE = 120  # characters
 MAX_TYPED = 40  # characters of an answer; longer is cut before grading
 WRITE_SECONDS = 120  # one small-model call
 RETRY_SECONDS = 3600  # background writes for one player: at most one an hour
+MAX_SUGGESTED = 15  # words suggested from writing (v4.14), the newest kept
+SUGGEST_DAYS = 14  # a suggestion not added by then is dropped
 VOWELS = set("aeiouy")  # y too: "gym" for "gem" is a vowel mix-up
 PICK_RE = re.compile(r"[a-z]{3,14}")  # Lerni's words: plain lowercase, 3-14 letters
 CLASS_RE = re.compile(r"[A-Za-z][A-Za-z'’-]{0,23}")  # a class word may be "don't" or "Monday"
@@ -318,6 +320,9 @@ class SpellingStore:
             "removed": [str(r) for r in data.get("removed") or []],  # lowercase, never picked
             # right or wrong, since the level last moved
             "recent": [bool(x) for x in data.get("recent") or []],
+            # words from a paragraph's misspellings (v4.14), right spellings only, untapped
+            "suggested": [r for r in data.get("suggested") or [] if isinstance(r, dict)
+                          and PICK_RE.fullmatch(str(r.get("word") or ""))],
         }
 
     def change(self, username: str, fn: Callable[[dict[str, Any]], Any]) -> Any:
@@ -471,6 +476,40 @@ class SpellingDesk:
 
         return self.store.change(username, apply)
 
+    def suggest(self, username: str, words: list[str], today: date) -> int:
+        """Keep a paragraph's misspelled words (their right spellings) for the educator to add
+        with a tap; never one in practice or removed. Returns how many are new."""
+        since = (today - timedelta(days=SUGGEST_DAYS)).isoformat()
+
+        def apply(data: dict[str, Any]) -> int:
+            known = {w["word"].casefold() for w in data["words"]} | set(data["removed"])
+            kept = [r for r in data["suggested"] if str(r.get("day") or "") > since]  # 14 days
+            have = {r["word"] for r in kept}
+            new = [w for w in dict.fromkeys(words) if w not in known | have]  # each once
+            data["suggested"] = (kept + [{"word": w, "day": today.isoformat()} for w in new])[
+                -MAX_SUGGESTED:
+            ]
+            return len(new)
+
+        return self.store.change(username, apply)
+
+    def add_suggested(self, username: str, words: list[str], today: date | None = None) -> int:
+        """Add the suggestions the educator ticked to practice (as Lerni's words, with a
+        sentence written soon). Returns how many were added."""
+        day, picked = today or date.today(), set(words)
+
+        def apply(data: dict[str, Any]) -> int:
+            have = {w["word"].casefold() for w in data["words"]}
+            add = [r["word"] for r in data["suggested"] if r["word"] in picked]
+            data["words"] += [_new_word(w, "lerni", day) for w in add if w not in have]
+            data["suggested"] = [r for r in data["suggested"] if r["word"] not in picked]
+            return len(add)
+
+        n = self.store.change(username, apply)
+        if n and self.writer is not None:  # sentences in the background, as for a class list
+            threading.Thread(target=self._quietly_sentences, args=(username,), daemon=True).start()
+        return n
+
     def summary(self, username: str) -> dict[str, Any]:
         """For the educator: the class list, every word in practice, missed most, mistakes."""
         data = self.store.get(username)
@@ -489,6 +528,7 @@ class SpellingDesk:
             "learned": sum(1 for w in data["words"] if learned(w)),
             "missed": [(w["word"], w["missed"]) for w in missed],
             "mistakes": sorted(kinds.items(), key=lambda kv: -kv[1]),  # most common first
+            "suggested": [r["word"] for r in data["suggested"]],  # from writing, untapped
         }
 
     # -- Claude's words -------------------------------------------------------------------

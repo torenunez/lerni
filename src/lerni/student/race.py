@@ -961,6 +961,9 @@ class Race:
     nudged: set[int] = field(default_factory=set)  # open answers already nudged once
     nudge: str = ""  # the nudge on screen now ("What kind of shark?")
     lines: dict[int, tuple[str, str]] = field(default_factory=dict)  # a typed slot's shown, note
+    paragraph: Any = None  # a writing race's task (v4.14): one paragraph is the whole race
+    graded: Any = None  # the paragraph's last grade, while a revision may come
+    revised: bool = False  # the one revision is used
 
     @property
     def done(self) -> bool:
@@ -1080,7 +1083,7 @@ def answer(race: Race, number: int, choice: int) -> Turn | None:
     """Answer question ``number`` (0-based); a repeat, stale, or odd tap returns None, and so
     does a choice while the bonus waits."""
     if (race.done or race.bonus_live or number != race.answered or choice not in (0, 1, 2)
-            or number in race.typed):  # a typed slot takes typing, not a tap
+            or number in race.typed or race.paragraph is not None):  # typing, not a tap
         return None
     q = race.questions[number]
     right = choice == q.answer
@@ -1332,6 +1335,7 @@ class RaceDesk:
         self.suggestions: Any = None  # the morning plan's store (v3.44); set by the app
         self.sources: dict[str, TypedSource] = {}  # typed questions by kind (v4.11); set by the app
         self.reading: Any = None  # reading races (v4.13), a ReadingDesk; set by the app
+        self.writing: Any = None  # writing races (v4.14), a WritingDesk; set by the app
         self._checking: set[str] = set()  # a typed answer being checked now, per race
         self._races: dict[str, Race] = {}
         self._busy: dict[str, threading.Event] = {}  # writing ahead now; set when done
@@ -1605,6 +1609,8 @@ class RaceDesk:
                 self.ahead.purge(today)
             if self.reading is not None:  # passages written ahead go when their day ends too
                 self.reading.store.purge(today)
+            if self.writing is not None:  # and the writing prompts written with them
+                self.writing.store.purge(today)
         except Exception as exc:  # noqa: BLE001
             print(f"Old questions ahead not deleted ({type(exc).__name__}).", flush=True)
 
@@ -1686,6 +1692,9 @@ class RaceDesk:
             if (reading := self._reading_race(username, day, boost, car, rivals)) is not None:
                 self.prefill(username, supervised)  # the next normal race's questions
                 return reading  # a reading race: no bonus, spelling, or pictures
+            if (writing := self._writing_race(username, day, boost, car, rivals)) is not None:
+                self.prefill(username, supervised)
+                return writing  # the day's paragraph, right after its reading race
             m, real = self._maps(username)
             with self._lock:
                 writing = self._busy.get(username)
@@ -1760,10 +1769,89 @@ class RaceDesk:
         race.passage, race.typed = passage, typed
         race.attempts = [None] * len(questions)  # no goal ideas to count
         self.reading.started(username, passage, day)  # today's count, the title, the next kind
+        if self.writing is not None:  # its writing prompts, for the next race (v4.14)
+            try:
+                self.writing.offer(username, passage, day)
+            except Exception:  # noqa: BLE001 - no writing race today; the reading race goes on
+                pass
         with self._lock:
             self._races[username] = race
             self._started[username] = self.clock()
         return race
+
+    def _writing_race(self, username: str, day: date, boost: float, car: str,
+                      rivals: Sequence[tuple[str, str]]) -> Race | None:
+        """The day's writing race (v4.14) when it's due; None for a normal race. Call it
+        holding the person's start gate."""
+        if self.writing is None:
+            return None
+        try:
+            task = self.writing.task(username, day)
+        except Exception:  # noqa: BLE001 - a broken file: a normal race instead
+            return None
+        if task is None:
+            return None
+        self.points.start_race(username, day)
+        questions = [Question(goal="", question="", choices=("", "", ""), answer=0, why="",
+                              reading=f"write:{n}") for n in range(QUESTIONS_PER_RACE)]
+        race = new_race(questions, boost, car, rivals)  # one slot per checklist item
+        race.paragraph = task
+        race.passage = task.passage  # a response shows what they read, folded
+        race.attempts = [None] * len(questions)
+        self.writing.started(username, task, day)  # none more today; the prompts go
+        with self._lock:
+            self._races[username] = race
+            self._started[username] = self.clock()
+        return race
+
+    def paragraph_answer(self, username: str, race_id: str, text: str, done: bool = False,
+                         today: date | None = None) -> tuple[Race | None, Any, int]:
+        """Grade a writing race's paragraph (``done``: keep the last grade as it is). The
+        first try may be revised once; the final checklist moves the cars, one step per item,
+        and the race pays. Returns (race, the grade, ⭐); a stale or double send grades
+        nothing, and a blank paragraph gives no grade."""
+        day = today or date.today()
+        with self._lock:
+            race = self._races.get(username)
+            if (race is None or race.id != race_id or race.paragraph is None or race.done
+                    or race.id in self._checking or (done and race.graded is None)):
+                return race, None, 0
+            self._checking.add(race.id)  # one grade at a time: a double send waits out
+            before = race.graded
+        try:
+            graded = before if done else self.writing.grade(
+                username, race.paragraph, text, day, before=before)
+            with self._lock:
+                if graded is None or self._races.get(username) is not race:
+                    return race, graded, 0  # blank, or replaced meanwhile: nothing counts
+                race.revised = race.revised or before is not None and not done
+                race.graded = graded
+                final = done or race.revised or graded.all_done or graded.care or graded.counted
+                if not final:
+                    return race, graded, 0  # the first try: Try again, or Done
+                for ok in graded.marks:  # one step per checklist item, as five answers
+                    _step(race, ok)
+                    race.marks.append(None)  # no goal's box moves
+        finally:
+            with self._lock:
+                self._checking.discard(race.id)
+        awarded = self.points.award(username, race.id, "race", race_points(race))
+        self.writing.finished(username, graded, race.revised, day)
+        self._log_paragraph(username, race, graded)
+        return race, graded, awarded
+
+    def _log_paragraph(self, username: str, race: Race, graded: Any) -> None:
+        # one row per checklist item (labels and right), then the finish; never the words
+        if self.results is None:
+            return
+        day = date.today().isoformat()
+        try:
+            for label, ok in zip(self.writing.labels(), graded.marks, strict=True):
+                self.results.add(username, {"day": day, "race": race.id, "kind": "write",
+                                            "label": label, "right": bool(ok)})
+            self._log_finish(username, race, day)
+        except Exception:  # noqa: BLE001 - a full disk: the race still counts
+            pass
 
     def _read_done(self, username: str, race: Race) -> None:
         # a finished reading race moves the reading level
