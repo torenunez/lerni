@@ -55,6 +55,10 @@ def stats_cmd(username: str = typer.Argument("", help="One student's report."),
         reading = summary(ReadingStore(folder), ResultsLog(folder).read(username), username,
                           date.today())  # the last 7 days, whatever the window (v4.13)
         typer.echo("\n" + "\n".join(summary_lines(reading)))
+        from lerni.student import writing  # the paragraphs' checklists (v4.14)
+
+        written = writing.summary(writing.WritingStore(folder), username, date.today())
+        typer.echo("\n" + "\n".join(writing.summary_lines(written)))
     else:
         typer.echo(overview(built.path, start))
         from lerni.student.meter import UsageLog, usage_report

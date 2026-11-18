@@ -42,6 +42,7 @@
 
 ## A paragraph
 
+- **Built in v4.14 as writing races** ([plan](../v4.14-paragraph.md)): once a day, right after the first reading race; each ✓ moves the car.
 - **Typed only** (speaking it would skip spelling and punctuation).
 - **Two kinds of prompt:** a response to a passage just read ("Would you want a pet sloth? Use one fact from the passage."), or creative, from the student's interests.
 - **A checklist, shown first:** a first sentence that says what it's about; 2–3 sentences with details; at least 2 adjectives; capitals and periods; a last sentence that wraps up.

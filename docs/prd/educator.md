@@ -174,6 +174,13 @@ As an educator, I want reading races to use texts I picked and to see how readin
 - THE SYSTEM SHALL write reading passages only from the educator's picked sources, and the facts from a picked government page from that page.
 - THE SYSTEM SHALL show the student's reading level and how each kind of question went in the last week, with how often answers used describing words.
 
+### Story: See how writing goes
+
+As an educator, I want to see how the student's paragraphs go and the words they misspell, so that I know what to practice.
+
+- THE SYSTEM SHALL show last week's paragraphs, each checklist item's ✓ count, and how many revisions got better.
+- THE SYSTEM SHALL suggest misspelled words as spelling words, added only when the educator ticks them.
+
 ## Out of scope
 
 Running the admin tool. Editing app code or files directly.

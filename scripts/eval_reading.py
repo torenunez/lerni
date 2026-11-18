@@ -52,8 +52,10 @@ def passage_at(source: Source, level: int) -> tuple[list[tuple[str, bool]], obje
     print(f"\n{name}: grade {p.grade} (target {TARGET[level]}), {len(p.text.split())} words")
     print(f"  {p.title}\n  {p.text}\n  Q: {p.question} {p.choices} -> {p.answer}")
     print(f"  Order: {p.order}\n  Open: {p.open_question} -> {p.key_ideas}")
+    print(f"  Writing: {p.respond!r} / {p.create!r}")
     return [(f"{name}: written and checked", True),
-            (f"{name}: within a grade of its target", p.grade <= TARGET[level] + TOO_HARD)], p
+            (f"{name}: within a grade of its target", p.grade <= TARGET[level] + TOO_HARD),
+            (f"{name}: two writing prompts (v4.14)", bool(p.respond and p.create))], p
 
 
 def open_answers(p) -> list[tuple[str, bool]]:
