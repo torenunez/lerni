@@ -36,6 +36,7 @@ from lerni.student.web.games import student_progress
 from lerni.student.web.mapdraw import map_svg, owner_key
 from lerni.student.web.maps import REFRESH_SECONDS, map_owner, save_feedback
 from lerni.student.web.mentallist import bump, mental_list
+from lerni.student.web.reading import reading_fold
 from lerni.student.web.spelling import spelling_fold
 
 
@@ -136,6 +137,7 @@ def educator_tab(
     results: ResultsLog | None = None,
     suggestions: SuggestionStore | None = None,
     spelling: SpellingDesk | None = None,
+    reading: Any = None,
 ) -> tuple[gr.Tab, gr.Dropdown]:
     """The student's page: Tell Lerni (a goal, a change, or a note on its suggestions), Lerni's
     morning suggestions to tick, then goal progress, the list, the picture.
@@ -189,6 +191,8 @@ def educator_tab(
         lerni_status = gr.Markdown()
         if spelling is not None:  # the class list and how spelling goes (v4.10)
             spelling_fold(signin, students, spelling, who, tab)
+        if reading is not None:  # the reading level and last week's counts (v4.13)
+            reading_fold(signin, students, reading, results, who, tab)
         points_line = gr.HTML()  # their goal progress this week, ⭐, and car
         list_owner, version = gr.State(""), gr.State(0)  # set only after map_owner's check
         # edits go to the student the list shows, never a newer dropdown pick

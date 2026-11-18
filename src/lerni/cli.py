@@ -44,6 +44,7 @@ def register_commands():
         organize,
         question,
         race,
+        reading,
         review,
         serve,
         service,
@@ -92,6 +93,7 @@ def register_commands():
     app.add_typer(map_cmd.map_app, name="map")
     app.add_typer(backup.backup_app, name="backup")
     app.add_typer(race.race_app, name="race")
+    app.add_typer(reading.reading_app, name="reading")
     app.command("stats")(stats.stats_cmd)
 
 

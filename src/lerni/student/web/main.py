@@ -188,6 +188,7 @@ def build_main_view(
                 getattr(educator_chats, "suggestions", None)
                 or (races.suggestions if races else None),
                 spelling,
+                races.reading if races else None,  # the Reading fold (v4.13)
             )
             account, students_table, students_box = settings_tab(signin, students)
 

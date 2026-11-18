@@ -221,6 +221,7 @@ class Question:
     probe: str = ""  # a nearby idea off the map (v3.36): no goal, never counted toward one
     format: str = ""  # its rolled format (v3.42), a fixed label for the results log
     setting: str = ""  # the interest it was set in (v3.43), the map's spelling
+    reading: str = ""  # a reading race's question (v4.13), as "narrative:kind": no goal
 
 
 def _facts(c: Car) -> str:
@@ -956,6 +957,10 @@ class Race:
     attempts: list[int | None] = field(default_factory=list)  # each question's, for the log
     typed: dict[int, Typed] = field(default_factory=dict)  # slots answered by typing (v4.11)
     typed_right: dict[int, bool] = field(default_factory=dict)  # how each typed slot went
+    passage: Any = None  # a reading race's passage, above the track (v4.13)
+    nudged: set[int] = field(default_factory=set)  # open answers already nudged once
+    nudge: str = ""  # the nudge on screen now ("What kind of shark?")
+    lines: dict[int, tuple[str, str]] = field(default_factory=dict)  # a typed slot's shown, note
 
     @property
     def done(self) -> bool:
@@ -993,6 +998,7 @@ class Checked:
     right: bool
     shown: str  # the right answer
     note: str = ""  # a word's parts, or how a picture adds up
+    again: str = ""  # a nudge: not graded yet, one more try (v4.13)
 
 
 class TypedSource(Protocol):
@@ -1103,6 +1109,7 @@ def answer_typed(race: Race, number: int, checked: Checked) -> Turn | None:
         return None
     named = _step(race, checked.right)
     race.typed_right[number] = checked.right  # for the sound and the card
+    race.lines[number] = (checked.shown, checked.note)  # what a reading miss says aloud
     race.marks.append(None)  # a typed answer never moves a goal's box
     _offer_bonus(race)
     return Turn(checked.right, checked.shown, checked.note, named)
@@ -1324,6 +1331,7 @@ class RaceDesk:
         self.dice = random.Random()  # each question's format and twist (v3.42)
         self.suggestions: Any = None  # the morning plan's store (v3.44); set by the app
         self.sources: dict[str, TypedSource] = {}  # typed questions by kind (v4.11); set by the app
+        self.reading: Any = None  # reading races (v4.13), a ReadingDesk; set by the app
         self._checking: set[str] = set()  # a typed answer being checked now, per race
         self._races: dict[str, Race] = {}
         self._busy: dict[str, threading.Event] = {}  # writing ahead now; set when done
@@ -1595,6 +1603,8 @@ class RaceDesk:
         try:
             if self.ahead is not None:
                 self.ahead.purge(today)
+            if self.reading is not None:  # passages written ahead go when their day ends too
+                self.reading.store.purge(today)
         except Exception as exc:  # noqa: BLE001
             print(f"Old questions ahead not deleted ({type(exc).__name__}).", flush=True)
 
@@ -1615,6 +1625,10 @@ class RaceDesk:
         Returns an event set when this call's writing is done (a write already running: its own
         write's event)."""
         today = date.today()
+        if self.reading is not None and self.points.races_left(username, today) > 0:
+            # the next reading race's passage, once one is coming today
+            self.reading.prefill(username, supervised, today,
+                                 self.points.get(username).races_today(today))
         m, real = self._maps(username)
         with self._lock:
             held = self._held(username, today)
@@ -1669,6 +1683,9 @@ class RaceDesk:
                     return current
             if self.points.races_left(username, day) <= 0:
                 self.points.start_race(username, day)  # raises the "closed for today" line
+            if (reading := self._reading_race(username, day, boost, car, rivals)) is not None:
+                self.prefill(username, supervised)  # the next normal race's questions
+                return reading  # a reading race: no bonus, spelling, or pictures
             m, real = self._maps(username)
             with self._lock:
                 writing = self._busy.get(username)
@@ -1722,6 +1739,36 @@ class RaceDesk:
                 self._started[username] = self.clock()
         self.prefill(username, supervised)  # the next race starts quickly
         return race
+
+    def _reading_race(self, username: str, day: date, boost: float, car: str,
+                      rivals: Sequence[tuple[str, str]]) -> Race | None:
+        """A reading race (v4.13) when one is due and its passage is ready; None for a normal
+        race. Call it holding the person's start gate."""
+        if self.reading is None:
+            return None
+        try:
+            if not self.reading.race_due(username, day, self.points.get(username).races_today(day)):
+                return None
+            passage = self.reading.take(username, day)  # removed from disk as it's raced
+            if passage is None:
+                return None  # not written yet: the next race tries again
+            questions, typed = self.reading.slots(passage)  # a broken one: a new one is written
+        except Exception:  # noqa: BLE001 - a broken file or passage: a normal race instead
+            return None
+        self.points.start_race(username, day)
+        race = new_race(questions, boost, car, rivals)
+        race.passage, race.typed = passage, typed
+        race.attempts = [None] * len(questions)  # no goal ideas to count
+        self.reading.started(username, passage, day)  # today's count, the title, the next kind
+        with self._lock:
+            self._races[username] = race
+            self._started[username] = self.clock()
+        return race
+
+    def _read_done(self, username: str, race: Race) -> None:
+        # a finished reading race moves the reading level
+        if race.passage is not None and self.reading is not None:
+            self.reading.finished(username, race.right)
 
     def _typed_slots(self, username: str, day: date, m: InterestMap,
                      lucky: bool) -> dict[int, Typed]:
@@ -1785,7 +1832,11 @@ class RaceDesk:
             except Exception:  # noqa: BLE001 - the student sees the right answer either way
                 checked = Checked(False, item.answer or item.key, item.note)  # "$1.35"
             with self._lock:  # dropped or replaced while checking: it no longer counts
-                if self._races.get(username) is race:
+                if checked.again and number not in race.nudged:  # one nudge, then a grade
+                    race.nudged.add(number)
+                    race.nudge = checked.again
+                elif self._races.get(username) is race:
+                    race.nudge = ""
                     turn = answer_typed(race, number, checked)
                 if turn is not None:
                     self._last_tap[username] = self.clock()
@@ -1799,6 +1850,7 @@ class RaceDesk:
         if race.done:  # the last answer: the race pays as always
             awarded = self.points.award(username, race.id, "race", race_points(race))
             self._spaced(username, race)
+            self._read_done(username, race)
         self._log(username, race, number, turn.right, took)
         return race, turn, awarded
 
@@ -1835,9 +1887,9 @@ class RaceDesk:
             if turn is not None:
                 self._last_tap[username] = self.clock()
                 took = self._last_tap[username] - shown
-        if turn is not None and self.concepts is not None and not race.questions[number].probe:
+        q = race.questions[number] if turn is not None else None
+        if q is not None and self.concepts is not None and not q.probe and not q.reading:
             try:  # best effort: the long-term record of how each idea and goal went (no probes)
-                q = race.questions[number]
                 self.concepts.answered(username, q.goal_id, q.concept, turn.right)
                 self.concepts.practiced(username, q.goal_id, turn.right)
             except Exception:  # a broken map or a full disk: the answer and award still count
@@ -1846,6 +1898,7 @@ class RaceDesk:
         if turn is not None and race.done:
             awarded = self.points.award(username, race.id, "race", race_points(race))
             self._spaced(username, race)
+            self._read_done(username, race)
         if turn is not None:
             self._log(username, race, number, turn.right, took)
         return race, turn, awarded
@@ -1913,6 +1966,11 @@ class RaceDesk:
         memory only. A repeat, stale, or double send gives no turn."""
         with self._lock:
             race = self._races.get(username)
+            item = race.typed.get(number) if race is not None and race.id == race_id else None
+        if item is not None and item.kind == "read":  # a reading race's open answer (v4.13)
+            return self.typed_answer(username, race_id, number, text)
+        with self._lock:
+            race = self._races.get(username)
             if (race is None or race.id != race_id or not race.bonus_live or number != race.answered
                     or race.id in self._grading):
                 return race, None, 0
@@ -1964,7 +2022,15 @@ class RaceDesk:
                                                  or r.typed_right.get(number) is False)
 
         def said(r: Race) -> str:
-            if (t := r.typed.get(number)) is not None:  # a word spelled out, or the number
+            t = r.typed.get(number)
+            if t is not None and t.kind == "read":  # a reading answer: what its card shows
+                shown, note = r.lines.get(number, (t.answer, ""))
+                if shown == CARE_LINE:  # a worry: the caring words alone
+                    return for_speaking(CARE_LINE)
+                if t.label.endswith(":order"):
+                    return for_speaking(f"{miss_opener(r, number)} The order is: {shown}")
+                return for_speaking(f"{miss_opener(r, number)} {note} One answer: {shown}")
+            if t is not None:  # a word spelled out, or the number
                 right = " ".join(t.key.upper()) if t.kind == "spell" else t.answer or t.key
                 return for_speaking(f"{miss_opener(r, number)} It's {right}. {t.note}")
             q = r.questions[number]
@@ -1999,9 +2065,9 @@ class RaceDesk:
         return audio
 
     def grading(self, race_id: str) -> bool:
-        """Whether this race's bonus answer is being graded right now."""
+        """Whether this race's bonus answer (or a reading answer) is being graded right now."""
         with self._lock:
-            return race_id in self._grading
+            return race_id in self._grading or race_id in self._checking
 
     def _bonus_effects(self, username: str, race: Race, bonus: Bonus, tier: str) -> None:
         # best effort: the explained date, the review schedule, and the results line
@@ -2040,6 +2106,12 @@ class RaceDesk:
                 self.results.add(username, {"day": day, "race": race.id, "kind": t.kind,
                                             "label": t.label, "right": right,
                                             "seconds": round(max(took, 0.0), 1)})
+                self._log_finish(username, race, day)
+                return
+            if q.reading:  # a reading race's tap (v4.13): its label, never a goal's
+                self.results.add(username, {"day": day, "race": race.id, "kind": "read",
+                                            "label": q.reading, "level": q.level,
+                                            "right": right, "seconds": round(max(took, 0.0), 1)})
                 self._log_finish(username, race, day)
                 return
             attempt = race.attempts[number] if number < len(race.attempts) else None

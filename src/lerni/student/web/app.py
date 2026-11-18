@@ -48,6 +48,7 @@ from lerni.student.race import (  # noqa: E402
     RaceDesk,
     seconds_until,
 )
+from lerni.student.reading import ReadingDesk, ReadingStore  # noqa: E402
 from lerni.student.results import ResultsLog  # noqa: E402
 from lerni.student.signin import SignIn, cookie_name, load_secret  # noqa: E402
 from lerni.student.spelling import SpellingDesk, SpellingStore  # noqa: E402
@@ -155,6 +156,24 @@ _CSS = """
 .lerni-ruler { display: block; width: 100%; max-width: 360px; margin: 4px auto 8px;
   color: var(--body-text-color-subdued); }
 .lerni-credit { font-size: 11px; color: var(--body-text-color-subdued); text-align: center; }
+/* reading races (v4.13): the passage above the track, folded by a tap, and order cards */
+.lerni-passage { border: 1px solid var(--border-color-primary); border-radius: 12px;
+  padding: 8px 12px; background: var(--block-background-fill); }
+.lerni-passage summary { font-weight: 600; font-size: 17px; cursor: pointer; }
+.lerni-passage-text { max-height: 40vh; overflow-y: auto; font-size: 18px; line-height: 1.6; }
+.lerni-passage-text p { margin: 8px 0; }
+.lerni-order { display: flex; flex-direction: column; gap: 8px; width: 100%; max-width: 480px;
+  margin: 0 auto; }
+.lerni-order-item { display: flex; gap: 10px; align-items: flex-start; text-align: left;
+  padding: 10px; border-radius: 10px; border: 1px solid var(--border-color-primary);
+  background: var(--block-background-fill); font-size: 17px; min-height: 44px; }
+.lerni-order-item b { flex: 0 0 26px; height: 26px; border-radius: 13px; font-size: 15px;
+  border: 1px solid var(--border-color-primary); display: flex; align-items: center;
+  justify-content: center; }
+.lerni-order-item.lerni-on b { background: var(--color-accent-soft); }
+.lerni-order-hint { font-size: 14px; color: var(--body-text-color-subdued); margin: 0;
+  text-align: center; }
+#lerni-dock-typed:has(.lerni-order) #lerni-typed { display: none !important; }
 .lerni-soon div { font-size: 120px; line-height: 1; }
 .lerni-soon p { font-size: 26px !important; font-weight: 700; margin-top: 1rem; }
 .lerni-dock { align-items: center; gap: 8px !important; }
@@ -244,8 +263,9 @@ def _head(speech: bool) -> str:
     from importlib.resources import files
 
     names = ["nav.js", "mapview.js", "race.js"] + (["talk.js"] if speech else [])
-    return "".join(f"<script>{files('lerni.student.web').joinpath(n).read_text()}</script>"
-                   for n in names)
+    return "".join(
+        f"<script>{files('lerni.student.web').joinpath(n).read_text()}</script>" for n in names
+    )
 
 
 def _theme() -> gr.themes.Base:
@@ -258,8 +278,11 @@ def write_ahead(races: Any, students: Any, morning: Any = None, wait: float = 0)
     races' worth (v3.42); never raises, so one bad morning never stops the next. With
     ``wait``, waits up to that many seconds for the writes and says whether all are done."""
     try:
-        players = [s.username for s in students.list_students()
-                   if s.kind is Kind.SUPERVISED and not s.archived]
+        players = [
+            s.username
+            for s in students.list_students()
+            if s.kind is Kind.SUPERVISED and not s.archived
+        ]
     except Exception as exc:  # noqa: BLE001 - a broken file never stops the server
         print(f"Writing races ahead skipped ({type(exc).__name__}).", flush=True)
         return False
@@ -283,8 +306,7 @@ def write_ahead(races: Any, students: Any, morning: Any = None, wait: float = 0)
     return done
 
 
-def morning_tries(races: Any, students: Any, morning: Any = None,
-                  wait: Any = time.sleep) -> None:
+def morning_tries(races: Any, students: Any, morning: Any = None, wait: Any = time.sleep) -> None:
     """The morning's write-ahead, tried again every half hour until 9:00 while something
     failed (v4.6.3); each try skips what's done (a plan that ran, races already held)."""
     for n in range(AHEAD_TRIES):
@@ -369,8 +391,9 @@ def build_app(
         path = COINS_DIR / f"{name}.png"
         if name not in COINS or not path.is_file():
             return PlainTextResponse("Not found.", status_code=404)
-        return FileResponse(path, media_type="image/png",
-                            headers={"Cache-Control": "public, max-age=86400"})
+        return FileResponse(
+            path, media_type="image/png", headers={"Cache-Control": "public, max-age=86400"}
+        )
 
     @app.get("/sounds/{name}")
     def race_sound(name: str, request: Request) -> Any:
@@ -380,33 +403,52 @@ def build_app(
         path = root / "sounds" / f"{name}.mp3"
         if name not in SOUNDS or not path.is_file():
             return PlainTextResponse("Not found.", status_code=404)
-        return FileResponse(path, media_type="audio/mpeg",  # revalidated, so a swapped clip plays
-                            headers={"Cache-Control": "private, no-cache"})
+        return FileResponse(
+            path,
+            media_type="audio/mpeg",  # revalidated, so a swapped clip plays
+            headers={"Cache-Control": "private, no-cache"},
+        )
 
     guidance = GuidanceStore(root)  # the educator's ticked notes (v4.9)
     # Spelling (v4.10): the class list and Lerni's words, written by the race's small model
     spelling = SpellingDesk(SpellingStore(root), maps, writer=quizzer, speech=speech)
-    races = (RaceDesk(quizzer, maps, points, ConceptStore(root), results=ResultsLog(root),
-                      checker=quizzer,  # the same small model answers each question blind
-                      garage=garage, grader=quizzer,  # and grades bonus answers
-                      log=log,  # a worrying bonus answer is kept where Chat's are
-                      speech=speech,  # reads questions aloud
-                      embedder=embedder,  # rewordings and set-asides by meaning
-                      bank=BankStore(root),  # the educator's ratings steer each write (v4.5)
-                      ahead=AheadStore(root),  # held questions survive a restart (v4.6.1)
-                      guidance=guidance)  # and the educator's ticked notes (v4.9)
-             if quizzer is not None else None)
+    races = (
+        RaceDesk(
+            quizzer,
+            maps,
+            points,
+            ConceptStore(root),
+            results=ResultsLog(root),
+            checker=quizzer,  # the same small model answers each question blind
+            garage=garage,
+            grader=quizzer,  # and grades bonus answers
+            log=log,  # a worrying bonus answer is kept where Chat's are
+            speech=speech,  # reads questions aloud
+            embedder=embedder,  # rewordings and set-asides by meaning
+            bank=BankStore(root),  # the educator's ratings steer each write (v4.5)
+            ahead=AheadStore(root),  # held questions survive a restart (v4.6.1)
+            guidance=guidance,
+        )  # and the educator's ticked notes (v4.9)
+        if quizzer is not None
+        else None
+    )
     if quizzer is not None:  # Lerni sorts goals with no area after each save, and once now
         sorter = AreaSorter(quizzer, maps)
         maps.after_change = sorter.sort
-        threading.Thread(target=lambda: [sorter.sort(s.username) for s in
-                                         students.list_students() if not s.archived],
-                         daemon=True).start()
+        threading.Thread(
+            target=lambda: [
+                sorter.sort(s.username) for s in students.list_students() if not s.archived
+            ],
+            daemon=True,
+        ).start()
     suggestions = SuggestionStore(root)  # the morning plan (v3.44)
     if races is not None:
         races.suggestions = suggestions
         # typed questions in races (v4.11): spelling words (with the voice) and blocks
         races.sources = {"spell": spelling, "picture": PicturesDesk(PicturesStore(root), maps)}
+        # reading races (v4.13): passages from the educator's sources, by the same small model
+        races.reading = ReadingDesk(ReadingStore(root), maps, writer=quizzer, log=log)
+        races.sources["read"] = races.reading  # its order and open answers are typed slots
 
     def morning(username: str) -> bool:  # once a day per student; best effort inside
         today = date.today()
@@ -419,14 +461,14 @@ def build_app(
     log.purge()  # at startup; then once a day as exchanges are logged
     # production only (a labelled server is development): a restart loses held questions
     if races is not None and not label:
+
         def mornings() -> None:  # and again each morning, before anyone races
             while True:
                 time.sleep(seconds_until(AHEAD_HOUR, datetime.now()))
                 morning_tries(races, students, morning)
 
         # in the background: the morning call takes a minute, and the server starts now
-        threading.Thread(target=write_ahead, args=(races, students, morning),
-                         daemon=True).start()
+        threading.Thread(target=write_ahead, args=(races, students, morning), daemon=True).start()
         threading.Thread(target=mornings, daemon=True).start()
 
     def plays(username: str) -> bool:  # supervised students and educators earn ⭐
