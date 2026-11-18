@@ -196,6 +196,13 @@ As a student with a math goal, I want to measure things on a ruler in centimeter
 - THE SYSTEM SHALL show a two-sided ruler, centimeters on one edge and inches on the other, at one real scale.
 - THE SYSTEM SHALL grade lengths exactly, whether typed as 1.5 or 1 1/2.
 
+### Story: Read and race
+
+As a student, I want to read a short passage about things I like and answer questions about it in my race, so that I get better at understanding what I read.
+
+- WHEN a reading race starts THE SYSTEM SHALL show the passage above the track, at my reading level, and ask what kind of text it is, why, a choice, the sentences in order, and one open answer.
+- THE SYSTEM SHALL let me say or type an open answer, and nudge me once to add a describing word.
+
 ## Out of scope
 
 Public access and a native iPad app.
