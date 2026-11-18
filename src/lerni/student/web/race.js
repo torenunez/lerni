@@ -133,8 +133,42 @@
   document.addEventListener('keydown', event => {
     if (event.key === 'Enter' && event.target.closest?.('#lerni-typed')) moveOn();
   });
+  // sentences in order (v4.13): each tap numbers a card; a tap on a numbered one undoes it
+  // and every card after it; the taps go in the hidden answer field as "2,0,1" for Check
+  function orderTap(card) {
+    const box = card.closest('.lerni-order');
+    let picks = box.dataset.picks ? box.dataset.picks.split(',') : [];
+    const i = card.dataset.i, at = picks.indexOf(i);
+    picks = at >= 0 ? picks.slice(0, at) : picks.concat(i);  // undo from here, or add it
+    box.dataset.picks = picks.join(',');
+    box.querySelectorAll('.lerni-order-item').forEach(c => {
+      const n = picks.indexOf(c.dataset.i);
+      c.classList.toggle('lerni-on', n >= 0);
+      c.querySelector('b').textContent = n >= 0 ? String(n + 1) : '';
+    });
+    const hint = box.querySelector('.lerni-order-hint');
+    if (hint) hint.textContent = 'Tap again to undo.';
+    const field = document.querySelector('#lerni-typed input, #lerni-typed textarea');
+    if (field) {  // Gradio reads the field on its input event
+      field.value = box.dataset.picks;
+      field.dispatchEvent(new Event('input', {bubbles: true}));
+    }
+  }
   document.addEventListener('click', event => {
     const at = selector => event.target.closest?.(selector);
+    const orderCard = at('.lerni-order-item');
+    if (orderCard) { orderTap(orderCard); return; }
+    const box = document.querySelector('#lerni-dock-typed .lerni-order');
+    if (at('.lerni-check') && box) {  // Check waits until every sentence is numbered
+      const picked = box.dataset.picks ? box.dataset.picks.split(',').length : 0;
+      if (picked < Number(box.dataset.n)) {
+        event.preventDefault();
+        event.stopPropagation();
+        const hint = box.querySelector('.lerni-order-hint');
+        if (hint) hint.textContent = `Tap all ${box.dataset.n} first.`;
+        return;
+      }
+    }
     if (at('#lerni-next') && holdTimer) {  // still saying the right answer
       event.preventDefault();
       event.stopPropagation();

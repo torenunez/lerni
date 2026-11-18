@@ -25,7 +25,7 @@ FILE = "stats.sqlite"
 AIM = "50–75%"  # how often a student should be right (v3.16)
 MIN_HARDEST = 5  # a goal with fewer answers says too little to call it hard
 TOP = 5  # rows in the hardest and missed lists
-TYPED_NAMES = {"spell": "Spelling", "picture": "Pictures"}  # the report's names for them
+TYPED_NAMES = {"spell": "Spelling", "picture": "Pictures", "read": "Reading"}  # report names
 WHO = "username = ? AND day >= ?"  # every report query: one student, from a first day
 # a bonus has a tier, a probe its own line, and typed questions theirs (v4.11)
 SCORED = "right IS NOT NULL AND probe IS NULL AND kind = 'choice'"

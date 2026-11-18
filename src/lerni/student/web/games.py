@@ -32,6 +32,7 @@ from lerni.student.money import COIN_PX, say_cents
 from lerni.student.points import STARTER, Points, PointsError, PointsStore
 from lerni.student.race import (
     BOT_RIVALS,
+    CARE_LINE,
     MAX_ANSWER,
     NOT_READY,
     QUESTIONS_PER_RACE,
@@ -60,16 +61,18 @@ MAX_LABEL = 18  # characters of a car's name on the track
 WAIT_LINE = "Pumping the tires… 🛞 New questions can take a minute to write."
 SOUNDS = ("roar", "sputter", "finish", "zoom")  # <data>/sounds/<name>.mp3, played by race.js
 BONUS_SOUNDS = {"nailed": "zoom", "partly": "roar", "tried": "rev"}  # rev: a short, soft roar
-EDGE = ('<defs><filter id="lerni-edge" x="-10%" y="-10%" width="120%" height="120%">'
-        '<feDropShadow dx="0" dy="0" stdDeviation="0.7" flood-color="#2C2C2A" '
-        'flood-opacity="0.9"/></filter></defs>')  # a thin dark edge, so a white car shows
+EDGE = (
+    '<defs><filter id="lerni-edge" x="-10%" y="-10%" width="120%" height="120%">'
+    '<feDropShadow dx="0" dy="0" stdDeviation="0.7" flood-color="#2C2C2A" '
+    'flood-opacity="0.9"/></filter></defs>'
+)  # a thin dark edge, so a white car shows
 READS = {"why": ' data-why="1"', "question": ' data-ask="1"'}  # what race.js says by itself
 HEAR = " · tap to hear"  # on a card the server can read aloud
 ORDINAL = {1: "1st", 2: "2nd", 3: "3rd"}
 NO_CLAUDE = "Games need Claude, which isn't set up on this server."
 TYPED_MAX = 40  # characters of a typed answer (a word or a number)
 TYPE_FIRST = "Type your answer first, then tap Check."
-PLACEHOLDER = {"spell": "Type the word", "picture": "Type your answer"}
+PLACEHOLDER = {"spell": "Type the word", "picture": "Type your answer", "read": ""}
 
 
 def require_player(viewer: Viewer | None) -> Viewer:
@@ -87,21 +90,28 @@ def stars(points: PointsStore, viewer: Viewer | None) -> str:
         return ""
 
 
-def start_race(desk: RaceDesk, viewer: Viewer | None, gas: float = 1.0, car: str = "",
-               rivals: tuple[tuple[str, str], ...] = BOT_RIVALS) -> tuple[Race | None, str]:
+def start_race(
+    desk: RaceDesk,
+    viewer: Viewer | None,
+    gas: float = 1.0,
+    car: str = "",
+    rivals: tuple[tuple[str, str], ...] = BOT_RIVALS,
+) -> tuple[Race | None, str]:
     """A new race in this car with its gas boost, or why there can't be one."""
     try:
         v = require_player(viewer)
-        return desk.start(v.username, supervised=v.role is Role.SUPERVISED, boost=gas,
-                          car=car, rivals=rivals), ""
+        return desk.start(
+            v.username, supervised=v.role is Role.SUPERVISED, boost=gas, car=car, rivals=rivals
+        ), ""
     except (NotAllowed, PointsError, RaceUnavailable) as exc:
         return None, str(exc)
     except Exception:  # never stuck on "Pumping the tires"
         return None, NOT_READY
 
 
-def pick(desk: RaceDesk, viewer: Viewer | None, race_id: str, number: int,
-         choice: int) -> tuple[Race | None, Turn | None, int]:
+def pick(
+    desk: RaceDesk, viewer: Viewer | None, race_id: str, number: int, choice: int
+) -> tuple[Race | None, Turn | None, int]:
     """Answer the question on screen; the desk ignores stale or repeat taps."""
     return desk.pick(require_player(viewer).username, race_id, number, choice)
 
@@ -125,9 +135,15 @@ def garage_tap(points: PointsStore, garage: Garage, viewer: Viewer | None, car_i
         return "⚠️ No such car."
 
 
-def student_progress(points: PointsStore, garage: Garage, students: StudentStore,
-                     viewer: Viewer | None, requested: str | None,
-                     results: ResultsLog | None = None, maps: MapStore | None = None) -> str:
+def student_progress(
+    points: PointsStore,
+    garage: Garage,
+    students: StudentStore,
+    viewer: Viewer | None,
+    requested: str | None,
+    results: ResultsLog | None = None,
+    maps: MapStore | None = None,
+) -> str:
     """A supervised student's goal progress this week, grouped by area (the most practiced
     first, no area last), then ⭐ and the car they drive, as HTML for their educator ("" for
     anyone else)."""
@@ -155,20 +171,26 @@ def student_progress(points: PointsStore, garage: Garage, students: StudentStore
         items = sorted(groups[a], key=lambda g: -g[2])
         if len(groups) > 1 or a:  # an area heading with its total, unless there are no areas
             right, asked = sum(g[1] for g in items), sum(g[2] for g in items)
-            rows.append(f'<div class="lerni-week-area"><span>{html.escape(a or "Other")}</span>'
-                        f'<span class="lerni-of">{right} of {asked}</span></div>')
-        rows += [f'<div class="lerni-week-row"><span>{html.escape(goal)}</span>'
-                 f'<span class="lerni-week-bar">'
-                 f'<i style="width:{round(100 * right / asked)}%"></i></span>'
-                 f'<span class="lerni-of">{right} of {asked}</span></div>'
-                 for goal, right, asked in items]
+            rows.append(
+                f'<div class="lerni-week-area"><span>{html.escape(a or "Other")}</span>'
+                f'<span class="lerni-of">{right} of {asked}</span></div>'
+            )
+        rows += [
+            f'<div class="lerni-week-row"><span>{html.escape(goal)}</span>'
+            f'<span class="lerni-week-bar">'
+            f'<i style="width:{round(100 * right / asked)}%"></i></span>'
+            f'<span class="lerni-of">{right} of {asked}</span></div>'
+            for goal, right, asked in items
+        ]
     try:  # a car gone from the garage file gets no chip
         car = f'<span class="lerni-chip">🚗 {html.escape(garage.car(p.car).name)}</span>'
     except KeyError:
         car = ""
     body = "".join(rows) or '<p class="lerni-of">No races this week.</p>'
-    return (f'<div class="lerni-week"><h3>Goal progress this week</h3>{body}'
-            f'<div><span class="lerni-chip">⭐ {p.balance}</span>{car}</div></div>')
+    return (
+        f'<div class="lerni-week"><h3>Goal progress this week</h3>{body}'
+        f'<div><span class="lerni-chip">⭐ {p.balance}</span>{car}</div></div>'
+    )
 
 
 def rival_pairs(garage: Garage, p: Points) -> tuple[tuple[str, str], ...]:
@@ -179,10 +201,12 @@ def rival_pairs(garage: Garage, p: Points) -> tuple[tuple[str, str], ...]:
 
 def _label(text: str, y: int) -> str:
     # a small name on a pill at the top-left of its lane, readable in either theme
-    name = text if len(text) <= MAX_LABEL else text[:MAX_LABEL - 1] + "…"
-    return (f'<rect x="2" y="{y - 10}" width="{len(name) * 4.6 + 6:.0f}" height="11" rx="5" '
-            f'fill="#FFFFFF" fill-opacity="0.8"/><text x="5" y="{y - 2}" font-size="8" '
-            f'fill="#085041">{html.escape(name)}</text>')
+    name = text if len(text) <= MAX_LABEL else text[: MAX_LABEL - 1] + "…"
+    return (
+        f'<rect x="2" y="{y - 10}" width="{len(name) * 4.6 + 6:.0f}" height="11" rx="5" '
+        f'fill="#FFFFFF" fill-opacity="0.8"/><text x="5" y="{y - 2}" font-size="8" '
+        f'fill="#085041">{html.escape(name)}</text>'
+    )
 
 
 def step_sound(race: Race) -> str:
@@ -211,19 +235,23 @@ def track_svg(race: Race | None, car_id: str, garage: Garage, reads: str = "") -
     car_id = (race.car or car_id) if race else car_id  # the car it started in
     rivals = race.rivals if race else ()
     where = f"You're {ORDINAL[place(race)]}" if race and race.answered else "At the start line"
-    parts = [f'<svg viewBox="0 0 320 130" width="100%" role="img" aria-label="{where}" '
-             f'data-race="{html.escape(race.id if race else "")}" '
-             f'data-step="{race.answered if race else 0}" data-right="{race.right if race else 0}" '
-             f'data-total="{QUESTIONS_PER_RACE}" data-car="{html.escape(car_id)}" '
-             f'data-sound="{step_sound(race) if race else ""}"{READS.get(reads, "")}>', EDGE,
-             '<rect width="320" height="130" rx="8" fill="#E1F5EE"/>',
-             '<line x1="0" y1="43" x2="320" y2="43" stroke="#9FE1CB" stroke-dasharray="6 6"/>',
-             '<line x1="0" y1="86" x2="320" y2="86" stroke="#9FE1CB" stroke-dasharray="6 6"/>',
-             f'<rect x="{END + 58}" y="0" width="6" height="130" fill="#444441"/>',  # finish line
-             '<g filter="url(#lerni-edge)">', garage.svg(car_id, x(race.me if race else 0.0),
-                                                          LANES[0], "me")]
-    for rival, pos, y, lane in zip(rivals, race.at if race else (), LANES[1:], ("fast", "slow"),
-                                   strict=False):  # no rivals at the start line
+    parts = [
+        f'<svg viewBox="0 0 320 130" width="100%" role="img" aria-label="{where}" '
+        f'data-race="{html.escape(race.id if race else "")}" '
+        f'data-step="{race.answered if race else 0}" data-right="{race.right if race else 0}" '
+        f'data-total="{QUESTIONS_PER_RACE}" data-car="{html.escape(car_id)}" '
+        f'data-sound="{step_sound(race) if race else ""}"{READS.get(reads, "")}>',
+        EDGE,
+        '<rect width="320" height="130" rx="8" fill="#E1F5EE"/>',
+        '<line x1="0" y1="43" x2="320" y2="43" stroke="#9FE1CB" stroke-dasharray="6 6"/>',
+        '<line x1="0" y1="86" x2="320" y2="86" stroke="#9FE1CB" stroke-dasharray="6 6"/>',
+        f'<rect x="{END + 58}" y="0" width="6" height="130" fill="#444441"/>',  # finish line
+        '<g filter="url(#lerni-edge)">',
+        garage.svg(car_id, x(race.me if race else 0.0), LANES[0], "me"),
+    ]
+    for rival, pos, y, lane in zip(
+        rivals, race.at if race else (), LANES[1:], ("fast", "slow"), strict=False
+    ):  # no rivals at the start line
         if (rival.name, rival.car) in BOT_RIVALS:  # a bot, in its own paint
             parts.append(car_svg(rival.car, x(pos), y, lane, BOT_COLORS[rival.name]))
         else:
@@ -235,8 +263,9 @@ def track_svg(race: Race | None, car_id: str, garage: Garage, reads: str = "") -
 
 
 def _picture(c: Car) -> str:
-    return (f'<img src="/cars/{c.id}" alt="{html.escape(c.name)}">' if c.picture
-            else car_card_svg(c.id))
+    return (
+        f'<img src="/cars/{c.id}" alt="{html.escape(c.name)}">' if c.picture else car_card_svg(c.id)
+    )
 
 
 def _zap(c: Car) -> str:
@@ -250,22 +279,32 @@ def card_html(c: Car, owned: bool = False, locked: bool = False) -> str:
     """
     price = ""
     if not owned and c.usd:
-        price = (f'<span class="lerni-usd">${c.usd:,}</span>'
-                 f'<span class="lerni-like">{family_cars(c.usd)}</span>')
+        price = (
+            f'<span class="lerni-usd">${c.usd:,}</span>'
+            f'<span class="lerni-like">{family_cars(c.usd)}</span>'
+        )
     hp = f"{c.power_hp:,} hp" if c.power_hp else ""
     secs = f"{c.zero_to_60:g} seconds" if c.zero_to_60 else ""
-    facts = [f"{k}: {v}" for k, v in (("Engine", c.engine), ("Power", hp), ("Drive", c.drive),
-                                      ("0–60 mph", secs)) if v]
+    facts = [
+        f"{k}: {v}"
+        for k, v in (("Engine", c.engine), ("Power", hp), ("Drive", c.drive), ("0–60 mph", secs))
+        if v
+    ]
     facts += [c.note] if c.note else []
     if c.usd:
         facts.append(f"${c.usd:,} ÷ $2,500 a star ≈ {c.price:,} ⭐")
     facts.append("More ⚡ moves your car farther with each right answer.")
-    details = ("<details><summary>Car facts</summary>"
-               + "".join(f"<div>{html.escape(f)}</div>" for f in facts) + "</details>")
+    details = (
+        "<details><summary>Car facts</summary>"
+        + "".join(f"<div>{html.escape(f)}</div>" for f in facts)
+        + "</details>"
+    )
     if locked:  # ⚡ and the facts are earned by saving up
         return f'<div class="lerni-card">{_picture(c)}<b>{html.escape(c.name)}</b>{price}</div>'
-    return (f'<div class="lerni-card">{_picture(c)}<b>{html.escape(c.name)}</b>{_zap(c)}'
-            f"{price}{details}</div>")
+    return (
+        f'<div class="lerni-card">{_picture(c)}<b>{html.escape(c.name)}</b>{_zap(c)}'
+        f"{price}{details}</div>"
+    )
 
 
 def goal_line(garage: Garage, p: Points) -> str:
@@ -287,16 +326,46 @@ def hero_html(garage: Garage, p: Points | None) -> str:
     if goal is not None and goal.price > p.balance:
         pct = min(100, p.balance * 100 // goal.price)
         bar = f'<div class="lerni-bar" aria-hidden="true"><span style="width:{pct}%"></span></div>'
-    return (f'<div class="lerni-hero-car">{_picture(c)}</div>'
-            f'<div class="lerni-hero-name"><b>{html.escape(c.name)}</b> {_zap(c)}</div>'
-            f'<div class="lerni-goal">{html.escape(goal_line(garage, p))}{bar}</div>')
+    return (
+        f'<div class="lerni-hero-car">{_picture(c)}</div>'
+        f'<div class="lerni-hero-name"><b>{html.escape(c.name)}</b> {_zap(c)}</div>'
+        f'<div class="lerni-goal">{html.escape(goal_line(garage, p))}{bar}</div>'
+    )
+
+
+def passage_html(p: Any) -> str:
+    """A reading race's passage (v4.13): its title and paragraphs, folded by a tap; no kind
+    label, since question 1 asks it."""
+    if p is None:
+        return ""
+    paras = "".join(f"<p>{html.escape(para)}</p>" for para in p.text.split("\n\n"))
+    return (
+        f'<details class="lerni-passage" open><summary>📖 {html.escape(p.title)}</summary>'
+        f'<div class="lerni-passage-text">{paras}</div></details>'
+    )
+
+
+def order_html(pic: dict[str, Any]) -> str:
+    """Sentences to tap in order (v4.13): race.js numbers each tap and fills the answer."""
+    items = [str(x) for x in pic.get("items") or []]
+    cards = "".join(
+        f'<button type="button" class="lerni-order-item" data-i="{i}">'
+        f'<b aria-hidden="true"></b><span>{html.escape(t)}</span></button>'
+        for i, t in enumerate(items)
+    )  # escaped, though Claude wrote them
+    return (
+        f'<div class="lerni-order" data-n="{len(items)}">{cards}'
+        '<p class="lerni-order-hint">Tap again to undo.</p></div>'
+    )
 
 
 def picture_html(pic: dict[str, Any] | None) -> str:
     """A picture question's blocks: a grid of emoji or squares, or for a missing piece, the
-    pile and the empty rows to share it into; "" for none."""
-    if not pic:
-        return ""  # a spelling word: nothing to draw
+    pile and the empty rows to share it into; sentences to put in order; "" for none."""
+    if not pic or pic.get("kind") == "open":
+        return ""  # a spelling word or an open answer: nothing to draw
+    if pic.get("kind") == "order":
+        return order_html(pic)
     if pic.get("kind") == "money":
         return money_html(pic)
     if pic.get("kind") == "ruler":
@@ -307,11 +376,15 @@ def picture_html(pic: dict[str, Any] | None) -> str:
     if pic.get("empty"):  # the pile, then one empty row per row
         pile = one * int(pic.get("total", 0))
         empty = '<div class="lerni-row-empty"></div>' * rows
-        return (f'<div class="lerni-pic"><div class="lerni-pile">{pile}</div></div>'
-                f'<div class="lerni-pic-rows">{empty}</div>')
+        return (
+            f'<div class="lerni-pic"><div class="lerni-pile">{pile}</div></div>'
+            f'<div class="lerni-pic-rows">{empty}</div>'
+        )
     # a grid: one column per block in a row, so the rows line up
-    return (f'<div class="lerni-pic" style="grid-template-columns:repeat({cols},36px)" '
-            f'aria-label="{rows} rows of {cols}">{one * (rows * cols)}</div>')
+    return (
+        f'<div class="lerni-pic" style="grid-template-columns:repeat({cols},36px)" '
+        f'aria-label="{rows} rows of {cols}">{one * (rows * cols)}</div>'
+    )
 
 
 RULER_X, PX_CM = 30, 22  # the ruler's 0, and pixels per centimeter (an inch: 2.54 × 22)
@@ -327,37 +400,55 @@ def ruler_svg(pic: dict[str, Any]) -> str:
     out, ends = [], []  # the dashed lines go last, over the ruler
     for i, b in enumerate(bars):  # each object: a bar, its emoji at the end, a dashed line
         y, end = 4 + BAR_ROW * i, px(b["end"])
-        out.append(f'<rect x="{px(b["start"]):.1f}" y="{y}" width="{end - px(b["start"]):.1f}" '
-                   f'height="12" rx="4" fill="#1D9E75"/>'
-                   f'<text x="{end + 3:.1f}" y="{y + 12}" font-size="16">'
-                   f'{html.escape(str(b.get("emoji", "")))}</text>')
+        out.append(
+            f'<rect x="{px(b["start"]):.1f}" y="{y}" width="{end - px(b["start"]):.1f}" '
+            f'height="12" rx="4" fill="#1D9E75"/>'
+            f'<text x="{end + 3:.1f}" y="{y + 12}" font-size="16">'
+            f"{html.escape(str(b.get('emoji', '')))}</text>"
+        )
         for x in (px(b["start"]), end) if b["start"] else (end,):  # its start too, past 0
-            ends.append(f'<line x1="{x:.1f}" y1="{y}" x2="{x:.1f}" y2="{top + RULER_H}" '
-                        f'stroke="#0F6E56" stroke-width="1.5" stroke-dasharray="3 2"/>')
+            ends.append(
+                f'<line x1="{x:.1f}" y1="{y}" x2="{x:.1f}" y2="{top + RULER_H}" '
+                f'stroke="#0F6E56" stroke-width="1.5" stroke-dasharray="3 2"/>'
+            )
         if b.get("label"):  # 1 or 2, when two are compared
-            out.append(f'<text x="2" y="{y + 11}" font-size="12" fill="currentColor">'
-                       f'{html.escape(str(b["label"]))}</text>')
-    out.append(f'<rect x="{RULER_X - 8}" y="{top}" width="282" height="{RULER_H}" rx="4" '
-               f'fill="#FAC775" stroke="#BA7517"/>')  # the ruler itself
+            out.append(
+                f'<text x="2" y="{y + 11}" font-size="12" fill="currentColor">'
+                f"{html.escape(str(b['label']))}</text>"
+            )
+    out.append(
+        f'<rect x="{RULER_X - 8}" y="{top}" width="282" height="{RULER_H}" rx="4" '
+        f'fill="#FAC775" stroke="#BA7517"/>'
+    )  # the ruler itself
     for cm in range(13):  # the top edge: every centimeter, numbered
         x = px(cm)
-        out.append(f'<line x1="{x:.1f}" y1="{top}" x2="{x:.1f}" y2="{top + 16}" stroke="#633806"/>'
-                   f'<text x="{x:.1f}" y="{top + 28}" font-size="10" text-anchor="middle" '
-                   f'fill="#412402">{cm}</text>')
+        out.append(
+            f'<line x1="{x:.1f}" y1="{top}" x2="{x:.1f}" y2="{top + 16}" stroke="#633806"/>'
+            f'<text x="{x:.1f}" y="{top + 28}" font-size="10" text-anchor="middle" '
+            f'fill="#412402">{cm}</text>'
+        )
     for half in range(10):  # the bottom edge: every half inch, whole inches numbered
         x, whole = px(half * 1.27), half % 2 == 0  # half an inch is 1.27 cm
-        out.append(f'<line x1="{x:.1f}" y1="{top + RULER_H}" x2="{x:.1f}" '
-                   f'y2="{top + RULER_H - (18 if whole else 10)}" stroke="#633806"/>')
+        out.append(
+            f'<line x1="{x:.1f}" y1="{top + RULER_H}" x2="{x:.1f}" '
+            f'y2="{top + RULER_H - (18 if whole else 10)}" stroke="#633806"/>'
+        )
         if whole:
-            out.append(f'<text x="{x:.1f}" y="{top + RULER_H - 22}" font-size="10" '
-                       f'text-anchor="middle" fill="#412402">{half // 2}</text>')
+            out.append(
+                f'<text x="{x:.1f}" y="{top + RULER_H - 22}" font-size="10" '
+                f'text-anchor="middle" fill="#412402">{half // 2}</text>'
+            )
     # outside the ruler, so in the page's own text color (light or dark)
-    out.append(f'<text x="0" y="{top + 28}" font-size="11" fill="currentColor">cm</text>'
-               f'<text x="4" y="{top + RULER_H - 22}" font-size="11" fill="currentColor">in</text>')
+    out.append(
+        f'<text x="0" y="{top + 28}" font-size="11" fill="currentColor">cm</text>'
+        f'<text x="4" y="{top + RULER_H - 22}" font-size="11" fill="currentColor">in</text>'
+    )
     out += ends  # across both edges, so either can be read
     height = top + RULER_H + 4
-    return (f'<svg class="lerni-ruler" viewBox="0 0 320 {height}" role="img" '
-            f'aria-label="A ruler: centimeters on top, inches below">{"".join(out)}</svg>')
+    return (
+        f'<svg class="lerni-ruler" viewBox="0 0 320 {height}" role="img" '
+        f'aria-label="A ruler: centimeters on top, inches below">{"".join(out)}</svg>'
+    )
 
 
 def money_html(pic: dict[str, Any]) -> str:
@@ -366,18 +457,26 @@ def money_html(pic: dict[str, Any]) -> str:
     coins = "".join(  # the Mint's photo, named, never its worth
         f'<span class="lerni-coin"><img src="/coins/{c}.png" alt="{c}" '
         f'width="{COIN_PX[c]}" height="{COIN_PX[c]}"><small>{c}</small></span>'
-        for c in pic.get("coins", []) if c in COIN_PX)
+        for c in pic.get("coins", [])
+        if c in COIN_PX
+    )
     price = ""
     if pic.get("price"):  # making change: what's bought and its price tag
-        price = (f'<span class="lerni-price"><span>{html.escape(str(pic.get("item", "")))}'
-                 f'</span><small>{say_cents(int(pic["price"]), True)}</small></span>')
-    credit = ('<p class="lerni-credit">United States coin images from the United States '
-              'Mint.</p>' if coins else "")  # the Mint asks for this line
+        price = (
+            f'<span class="lerni-price"><span>{html.escape(str(pic.get("item", "")))}'
+            f"</span><small>{say_cents(int(pic['price']), True)}</small></span>"
+        )
+    credit = (
+        '<p class="lerni-credit">United States coin images from the United States Mint.</p>'
+        if coins
+        else ""
+    )  # the Mint asks for this line
     return f'<div class="lerni-money">{bills}{price}{coins}</div>{credit}'
 
 
-def after_tap(race: Race | None, ref: tuple[str, int], turn: Turn | None,
-              awarded: int = 0, goal: str = "") -> tuple[Race | None, str] | None:
+def after_tap(
+    race: Race | None, ref: tuple[str, int], turn: Turn | None, awarded: int = 0, goal: str = ""
+) -> tuple[Race | None, str] | None:
     """What an answer tap shows: the race and a line, or None when nothing changes (a repeat)."""
     if turn is not None:
         return race, _feedback(race, turn, awarded, goal) if race else ""
@@ -388,20 +487,41 @@ def after_tap(race: Race | None, ref: tuple[str, int], turn: Turn | None,
 
 def _why_first(race: Race, last: tuple[int, Turn] | None) -> bool:
     # a multiple-choice miss just now, mid-race: its right answer and why wait for Next
-    return (last is not None and bool(last[1].answer) and not last[1].right and not race.done
-            and last[0] == race.answered - 1)
+    return (
+        last is not None
+        and bool(last[1].answer)
+        and not last[1].right
+        and not race.done
+        and last[0] == race.answered - 1
+    )
+
+
+def _read_miss(t: Any, turn: Turn, opener: str) -> str:
+    # a reading answer not right (v4.13): the order, or a hint and one answer that fits
+    if turn.answer == CARE_LINE:  # a worry: the caring words alone
+        return CARE_LINE
+    if t.label.endswith(":order"):
+        return f"{opener} The order is:\n\n{turn.answer}"
+    return f"{opener} {turn.why} One answer: **{turn.answer}**".replace("  ", " ")
 
 
 def _typed_miss(race: Race, number: int, turn: Turn, typed: str) -> str:
     # a missed typed answer: its question, then the right answer (a word's missed letters marked)
     t = race.typed[number]
+    if t.kind == "read":
+        return f"Question {number + 1} of {QUESTIONS_PER_RACE}\n\n**{t.prompt}**\n\n" + _read_miss(
+            t, turn, miss_opener(race, number)
+        )
     right = spelled_html(turn.answer, typed) if t.kind == "spell" else f"**{turn.answer}**"
-    return (f"Question {number + 1} of {QUESTIONS_PER_RACE}\n\n**{t.prompt}**\n\n"
-            f"{miss_opener(race, number)} It's {right}. {turn.why}").rstrip()
+    return (
+        f"Question {number + 1} of {QUESTIONS_PER_RACE}\n\n**{t.prompt}**\n\n"
+        f"{miss_opener(race, number)} It's {right}. {turn.why}"
+    ).rstrip()
 
 
-def question_card(race: Race, last: tuple[int, Turn] | None = None,
-                  hear: str = "", typed: str = "") -> tuple[str, bool]:
+def question_card(
+    race: Race, last: tuple[int, Turn] | None = None, hear: str = "", typed: str = ""
+) -> tuple[str, bool]:
     """The question card, and whether its choices show: right after a wrong answer mid-race,
     the question just answered with its right answer and why (the next waits for Next);
     otherwise the current question. The bonus shows its question alone, then its grade.
@@ -411,29 +531,45 @@ def question_card(race: Race, last: tuple[int, Turn] | None = None,
         return _typed_miss(race, *last, typed), False
     if _why_first(race, last):  # a wrong answer's why comes before anything, the bonus too
         number, turn = last
-        return (f"Question {number + 1} of {QUESTIONS_PER_RACE}{hear}\n\n"
-                f"**{race.questions[number].question}**\n\n"
-                f"{miss_opener(race, number)} It's **{turn.answer}**. {turn.why}", False)
+        return (
+            f"Question {number + 1} of {QUESTIONS_PER_RACE}{hear}\n\n"
+            f"**{race.questions[number].question}**\n\n"
+            f"{miss_opener(race, number)} It's **{turn.answer}**. {turn.why}",
+            False,
+        )
     if race.bonus_live and race.bonus is not None:  # typed or spoken: no choices
-        return (f"Question {race.answered + 1} of {QUESTIONS_PER_RACE}{hear}\n\n"
-                f"⭐ **Bonus: explain it in your own words!**\n\n**{race.bonus.question}**", False)
+        return (
+            f"Question {race.answered + 1} of {QUESTIONS_PER_RACE}{hear}\n\n"
+            f"⭐ **Bonus: explain it in your own words!**\n\n**{race.bonus.question}**",
+            False,
+        )
     if last is not None and not last[1].answer and race.bonus is not None and not race.done:
         number, turn = last  # a graded bonus waits for Next too, so its line is read
-        return (f"Question {number + 1} of {QUESTIONS_PER_RACE}\n\n⭐ **{race.bonus.question}**"
-                f"\n\n{turn.why}", False)
+        return (
+            f"Question {number + 1} of {QUESTIONS_PER_RACE}\n\n⭐ **{race.bonus.question}**"
+            f"\n\n{turn.why}",
+            False,
+        )
     if last is not None and not last[1].right and not race.done and last[0] in race.typed:
         return _typed_miss(race, *last, typed), False
     if (t := race.typed.get(race.answered)) is not None:  # typed: the dock shows, no choices
-        return (f"Question {race.answered + 1} of {QUESTIONS_PER_RACE}{hear}\n\n"
-                f"**{t.prompt}**", False)
+        return (
+            f"Question {race.answered + 1} of {QUESTIONS_PER_RACE}{hear}\n\n**{t.prompt}**",
+            False,
+        )
     if last is not None and not last[1].right and not race.done:
         number, turn = last
-        return (f"Question {number + 1} of {QUESTIONS_PER_RACE}\n\n"
-                f"**{race.questions[number].question}**\n\n"
-                f"{miss_opener(race, number)} It's **{turn.answer}**. {turn.why}", False)
+        return (
+            f"Question {number + 1} of {QUESTIONS_PER_RACE}\n\n"
+            f"**{race.questions[number].question}**\n\n"
+            f"{miss_opener(race, number)} It's **{turn.answer}**. {turn.why}",
+            False,
+        )
     view = public(race)
-    return (f"Question {view['number'] + 1} of {QUESTIONS_PER_RACE}{hear}\n\n"
-            f"**{view['question']}**", True)
+    return (
+        f"Question {view['number'] + 1} of {QUESTIONS_PER_RACE}{hear}\n\n**{view['question']}**",
+        True,
+    )
 
 
 def _feedback(race: Race, turn: Turn, awarded: int, goal: str = "") -> str:
@@ -441,22 +577,34 @@ def _feedback(race: Race, turn: Turn, awarded: int, goal: str = "") -> str:
     if not turn.right and not race.done:
         return ""  # the card shows the right answer and its why, until Next
     typed = (race.answered - 1) in race.typed
-    if turn.right and typed:  # the word or number, with its parts or how it adds up
+    if turn.right and typed and race.typed[race.answered - 1].kind == "read":  # v4.13
+        line = f"✓ {turn.why or 'Right!'} Boost! {slowed} 💨"  # Claude's line, or "In order!"
+    elif typed and race.typed[race.answered - 1].kind == "read":  # a reading miss at the finish
+        t = race.typed[race.answered - 1]
+        line = _read_miss(t, turn, miss_opener(race, race.answered - 1))  # a worry: its words
+    elif turn.right and typed:  # the word or number, with its parts or how it adds up
         line = f"✓ **{turn.answer}**" + (f": {turn.why}" if turn.why else "")
         line += f" Boost! {slowed} 💨"
     else:
-        line = (f"Right answer: boost! {slowed} 💨" if turn.right
-                else f"{miss_opener(race, race.answered - 1)} It's **{turn.answer}**. {turn.why}")
+        line = (
+            f"Right answer: boost! {slowed} 💨"
+            if turn.right
+            else f"{miss_opener(race, race.answered - 1)} It's **{turn.answer}**. {turn.why}"
+        )
     if race.done:
         line += f"\n\nYou finished {ORDINAL[place(race)]}! ⭐ +{awarded}"
         line += f"\n\n{goal}" if goal else ""
     return line
 
 
-def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
-              header_stars: gr.Markdown, garage: Garage,
-              speech: Speech | None = None
-              ) -> tuple[gr.Tab, Callable[..., list[Any]], list[Any], list[gr.Button]]:
+def games_tab(
+    signin: SignIn,
+    desk: RaceDesk | None,
+    points: PointsStore,
+    header_stars: gr.Markdown,
+    garage: Garage,
+    speech: Speech | None = None,
+) -> tuple[gr.Tab, Callable[..., list[Any]], list[Any], list[gr.Button]]:
     """The Games tab: your car and the next goal, the race, then My cars and Showroom
     (between races only).
 
@@ -464,6 +612,7 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
         The tab, a refresh for page load (no Claude call), the components it fills, and the
         finish's topic buttons, which open Chat (main.py wires them, since it owns the tabs).
     """
+
     def tile(c: Car) -> tuple[gr.Column, gr.Button]:
         with gr.Column(elem_classes="lerni-tile", min_width=0, visible=False) as col:
             gr.HTML(card_html(c, owned=True), padding=False)
@@ -477,32 +626,46 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
 
     with gr.Tab("Games", id="games", visible=False) as tab:
         hero = gr.HTML(elem_id="lerni-hero")  # your car and the next goal, when not racing
+        passage = gr.HTML(elem_id="lerni-passage", visible=False, padding=False)  # v4.13
         track = gr.HTML(elem_id="lerni-track", visible=False)  # once a race starts
         question = gr.Markdown(elem_classes="lerni-question")  # a tap reads it aloud (race.js)
         # the hidden reader: race.js presses it for a tap on the card, or a wrong answer's why
         speak = gr.Button(elem_id="lerni-read-go", elem_classes="lerni-hide")
         hear = gr.State("")  # what it reads: "question", "why", or nothing
-        read_clip = gr.Textbox(elem_id="lerni-clip-read", elem_classes="lerni-hide",
-                               container=False)  # the clip for talk.js to play
+        read_clip = gr.Textbox(
+            elem_id="lerni-clip-read", elem_classes="lerni-hide", container=False
+        )  # the clip for talk.js to play
         choices = [gr.Button(visible=False, elem_classes="lerni-choice") for _ in range(3)]
         talks = speech is not None
         # the bonus: typed or spoken, like Chat's dock (talk.js drives the "bonus" parts)
-        with gr.Column(elem_id="lerni-dock-bonus", visible=False,
-                       elem_classes="lerni-dock lerni-voice" if talks else "lerni-dock") as dock:
+        with gr.Column(
+            elem_id="lerni-dock-bonus",
+            visible=False,
+            elem_classes="lerni-dock lerni-voice" if talks else "lerni-dock",
+        ) as dock:
             if talks:
                 preview = gr.Markdown(elem_id="lerni-preview-bonus")  # what's heard so far
                 gr.Button("🎤\nHold to talk", elem_id="lerni-talk-bonus", elem_classes="lerni-talk")
             with gr.Row(elem_classes="lerni-type"):
                 answer_box = gr.Textbox(
-                    show_label=False, placeholder="Explain it in your own words…", lines=1,
-                    max_lines=4, max_length=MAX_ANSWER, container=False, scale=4,
-                    elem_id="lerni-question-bonus")
-                send = gr.Button("Send", variant="primary", scale=1, min_width=70,
-                                 elem_id="lerni-send-bonus")
+                    show_label=False,
+                    placeholder="Explain it in your own words…",
+                    lines=1,
+                    max_lines=4,
+                    max_length=MAX_ANSWER,
+                    container=False,
+                    scale=4,
+                    elem_id="lerni-question-bonus",
+                )
+                send = gr.Button(
+                    "Send", variant="primary", scale=1, min_width=70, elem_id="lerni-send-bonus"
+                )
             if talks:
-                gr.HTML('<div class="lerni-mode" role="group" aria-label="Talk or type">'
-                        '<button type="button" data-mode="talk">🎤 Talk</button>'
-                        '<button type="button" data-mode="type">⌨️ Type</button></div>')
+                gr.HTML(
+                    '<div class="lerni-mode" role="group" aria-label="Talk or type">'
+                    '<button type="button" data-mode="talk">🎤 Talk</button>'
+                    '<button type="button" data-mode="type">⌨️ Type</button></div>'
+                )
                 hide = {"elem_classes": "lerni-hide", "container": False}
                 clip = gr.Textbox(elem_id="lerni-clip-bonus", **hide)
                 partial = gr.Textbox(elem_id="lerni-partial-bonus", **hide)
@@ -510,25 +673,35 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
                 peek = gr.Button(elem_id="lerni-peek-bonus", elem_classes="lerni-hide")
             skip = gr.Button("Skip", size="sm")
         # a typed question (v4.11): its picture, the answer field, and Check
-        with gr.Column(elem_id="lerni-dock-typed", visible=False,
-                       elem_classes="lerni-dock") as tdock:
+        with gr.Column(
+            elem_id="lerni-dock-typed", visible=False, elem_classes="lerni-dock"
+        ) as tdock:
             drawing = gr.HTML(padding=False)  # a picture's blocks; empty for a word
             with gr.Row(elem_classes="lerni-type"):
                 typed_box = gr.Textbox(
-                    show_label=False, lines=1, max_lines=1, max_length=TYPED_MAX,
-                    container=False, scale=4, elem_id="lerni-typed")  # race.js: no autocorrect
-                check = gr.Button("Check", variant="primary", scale=1, min_width=80,
-                                  elem_classes="lerni-check")  # race.js counts it as a tap
+                    show_label=False,
+                    lines=1,
+                    max_lines=1,
+                    max_length=TYPED_MAX,
+                    container=False,
+                    scale=4,
+                    elem_id="lerni-typed",
+                )  # race.js: no autocorrect
+                check = gr.Button(
+                    "Check", variant="primary", scale=1, min_width=80, elem_classes="lerni-check"
+                )  # race.js counts it as a tap
         note = gr.Markdown(elem_id="lerni-note")
         # at the finish: up to two nearby ideas to talk about in Chat (v3.36)
         with gr.Column(visible=False, elem_classes="lerni-explore") as explore:
             gr.Markdown("Want to find out more?")
             with gr.Row():
-                topic_btns = [gr.Button(visible=False, elem_classes="lerni-topic")
-                              for _ in range(2)]
+                topic_btns = [
+                    gr.Button(visible=False, elem_classes="lerni-topic") for _ in range(2)
+                ]
         go = gr.Button("Race!", variant="primary", elem_classes="lerni-go")
-        next_btn = gr.Button("Next", variant="primary", elem_classes="lerni-go", visible=False,
-                             elem_id="lerni-next")  # race.js holds it while the why is said
+        next_btn = gr.Button(
+            "Next", variant="primary", elem_classes="lerni-go", visible=False, elem_id="lerni-next"
+        )  # race.js holds it while the why is said
         shown = gr.State(("", 0))  # the race id and question number on screen
         # tiles are built once at startup, one per car in each list; each player sees theirs
         with gr.Column() as garage_box:  # out of sight while racing, so the race has the screen
@@ -539,11 +712,31 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
             with gr.Row(elem_classes="lerni-tiles"):
                 shop = {c.id: shop_tile(c) for c in garage.cars}
 
-    outputs = [header_stars, hero, track, question, *choices, dock, answer_box, send, note, go,
-               next_btn, shown, mine_title,
-               *(x for pair in mine.values() for x in pair),
-               *(x for parts in shop.values() for x in parts), garage_box, hear, explore,
-               *topic_btns, tdock, drawing, typed_box]
+    outputs = [
+        header_stars,
+        hero,
+        track,
+        question,
+        *choices,
+        dock,
+        answer_box,
+        send,
+        note,
+        go,
+        next_btn,
+        shown,
+        mine_title,
+        *(x for pair in mine.values() for x in pair),
+        *(x for parts in shop.values() for x in parts),
+        garage_box,
+        hear,
+        explore,
+        *topic_btns,
+        tdock,
+        drawing,
+        typed_box,
+        passage,
+    ]
 
     def garage_updates(p: Points | None) -> list[Any]:
         """The My cars title, then each car's tile and button in both lists."""
@@ -561,15 +754,28 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
             if p is None or c not in sold or c in owned:
                 ups += [gr.update(visible=False), gr.update(), gr.update(), gr.update()]
             elif p.balance >= c.price:
-                ups += [gr.update(visible=True), gr.update(visible=True), gr.update(visible=False),
-                        gr.update(value=f"Buy · {c.price:,} ⭐", interactive=True)]
+                ups += [
+                    gr.update(visible=True),
+                    gr.update(visible=True),
+                    gr.update(visible=False),
+                    gr.update(value=f"Buy · {c.price:,} ⭐", interactive=True),
+                ]
             else:
-                ups += [gr.update(visible=True), gr.update(visible=False), gr.update(visible=True),
-                        gr.update(value=f"{c.price - p.balance:,} more ⭐", interactive=False)]
+                ups += [
+                    gr.update(visible=True),
+                    gr.update(visible=False),
+                    gr.update(visible=True),
+                    gr.update(value=f"{c.price - p.balance:,} more ⭐", interactive=False),
+                ]
         return ups
 
-    def screen(viewer: Viewer | None, race: Race | None, line: str,
-               last: tuple[int, Turn] | None = None, typed: str = "") -> list[Any]:
+    def screen(
+        viewer: Viewer | None,
+        race: Race | None,
+        line: str,
+        last: tuple[int, Turn] | None = None,
+        typed: str = "",
+    ) -> list[Any]:
         """Every output, in order; ``last`` is the answer just given, for the waiting card, and
         ``typed`` what was just typed, to mark a missed word (never kept)."""
         pic, kind = None, ""  # a typed slot on screen: what to draw, and its kind
@@ -580,40 +786,78 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
             go_update = gr.update(visible=True, value="Race again!" if race else "Race!")
             ref, waiting, live = (race.id, race.answered) if race else ("", 0), False, False
             # a wrong last answer: its right answer and why are in the note
-            why = race is not None and last is not None and bool(last[1].answer) and not (
-                last[1].right)
+            why = (
+                race is not None
+                and last is not None
+                and bool(last[1].answer)
+                and not (last[1].right)
+            )
             reads = "why" if why else ""
             typed_live = False
         else:
             ask, show = question_card(race, last, HEAR if talks else "", typed)
             # while the why shows, the hidden buttons don't get the next question yet
-            buttons = ([gr.update(visible=True, value=c) for c in public(race)["choices"]] if show
-                       else [gr.update(visible=False) for _ in choices])
-            live = race.bonus_live and not _why_first(race, last)  # the dock, not Next
+            buttons = (
+                [gr.update(visible=True, value=c) for c in public(race)["choices"]]
+                if show
+                else [gr.update(visible=False) for _ in choices]
+            )
             view = public(race)
-            typed_live = "typed" in view and not _why_first(race, last)  # its dock, not Next
+            # a reading race's open answer (v4.13) is said or typed in the bonus's dock
+            spoken = (
+                view.get("typed") == "read" and (view.get("picture") or {}).get("kind") == "open"
+            )
+            live = (race.bonus_live or spoken) and not _why_first(race, last)  # the dock
+            typed_live = "typed" in view and not spoken and not _why_first(race, last)
             if typed_live:
                 pic, kind = view.get("picture"), view["typed"]
-            go_update, ref, waiting = gr.update(visible=False), (race.id, race.answered), not (
-                show or live or typed_live)
+            go_update, ref, waiting = (
+                gr.update(visible=False),
+                (race.id, race.answered),
+                not (show or live or typed_live),
+            )
             why = _why_first(race, last)
             reads = "why" if why else "question" if show or live or typed_live else ""
         mine = stars(points, viewer)
-        topics = (desk.probes_after(viewer.username, race)  # only at the finish
-                  if desk is not None and viewer is not None and race is not None and race.done
-                  else [])
-        return [gr.update(value=mine, visible=bool(mine)),
-                gr.update(value=hero_html(garage, p), visible=race is None),
-                gr.update(value=track_svg(race, driving, garage, reads if talks else ""),
-                          visible=race is not None),
-                ask, *buttons, gr.update(visible=live), gr.update(value=""),
-                gr.update(interactive=True), line, go_update, gr.update(visible=waiting), ref,
-                *garage_updates(p), gr.update(visible=race is None or race.done), reads,
-                gr.update(visible=bool(topics)),
-                *(gr.update(visible=True, value=f"🔭 {topics[i]}") if i < len(topics)
-                  else gr.update(visible=False) for i in range(len(topic_btns))),
-                gr.update(visible=typed_live), picture_html(pic),
-                gr.update(value="", placeholder=PLACEHOLDER.get(kind, ""))]  # empty for each
+        topics = (
+            desk.probes_after(viewer.username, race)  # only at the finish
+            if desk is not None and viewer is not None and race is not None and race.done
+            else []
+        )
+        return [
+            gr.update(value=mine, visible=bool(mine)),
+            gr.update(value=hero_html(garage, p), visible=race is None),
+            gr.update(
+                value=track_svg(race, driving, garage, reads if talks else ""),
+                visible=race is not None,
+            ),
+            ask,
+            *buttons,
+            gr.update(visible=live),
+            gr.update(value=""),
+            gr.update(interactive=True),
+            line,
+            go_update,
+            gr.update(visible=waiting),
+            ref,
+            *garage_updates(p),
+            gr.update(visible=race is None or race.done),
+            reads,
+            gr.update(visible=bool(topics)),
+            *(
+                gr.update(visible=True, value=f"🔭 {topics[i]}")
+                if i < len(topics)
+                else gr.update(visible=False)
+                for i in range(len(topic_btns))
+            ),
+            gr.update(visible=typed_live),
+            picture_html(pic),
+            gr.update(value="", placeholder=PLACEHOLDER.get(kind, "")),  # empty for each
+            gr.update(
+                value=passage_html(race.passage if race else None),  # above the track
+                visible=bool(race and race.passage and not race.done),
+            ),
+        ]
 
     def viewer_of(request: gr.Request) -> Viewer | None:
         viewer = signin.viewer(request.username)  # re-read on every request
@@ -657,8 +901,11 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
             return screen(viewer, race, "" if race else oops)
         except Exception:  # noqa: BLE001 - the screen failed too: just the Race button
             ups = [gr.update() for _ in outputs]
-            for part, up in ((note, gr.update(value=oops)), (go, gr.update(visible=True)),
-                             (send, gr.update(interactive=True))):
+            for part, up in (
+                (note, gr.update(value=oops)),
+                (go, gr.update(visible=True)),
+                (send, gr.update(interactive=True)),
+            ):
                 ups[next(n for n, c in enumerate(outputs) if c is part)] = up
             return ups
 
@@ -676,19 +923,26 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
                 return screen(viewer, *shown, last=(ref[1], turn) if turn else None)
             except Exception:  # noqa: BLE001 - never show what went wrong inside
                 return recover(request)
+
         return handler
 
-    def on_bonus(text: str, ref: tuple[str, int], request: gr.Request,
-                 said: str = "") -> list[Any]:
+    def on_bonus(text: str, ref: tuple[str, int], request: gr.Request, said: str = "") -> list[Any]:
         try:  # anything odd: the race as it stands, never a stuck screen
             # grade the answer once (it stays in memory), then show the grade until Next
             viewer = viewer_of(request)
             if desk is None or viewer is None:
                 return screen(viewer, None, "")
-            race, turn, awarded = desk.answer_bonus(viewer.username, ref[0], ref[1], text or "",
-                                                    supervised=viewer.role is Role.SUPERVISED)
+            race, turn, awarded = desk.answer_bonus(
+                viewer.username,
+                ref[0],
+                ref[1],
+                text or "",
+                supervised=viewer.role is Role.SUPERVISED,
+            )
             if turn is None and race is not None and desk.grading(race.id):
                 return [gr.update() for _ in outputs]  # the first answer is still being read
+            if turn is None and race is not None and race.nudge:  # one more try (v4.13)
+                return screen(viewer, race, (f"🎤 {said}\n\n" if said else "") + race.nudge)
             if turn is None:  # a double send, or the race ended
                 return screen(viewer, race, "" if race else "That race ended. Tap Race! 🏁")
             line = (f"🎤 {said}\n\n" if said else "") + (f"⭐ +{awarded}" if awarded else "")
@@ -734,6 +988,7 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
             message = garage_tap(points, garage, viewer, car_id)
             race = desk.current(viewer.username) if desk is not None and viewer else None
             return screen(viewer, race, message)
+
         return handler
 
     def on_speak(ref: tuple[str, int], reads: str, request: gr.Request) -> Any:
@@ -741,41 +996,64 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
         viewer = viewer_of(request)
         if desk is None or viewer is None or not reads:
             return gr.update()
-        audio = (desk.read_why(viewer.username, ref[0], ref[1] - 1) if reads == "why"
-                 else desk.read_aloud(viewer.username, ref[0], ref[1]))
+        audio = (
+            desk.read_why(viewer.username, ref[0], ref[1] - 1)
+            if reads == "why"
+            else desk.read_aloud(viewer.username, ref[0], ref[1])
+        )
         if not audio:  # an empty clip for a why: Next stops waiting for it
             return json.dumps([time.monotonic(), ""]) if reads == "why" else gr.update()
         return json.dumps([time.monotonic(), base64.b64encode(audio).decode()])
 
     # "multiple": a tap while an older reading is still being made isn't ignored
-    speak.click(on_speak, [shown, hear], read_clip, concurrency_limit=MAX_AT_ONCE,
-                trigger_mode="multiple", **PRIVATE)
-    read_clip.change(None, read_clip, None,  # one reading at a time: a new one replaces it
-                     js="(v) => { if (window.lerniRace?.wants() !== false) "
-                        "window.lerniTalk?.say(v); }")  # not after Sound off or moving on
+    speak.click(
+        on_speak,
+        [shown, hear],
+        read_clip,
+        concurrency_limit=MAX_AT_ONCE,
+        trigger_mode="multiple",
+        **PRIVATE,
+    )
+    read_clip.change(
+        None,
+        read_clip,
+        None,  # one reading at a time: a new one replaces it
+        js="(v) => { if (window.lerniRace?.wants() !== false) window.lerniTalk?.say(v); }",
+    )  # not after Sound off or moving on
     tab.select(on_open, None, outputs, **PRIVATE)
     # Race hides while questions are written, so extra taps can't start more races
     # the note says why it waits; progress only on the hidden Race button, so no "processing"
     # over the hero, the card, and every garage car ("hidden" still shows it on HTML)
-    go.click(lambda: [WAIT_LINE, *(gr.update(visible=False) for _ in range(3))], None,
-             [note, go, garage_box, explore], queue=False, **PRIVATE).then(
-        on_go, None, outputs, concurrency_limit=MAX_AT_ONCE, show_progress_on=[go],
-        **PRIVATE)  # side by side
+    go.click(
+        lambda: [WAIT_LINE, *(gr.update(visible=False) for _ in range(3))],
+        None,
+        [note, go, garage_box, explore],
+        queue=False,
+        **PRIVATE,
+    ).then(
+        on_go, None, outputs, concurrency_limit=MAX_AT_ONCE, show_progress_on=[go], **PRIVATE
+    )  # side by side
     for i, button in enumerate(choices):
         button.click(on_choice(i), shown, outputs, concurrency_limit=MAX_AT_ONCE, **PRIVATE)
     next_btn.click(on_next, None, outputs, concurrency_limit=MAX_AT_ONCE, **PRIVATE)
     for trigger in (check.click, typed_box.submit):  # Check, or Return on the keyboard
         trigger(on_typed, [typed_box, shown], outputs, concurrency_limit=MAX_AT_ONCE, **PRIVATE)
-    reading = (lambda: ["Lerni is reading your answer… ⭐", gr.update(interactive=False)],
-               None, [note, send])  # Send waits while Claude grades
+    reading = (
+        lambda: ["Lerni is reading your answer… ⭐", gr.update(interactive=False)],
+        None,
+        [note, send],
+    )  # Send waits while Claude grades
     for trigger in (send.click, answer_box.submit):
-        trigger(*reading, **PRIVATE).then(on_bonus, [answer_box, shown], outputs,
-                                          concurrency_limit=MAX_AT_ONCE, **PRIVATE)
+        trigger(*reading, **PRIVATE).then(
+            on_bonus, [answer_box, shown], outputs, concurrency_limit=MAX_AT_ONCE, **PRIVATE
+        )
+
     def on_skip(ref: tuple[str, int], request: gr.Request) -> list[Any]:
         return on_bonus("", ref, request)  # nothing to grade: no points, never called wrong
 
     skip.click(on_skip, [shown], outputs, concurrency_limit=MAX_AT_ONCE, **PRIVATE)
     if talks:
+
         def on_heard(b64: str, ref: tuple[str, int], request: gr.Request) -> list[Any]:
             # what Whisper heard is sent at once, as in Chat; nothing heard: try again
             if viewer_of(request) is None:  # who's asking, before anything is heard
@@ -789,13 +1067,17 @@ def games_tab(signin: SignIn, desk: RaceDesk | None, points: PointsStore,
             return on_bonus(text, ref, request, said=text)
 
         heard_btn.click(lambda: "", None, [preview], **PRIVATE).then(  # the last words go
-            on_heard, [clip, shown], outputs, concurrency_limit=MAX_AT_ONCE, **PRIVATE)
+            on_heard, [clip, shown], outputs, concurrency_limit=MAX_AT_ONCE, **PRIVATE
+        )
+
         def on_peek(b64: str, request: gr.Request) -> str:
             viewer = viewer_of(request)  # what's heard so far, while the button is held
             return f"🎤 {talk_preview(speech, viewer, b64)}" if viewer else ""
 
         peek.click(on_peek, [partial], [preview], trigger_mode="always_last", **PRIVATE)
-    for car_id, button in [*((i, t[-1]) for i, t in mine.items()),
-                           *((i, t[-1]) for i, t in shop.items())]:
+    for car_id, button in [
+        *((i, t[-1]) for i, t in mine.items()),
+        *((i, t[-1]) for i, t in shop.items()),
+    ]:
         button.click(on_garage(car_id), None, outputs, concurrency_limit=MAX_AT_ONCE, **PRIVATE)
     return tab, refresh, outputs, topic_btns

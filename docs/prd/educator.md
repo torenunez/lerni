@@ -167,6 +167,13 @@ As an educator, I want to give Lerni the class spelling list and see which words
 - THE SYSTEM SHALL add its own words from the student's interests straight into practice, and the educator SHALL be able to remove any word for good.
 - THE SYSTEM SHALL show the words missed most and the kinds of mistakes (a doubled letter, ie or ei).
 
+### Story: Pick what they read
+
+As an educator, I want reading races to use texts I picked and to see how reading goes, so that practice stays at the right level.
+
+- THE SYSTEM SHALL write reading passages only from the educator's picked sources, and the facts from a picked government page from that page.
+- THE SYSTEM SHALL show the student's reading level and how each kind of question went in the last week, with how often answers used describing words.
+
 ## Out of scope
 
 Running the admin tool. Editing app code or files directly.

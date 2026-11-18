@@ -29,6 +29,7 @@
 
 ## Reading
 
+- **Built in v4.13 as reading races** ([plan](../v4.13-reading.md)): the passage above the track, five questions about it.
 - **Passages Claude writes,** about the student's interests, at their reading level. Lerni finds the level itself: it starts easy and moves up as race levels do, checked with a readability formula on the home server.
 - **Three kinds, taking turns:** narrative, informational, and opinion.
 - **Task 1, what kind of text:** a tap among the three, then "why?" in a few typed words.

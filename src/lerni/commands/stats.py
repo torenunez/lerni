@@ -49,6 +49,12 @@ def stats_cmd(username: str = typer.Argument("", help="One student's report."),
         window = "all time" if everything else "this week" if weeks == 1 \
             else f"last {weeks} weeks"
         typer.echo(report(built.path, username, start, window))
+        from lerni.student.reading import ReadingStore, summary, summary_lines
+        from lerni.student.results import ResultsLog
+
+        reading = summary(ReadingStore(folder), ResultsLog(folder).read(username), username,
+                          date.today())  # the last 7 days, whatever the window (v4.13)
+        typer.echo("\n" + "\n".join(summary_lines(reading)))
     else:
         typer.echo(overview(built.path, start))
         from lerni.student.meter import UsageLog, usage_report
