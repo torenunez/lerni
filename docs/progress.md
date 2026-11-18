@@ -14,6 +14,10 @@ When something changes, update this section and add a log entry below.
 
 ## Log
 
+### 2026-11-18 (the roadmap after v4.14, v4.15)
+
+- v4.15 (docs only): the roadmap reordered around the admin's ideas. The night job (v4.16: bridges shortlisted by meaning, the morning plan, the day's questions, with check a few questions and a log for analysis), Chat asking what the student likes (v4.17), a grader check (v4.18), lighter chat (v4.19), a local tagger (v4.20), then a storage check before Versions 5–7. Measurement decisions (labels only from people; a difficulty model now; methods per version) and a rule 6 line for the educator's grades of real answers. Version 10, Beyond the family, gates anyone outside the family; no Django now.
+
 ### 2026-11-18 (writing races, v4.14)
 
 - v4.14 ([plan](../plans/v4.14-paragraph.md)): writing races. Once a day, the race right after the first reading race is one typed paragraph to a prompt written with that passage (a response or a creative one, taking turns, at no extra Claude call). A 5-item checklist (capitals and the sentence count by code, the rest by the small model), one thing done well and one to try, one revision; each ✓ moves the car. Misspellings go to the Spelling fold as suggestions, added on the educator's tick. The paragraph only in the conversation logs. The admin's calls: a writing race, once a day.

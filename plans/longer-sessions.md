@@ -60,7 +60,7 @@
 
 ### B. Write the day ahead, overnight (moves session load into a night window)
 
-- **The night job:** at 02:00, before the 05:00 morning plan, write the day's whole supply, about 12 races of questions plus their bonuses, through the usual checks.
+- **The night job:** at 02:00, before the 05:00 morning plan, write the day's whole supply, about 12 races of questions plus their bonuses, through the usual checks. *Replaced 2026-11-18:* one 02:00 run does three steps in order: the local embedding model shortlists interest–goal pairs by meaning, the morning plan proposes connections from that shortlist, and the supply is written with the connections already ticked.
 - **During the session,** writing happens only when the supply runs out.
 - **Kept on disk until the day ends** (`ahead/<user>.json`), so a deploy or restart doesn't throw them away and pay for them again. **This needs a rule 6 change** (the admin's call).
 - **Picking up today's changes:** a goal or set-aside change during the day already drops held questions at race start (`fits`, `_still_on`). Those checks stay.
@@ -82,7 +82,7 @@
 - **Shadow mode first:** the local tagger runs beside Haiku on the same exchanges, and records only whether their fields agree. Nothing it decides reaches the map or points.
 - **The bar to switch:**
   - at least 90% agreement on `answered`;
-  - `skip` catches every case Haiku catches;
+  - `skip` catches every case Haiku catches; *Replaced 2026-11-18:* no misses in 60 skip cases (rule of three: a miss rate under 5%), counted in skip cases, not exchanges: likely about 600 exchanges (about 3 weeks). A person settles each disagreement;
   - no false merges in a reviewed sample.
 - **Then:** local first, with Haiku taking the cases where they disagree or the local output is malformed.
 - **Next candidates, each measured the same way:**
@@ -104,7 +104,7 @@
 
 v4.5 (bulk ratings and question quality) → v4.6 the map picture (general interests only) → v4.7 Tell Lerni → **v4.8 A, the usage meter**, with minimal CI → **v4.9 B, overnight write-ahead**, with check a few questions → **v4.10 C, lighter chat** → **v4.11 D, local tagger in shadow** → Versions 5–7. *Replaced 2026-11-14:* away from home is v4.8, so A–D are v4.9–v4.12.
 
-*Replaced 2026-11-17:* the current order is in [upcoming versions](../docs/todo.md#upcoming-versions) (the meter v4.12, write-ahead v4.15, lighter chat v4.16, local tagger v4.17).
+*Replaced 2026-11-17:* the current order is in [upcoming versions](../docs/todo.md#upcoming-versions) (the meter v4.12, write-ahead v4.15, lighter chat v4.16, local tagger v4.17). *Replaced 2026-11-18:* B grows into the night job (v4.16: bridges shortlisted by meaning, then the morning plan, then the day's supply), Chat asking about interests is v4.17, a grader check v4.18, lighter chat v4.19, and the local tagger v4.20.
 
 **Data check-in:** about a week after A ships, read the meter. It may reorder B, C and D.
 
@@ -134,4 +134,4 @@ v4.5 (bulk ratings and question quality) → v4.6 the map picture (general inter
 - **A:** one day of production use shows a per-feature table in `lerni stats` that adds up to the windows' movement.
 - **B:** the meter shows question writing and blind-check calls moving into the 02:00 window, and a restart mid-day keeps the supply.
 - **C:** the chat eval scores and the admin's read show no visible drop, and tokens per turn fall.
-- **D:** the shadow agreement report on at least 200 exchanges, plus memory and response time measured while a session runs.
+- **D:** the shadow agreement report on at least 60 skip cases (about 600 exchanges; *replaced 2026-11-18*, was 200 exchanges), plus memory and response time measured while a session runs.
