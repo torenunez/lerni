@@ -117,6 +117,16 @@ Both servers run as macOS LaunchAgents: they start when the admin logs in (after
 - Install from a Terminal on this Mac, not over SSH: it saves this shell's PATH and its `LERNI_*` settings (the voice, the models; the data folder only from `--data`) for the server, says which it saved or dropped, and warns if `claude` or `whisper-cli` can't be found, or if production's checkout holds code that isn't on `main`. It refuses either server on the other's data folder or port. To change a setting, install again with the same `--cert` and `--key`; the last log is kept as `<name>.log.1`.
 - Then `lerni service status` (running and answering?), `restart prod|dev` (after an update or a branch change; also starts a stopped one), `stop`, or `uninstall`. `install` and `restart` wait up to 75 seconds for the server to answer, and if it doesn't, show the end of its log. Output goes to `~/Library/Logs/lerni/<name>.log`; on restart a log over 5 MB moves to `<name>.log.1`.
 
+### Job times
+
+All in the home server's local time, set in `src/lerni/student/schedule.py`: change a time there and restart (the copy: also `lerni backup install` again).
+
+| Job | When |
+|---|---|
+| The night job: yesterday's held items deleted, bridges shortlisted by meaning, the morning plan, the day's races and first passage | 02:00, again every half hour until 06:00 if a call fails |
+| The nightly copy, then the stats copy rebuilt | 03:00 |
+| A few races' worth | At each start |
+
 ### Backups and undo
 
 - **Nightly copies:** `lerni backup install` (once, in the production checkout) copies `~/.lerni/student` to `~/.lerni/backups/student/nightly-<date>/` every night at 03:00 and keeps the newest 30; `lerni backup run` copies now (`--to /Volumes/Drive/lerni` also copies to a drive: use an encrypted one, since the copy holds the logs and accounts); `lerni service status` shows the newest copy. They're on the same disk: they cover a bad change or deploy, not a broken disk. The copies leave out `secret.key`, `https-key.pem`, and the stats copy, and every data file is readable by the admin's account only.

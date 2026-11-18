@@ -81,3 +81,19 @@ def skipped(m: InterestMap, embedder: Embedder) -> frozenset[str]:
     return frozenset(r.casefold() for r in m.removed
                      if any((s := meaning.sim(r, t)) is not None and s >= GOALS_WIN
                             for t in targets))
+
+
+def shortlist(
+    embedder: Embedder, pairs: Sequence[tuple[str, str]], k: int
+) -> list[tuple[int, float]]:
+    """The ``k`` closest of ``pairs`` (interest text, goal text) as (index, similarity),
+    closest first: the night job's bridge shortlist (v4.16). Ties keep their order.
+
+    Raises:
+        Exception: Whatever the embedder raises; the caller plans unranked.
+    """
+    meaning = Meaning.build(embedder, [t for pair in pairs for t in pair])  # one embed call
+    # a pair whose text wasn't embedded is left out, never ranked
+    scored = [(i, s) for i, (a, b) in enumerate(pairs) if (s := meaning.sim(a, b)) is not None]
+    scored.sort(key=lambda x: -x[1])  # stable: equal scores stay in map order
+    return [(i, round(s, 3)) for i, s in scored[:k]]  # 3 places: enough to rank and log

@@ -100,7 +100,8 @@ def test_without_the_meaning_model_ten_still_race_dealt_by_format(tmp_path):
 def test_the_morning_write_ahead_holds_a_few_races(tmp_path):
     from datetime import datetime
 
-    from lerni.student.race import AHEAD_RACES, QUESTIONS_PER_RACE, seconds_until
+    from lerni.student.race import AHEAD_RACES, QUESTIONS_PER_RACE
+    from lerni.student.schedule import seconds_until
 
     class Fresh(Quizzer):  # new ideas every call
         def write(self, system, prompt):

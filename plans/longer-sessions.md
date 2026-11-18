@@ -104,7 +104,7 @@
 
 v4.5 (bulk ratings and question quality) → v4.6 the map picture (general interests only) → v4.7 Tell Lerni → **v4.8 A, the usage meter**, with minimal CI → **v4.9 B, overnight write-ahead**, with check a few questions → **v4.10 C, lighter chat** → **v4.11 D, local tagger in shadow** → Versions 5–7. *Replaced 2026-11-14:* away from home is v4.8, so A–D are v4.9–v4.12.
 
-*Replaced 2026-11-17:* the current order is in [upcoming versions](../docs/todo.md#upcoming-versions) (the meter v4.12, write-ahead v4.15, lighter chat v4.16, local tagger v4.17). *Replaced 2026-11-18:* B grows into the night job (v4.16: bridges shortlisted by meaning, then the morning plan, then the day's supply), Chat asking about interests is v4.17, a grader check v4.18, lighter chat v4.19, and the local tagger v4.20.
+*Replaced 2026-11-17:* the current order is in [upcoming versions](../docs/todo.md#upcoming-versions) (the meter v4.12, write-ahead v4.15, lighter chat v4.16, local tagger v4.17). *Replaced 2026-11-18:* B grows into the night job (v4.16: bridges shortlisted by meaning, then the morning plan, then the day's supply), Chat asking about interests is v4.17, a grader check v4.18, lighter chat v4.19, and the local tagger v4.20 (*replaced the same day:* check a few questions split out as v4.17 and calibration added as v4.18, so these are v4.19–v4.22).
 
 **Data check-in:** about a week after A ships, read the meter. It may reorder B, C and D.
 

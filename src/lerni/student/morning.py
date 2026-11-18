@@ -31,6 +31,7 @@ from lerni.student.interests import (
     set_notes,
 )
 from lerni.student.jsonfiles import read_json, write_json_atomic
+from lerni.student.meaning import shortlist
 from lerni.student.meter import using
 from lerni.student.students import check_username, default_data_dir
 
@@ -45,6 +46,8 @@ LAPSE_DAYS = 30  # a connection in use this long without a bridge lapses
 AGAIN_DAYS = 14  # a goal whose suggestion was used or dismissed waits this long for another
 WAIT_DAYS = 14  # a suggestion left unticked this long is dropped, making room (review)
 SHOWN_PAIRS = 30  # suggestions made already, at most this many in the prompt
+SHORTLIST = 12  # interest–goal pairs the night job's embeddings keep, closest first (v4.16)
+KEEP_CLOSED = 500  # ranked connections' outcomes kept for analysis (numbers only)
 
 MORNING_SCHEMA: dict[str, Any] = {
     "type": "object",
@@ -95,8 +98,9 @@ JSON asked for.
 - "connections": up to {MAX_CONNECTIONS}. Each pairs one of their interests with one of their \
 goals, by the names listed, and a "hook": one short line (under {MAX_LABEL} characters) naming \
 what links them, a teaching angle and not a question ("a train's seats shared out equally"). \
-Never a pair listed as bridged already, waiting, in use, or dismissed. Prefer interests a goal \
-has never been reached through, and spread them over the goals.
+Never a pair listed as bridged already, waiting, in use, or dismissed. When "Pairs to choose \
+from" are listed, choose only from them, by their exact names. Prefer interests a goal has \
+never been reached through, and spread them over the goals.
 - "goal_suggestions": for each goal marked "running out", at most one: "notes" are the goal's \
 notes widened by one step (what to add next), under {MAX_NOTES} characters.
 - "steps": for each goal marked "needs steps", 10 to 15 small steps inside it, each a short \
@@ -145,7 +149,7 @@ class SuggestionStore:
     def get(self, username: str) -> dict[str, Any]:
         """The file's data; empty when there's none or it's broken (moved aside)."""
         data = read_json(self._path(username)) or {}
-        for k in ("connections", "goals", "notes"):
+        for k in ("connections", "goals", "notes", "closed"):
             data[k] = [x for x in data.get(k, []) if isinstance(x, dict)]
         data["steps"] = data.get("steps") if isinstance(data.get("steps"), dict) else {}
         return data
@@ -261,14 +265,52 @@ def _running_out(asked: Mapping[str, Sequence[str]], goal_id: str) -> bool:
     return len({normalize(a) for a in asked.get(goal_id, ())}) >= RUNNING_OUT
 
 
+def _texts(m: InterestMap, interest: Any, goal: Any) -> tuple[str, str]:
+    # what's embedded: the interest with its kinds, and the goal with its notes
+    kinds = [x.name for x in family(m, interest) if x.id != interest.id]
+    return (interest.name + (f" ({', '.join(kinds)})" if kinds else ""),
+            goal.name + (f": {goal.notes}" if goal.notes else ""))
+
+
+def candidates(m: InterestMap, data: dict[str, Any]) -> list[tuple[Any, Any]]:
+    """Every (interest, goal) pair the morning plan could suggest: top-level interests not set
+    aside, against each goal, leaving out pairs bridged already or suggested before."""
+    made = {(str(c.get("interest", "")).casefold(), str(c.get("goal_id")))
+            for c in data["connections"]}  # suggested already, in any state
+    interests = [e for e in m.entries if e.kind == "interest" and not parents(m, e.id)
+                 and not mentions_set_aside(m, e.name)]
+    goals = [e for e in m.entries if e.kind == "goal"]
+    # every pairing, minus the ones a bridge or an earlier suggestion already covers
+    return [(i, g) for i in interests for g in goals
+            if not _bridged(m, i.id, g.id) and (i.name.casefold(), g.id) not in made]
+
+
+def ranked(m: InterestMap, data: dict[str, Any], embedder: Any) -> list[dict[str, Any]]:
+    """The night job's shortlist (v4.16): the ``SHORTLIST`` closest candidate pairs by meaning, as
+    {interest, goal, goal_id, similarity, rank}, rank 1 the closest.
+
+    Raises:
+        Exception: Whatever the embedder raises; the caller plans unranked.
+    """
+    pairs = candidates(m, data)
+    if not pairs:  # nothing left to pair: no call to the embedder
+        return []
+    top = shortlist(embedder, [_texts(m, i, g) for i, g in pairs], SHORTLIST)
+    # rank 1 is the closest; the similarity is kept to choose a cut-off later (v4.18)
+    return [{"interest": pairs[n][0].name, "goal": pairs[n][1].name,
+             "goal_id": pairs[n][1].id, "similarity": sim, "rank": r}
+            for r, (n, sim) in enumerate(top, 1)]
+
+
 def morning_input(
     m: InterestMap, asked: Mapping[str, Sequence[str]], data: dict[str, Any], today: date,
     widen: str = "", guidance: Sequence[tuple[str, str]] = (),
+    pairs: Sequence[dict[str, Any]] = (),
 ) -> str:
     """What the morning call needs: goals (with whether they're running out or need steps),
     interests, bridges, suggestions already made, and the educator's notes. Only ``widen``,
     the one goal to suggest widening (v3.45), is marked running out. ``guidance`` is the
-    educator's (goal id or "" for all, note) pairs (v4.9)."""
+    educator's (goal id or "" for all, note) pairs (v4.9); ``pairs`` the shortlist (v4.16)."""
     names = {e.id: e.name for e in m.entries}
     lines = ["Goals:"]
     for e in (e for e in m.entries if e.kind == "goal"):
@@ -304,6 +346,9 @@ def morning_input(
         ]
         if made:
             lines.append(f"{title}: " + "; ".join(made[-SHOWN_PAIRS:]))
+    if pairs:  # the shortlist, closest first: connections come only from these (v4.16)
+        lines.append("Pairs to choose from: "
+                     + "; ".join(f"{p['interest']} → {p['goal']}" for p in pairs))
     aside = [r for r in m.removed if "id" in m.removed_info.get(r.casefold(), {})][-8:]
     if aside:
         lines.append("Set aside, never use: " + ", ".join(aside))
@@ -383,16 +428,25 @@ def _tidy(data: dict[str, Any], m: InterestMap, today: date,
                      key=lambda g: (rank.index(g["goal_id"]) if g.get("goal_id") in rank
                                     else len(rank), str(g.get("day", ""))))
     goals = [g for g in goals if g.get("state") != "waiting" or g is (waiting or [None])[0]]
-    return {**data, "connections": [c for c in data["connections"] if stands(c)],
-            "goals": goals}
+    kept = [c for c in data["connections"] if stands(c)]
+    closed = [  # a ranked connection leaving the file keeps its outcome, numbers only (v4.16)
+        {"rank": c["rank"], "similarity": c.get("similarity"), "shortlist": c.get("shortlist"),
+         "proposed": c.get("proposed"), "closed": today.isoformat(),
+         "state": "unticked" if c.get("state") == "waiting" else c.get("state")}
+        for c in data["connections"] if "rank" in c and not stands(c)
+    ]
+    return {**data, "connections": kept, "goals": goals,
+            "closed": (data.get("closed", []) + closed)[-KEEP_CLOSED:]}
 
 
 def check_plan(
     raw: Any, m: InterestMap, data: dict[str, Any], asked: Mapping[str, Sequence[str]], today: date,
-    widen: str = "",
+    widen: str = "", pairs: Sequence[dict[str, Any]] = (),
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], dict[str, Any]]:
     """The call's answer, checked: new connections, goal suggestions, and steps by goal id.
-    Anything off the map, set aside, too long, or already suggested is dropped."""
+    Anything off the map, set aside, too long, or already suggested is dropped; with a
+    shortlist (``pairs``), so is any connection not on it, and each kept one notes its
+    similarity and rank (v4.16)."""
     raw = raw if isinstance(raw, dict) else {}
     day = today.isoformat()
     made = {
@@ -400,6 +454,7 @@ def check_plan(
     }
     room = MAX_CONNECTIONS - sum(c.get("state") == "waiting" for c in data["connections"])
     goals = {e.name.casefold(): e for e in m.entries if e.kind == "goal"}
+    listed = {(p["interest"].casefold(), p["goal_id"]): p for p in pairs}  # by top-level name
     connections = []
     for c in raw.get("connections") or []:
         if not isinstance(c, dict) or len(connections) >= room:
@@ -418,6 +473,10 @@ def check_plan(
             or (interest.name.casefold(), goal.id) in made
         ):
             continue
+        top = m.get(next(iter(parents(m, interest.id)), interest.id))  # a kind: its group
+        picked = listed.get((top.name.casefold(), goal.id)) if top is not None else None
+        if pairs and picked is None:
+            continue  # off the shortlist: its rank would mean nothing
         made.add((interest.name.casefold(), goal.id))
         connections.append(
             {
@@ -427,6 +486,8 @@ def check_plan(
                 "hook": hook,
                 "state": "waiting",
                 "day": day,
+                **({"similarity": picked["similarity"], "rank": picked["rank"],
+                    "shortlist": len(pairs), "proposed": day} if picked else {}),
             }
         )
     blocked = _blocked_goals(data, today)
@@ -473,10 +534,12 @@ def run_morning(
     store: SuggestionStore,
     today: date,
     guidance: Any = None,
+    embedder: Any = None,
 ) -> None:
     """This morning's call for one student; best effort: a failure leaves yesterday's
     suggestions, and races and Chat run as before. Logs numbers only. ``guidance``: the
-    educator's notes store (v4.9), or None."""
+    educator's notes store (v4.9), or None; ``embedder``: the shortlist's (v4.16), or None
+    to plan unranked."""
     try:
         m = maps.get(username)
         asked = concepts.asked_by_goal(username, today) if concepts is not None else {}
@@ -488,10 +551,16 @@ def run_morning(
         widen = next((g for g in rank if g not in blocked), "") if not any(
             g.get("state") == "waiting" for g in data["goals"]) else ""
         guide = guidance.for_goals(username) if guidance is not None else []  # all goals' notes
-        prompt = morning_input(m, asked, data, today, widen, guide)
+        pairs: list[dict[str, Any]] = []
+        if embedder is not None:
+            try:  # the shortlist by meaning; without it, the plan runs unranked
+                pairs = ranked(m, data, embedder)
+            except Exception as exc:  # noqa: BLE001
+                print(f"Morning plan unranked ({type(exc).__name__}).", flush=True)
+        prompt = morning_input(m, asked, data, today, widen, guide, pairs)
         with using("morning-plan"):  # the meter's name for this call
             raw = planner.write(MORNING_SYSTEM, prompt, MORNING_SCHEMA)
-        connections, suggestions, steps = check_plan(raw, m, data, asked, today, widen)
+        connections, suggestions, steps = check_plan(raw, m, data, asked, today, widen, pairs)
     except Exception as exc:  # noqa: BLE001 - never echo the map in errors
         print(f"Morning plan skipped ({type(exc).__name__}).", flush=True)
         store.failed(username, today)  # tried again later, up to MORNING_TRIES (v4.6.3)
@@ -499,7 +568,8 @@ def run_morning(
     def save(d: dict[str, Any]) -> None:
         kept = _tidy(d, m, today, rank)
         d.update(day=today.isoformat(), connections=kept["connections"] + connections,
-                 goals=kept["goals"] + suggestions, steps={**d["steps"], **steps})
+                 goals=kept["goals"] + suggestions, steps={**d["steps"], **steps},
+                 closed=kept["closed"])  # outcomes of ranked ones that left (v4.16)
 
     try:  # a failed save never stops the races written next (review)
         store._change(username, save)
@@ -507,7 +577,9 @@ def run_morning(
         print(f"Morning plan not saved ({type(exc).__name__}).", flush=True)
         return
     print(
-        f"Morning plan: {len(connections)} connections, {len(suggestions)} goal suggestion"
+        f"Morning plan: {len(connections)} connections"
+        + (f" (from a shortlist of {len(pairs)})" if pairs else " (unranked)")
+        + f", {len(suggestions)} goal suggestion"
         f"{'' if len(suggestions) == 1 else 's'}, {len(steps)} goal's steps",
         flush=True,
     )

@@ -38,18 +38,16 @@ from lerni.student.money import COINS  # noqa: E402
 from lerni.student.morning import SuggestionStore, run_morning  # noqa: E402
 from lerni.student.pictures import PicturesDesk, PicturesStore  # noqa: E402
 from lerni.student.points import PointsStore  # noqa: E402
-from lerni.student.race import (  # noqa: E402
-    AHEAD_HOUR,
-    AHEAD_RACES,
-    AHEAD_RETRY_SECONDS,
-    AHEAD_TRIES,
-    AHEAD_WAIT_SECONDS,
-    Quizzer,
-    RaceDesk,
+from lerni.student.race import AHEAD_RACES, NIGHT_RACES, Quizzer, RaceDesk  # noqa: E402
+from lerni.student.reading import FIRST_RACE, ReadingDesk, ReadingStore  # noqa: E402
+from lerni.student.results import ResultsLog  # noqa: E402
+from lerni.student.schedule import (  # noqa: E402
+    NIGHT_HOUR,
+    NIGHT_TRIES,
+    RETRY_SECONDS,
+    WAIT_SECONDS,
     seconds_until,
 )
-from lerni.student.reading import ReadingDesk, ReadingStore  # noqa: E402
-from lerni.student.results import ResultsLog  # noqa: E402
 from lerni.student.signin import SignIn, cookie_name, load_secret  # noqa: E402
 from lerni.student.spelling import SpellingDesk, SpellingStore  # noqa: E402
 from lerni.student.students import (  # noqa: E402
@@ -282,10 +280,12 @@ def _theme() -> gr.themes.Base:
     return gr.themes.Base(font=_SYSTEM_FONTS, font_mono=_MONO_FONTS)
 
 
-def write_ahead(races: Any, students: Any, morning: Any = None, wait: float = 0) -> bool:
-    """For each supervised student, this morning's plan (v3.44, once a day) and then a few
-    races' worth (v3.42); never raises, so one bad morning never stops the next. With
-    ``wait``, waits up to that many seconds for the writes and says whether all are done."""
+def write_ahead(races: Any, students: Any, morning: Any = None, wait: float = 0,
+                ahead: int = AHEAD_RACES) -> bool:
+    """For each supervised student, today's plan (v3.44, once a day) and then ``ahead`` races'
+    worth (v3.42; the night job asks for the day's, v4.16); never raises, so one bad night never
+    stops the next. With ``wait``, waits up to that many seconds for the writes and says
+    whether all are done."""
     try:
         players = [
             s.username
@@ -305,24 +305,26 @@ def write_ahead(races: Any, students: Any, morning: Any = None, wait: float = 0)
                 print(f"Morning plan skipped for one ({type(exc).__name__}).", flush=True)
                 done = False
         try:  # one student's broken file never stops the others'
-            writing = races.prefill(username, supervised=True, races=AHEAD_RACES)
-            if wait:  # the morning tries: wait, then check what's held
+            writing = races.prefill(username, supervised=True, races=ahead)
+            if ahead > AHEAD_RACES and getattr(races, "reading", None):  # the night: 1st passage
+                races.reading.prefill(username, True, date.today(), started=FIRST_RACE)
+            if wait:  # the night's tries: wait, then check what's held
                 writing.wait(wait)
-                done = races.ready(username, AHEAD_RACES) and done
+                done = races.ready(username, ahead) and done
         except Exception as exc:  # noqa: BLE001
             print(f"Writing races ahead skipped for one ({type(exc).__name__}).", flush=True)
             done = False
     return done
 
 
-def morning_tries(races: Any, students: Any, morning: Any = None, wait: Any = time.sleep) -> None:
-    """The morning's write-ahead, tried again every half hour until 9:00 while something
-    failed (v4.6.3); each try skips what's done (a plan that ran, races already held)."""
-    for n in range(AHEAD_TRIES):
+def night_tries(races: Any, students: Any, morning: Any = None, wait: Any = time.sleep) -> None:
+    """The night job (v4.16): the plan and the day's races, tried again every half hour until
+    06:00 while something failed; each try skips what's done (a plan that ran, races held)."""
+    for n in range(NIGHT_TRIES):
         if n:
-            wait(AHEAD_RETRY_SECONDS)
-        if write_ahead(races, students, morning, wait=AHEAD_WAIT_SECONDS):
-            return  # all written: no more tries today
+            wait(RETRY_SECONDS)
+        if write_ahead(races, students, morning, wait=WAIT_SECONDS, ahead=NIGHT_RACES):
+            return  # all written: no more tries tonight
 
 
 def build_app(
@@ -466,21 +468,22 @@ def build_app(
         if quizzer is None or races is None:
             return True  # nothing to plan with
         if not suggestions.ran_today(username, today):
-            run_morning(username, quizzer, maps, races.concepts, suggestions, today, guidance)
+            run_morning(username, quizzer, maps, races.concepts, suggestions, today, guidance,
+                        embedder)  # the bridges' shortlist by meaning (v4.16)
         return suggestions.ran_today(username, today)  # False: failed, tried again later
 
     log.purge()  # at startup; then once a day as exchanges are logged
     # production only (a labelled server is development): a restart loses held questions
     if races is not None and not label:
 
-        def mornings() -> None:  # and again each morning, before anyone races
+        def nights() -> None:  # and the night job each night, before anyone races
             while True:
-                time.sleep(seconds_until(AHEAD_HOUR, datetime.now()))
-                morning_tries(races, students, morning)
+                time.sleep(seconds_until(NIGHT_HOUR, datetime.now()))
+                night_tries(races, students, morning)
 
         # in the background: the morning call takes a minute, and the server starts now
         threading.Thread(target=write_ahead, args=(races, students, morning), daemon=True).start()
-        threading.Thread(target=mornings, daemon=True).start()
+        threading.Thread(target=nights, daemon=True).start()
 
     def plays(username: str) -> bool:  # supervised students and educators earn ⭐
         try:
