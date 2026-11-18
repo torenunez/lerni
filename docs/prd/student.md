@@ -79,6 +79,7 @@ As a student, I want to ask anything by text and get clear, short answers, so th
 - WHILE they're in a conversation THE SYSTEM SHALL keep one ongoing conversation per student, the last 20 messages, in memory, the same on each of their devices, until they start a new conversation or the server restarts. Anthropic's own retention applies to what is sent.
 - WHILE an answer is streaming THE SYSTEM SHALL turn Send into Stop, keeping what was said so far if they press it, and keep their question if the answer fails.
 - WHEN the conversation fits naturally THE SYSTEM SHALL build a bridge from one of their interests to one goal, one at a time, never forced or announced.
+- WHILE talking with a supervised student THE SYSTEM SHALL ask now and then, in an easy question, about what they like, so their map grows (from v4.17).
 
 ### Story: My interests grow a map
 
@@ -255,6 +256,9 @@ Public access and a native iPad app.
 - 2026-11-09: Goals win over a set-aside interest (the admin's decision): one close in meaning to a goal or an area with goals no longer blocks that goal's race questions, though Chat still steers away from it. Race questions that reword a recent idea or touch a set-aside topic in other words are dropped (spec 10, v3.40).
 - 2026-11-10: The morning plan (the admin's decisions): each morning Lerni suggests connections to try and goal suggestions for the educator to tick, and goal steps for narrow goals; a ticked connection is a target, never a bridge, and the box on the student's page becomes Tell Lerni, for goals and notes on the suggestions alike (v3.44).
 - 2026-11-10: Fresher races (the admin's decisions, after hearing the same questions again): each goal remembers its ideas for a month; the server rolls each question's format and twist, since Claude's temperature can't be raised; Claude writes 15 and the 10 most different race; and each morning, and at start-up, the server writes a few races ahead in memory so the student doesn't wait (never on disk, rule 6).
+- 2026-11-18: Chat's job and the night job (the admin's idea): Chat finds out what the student likes, and each night Lerni turns that into bridges to the goals (shortlisted by meaning with local embeddings, proposed for the educator's tick) and writes the day's questions ahead, so the session waits less.
+- 2026-11-18: Measurement (the admin's decisions): labels come only from people, never from Claude's outputs. Declined: Bayesian knowledge tracing (too few answers per idea to pin down its parameters; a Beta posterior per goal instead), and embedding clusters to suggest new areas (maps are small and areas mostly fixed; the area sorter's error rate is the share of sorted goals a person moved, read from the change journal).
+- 2026-11-18: No Django now (the admin's decision): the web framework isn't what limits Lerni's scale; the Claude plan is, with JSON files in one process and state held in memory. The core (about 12,400 lines) has no Gradio in it and carries over; only the web layer (about 5,100 lines) would be rebuilt. The rebuild waits for Beyond the family, unless Gradio blocks a screen first.
 
 ## Open questions
 
