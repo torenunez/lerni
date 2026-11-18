@@ -20,6 +20,7 @@ from pathlib import Path
 
 from lerni.student.journal import map_lock
 from lerni.student.jsonfiles import private, read_json, write_json_atomic
+from lerni.student.schedule import COPY_AT
 from lerni.student.service import (
     DATA_ENV,
     PORTS,
@@ -39,7 +40,7 @@ from lerni.student.students import AccountError, check_username
 NAME = "backup"  # com.lerni.backup
 KEEP = 30  # nightly copies kept
 NIGHTLY = re.compile(r"^nightly-\d{4}-\d{2}-\d{2}$")
-AT = {"Hour": 3, "Minute": 0}  # when the copy runs, while everyone's asleep
+AT = COPY_AT  # when the copy runs, after the night job (schedule.py)
 KEYS = ("secret.key", "https-key.pem")  # never copied: a copy must not let anyone sign in
 CARRIED = (*KEYS, "https.pem")  # kept from the folder a restore replaces
 SKIP = shutil.ignore_patterns(".tmp-*", "*.lock", "stats.sqlite*", *KEYS)  # stats: rebuilt

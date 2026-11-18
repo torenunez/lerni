@@ -45,6 +45,8 @@ CREATE TABLE probe_taps (username TEXT, day TEXT, topic TEXT);
 CREATE TABLE concepts (username TEXT, goal_id TEXT, goal TEXT, concept TEXT, first TEXT,
     last TEXT, asked INTEGER, right INTEGER);
 CREATE TABLE goal_levels (username TEXT, goal_id TEXT, level INTEGER, box INTEGER, due TEXT);
+CREATE TABLE connections (username TEXT, rank INTEGER, similarity REAL, shortlist INTEGER,
+    proposed TEXT, state TEXT, closed TEXT);
 """
 
 
@@ -165,7 +167,22 @@ def _add_student(db: sqlite3.Connection, root: Path, user: str, account: dict[st
             skipped += not _add_result(db, user, m, r)
         except BAD:
             skipped += 1
-    return skipped + _add_concepts(db, root / "concepts" / f"{user}.json", user)
+    return (skipped + _add_concepts(db, root / "concepts" / f"{user}.json", user)
+            + _add_connections(db, root / "suggestions" / f"{user}.json", user))
+
+
+def _add_connections(db: sqlite3.Connection, path: Path, user: str) -> int:
+    # the night job's ranked connections (v4.16), open and closed: numbers and states only
+    try:
+        data = _object(path) if path.is_file() else {}
+        open_ = [(user, c["rank"], c.get("similarity"), c.get("shortlist"), c.get("proposed"),
+                  c.get("state"), None) for c in data.get("connections", []) if "rank" in c]
+        closed = [(user, c["rank"], c.get("similarity"), c.get("shortlist"), c.get("proposed"),
+                   c.get("state"), c.get("closed")) for c in data.get("closed", [])]
+        db.executemany("INSERT INTO connections VALUES (?,?,?,?,?,?,?)", open_ + closed)
+    except (*BAD, OSError):
+        return 1  # a broken file: its rows are left out, the rest goes on
+    return 0
 
 
 def _add_concepts(db: sqlite3.Connection, path: Path, user: str) -> int:

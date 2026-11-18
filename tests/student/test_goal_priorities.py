@@ -17,7 +17,7 @@ from lerni.student.interests import (
 from lerni.student.morning import MORNING_TRIES, SuggestionStore, run_morning
 from lerni.student.race import pick_goals
 from lerni.student.students import Kind
-from lerni.student.web.app import morning_tries
+from lerni.student.web.app import night_tries
 
 
 def test_shares_follow_priorities_and_a_goal_can_differ_from_its_area():
@@ -66,7 +66,7 @@ def test_a_failed_morning_is_tried_again(tmp_path):
                             ready=lambda *a: True)
     sam = SimpleNamespace(username="sam", kind=Kind.SUPERVISED, archived=False)
     students = SimpleNamespace(list_students=lambda: [sam])
-    morning_tries(races, students, lambda u: plans.append(u) or len(plans) > 1,
+    night_tries(races, students, lambda u: plans.append(u) or len(plans) > 1,
                   wait=lambda seconds: None)
     assert len(plans) == 2  # failed once, ran on the second try, then no more
 

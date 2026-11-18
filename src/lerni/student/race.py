@@ -21,7 +21,7 @@ import zlib
 from collections import Counter, deque
 from collections.abc import Callable, Collection, Mapping, Sequence
 from dataclasses import asdict, dataclass, field, fields, replace
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
 from difflib import SequenceMatcher
 from importlib import metadata
 from typing import Any, Protocol
@@ -81,11 +81,8 @@ MISS_OPENERS = ("Good try!", "Tricky one!", "Nice guess!", "Not quite!", "Not th
 CARE = "care"  # a worrying answer: the caring words, no points, kept in the conversation log
 MAX_KEY_IDEA = 60
 BRIDGED_AS = 3  # a group already bridged to a slot's goal counts as this many more uses (v3.43)
-AHEAD_RACES = 4  # races' worth written each morning and at start-up, so no one waits (v3.42)
-AHEAD_HOUR = 5  # the morning write-ahead, local time
-AHEAD_TRIES = 9  # 5:00, then every half hour until 9:00 while a write fails (v4.6.3)
-AHEAD_RETRY_SECONDS = 30 * 60
-AHEAD_WAIT_SECONDS = 15 * 60  # each try waits this long at most for its writes
+AHEAD_RACES = 4  # races' worth written at start-up, so no one waits (v3.42)
+NIGHT_RACES = 6  # the night job's (v4.16): 10 races a day, less 3 reading and 1 writing
 PROBES_PER_SET = 2  # nearby ideas off the map a set of 10 may try (v3.36)
 PROBE_AT = (1, 2)  # a probe is question 2 or 3; question 4 is the bonus's
 PROBE_LEVEL = 2  # pitched simply: the idea is new
@@ -1253,12 +1250,6 @@ def _set_event() -> threading.Event:
     done = threading.Event()
     done.set()
     return done
-
-
-def seconds_until(hour: int, now: datetime) -> float:
-    """Seconds from ``now`` to the next ``hour`` o'clock, today or tomorrow."""
-    at = now.replace(hour=hour, minute=0, second=0, microsecond=0)
-    return ((at if at > now else at + timedelta(days=1)) - now).total_seconds()
 
 
 def line_up(held: list[Question], rng: random.Random) -> tuple[list[Question], list[Question]]:

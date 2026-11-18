@@ -72,7 +72,7 @@ def test_the_morning_plan_suggests_and_a_tick_steers_races_and_chat(tmp_path, ca
     assert len(waiting) == 6  # 5 connections and a goal suggestion
     assert not any("spiders" in w or "robots" in w for w in waiting)  # set aside, off the map
     out = capsys.readouterr().out
-    assert "Morning plan: 5 connections, 1 goal suggestion, 1 goal's steps" in out
+    assert "Morning plan: 5 connections (unranked), 1 goal suggestion, 1 goal's steps" in out
     # the educator ticks a connection and the goal suggestion: Use ticked
     trains = next(w for w in waiting if w.startswith("trains → Fractions"))
     goal = next(w for w in waiting if "then thirds" in w)
@@ -201,3 +201,59 @@ def test_review_a_goal_suggestion_never_overwrites_newer_notes(tmp_path):
     assert maps.get("sam").find("Fractions").notes == "only tenths this week"
     assert shown not in store.waiting("sam")  # gone at once (v4.3 review), no 14-day block
     assert not any(g.get("state") == "dismissed" for g in store.get("sam")["goals"])
+
+
+class Embedder:
+    """A fake embedder: trains and fractions share a direction, baking and nouns another."""
+
+    def embed(self, texts):
+        def vec(t):
+            if "trains" in t or "Fractions" in t:
+                return [1.0, 0.0]
+            if "baking" in t or "Nouns" in t:
+                return [0.0, 1.0]
+            return [0.6, 0.8]  # everything else sits between them
+        return [vec(t) for t in texts]
+
+
+def test_the_night_job_shortlists_by_meaning_and_keeps_each_outcome(tmp_path):
+    # v4.16: connections only from the shortlist, each with its rank; an untick is kept
+    import sqlite3
+    from types import SimpleNamespace
+
+    from lerni.student import morning
+    from lerni.student.race import NIGHT_RACES
+    from lerni.student.stats import TABLES, _add_connections
+    from lerni.student.students import Kind
+    from lerni.student.web.app import write_ahead
+
+    maps, concepts, store, ids = setup(tmp_path)
+    planner = Planner(RAW)
+    morning.SHORTLIST, keep = 2, morning.SHORTLIST  # the two closest pairs
+    try:
+        run_morning("sam", planner, maps, concepts, store, TODAY, embedder=Embedder())
+    finally:
+        morning.SHORTLIST = keep
+    shown = store.get("sam")["connections"]
+    assert [(c["interest"], c["rank"]) for c in shown] == [("trains", 1), ("baking", 2)]
+    assert "Pairs to choose from: trains → Fractions; baking → Nouns" in planner.prompts[0]
+    # two weeks unticked: they leave the list, and their outcome stays as numbers
+    later = Planner({"connections": [], "goal_suggestions": [], "steps": []})
+    run_morning("sam", later, maps, concepts, store, TODAY + timedelta(days=15))
+    closed = store.get("sam")["closed"]
+    assert [(c["rank"], c["state"]) for c in closed] == [(1, "unticked"), (2, "unticked")]
+    db = sqlite3.connect(":memory:")
+    db.executescript(TABLES)
+    _add_connections(db, tmp_path / "suggestions" / "sam.json", "sam")
+    assert db.execute("SELECT rank, state FROM connections").fetchall() == [
+        (1, "unticked"), (2, "unticked")]  # the tick rate by rank is one query
+    # the night writes the day's races and its first passage
+    asked = {}
+    races = SimpleNamespace(
+        purge_ahead=lambda day: 0, ready=lambda *a: True,
+        prefill=lambda u, supervised, races: asked.setdefault("races", races) and None
+        or SimpleNamespace(wait=lambda s: None),
+        reading=SimpleNamespace(prefill=lambda *a, **k: asked.setdefault("passage", k)))
+    sam = SimpleNamespace(username="sam", kind=Kind.SUPERVISED, archived=False)
+    write_ahead(races, SimpleNamespace(list_students=lambda: [sam]), ahead=NIGHT_RACES)
+    assert asked == {"races": NIGHT_RACES, "passage": {"started": 1}}
