@@ -132,6 +132,7 @@ As a student, I want to spend my points on cars in the garage, so that I can rac
 
 - WHEN the student has enough points and taps Buy THE SYSTEM SHALL take the price off their points, once, and keep that car for them for good.
 - WHEN they pick a car they own THE SYSTEM SHALL race with it.
+- WHILE covered cars are still to come THE SYSTEM SHALL show them under the Showroom with a ❤️ each and the day the next arrives, bring one each week (the cheapest they ❤️, else the cheapest), and never sell one before it arrives (from v4.17).
 
 ## Version 4: the educator's Chat
 
