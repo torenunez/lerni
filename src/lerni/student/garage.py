@@ -11,8 +11,10 @@ import math
 import re
 from collections.abc import Collection, Sequence
 from dataclasses import dataclass
+from datetime import date
 from pathlib import Path
 
+from lerni.student.schedule import next_delivery
 from lerni.student.students import default_data_dir
 
 
@@ -32,6 +34,7 @@ class Car:
     drive: str = ""
     note: str = ""  # e.g. "Limited to 250 cars"
     picture: str = ""  # a file in <data>/cars/
+    coming: bool = False  # covered until its delivery day (v4.17)
 
 
 CARS = (
@@ -168,6 +171,23 @@ def next_goal(cars: Sequence[Car], owned: Collection[str], balance: int) -> tupl
     return goal, f"{goal.name} · ⭐ {balance:,} / {goal.price:,} · about {races} race{plural}"
 
 
+def next_pick(waiting: Sequence[Car], hearts: Collection[str]) -> Car:
+    """The car that comes next: the cheapest one hearted, or the cheapest when none is
+    (so an affordable car keeps coming). ``waiting`` is never empty."""
+    wanted = [c for c in waiting if c.id in hearts] or list(waiting)
+    return min(wanted, key=lambda c: (c.price, c.id))  # id breaks a tie the same way each time
+
+
+def arrival_day(day: date, today: date) -> str:
+    """When a delivery comes, in words: "today", "tomorrow", a weekday, or a date."""
+    days = (day - today).days
+    if days <= 0:
+        return "today"  # due: it arrives the next time Games opens
+    if days == 1:
+        return "tomorrow"
+    return f"{day:%A}" if days <= 7 else f"{day:%b} {day.day}"  # "Friday", or "Nov 28"
+
+
 class Garage:
     """The cartoon cars in code, plus real cars from the home server's private garage file."""
 
@@ -179,6 +199,7 @@ class Garage:
         self.cars = (CARS[0], *real, *CARS[1:])  # starter, real cars cheapest first, other cartoons
         self._by_id = {c.id: c for c in self.cars}
         self._real = {c.id for c in real}
+        self.coming = tuple(c for c in real if c.coming)  # covered cars, cheapest first
 
     def _load(self, path: Path) -> list[Car]:
         try:
@@ -202,6 +223,7 @@ class Garage:
                     str(item.get("drive", "")),
                     str(item.get("note", "")),
                     picture,
+                    item.get("coming") is True,  # only a real true covers it
                 )
             except (KeyError, TypeError, ValueError, OverflowError):
                 continue  # a bad entry is skipped alone
@@ -231,27 +253,64 @@ class Garage:
         c = self._by_id.get(car_id)
         return self.folder / c.picture if c is not None and c.id in self._real else None
 
-    def sold(self, owned: list[str]) -> list[Car]:
-        """What this player's garage lists: the starter, real cars, and cartoon cars they own."""
-        return [c for c in self.cars if c.id == "starter" or c.id in self._real or c.id in owned]
+    def here(self, c: Car, owned: Collection[str], arrived: Collection[str]) -> bool:
+        """A real car is here unless it's covered and hasn't arrived for this player."""
+        return c.id in self._real and (not c.coming or c.id in arrived or c.id in owned)
 
-    def in_reach(self, owned: Collection[str], balance: int) -> list[Car]:
-        """Real cars they own or can afford (the Showroom shows these facts), fastest first."""
-        near = [c for c in self.cars
-                if c.id in self._real and (c.id in owned or c.price <= balance)]
+    def sold(self, owned: Collection[str], arrived: Collection[str] = ()) -> list[Car]:
+        """What this player's garage lists: the starter, real cars that are here, and cartoon
+        cars they own. Without ``arrived``, no covered car is sold (the safe default)."""
+        return [c for c in self.cars
+                if c.id == "starter" or self.here(c, owned, arrived) or c.id in owned]
+
+    def in_reach(
+        self, owned: Collection[str], balance: int, arrived: Collection[str] = ()
+    ) -> list[Car]:
+        """Real cars here that they own or can afford (the Showroom shows these facts),
+        fastest first."""
+        near = [c for c in self.cars  # a covered car's facts wait for its delivery
+                if self.here(c, owned, arrived) and (c.id in owned or c.price <= balance)]
         return sorted(near, key=lambda c: c.zero_to_60)[:MAX_IN_REACH]
 
+    def waiting(self, owned: Collection[str], arrived: Collection[str]) -> list[Car]:
+        """Covered cars still to come for this player, cheapest first."""
+        return [c for c in self.coming if c.id not in arrived and c.id not in owned]
+
+    def deliver(
+        self, owned: Collection[str], hearts: Collection[str], arrived: Collection[str],
+        delivery: str, today: date,
+    ) -> tuple[str | None, str]:
+        """The car arriving now (or None) and the next delivery day ("" with none to come).
+
+        A delivery day, once set, never moves; on or after it, one car comes (``next_pick``),
+        and the next day is the first delivery day after today, so weeks away don't pile up.
+        """
+        waiting = self.waiting(owned, arrived)
+        if not waiting:
+            return None, ""  # nothing to come: no day shown
+        if not delivery:
+            return None, next_delivery(today).isoformat()  # first seen: the next Friday
+        try:
+            due = date.fromisoformat(delivery)
+        except ValueError:
+            return None, next_delivery(today).isoformat()  # a broken day starts again
+        if due > today:
+            return None, delivery  # still on its way
+        car = next_pick(waiting, hearts)
+        later = len(waiting) > 1  # another to come after this one
+        return car.id, next_delivery(today).isoformat() if later else ""
+
     def rivals(
-        self, owned: Collection[str], driving: str, balance: int
+        self, owned: Collection[str], driving: str, balance: int, arrived: Collection[str] = ()
     ) -> tuple[Car | None, Car | None]:
         """The fast and slow lanes' cars; None where a bot drives instead.
 
         Fast: the car they save for, or with every car theirs, their fastest other one.
         Slow: their fastest owned car no faster than the one they drive.
         """
-        mine = [c for c in self.sold(list(owned)) if c.id in owned and c.id != driving]
+        mine = [c for c in self.sold(owned) if c.id in owned and c.id != driving]
         mine.sort(key=boost, reverse=True)
-        fast, _ = next_goal(self.sold(list(owned)), owned, balance)
+        fast, _ = next_goal(self.sold(owned, arrived), owned, balance)
         if fast is None and mine:
             fast = mine[0]
         try:

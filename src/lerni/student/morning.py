@@ -296,7 +296,7 @@ def ranked(m: InterestMap, data: dict[str, Any], embedder: Any) -> list[dict[str
     if not pairs:  # nothing left to pair: no call to the embedder
         return []
     top = shortlist(embedder, [_texts(m, i, g) for i, g in pairs], SHORTLIST)
-    # rank 1 is the closest; the similarity is kept to choose a cut-off later (v4.18)
+    # rank 1 is the closest; the similarity is kept to choose a cut-off later (v4.21)
     return [{"interest": pairs[n][0].name, "goal": pairs[n][1].name,
              "goal_id": pairs[n][1].id, "similarity": sim, "rank": r}
             for r, (n, sim) in enumerate(top, 1)]

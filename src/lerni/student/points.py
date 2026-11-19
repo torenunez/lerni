@@ -37,6 +37,9 @@ class Points:
     car: str = STARTER  # the one they drive
     awards: list[dict[str, Any]] = field(default_factory=list)  # id, source, amount, day
     races: dict[str, Any] = field(default_factory=dict)  # day and count
+    hearts: list[str] = field(default_factory=list)  # covered cars they want (v4.17)
+    arrived: dict[str, str] = field(default_factory=dict)  # car id -> the day it arrived
+    delivery: str = ""  # the next delivery day; "" before the first, or with none to come
 
     def races_today(self, today: date) -> int:
         """How many races they started today."""
@@ -72,7 +75,8 @@ class PointsStore:
             return Points()
         return Points(int(data.get("balance", 0)), list(data.get("cars", [STARTER])),
                       str(data.get("car", STARTER)), list(data.get("awards", [])),
-                      dict(data.get("races", {})))
+                      dict(data.get("races", {})), list(data.get("hearts", [])),
+                      dict(data.get("arrived", {})), str(data.get("delivery", "")))
 
     def _change(self, username: str, fn: Callable[[Points], T]) -> T:
         with self._lock(username):  # only the server writes points, so a thread lock is enough
@@ -123,6 +127,43 @@ class PointsStore:
             p.cars.append(car_id)
 
         self._change(username, apply)
+
+    def heart(self, username: str, car_id: str) -> bool:
+        """Want a covered car, or stop wanting it; True when it's wanted now."""
+
+        def apply(p: Points) -> bool:
+            if car_id in p.hearts:  # a second tap takes it back
+                p.hearts.remove(car_id)
+                return False
+            p.hearts.append(car_id)  # ids only; the caller checks it's a covered car
+            return True
+
+        return self._change(username, apply)
+
+    def settle(
+        self, username: str, deliver: Callable[[Points], tuple[str | None, str]]
+    ) -> tuple[Points, str | None]:
+        """Bring their deliveries up to date: their points, and the car that just arrived.
+
+        ``deliver`` says, from their points, which car arrives now and the next delivery
+        day (``Garage.deliver``); nothing is written when nothing changes.
+        """
+        p = self.get(username)
+        car, day = deliver(p)
+        if car is None and day == p.delivery:
+            return p, None  # the common case: a read, no write
+
+        def apply(p: Points) -> str | None:
+            car, day = deliver(p)  # again under the lock, in case two screens settle at once
+            if car is not None:
+                p.arrived[car] = p.delivery  # dated by its delivery day, for the measure
+                if car in p.hearts:
+                    p.hearts.remove(car)  # here now: no longer a wish
+            p.delivery = day
+            return car
+
+        car = self._change(username, apply)
+        return self.get(username), car
 
     def drive(self, username: str, car_id: str) -> None:
         """Race with a car they own.

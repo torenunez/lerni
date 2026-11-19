@@ -20,12 +20,14 @@ import gradio as gr
 from lerni.student.garage import (
     Car,
     Garage,
+    arrival_day,
     bolts,
     boost,
     car_card_svg,
     car_svg,
     family_cars,
     next_goal,
+    next_pick,
 )
 from lerni.student.interests import MapStore, area_group
 from lerni.student.money import COIN_PX, say_cents
@@ -117,19 +119,74 @@ def pick(
     return desk.pick(require_player(viewer).username, race_id, number, choice)
 
 
-def garage_tap(points: PointsStore, garage: Garage, viewer: Viewer | None, car_id: str) -> str:
-    """Drive a car they own, or buy it and drive it."""
+def settled(
+    points: PointsStore, garage: Garage, username: str, today: date | None = None
+) -> tuple[Points, Car | None]:
+    """Their points with deliveries up to date, and the car that just arrived (v4.17)."""
+    day = today or date.today()  # tests pass a fixed day
+    p, car_id = points.settle(
+        username, lambda q: garage.deliver(q.cars, q.hearts, q.arrived, q.delivery, day)
+    )
+    try:
+        return p, garage.car(car_id) if car_id else None
+    except KeyError:  # gone from the garage file since
+        return p, None
+
+
+def covered_html(c: Car, when: str) -> str:
+    """A covered car: its dark shape, name, and price, with "Arrives Friday" on the one coming
+    next (``when``), or how to pick it."""
+    tag = f"Arrives {when}" if when else "❤️ it to pick it"  # the others say how to choose
+    return (
+        f'<div class="lerni-card lerni-covered">{_picture(c)}<b>{html.escape(c.name)}</b>'
+        f'<span class="lerni-like">⭐ {c.price:,}</span>'
+        f'<span class="lerni-when{" lerni-next" if when else ""}">{html.escape(tag)}</span></div>'
+    )
+
+
+def delivery_chip(garage: Garage, p: Points, today: date | None = None) -> str:
+    """For the educator: the next delivery, the car it would bring, and the cars wanted."""
+    waiting = garage.waiting(p.cars, p.arrived)
+    if not waiting or not p.delivery:
+        return ""  # nothing to come, or not shown to the student yet
+    try:
+        when = arrival_day(date.fromisoformat(p.delivery), today or date.today())
+    except ValueError:
+        return ""
+    wanted = [c.name for c in waiting if c.id in p.hearts]  # still to come, so still wishes
+    hearts = f" · ❤️ {', '.join(wanted)}" if wanted else ""
+    text = f"🚚 {when}: {next_pick(waiting, p.hearts).name}{hearts}"
+    return f'<span class="lerni-chip">{html.escape(text)}</span>'
+
+
+def garage_tap(
+    points: PointsStore, garage: Garage, viewer: Viewer | None, car_id: str,
+    today: date | None = None, wants: bool = False,
+) -> str:
+    """Drive a car they own, buy it and drive it, or heart a covered one (v4.17).
+
+    ``wants`` is a tap on a covered tile's ❤️: it never buys, even when that car arrives
+    during the tap (the screen was drawn before its delivery).
+    """
     try:
         v, c = require_player(viewer), garage.car(car_id)
-        owned = points.get(v.username).cars
-        if c not in garage.sold(owned):
+        p, came = settled(points, garage, v.username, today)  # a car due today arrives first
+        news = f"🚚 The {came.name} just arrived in the Showroom! " if came else ""
+        owned = p.cars
+        if c in garage.waiting(owned, p.arrived):  # covered: a tap wants it, never buys it
+            if points.heart(v.username, car_id):
+                return f"{news}❤️ You want the {c.name}."
+            return f"{news}The {c.name} is off your list."
+        if wants:  # a ❤️ on a car that's here now: say so, buy nothing
+            return news or f"The {c.name} is in the Showroom now."
+        if c not in garage.sold(owned, p.arrived):
             return "⚠️ That car isn't sold here."
         if car_id not in owned:
             points.buy(v.username, car_id, c.price)
             points.drive(v.username, car_id)
-            return f"🎉 The {c.name} is yours!"
+            return f"{news}🎉 The {c.name} is yours!"
         points.drive(v.username, car_id)
-        return f"Driving the {c.name}."
+        return f"{news}Driving the {c.name}."
     except (NotAllowed, PointsError) as exc:
         return f"⚠️ {exc}"
     except KeyError:
@@ -190,13 +247,14 @@ def student_progress(
     body = "".join(rows) or '<p class="lerni-of">No races this week.</p>'
     return (
         f'<div class="lerni-week"><h3>Goal progress this week</h3>{body}'
-        f'<div><span class="lerni-chip">⭐ {p.balance}</span>{car}</div></div>'
+        f'<div><span class="lerni-chip">⭐ {p.balance}</span>{car}{delivery_chip(garage, p)}'
+        "</div></div>"
     )
 
 
 def rival_pairs(garage: Garage, p: Points) -> tuple[tuple[str, str], ...]:
     """The two rivals as (name, car id), fast lane first; a bot fills a lane with no car."""
-    cars = garage.rivals(p.cars, p.car, p.balance)
+    cars = garage.rivals(p.cars, p.car, p.balance, p.arrived)
     return tuple((c.name, c.id) if c else bot for c, bot in zip(cars, BOT_RIVALS, strict=True))
 
 
@@ -310,7 +368,7 @@ def card_html(c: Car, owned: bool = False, locked: bool = False) -> str:
 
 def goal_line(garage: Garage, p: Points) -> str:
     """The next car to save for, as one line ("" when nothing is left to get)."""
-    goal, line = next_goal(garage.sold(p.cars), p.cars, p.balance)
+    goal, line = next_goal(garage.sold(p.cars, p.arrived), p.cars, p.balance)
     return f"Next car: {line}" if goal is not None and goal.price > p.balance else line
 
 
@@ -322,7 +380,7 @@ def hero_html(garage: Garage, p: Points | None) -> str:
         c = garage.car(p.car)
     except KeyError:  # gone from the garage file: the starter drives
         c = garage.car(STARTER)
-    goal, _ = next_goal(garage.sold(p.cars), p.cars, p.balance)
+    goal, _ = next_goal(garage.sold(p.cars, p.arrived), p.cars, p.balance)
     bar = ""
     if goal is not None and goal.price > p.balance:
         pct = min(100, p.balance * 100 // goal.price)
@@ -650,6 +708,10 @@ def games_tab(
             locked = gr.HTML(card_html(c, locked=True), padding=False, visible=False)
             return col, full, locked, gr.Button(elem_classes="lerni-buy")
 
+    def covered_tile(c: Car) -> tuple[gr.Column, gr.HTML, gr.Button]:
+        with gr.Column(elem_classes="lerni-tile", min_width=0, visible=False) as col:
+            return col, gr.HTML(padding=False), gr.Button(elem_classes="lerni-buy")
+
     with gr.Tab("Games", id="games", visible=False) as tab:
         hero = gr.HTML(elem_id="lerni-hero")  # your car and the next goal, when not racing
         passage = gr.HTML(elem_id="lerni-passage", visible=False, padding=False)  # v4.13
@@ -754,6 +816,9 @@ def games_tab(
             gr.Markdown("### 🛒 Showroom")
             with gr.Row(elem_classes="lerni-tiles"):
                 shop = {c.id: shop_tile(c) for c in garage.cars}
+            coming_title = gr.Markdown(visible=False)  # v4.17: covered cars and their day
+            with gr.Row(elem_classes="lerni-tiles"):
+                coming = {c.id: covered_tile(c) for c in garage.coming}
 
     outputs = [
         header_stars,
@@ -771,6 +836,8 @@ def games_tab(
         mine_title,
         *(x for pair in mine.values() for x in pair),
         *(x for parts in shop.values() for x in parts),
+        coming_title,
+        *(x for parts in coming.values() for x in parts),
         garage_box,
         hear,
         explore,
@@ -787,8 +854,9 @@ def games_tab(
     ]
 
     def garage_updates(p: Points | None) -> list[Any]:
-        """The My cars title, then each car's tile and button in both lists."""
-        sold = garage.sold(p.cars) if p else []
+        """The My cars title, each car's tile and button in both lists, then the covered
+        cars: the next delivery's day on the car it would bring, and a ❤️ on each."""
+        sold = garage.sold(p.cars, p.arrived) if p else []
         owned = [c for c in garage.cars if p and c.id in p.cars]
         ups: list[Any] = [f"### 🅿️ My cars ({len(owned)})"]
         for c in garage.cars:  # My cars
@@ -815,6 +883,30 @@ def games_tab(
                     gr.update(visible=True),
                     gr.update(value=f"{c.price - p.balance:,} more ⭐", interactive=False),
                 ]
+        waiting = garage.waiting(p.cars, p.arrived) if p and p.delivery else []
+        if not waiting:  # nothing to come, or before the first day is set
+            return [*ups, gr.update(visible=False), *(
+                x for _ in coming for x in (gr.update(visible=False), gr.update(), gr.update())
+            )]
+        try:
+            when = arrival_day(date.fromisoformat(p.delivery), date.today())
+        except ValueError:
+            when = "soon"  # a broken day: settle sets a new one
+        pick = next_pick(waiting, p.hearts)  # what the delivery would bring now
+        ups.append(gr.update(
+            value=f"### 🚚 Arriving {when}\nTap ❤️ on the cars you want. One comes each week.",
+            visible=True,
+        ))
+        for c in garage.coming:
+            if c not in waiting:  # arrived or owned: in the Showroom or My cars
+                ups += [gr.update(visible=False), gr.update(), gr.update()]
+                continue
+            wanted = c.id in p.hearts
+            ups += [
+                gr.update(visible=True),
+                covered_html(c, when if c is pick else ""),  # only the pick shows the day
+                gr.update(value="💖 Wanted" if wanted else "❤️ Want it", interactive=True),
+            ]
         return ups
 
     def screen(
@@ -831,7 +923,9 @@ def games_tab(
         writes = race is not None and race.paragraph is not None  # a writing race (v4.14)
         writing = writes and not race.done  # its field and buttons, until the finish
         pic, kind = None, ""  # a typed slot on screen: what to draw, and its kind
-        p = points.get(viewer.username) if viewer else None
+        p, came = settled(points, garage, viewer.username) if viewer else (None, None)
+        if came is not None and not line:  # the delivery, said once, the first time it's seen
+            line = f"🚚 The {came.name} just arrived in the Showroom!"
         driving = p.car if p else STARTER
         if race is None or race.done:
             ask, buttons = "", [gr.update(visible=False) for _ in choices]
@@ -1071,10 +1165,10 @@ def games_tab(
         except Exception:  # noqa: BLE001 - never show what went wrong inside
             return recover(request)
 
-    def on_garage(car_id: str) -> Callable[..., list[Any]]:
+    def on_garage(car_id: str, wants: bool = False) -> Callable[..., list[Any]]:
         def handler(request: gr.Request) -> list[Any]:
             viewer = viewer_of(request)
-            message = garage_tap(points, garage, viewer, car_id)
+            message = garage_tap(points, garage, viewer, car_id, wants=wants)
             race = desk.current(viewer.username) if desk is not None and viewer else None
             return screen(viewer, race, message)
 
@@ -1183,4 +1277,8 @@ def games_tab(
         *((i, t[-1]) for i, t in shop.items()),
     ]:
         button.click(on_garage(car_id), None, outputs, concurrency_limit=MAX_AT_ONCE, **PRIVATE)
+    for car_id, (*_, button) in coming.items():  # a covered tile's ❤️ never buys
+        button.click(
+            on_garage(car_id, wants=True), None, outputs, concurrency_limit=MAX_AT_ONCE, **PRIVATE
+        )
     return tab, refresh, outputs, topic_btns

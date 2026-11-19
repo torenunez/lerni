@@ -356,7 +356,7 @@ def test_review_v42_a_sets_car_number_is_one_two_cars_have(tmp_path):
     races = desk(tmp_path, None)
     cars = [Car("a", "Mini", 10, "red", "", usd=20000, zero_to_60=9.0),
             Car("b", "Beetle", 10, "blue", "", usd=15000, zero_to_60=12.0, power_hp=80)]
-    races.garage = type("G", (), {"in_reach": lambda self, owned, balance: cars})()
+    races.garage = type("G", (), {"in_reach": lambda self, owned, balance, arrived=(): cars})()
     for _ in range(6):
         races._write("sam", supervised=True, today=TODAY)
         assert "uses only: horsepower" not in races.quizzer.prompts[-1]  # only one has hp

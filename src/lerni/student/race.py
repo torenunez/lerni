@@ -1497,7 +1497,7 @@ class RaceDesk:
         dealt = [*(g for g in picked if g.casefold() in firsts),
                  *(g for g in picked if g.casefold() not in firsts)]
         p = self.points.get(username)
-        cars = self.garage.in_reach(p.cars, p.balance) if self.garage else []
+        cars = self.garage.in_reach(p.cars, p.balance, p.arrived) if self.garage else []
         have = [f for f, n in zip(CAR_FACTS, (sum(c.zero_to_60 > 0 for c in cars),
                                                sum(bool(c.power_hp) for c in cars),
                                                sum(c.usd > 0 for c in cars)), strict=True)

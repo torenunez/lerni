@@ -3,6 +3,8 @@ name: check
 on:
   pull_request:
     branches: [main]
+  push:
+    branches: [main]  # what merged: the README's badge shows this run
   schedule:
     - cron: "0 9 * * 1"  # Mondays: the secrets job scans the whole history
   workflow_dispatch:  # or by hand, from the Actions tab
@@ -29,7 +31,7 @@ jobs:
           if [ -n "$files" ]; then ruff check $files; else echo "No Python changes."; fi
 
   tests:
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' || github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
