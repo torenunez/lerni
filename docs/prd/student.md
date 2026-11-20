@@ -79,7 +79,7 @@ As a student, I want to ask anything by text and get clear, short answers, so th
 - WHILE they're in a conversation THE SYSTEM SHALL keep one ongoing conversation per student, the last 20 messages, in memory, the same on each of their devices, until they start a new conversation or the server restarts. Anthropic's own retention applies to what is sent.
 - WHILE an answer is streaming THE SYSTEM SHALL turn Send into Stop, keeping what was said so far if they press it, and keep their question if the answer fails.
 - WHEN the conversation fits naturally THE SYSTEM SHALL build a bridge from one of their interests to one goal, one at a time, never forced or announced.
-- WHILE talking with a supervised student THE SYSTEM SHALL ask now and then, in an easy question, about what they like, so their map grows (from v4.19).
+- WHILE talking with a supervised student THE SYSTEM SHALL ask now and then, in an easy question, about what they like, so their map grows (from v4.22).
 
 ### Story: My interests grow a map
 
@@ -106,7 +106,7 @@ As a student, I want to hold one button to talk and let go when I'm done, so tha
 
 ## Version 3: play and points
 
-The student doesn't always take Lerni's questions seriously; points give them a reason to. Design: [spec 09](../../plans/specs/09-play-and-points.md) and [part 2](../../plans/specs/09b-harder-races.md).
+The student doesn't always take Lerni's questions seriously; points give them a reason to. Design: [spec 09](../../plans/specs/09-play-and-points.md), [part 2](../../plans/specs/09b-harder-races.md), and [part 3](../../plans/specs/09c-garage.md).
 
 ### Story: Race to win points
 
@@ -132,6 +132,7 @@ As a student, I want to spend my points on cars in the garage, so that I can rac
 
 - WHEN the student has enough points and taps Buy THE SYSTEM SHALL take the price off their points, once, and keep that car for them for good.
 - WHEN they pick a car they own THE SYSTEM SHALL race with it.
+- WHILE covered cars are still to come THE SYSTEM SHALL show them under the Showroom with a ❤️ each and the day the next arrives, bring one each week (the cheapest they ❤️, else the cheapest), and never sell one before it arrives (from v4.17).
 
 ## Version 4: the educator's Chat
 

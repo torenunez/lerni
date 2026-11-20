@@ -1,5 +1,7 @@
 # Lerni
 
+[![check](https://github.com/torenunez/lerni/actions/workflows/check.yml/badge.svg?branch=main&event=push)](https://github.com/torenunez/lerni/actions/workflows/check.yml) [![version](https://img.shields.io/github/v/tag/torenunez/lerni?label=version)](https://github.com/torenunez/lerni/tags) [![license: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+
 Lerni is a learning app that facilitates interest exploration, provides users a deeper understanding of these interests, and helps them connect key concepts, reinforce them, and commit them to memory. It is built on key learning concepts such as the **Feynman technique** (explain an idea simply to find what you don't understand) and **spaced repetition** (review at growing intervals so it sticks). [Learning concepts](docs/learning-concepts.md) covers these and the other ideas we design with.
 
 Lerni has two parts:

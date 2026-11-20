@@ -14,6 +14,10 @@ When something changes, update this section and add a log entry below.
 
 ## Log
 
+### 2026-11-19 (new arrivals, v4.17)
+
+- v4.17 ([plan](../plans/v4.17-new-arrivals.md), [spec 09c](../plans/specs/09c-garage.md)): new arrivals. Covered cars (`"coming": true` in `garage.json`) sit under the Showroom with a ❤️ each; one arrives each Friday, the cheapest the student hearts (else the cheapest), and a covered car is never sold, even to a direct call. The educator's progress card shows the next car and the hearts. The roadmap puts a garage worth coming back to first (the admin's call, after the student raced less): v4.17 new arrivals, v4.18 check a few questions, v4.19 spec cards, v4.20 a stat duel, then the rest moved down three. Also README badges (CI, version, license), CI tests on merges to `main`, and the commit check ignoring the repo's own public address. Review (fresh Opus): a ❤️ tap during a delivery could buy the car (fixed, with a regression test); the badge line was refused by the commit check (the admin's call: ignore the repo's address). Tests: 330 pass. The new cars' photos (Wikimedia Commons) and stats, and the Porsche 918's price when new, are loaded at the deploy.
+
 ### 2026-11-18 (the night job, v4.16)
 
 - v4.16 ([plan](../plans/v4.16-night-job.md)): the night job. At 02:00 (retries until 06:00), one run per supervised student: yesterday's held items deleted, interest–goal pairs shortlisted by meaning with the local embedder (12, provisional), the morning plan proposing only from the shortlist, then the day's 6 races and first passage. Every job time in `schedule.py`, with a table in the admin reference. Each connection keeps its rank and similarity, and its outcome as numbers once it closes; the stats copy has a `connections` table for the tick rate by rank. The morning eval showed names alone barely separate the pairs on a small map, so the cut-off waits for v4.18's labels. The admin's calls: split from check a few questions (v4.17), and ship before calibrating.

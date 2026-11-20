@@ -227,6 +227,12 @@ body[data-lerni-hold] #lerni-next { opacity: 0.5; pointer-events: none; }  /* wh
 .lerni-usd { font-size: 20px; font-weight: 700; }
 .lerni-like, .lerni-card details { font-size: 14px; }
 .lerni-buy { min-height: 48px !important; font-size: 16px !important; }
+/* v4.17: a covered car is its dark shape (light in dark mode), with its day on the next one */
+.lerni-covered img { filter: brightness(0); opacity: 0.75; }
+.dark .lerni-covered img { filter: brightness(0) invert(1); opacity: 0.6; }
+.lerni-when { align-self: flex-start; margin-top: 2px; padding: 1px 8px; border-radius: 8px;
+  font-size: 14px; background: var(--block-background-fill); }
+.lerni-when.lerni-next { background: #e1f5ee; color: #085041; font-weight: 600; }
 /* the race in a third of the screen: shrunk to fit, its shape kept, centred */
 #lerni-track svg { width: 100%; max-width: 820px; max-height: 30dvh; display: block;
   margin: 0 auto; }
@@ -280,8 +286,9 @@ def _theme() -> gr.themes.Base:
     return gr.themes.Base(font=_SYSTEM_FONTS, font_mono=_MONO_FONTS)
 
 
-def write_ahead(races: Any, students: Any, morning: Any = None, wait: float = 0,
-                ahead: int = AHEAD_RACES) -> bool:
+def write_ahead(
+    races: Any, students: Any, morning: Any = None, wait: float = 0, ahead: int = AHEAD_RACES
+) -> bool:
     """For each supervised student, today's plan (v3.44, once a day) and then ``ahead`` races'
     worth (v3.42; the night job asks for the day's, v4.16); never raises, so one bad night never
     stops the next. With ``wait``, waits up to that many seconds for the writes and says
@@ -468,8 +475,9 @@ def build_app(
         if quizzer is None or races is None:
             return True  # nothing to plan with
         if not suggestions.ran_today(username, today):
-            run_morning(username, quizzer, maps, races.concepts, suggestions, today, guidance,
-                        embedder)  # the bridges' shortlist by meaning (v4.16)
+            run_morning(
+                username, quizzer, maps, races.concepts, suggestions, today, guidance, embedder
+            )  # the bridges' shortlist by meaning (v4.16)
         return suggestions.ran_today(username, today)  # False: failed, tried again later
 
     log.purge()  # at startup; then once a day as exchanges are logged

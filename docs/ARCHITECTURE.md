@@ -88,7 +88,7 @@ flowchart LR
 | Conversation | The last 20 messages, one ongoing conversation per student | That student | Memory only; gone on New conversation or a server restart (built) |
 | Conversation logs | Each exchange and what the tagger did with it | The admin reads them (`lerni logs`) | `~/.lerni/student/logs/<username>/<date>.jsonl`, deleted after a year (built) |
 | Feedback | Date, who, which map, the note the educator ticked | The admin processes it | `~/.lerni/student/feedback.jsonl` (built) |
-| Points | Balance, cars, today's races, and recent award ids (ids and numbers only) | The player; an educator reads a supervised student's | `~/.lerni/student/points/<username>.json` |
+| Points | Balance, cars, today's races, recent award ids, and covered cars wanted and delivered (ids, numbers, and days) | The player; an educator reads a supervised student's | `~/.lerni/student/points/<username>.json` |
 | Spelling words | The class list and Lerni's picks, their sentences, counts, mistake labels, and a level 1-6 (never what was typed) | The educator sets the list and removes words; the server, at each answer | `~/.lerni/student/spelling/<username>.json` |
 | Pictures | Each player's picture tracks (blocks, money, ruler): level 1-6 and last few answers (numbers only) | The server, at each picture answer | `~/.lerni/student/pictures/<username>.json` |
 | Reading | The educator's sources; each student's reading level, next kind, titles read, and describing-word counts (numbers); one passage written ahead | `lerni reading import`; the server, at each reading race | `~/.lerni/student/reading/` (`sources.json`, `<username>.json`, `ahead/<username>.json` until its day ends) |

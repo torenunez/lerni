@@ -29,6 +29,8 @@ resolve_tool() {
 PRIVATE="$CWD/.private-words"
 if [ -f "$PRIVATE" ]; then
     ADDED=$(cd "$CWD" && { git diff --cached -U0; git diff -U0; } 2>/dev/null | grep -E '^\+' | grep -vE '^\+\+\+ ')
+    # the repo's own public address (README badges) isn't private: drop it before matching
+    ADDED=$(sed -E 's#(github\.com|shields\.io/github/v/tag)/[A-Za-z0-9-]+/lerni##g' <<<"$ADDED")
     while IFS= read -r word || [ -n "$word" ]; do  # the last line may lack a newline
         word="${word%%#*}"
         # trim the ends only, so two-word entries like a full name still match
